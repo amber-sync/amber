@@ -1,0 +1,59 @@
+{
+  "name": "amber",
+  "private": true,
+  "version": "0.0.0",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"npm run dev\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "tsc -p electron/tsconfig.json && vite build && electron-builder",
+    "test": "mocha --require ts-node/register --project tests/tsconfig.json \"tests/**/*.test.js\""
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "electron-log": "^5.4.3",
+    "lucide-react": "^0.554.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.4.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.22",
+    "chai": "^5.1.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.3",
+    "electron-builder": "^26.0.12",
+    "fs-extra": "^11.3.2",
+    "mocha": "^11.7.5",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "com.amber.app",
+    "productName": "Amber",
+    "directories": {
+      "output": "dist_electron_build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities"
+    }
+  }
+}

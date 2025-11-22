@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run electron:dev:*)",
+      "Bash(/usr/local/bin/npm --version)",
+      "Bash(~/.nvm/versions/node/*/bin/npm)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
