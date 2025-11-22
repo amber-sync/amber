@@ -37,8 +37,7 @@ import {
   Copy,
   History,
   Terminal,
-  X,
-  XCircle
+  X
 } from 'lucide-react';
 
 export const Icons = {

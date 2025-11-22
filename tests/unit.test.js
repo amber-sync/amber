@@ -55,10 +55,9 @@ describe('RsyncService - Unit Tests', () => {
     expect(args).to.include('--stats');
     expect(args).to.include('--human-readable');
     
-    // Compression is only added if SSH is enabled now, or via custom flag?
-    // Code says: if (conf.compress) args.push('--compress');
-    // mockJob has compress: true.
-    expect(args).to.include('--compress');
+    // Compression is only added if SSH is enabled (per robust script logic)
+    // mockJob has compress: true but no SSH, so it should NOT be included.
+    expect(args).to.not.include('--compress');
     
     expect(args).to.include('-v');
     expect(args).to.not.include('--delete');
@@ -88,6 +87,7 @@ describe('RsyncService - Unit Tests', () => {
     expect(sshCmd).to.contain('-p 2222');
     expect(sshCmd).to.contain('-i /key');
     expect(sshCmd).to.contain('-F /config');
+    expect(args).to.include('--compress');
   });
 
   it('should handle exclusions', () => {

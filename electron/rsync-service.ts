@@ -343,7 +343,7 @@ export class RsyncService {
         '--human-readable'
     );
 
-    if (conf.compress) args.push('--compress'); // Script adds this if SSH, we can keep it config-based or force it. Config based is safer for flexibility.
+    if (job.sshConfig?.enabled) args.push('--compress'); // Script logic: Only add compress if SSH is enabled
     if (conf.verbose) args.push('-v');
     if (conf.delete) args.push('--delete');
 
