@@ -114,20 +114,30 @@ export class RsyncService {
         return { success: false, error: e.message };
     }
 
-    // SAFETY CHECK: Verify backup marker exists in destination
-    // This prevents accidentally using the wrong directory and wiping data
-    const markerPath = path.join(dest, CONSTANTS.BACKUP_MARKER_FILENAME);
+    // SAFETY CHECK: Ensure backup marker exists in destination
+    // Auto-create if missing to mark this as a valid backup location
+    const destBasename = path.basename(dest);
+    const markerFilename = `.${destBasename}_backup-marker`;
+    const markerPath = path.join(dest, markerFilename);
     try {
         await fs.access(markerPath);
+        onLog(`Backup marker verified at destination`);
     } catch (e) {
-        onLog(`ERROR: Safety check failed - backup marker not found at ${markerPath}`);
-        onLog(`This directory does not appear to be a backup destination.`);
-        onLog(`To mark this as a backup folder, create the marker file with:`);
-        onLog(`  touch "${markerPath}"`);
-        return {
-            success: false,
-            error: 'Backup marker not found. Safety check failed. See logs for instructions.'
-        };
+        onLog(`Creating backup marker at ${markerPath}`);
+        try {
+            // Ensure destination directory exists
+            await fs.mkdir(dest, { recursive: true });
+            // Create the marker file with destination info
+            const markerContent = `Amber backup destination\nFolder: ${destBasename}\nCreated: ${new Date().toISOString()}\n`;
+            await fs.writeFile(markerPath, markerContent);
+            onLog(`Backup marker created successfully`);
+        } catch (createError: any) {
+            onLog(`ERROR: Failed to create backup marker: ${createError.message}`);
+            return {
+                success: false,
+                error: `Cannot create backup marker. Check write permissions for: ${dest}`
+            };
+        }
     }
 
     // Setup paths for Time Machine

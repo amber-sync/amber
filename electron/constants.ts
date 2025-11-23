@@ -28,7 +28,7 @@ export const CONSTANTS = {
   BACKUP_DIR_PATTERN: /^\d{4}-\d{2}-\d{2}-\d{6}$/,
 
   // Paths
-  BACKUP_MARKER_FILENAME: 'backup.marker',
+  BACKUP_MARKER_FILENAME: '.backup-marker', // Note: Dynamically generated as .{foldername}_backup-marker
   LATEST_SYMLINK_NAME: 'latest',
 } as const;
 
