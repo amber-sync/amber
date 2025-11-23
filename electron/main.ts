@@ -1,10 +1,13 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'path';
+import os from 'os';
+import fs from 'fs/promises';
 import log from 'electron-log';
 import { RsyncService } from './rsync-service';
 import { SyncJob } from './types';
+import { CONSTANTS } from './constants';
 
-log.initialize();
+// electron-log auto-initializes in v5+
 
 let mainWindow: BrowserWindow | null = null;
 const rsyncService = new RsyncService();
@@ -83,13 +86,12 @@ ipcMain.on('run-rsync', async (event, job: SyncJob) => {
 
 ipcMain.handle('read-dir', async (_, dirPath: string) => {
   try {
-    const fs = require('fs/promises');
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     return items.map((item: any) => ({
       name: item.name,
       isDirectory: item.isDirectory(),
       path: path.join(dirPath, item.name),
-      size: 0, // TODO: get stats if needed, but slow for large dirs
+      size: 0,
       modified: 0
     }));
   } catch (error: any) {
@@ -116,39 +118,65 @@ ipcMain.on('kill-rsync', (event, jobId: string) => {
 
 ipcMain.handle('create-sandbox-dirs', async (_, sourcePath: string, destPath: string) => {
   try {
-    const fs = require('fs/promises');
-    // Ensure paths are absolute and safe-ish (simple check)
-    if (!sourcePath.startsWith('/tmp') || !destPath.startsWith('/tmp')) {
-        return { success: false, error: 'Sandbox paths must be in /tmp' };
+    // FIXED: Platform-independent temp dir check
+    const tmpDir = os.tmpdir();
+    if (!sourcePath.startsWith(tmpDir) || !destPath.startsWith(tmpDir)) {
+      return { success: false, error: `Sandbox paths must be in ${tmpDir}` };
     }
+
     await fs.mkdir(sourcePath, { recursive: true });
     await fs.mkdir(destPath, { recursive: true });
-    
+
     // Ensure backup.marker exists in destination for safety check
-    const markerPath = path.join(destPath, 'backup.marker');
+    const markerPath = path.join(destPath, CONSTANTS.BACKUP_MARKER_FILENAME);
     try {
-        await fs.access(markerPath);
+      await fs.access(markerPath);
     } catch {
-        await fs.writeFile(markerPath, '');
+      await fs.writeFile(markerPath, '');
     }
-    
-    // Create a dummy file in source if empty
+
+    // Create dummy files in source if empty
     const files = await fs.readdir(sourcePath);
     if (files.length < 100) {
-        await fs.writeFile(path.join(sourcePath, 'hello.txt'), 'Hello Amber Sandbox!');
-        await fs.writeFile(path.join(sourcePath, 'notes.md'), '# Sandbox Notes\nThis is a test.');
-        
-        // Create many small files to simulate load (10,000 files)
-        for (let i = 0; i < 10000; i++) {
-            // Write in batches to be faster
-            if (i % 100 === 0) await new Promise(r => setTimeout(r, 0));
-            await fs.writeFile(path.join(sourcePath, `dummy-${i}.dat`), Buffer.alloc(1024 * (Math.random() * 10 + 1), 'a')); // 1-10KB each
-        }
+      await fs.writeFile(path.join(sourcePath, 'hello.txt'), 'Hello Amber Sandbox!');
+      await fs.writeFile(path.join(sourcePath, 'notes.md'), '# Sandbox Notes\nThis is a test.');
 
-        // Create a few large files (5 x 50MB)
-        for (let i = 0; i < 5; i++) {
-             await fs.writeFile(path.join(sourcePath, `large-file-${i}.bin`), Buffer.alloc(1024 * 1024 * 50, 'x'));
+      // FIXED: Batched file creation for performance
+      log.info(`Creating ${CONSTANTS.SANDBOX_TOTAL_FILES} test files in batches...`);
+
+      for (let batch = 0; batch < CONSTANTS.SANDBOX_TOTAL_FILES / CONSTANTS.FILE_CREATION_BATCH_SIZE; batch++) {
+        const promises = [];
+        for (let i = 0; i < CONSTANTS.FILE_CREATION_BATCH_SIZE; i++) {
+          const fileIndex = batch * CONSTANTS.FILE_CREATION_BATCH_SIZE + i;
+          const size = Math.floor(1024 * (Math.random() * 10 + 1));
+          promises.push(
+            fs.writeFile(
+              path.join(sourcePath, `dummy-${fileIndex}.dat`),
+              Buffer.alloc(size, 'a')
+            )
+          );
         }
+        await Promise.all(promises);
+
+        if (batch % 10 === 0) {
+          log.info(`Created ${batch * CONSTANTS.FILE_CREATION_BATCH_SIZE} files...`);
+        }
+      }
+
+      // Create large files in parallel
+      log.info(`Creating ${CONSTANTS.SANDBOX_LARGE_FILES_COUNT} large files...`);
+      const largeFilePromises = [];
+      for (let i = 0; i < CONSTANTS.SANDBOX_LARGE_FILES_COUNT; i++) {
+        largeFilePromises.push(
+          fs.writeFile(
+            path.join(sourcePath, `large-file-${i}.bin`),
+            Buffer.alloc(1024 * 1024 * CONSTANTS.SANDBOX_LARGE_FILE_SIZE_MB, 'x')
+          )
+        );
+      }
+      await Promise.all(largeFilePromises);
+
+      log.info('Sandbox setup complete!');
     }
     return { success: true };
   } catch (error: any) {

@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npm run electron:dev:*)",
       "Bash(/usr/local/bin/npm --version)",
-      "Bash(~/.nvm/versions/node/*/bin/npm)"
+      "Bash(~/.nvm/versions/node/*/bin/npm)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test:*)",
+      "Bash(pkill:*)",
+      "Bash(pkill -9 -f \"electron .\")",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

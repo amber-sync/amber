@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { LogEntry } from '../types';
 
 interface TerminalProps {
-  logs: string[];
+  logs: LogEntry[];
   isRunning: boolean;
 }
 
@@ -25,8 +26,19 @@ export const Terminal: React.FC<TerminalProps> = ({ logs, isRunning }) => {
       <div className="flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600" ref={scrollRef}>
         {logs.map((log, i) => (
           <div key={i} className="break-all whitespace-pre-wrap">
-            <span className="text-gray-400 dark:text-gray-500 mr-2 select-none">[{new Date().toLocaleTimeString()}]</span>
-            {log}
+            <span className={`mr-2 select-none ${
+              log.level === 'error' ? 'text-red-500 dark:text-red-400' :
+              log.level === 'warning' ? 'text-yellow-500 dark:text-yellow-400' :
+              'text-gray-400 dark:text-gray-500'
+            }`}>
+              [{new Date(log.timestamp).toLocaleTimeString()}]
+            </span>
+            <span className={
+              log.level === 'error' ? 'text-red-600 dark:text-red-400' :
+              log.level === 'warning' ? 'text-yellow-600 dark:text-yellow-400' : ''
+            }>
+              {log.message}
+            </span>
           </div>
         ))}
         {isRunning && (

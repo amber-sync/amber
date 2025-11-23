@@ -20,6 +20,7 @@ export interface RsyncConfig {
   excludePatterns: string[];
   linkDest?: string; // For Time Machine mode
   customFlags: string;
+  customCommand?: string; // Advanced override for rsync invocation
 }
 
 export interface SshConfig {
@@ -27,6 +28,7 @@ export interface SshConfig {
   port?: string;
   identityFile?: string; // Path to private key
   configFile?: string;   // Path to ssh_config
+  disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
 }
 
 export interface FileNode {
@@ -60,4 +62,51 @@ export interface SyncJob {
   lastRun: number | null;
   status: JobStatus;
   snapshots: Snapshot[];
+}
+
+// Additional types for better type safety
+
+export interface LogEntry {
+  message: string;
+  timestamp: number;
+  level?: 'info' | 'error' | 'warning';
+}
+
+export interface RsyncProgressData {
+  transferred: string;
+  percentage: number;
+  speed: string;
+  eta: string | null;
+  currentFile?: string;
+}
+
+export interface DiskStats {
+  total: number;
+  free: number;
+  status: 'AVAILABLE' | 'UNAVAILABLE';
+}
+
+export interface BackupResult {
+  success: boolean;
+  error?: string;
+  snapshot?: Partial<Snapshot>;
+}
+
+// Type guards
+export function isRsyncProgress(data: unknown): data is RsyncProgressData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'percentage' in data &&
+    typeof (data as any).percentage === 'number'
+  );
+}
+
+export function isBackupResult(data: unknown): data is BackupResult {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'success' in data &&
+    typeof (data as any).success === 'boolean'
+  );
 }
