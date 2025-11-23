@@ -1,7 +1,11 @@
-import { spawn, ChildProcess, execSync } from 'child_process';
+import { spawn, ChildProcess, exec } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { SyncJob, SyncMode } from './types';
+import { CONSTANTS, MS_PER_DAY } from './constants';
+
+const execAsync = promisify(exec);
 
 export class RsyncService {
 
@@ -10,44 +14,40 @@ export class RsyncService {
   /**
    * Check if a filesystem is FAT (FAT32, exFAT, vfat, etc.)
    * FAT filesystems have lower timestamp precision and need --modify-window
+   * FIXED: Now async to avoid blocking the event loop
    */
-  private isFatFilesystem(dirPath: string): boolean {
+  private async isFatFilesystem(dirPath: string): Promise<boolean> {
     try {
-      // Try different methods depending on OS
       const platform = process.platform;
 
-      if (platform === 'darwin' || platform === 'linux') {
-        // Use df to get filesystem info
-        // On macOS: df -T gives type in different column than Linux
-        // On Linux: df -T gives type in column 2
-        // Better approach: use stat --file-system on Linux, diskutil on macOS
-
-        if (platform === 'darwin') {
-          // Use diskutil to get filesystem type
-          const output = execSync(`diskutil info "${dirPath}" 2>/dev/null || echo "UNKNOWN"`, {
-            encoding: 'utf8',
-            timeout: 5000
-          });
-
-          // Look for File System Personality line
-          const fsMatch = output.match(/File System Personality:\s+(.+)/i);
-          if (fsMatch) {
-            const fsType = fsMatch[1].toLowerCase();
-            return fsType.includes('fat') || fsType.includes('msdos') || fsType.includes('exfat');
+      if (platform === 'darwin') {
+        const { stdout } = await execAsync(
+          `diskutil info "${dirPath}" 2>/dev/null || echo "UNKNOWN"`,
+          {
+            timeout: CONSTANTS.FILESYSTEM_CHECK_TIMEOUT_MS,
+            encoding: 'utf8'
           }
-        } else if (platform === 'linux') {
-          // Use stat to get filesystem type
-          const output = execSync(`stat -f -c %T "${dirPath}" 2>/dev/null || echo "UNKNOWN"`, {
-            encoding: 'utf8',
-            timeout: 5000
-          });
+        );
 
-          const fsType = output.trim().toLowerCase();
-          return fsType.includes('fat') || fsType.includes('vfat') || fsType.includes('msdos') || fsType.includes('exfat');
+        const fsMatch = stdout.match(/File System Personality:\s+(.+)/i);
+        if (fsMatch) {
+          const fsType = fsMatch[1].toLowerCase();
+          return fsType.includes('fat') || fsType.includes('msdos') || fsType.includes('exfat');
         }
+      } else if (platform === 'linux') {
+        const { stdout } = await execAsync(
+          `stat -f -c %T "${dirPath}" 2>/dev/null || echo "UNKNOWN"`,
+          {
+            timeout: CONSTANTS.FILESYSTEM_CHECK_TIMEOUT_MS,
+            encoding: 'utf8'
+          }
+        );
+
+        const fsType = stdout.trim().toLowerCase();
+        return fsType.includes('fat') || fsType.includes('vfat') ||
+               fsType.includes('msdos') || fsType.includes('exfat');
       }
 
-      // If we can't determine, assume not FAT
       return false;
     } catch (error) {
       // If detection fails, assume not FAT to avoid breaking backups
@@ -68,20 +68,28 @@ export class RsyncService {
   }
 
   private async getLatestBackup(destPath: string): Promise<string | null> {
-    // Check for 'latest' symlink first
-    const latestLink = path.join(destPath, 'latest');
+    const latestLink = path.join(destPath, CONSTANTS.LATEST_SYMLINK_NAME);
+
     try {
       await fs.access(latestLink);
-      const realPath = await fs.readlink(latestLink);
-      return path.resolve(destPath, realPath); // Ensure absolute
+      const linkTarget = await fs.readlink(latestLink);
+
+      // FIXED: Handle both absolute and relative symlinks
+      const resolvedPath = path.isAbsolute(linkTarget)
+        ? linkTarget
+        : path.join(destPath, linkTarget);
+
+      return resolvedPath;
     } catch {
       // If no symlink, find newest timestamp folder
       const dirs = await this.getDirectories(destPath);
-      const backupDirs = dirs.filter(d => /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(d));
+      const backupDirs = dirs.filter(d => CONSTANTS.BACKUP_DIR_PATTERN.test(d));
+
       if (backupDirs.length > 0) {
         return path.join(destPath, backupDirs[backupDirs.length - 1]);
       }
     }
+
     return null;
   }
 
@@ -108,7 +116,7 @@ export class RsyncService {
 
     // SAFETY CHECK: Verify backup marker exists in destination
     // This prevents accidentally using the wrong directory and wiping data
-    const markerPath = path.join(dest, 'backup.marker');
+    const markerPath = path.join(dest, CONSTANTS.BACKUP_MARKER_FILENAME);
     try {
         await fs.access(markerPath);
     } catch (e) {
@@ -134,7 +142,18 @@ export class RsyncService {
       dest = path.join(job.destPath, folderName);
     }
 
-    const args = this.buildRsyncArgs(job, dest, linkDest, onLog);
+    let args: string[];
+    try {
+      args = await this.buildRsyncArgs(job, dest, linkDest, onLog);
+    } catch (err: any) {
+      onLog(`ERROR: ${err?.message || 'Failed to build rsync command'}`);
+      return { success: false, error: err?.message || 'Failed to build rsync command' };
+    }
+
+    if (!args || args.length === 0) {
+      onLog('ERROR: Unable to build rsync command.');
+      return { success: false, error: 'Failed to build rsync command' };
+    }
     onLog(`Command: rsync ${args.join(' ')}`);
 
     return new Promise((resolve) => {
@@ -223,14 +242,14 @@ export class RsyncService {
           if (job.mode === SyncMode.TIME_MACHINE) {
             try {
                 // Create/Update 'latest' symlink
-                const linkPath = path.join(job.destPath, 'latest');
+                const linkPath = path.join(job.destPath, CONSTANTS.LATEST_SYMLINK_NAME);
                 try {
                     await fs.unlink(linkPath);
                 } catch {} // Ignore if doesn't exist
-                
-                // Symlink relative path
+
+                // FIXED: Use relative path for portability
                 await fs.symlink(folderName, linkPath);
-                onLog(`Updated 'latest' symlink to ${folderName}`);
+                onLog(`Updated '${CONSTANTS.LATEST_SYMLINK_NAME}' symlink to ${folderName}`);
 
                 // Expiration
                 await this.expireBackups(job.destPath, onLog);
@@ -262,38 +281,57 @@ export class RsyncService {
     });
   }
 
-  private async scanDirectory(dir: string): Promise<any[]> {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-      
-      // Use Promise.all to parallelize subdirectory scanning
-      const tasks = entries.map(async (entry) => {
-          try {
-              if (entry.isDirectory()) {
-                  return {
-                      id: `${path.basename(dir)}-${entry.name}`,
-                      name: entry.name,
-                      type: 'FOLDER',
-                      size: 0,
-                      modified: Date.now(),
-                      children: await this.scanDirectory(path.join(dir, entry.name))
-                  };
-              } else {
-                  const stats = await fs.stat(path.join(dir, entry.name));
-                  return {
-                      id: `${path.basename(dir)}-${entry.name}`,
-                      name: entry.name,
-                      type: 'FILE',
-                      size: stats.size,
-                      modified: stats.mtimeMs
-                  };
-              }
-          } catch (e) {
-              // Ignore inaccessible files to prevent total failure
-              return null;
-          }
-      });
+  /**
+   * Recursively scan a directory with performance optimizations
+   * FIXED: Added batching and depth limits to prevent memory issues
+   */
+  private async scanDirectory(dir: string, depth = 0): Promise<any[]> {
+      if (depth > CONSTANTS.MAX_DIRECTORY_SCAN_DEPTH) {
+        return []; // Prevent infinite recursion
+      }
 
-      return (await Promise.all(tasks)).filter(Boolean);
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const results: any[] = [];
+
+      // Process in batches to avoid creating thousands of promises simultaneously
+      for (let i = 0; i < entries.length; i += CONSTANTS.DIRECTORY_SCAN_BATCH_SIZE) {
+        const batch = entries.slice(i, i + CONSTANTS.DIRECTORY_SCAN_BATCH_SIZE);
+        const batchResults = await Promise.all(
+          batch.map(entry => this.scanEntry(dir, entry, depth))
+        );
+        results.push(...batchResults.filter((item): item is any => item !== null));
+      }
+
+      return results;
+  }
+
+  private async scanEntry(dir: string, entry: any, depth: number): Promise<any | null> {
+      try {
+          const fullPath = path.join(dir, entry.name);
+
+          if (entry.isDirectory()) {
+              return {
+                  id: `${path.basename(dir)}-${entry.name}`,
+                  name: entry.name,
+                  type: 'FOLDER',
+                  size: 0,
+                  modified: Date.now(),
+                  children: await this.scanDirectory(fullPath, depth + 1)
+              };
+          } else {
+              const stats = await fs.stat(fullPath);
+              return {
+                  id: `${path.basename(dir)}-${entry.name}`,
+                  name: entry.name,
+                  type: 'FILE',
+                  size: stats.size,
+                  modified: stats.mtimeMs
+              };
+          }
+      } catch (e) {
+          // Ignore inaccessible files to prevent total failure
+          return null;
+      }
   }
 
   private calculateStats(files: any[]): { sizeBytes: number, fileCount: number } {
@@ -320,54 +358,77 @@ export class RsyncService {
     }
   }
 
-  private buildRsyncArgs(job: SyncJob, finalDest: string, linkDest: string | null, onLog: (msg: string) => void): string[] {
-    const args: string[] = [];
+  private async buildRsyncArgs(
+    job: SyncJob,
+    finalDest: string,
+    linkDest: string | null,
+    onLog: (msg: string) => void
+  ): Promise<string[]> {
+    const safeLog = onLog || (() => {});
     const conf = job.config;
 
-    // Explicit flags matching user's bash script "large overhaul"
-    // RSYNC_FLAGS="-D --numeric-ids --links --hard-links --one-file-system --itemize-changes --times --recursive --perms --owner --group --stats --human-readable"
-    
+    // Advanced override: user provided full command template
+    if (conf.customCommand !== undefined) {
+      if (!conf.customCommand.trim()) {
+        throw new Error('Custom rsync command is selected but empty.');
+      }
+      return this.buildCustomCommand(job, finalDest, linkDest, safeLog);
+    }
+
+    const args: string[] = [];
+    // Explicit flags for reliable backups
     args.push(
-        '-D',
-        '--numeric-ids',
-        '--links',
-        '--hard-links',
-        '--one-file-system', 
-        '--itemize-changes',
-        '--times',
-        '--recursive',
-        '--perms',
-        '--owner',
-        '--group',
-        '--stats',
-        '--human-readable'
+      '-D',
+      '--numeric-ids',
+      '--links',
+      '--hard-links',
+      '--one-file-system',
+      '--itemize-changes',
+      '--stats',
+      '--human-readable'
     );
 
-    if (job.sshConfig?.enabled) args.push('--compress'); // Script logic: Only add compress if SSH is enabled
+    if (conf.archive) {
+      args.push('-a'); // implies recursive, times, owner, group, perms, links, devices, specials
+    } else {
+      if (conf.recursive) args.push('--recursive');
+      // Preserve metadata even when not using -a
+      args.push('--times', '--perms', '--owner', '--group');
+    }
+
+    const shouldCompress = conf.compress === true || (job.sshConfig?.enabled && conf.compress === undefined);
+    if (shouldCompress) args.push('-z');
+
     if (conf.verbose) args.push('-v');
     if (conf.delete) args.push('--delete');
 
-    // Check for FAT filesystems and add --modify-window if needed
-    const sourceFat = this.isFatFilesystem(job.sourcePath);
-    const destFat = this.isFatFilesystem(finalDest);
+    // FIXED: Now async FAT filesystem check
+    const sourceFat = await this.isFatFilesystem(job.sourcePath);
+    const destFat = await this.isFatFilesystem(finalDest);
 
     if (sourceFat || destFat) {
-        if (sourceFat) {
-            onLog('Source filesystem is FAT - using --modify-window=2 for timestamp tolerance');
-        }
-        if (destFat) {
-            onLog('Destination filesystem is FAT - using --modify-window=2 for timestamp tolerance');
-        }
-        args.push('--modify-window=2');
+      if (sourceFat) {
+        onLog('Source filesystem is FAT - using --modify-window=2 for timestamp tolerance');
+      }
+      if (destFat) {
+        onLog('Destination filesystem is FAT - using --modify-window=2 for timestamp tolerance');
+      }
+      args.push('--modify-window=2');
     }
 
+    // SECURITY FIX: SSH host key checking
     if (job.sshConfig?.enabled) {
       let sshCmd = 'ssh';
       if (job.sshConfig.port) sshCmd += ` -p ${job.sshConfig.port}`;
       if (job.sshConfig.identityFile) sshCmd += ` -i ${job.sshConfig.identityFile}`;
       if (job.sshConfig.configFile) sshCmd += ` -F ${job.sshConfig.configFile}`;
-      // strict checking off for automation usually
-      sshCmd += ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
+
+      // SECURITY FIX: Only disable host key checking if explicitly enabled
+      if (job.sshConfig.disableHostKeyChecking === true) {
+        onLog('⚠️  WARNING: SSH host key checking is disabled. Use only in trusted networks.');
+        sshCmd += ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
+      }
+
       args.push('-e', sshCmd);
     }
 
@@ -381,18 +442,87 @@ export class RsyncService {
       });
     }
 
-    if (conf.customFlags) {
-      const flags = conf.customFlags.split(' ').filter(f => f.trim().length > 0);
-      args.push(...flags);
+    if (conf.customFlags && conf.customFlags.trim()) {
+      throw new Error('Custom flags are disabled; use the custom command field for advanced use.');
     }
 
-    // Source and Dest
-    // Ensure source ends with slash to copy CONTENTS, matching the script behavior: "$SRC_FOLDER/"
-    const sourcePath = job.sourcePath.endsWith(path.sep) ? job.sourcePath : `${job.sourcePath}${path.sep}`;
+    // Source and Dest - ensure trailing slash
+    const sourcePath = this.ensureTrailingSlash(job.sourcePath);
     args.push(sourcePath);
     args.push(finalDest);
 
     return args;
+  }
+
+  private buildCustomCommand(
+    job: SyncJob,
+    finalDest: string,
+    linkDest: string | null,
+    onLog: (msg: string) => void
+  ): string[] {
+    const template = (job.config.customCommand || '').trim();
+
+    // Replace placeholders when present; otherwise leave untouched.
+    const commandString = template
+      .replace(/{source}/g, this.ensureTrailingSlash(job.sourcePath))
+      .replace(/{dest}/g, finalDest)
+      .replace(/{linkDest}/g, linkDest || '');
+
+    const tokens = this.tokenizeFlags(commandString);
+
+    if (tokens.length === 0) {
+      throw new Error('Custom command is empty after parsing.');
+    }
+
+    onLog('Using custom rsync command (advanced mode, no safety checks).');
+    return tokens;
+  }
+
+  private tokenizeFlags(input: string): string[] {
+    const tokens: string[] = [];
+    let current = '';
+    let inSingle = false;
+    let inDouble = false;
+    let escaped = false;
+
+    for (const ch of input) {
+      if (escaped) {
+        current += ch;
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === '\'' && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+      if (ch === '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+      if (ch === ' ' && !inSingle && !inDouble) {
+        if (current) {
+          tokens.push(current);
+          current = '';
+        }
+        continue;
+      }
+      current += ch;
+    }
+
+    if (inSingle || inDouble) {
+      throw new Error('Unbalanced quotes in custom flags/command.');
+    }
+
+    if (current) tokens.push(current);
+    return tokens;
+  }
+
+  private ensureTrailingSlash(p: string): string {
+    return p.endsWith(path.sep) ? p : p + path.sep;
   }
 
   private formatDate(date: Date): string {
@@ -420,115 +550,65 @@ export class RsyncService {
   }
 
   private async expireBackups(destPath: string, onLog: (msg: string) => void) {
-    // Strategy: 1:1 30:7 365:30
-    // "After 1 day, keep one per day."
-    // "After 30 days, keep one per 7 days."
-    // "After 365 days, keep one per 30 days."
-    
     const dirs = await this.getDirectories(destPath);
-    const backupDirs = dirs.filter(d => /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(d)).sort();
-    
+    const backupDirs = dirs.filter(d => CONSTANTS.BACKUP_DIR_PATTERN.test(d)).sort();
+
     if (backupDirs.length === 0) return;
 
-    const now = new Date().getTime();
-    const msPerDay = 24 * 60 * 60 * 1000;
-
-    // We want to KEEP backups that satisfy conditions.
-    // We process from NEWEST to OLDEST to ensure we keep the latest backup of a given interval (e.g. latest of the day).
-    // This is standard Time Machine behavior (snapshots represent state at end of interval).
-    
-    let lastKeptTimestamp = now; // Initialize with current time (effectively keeping "future" or "now" as anchor)
-    // Actually, anchor should be the first backup kept.
-    // Iterate Newest -> Oldest
-    
-    // Strategy rules parsed
-    const strategies = [
-        { afterDays: 1, intervalDays: 1 },
-        { afterDays: 30, intervalDays: 7 },
-        { afterDays: 365, intervalDays: 30 }
-    ].sort((a, b) => a.afterDays - b.afterDays); // 1, 30, 365
+    const now = Date.now();
+    const strategies = CONSTANTS.RETENTION_STRATEGIES;
 
     const backupsToDelete: string[] = [];
+    let lastKeptTimestamp = now;
 
-    // REVERSE iteration (Newest first)
+    // Iterate from newest to oldest
     for (let i = backupDirs.length - 1; i >= 0; i--) {
-        const dir = backupDirs[i];
-        const date = this.parseDate(dir);
-        if (!date) continue;
-        
-        const ts = date.getTime();
-        const ageDays = (now - ts) / msPerDay;
-        
-        // Find applicable strategy
-        let interval = 0; // 0 means keep all
-        
-        // Find the most relevant strategy (largest afterDays < ageDays)
-        // wait, strategies are "after X days".
-        // If age is 0.5 days. No strategy > 0.5 days. Keep all.
-        // If age is 1.5 days. Strategy > 1 day applies.
-        
-        // Reversed: 365, 30, 1
-        for (let j = strategies.length - 1; j >= 0; j--) {
-            if (ageDays >= strategies[j].afterDays) {
-                interval = strategies[j].intervalDays;
-                break;
-            }
-        }
-        
-        if (interval === 0) {
-            // Keep all (recent backups)
-            lastKeptTimestamp = ts;
-            continue;
-        }
-        
-        // Check gap
-        // Since we go Newest -> Oldest, we check if this backup is "too close" to the previously kept one (which is NEWER).
-        // But "too close" in the past direction.
-        // Effectively: Is (lastKept - current) < interval?
-        
-        // Example: Daily (interval 1).
-        // Kept: Day 5, 23:00 (lastKept).
-        // Current: Day 5, 22:00. Diff = 1hr (0.04 days). < 1. DELETE.
-        // Current: Day 4, 23:00. Diff = 24hr (1.0 days). >= 1. KEEP. Update lastKept.
-        
-        // We initialize lastKeptTimestamp with the first backup we see in the restricted zone?
-        // Or we carry over from "recent" zone.
-        // The "recent" zone (age < 1 day) keeps everything.
-        // The newest backup in the "old" zone (> 1 day) will be the first encountered.
-        // We KEEP it. Then compare next ones to it.
-        
-        // But we need to handle the transition from "Keep All" to "Keep Daily".
-        // The lastKeptTimestamp from "Keep All" might be 0.9 days ago.
-        // The first backup in "Keep Daily" is 1.1 days ago. Diff 0.2.
-        // Should we delete it? No, standard TM keeps "First of the interval".
-        // If we go Newest->Oldest, we keep the newest of the interval.
-        // So if we transition zones, we should essentially reset the anchor or check against the strategy's grid.
-        // BUT simplified logic: Just check distance from last kept.
-        
-        if (lastKeptTimestamp === now) {
-             // First backup encountered (newest overall). Always keep.
-             lastKeptTimestamp = ts;
-             continue;
-        }
+      const dir = backupDirs[i];
+      const date = this.parseDate(dir);
+      if (!date) continue;
 
-        const daysDiff = (lastKeptTimestamp - ts) / msPerDay; // Positive because lastKept is newer
-        
-        if (daysDiff < interval) {
-            backupsToDelete.push(dir);
-        } else {
-            lastKeptTimestamp = ts;
+      const ts = date.getTime();
+      const ageDays = (now - ts) / MS_PER_DAY;
+
+      // Determine retention interval based on age
+      let interval = 0; // 0 means keep all (recent backups)
+
+      for (let j = strategies.length - 1; j >= 0; j--) {
+        if (ageDays >= strategies[j].afterDays) {
+          interval = strategies[j].intervalDays;
+          break;
         }
+      }
+
+      if (interval === 0) {
+        // Keep all recent backups
+        lastKeptTimestamp = ts;
+        continue;
+      }
+
+      if (lastKeptTimestamp === now) {
+        // First backup in retention zone - always keep
+        lastKeptTimestamp = ts;
+        continue;
+      }
+
+      const daysDiff = (lastKeptTimestamp - ts) / MS_PER_DAY;
+
+      if (daysDiff < interval) {
+        backupsToDelete.push(dir);
+      } else {
+        lastKeptTimestamp = ts;
+      }
     }
-    
+
     // Execute deletes
     for (const dir of backupsToDelete) {
-        onLog(`Pruning old backup: ${dir}`);
-        try {
-            await fs.rm(path.join(destPath, dir), { recursive: true, force: true });
-        } catch (e: any) {
-            onLog(`Failed to prune ${dir}: ${e.message}`);
-        }
+      onLog(`Pruning old backup: ${dir}`);
+      try {
+        await fs.rm(path.join(destPath, dir), { recursive: true, force: true });
+      } catch (e: any) {
+        onLog(`Failed to prune ${dir}: ${e.message}`);
+      }
     }
   }
 }
-

@@ -20,6 +20,7 @@ export interface RsyncConfig {
   excludePatterns: string[];
   linkDest?: string;
   customFlags: string;
+  customCommand?: string; // Advanced: optional full rsync command template
 }
 
 export interface SshConfig {
@@ -27,6 +28,7 @@ export interface SshConfig {
   port?: string;
   identityFile?: string;
   configFile?: string;
+  disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
 }
 
 export interface SyncJob {
@@ -42,4 +44,3 @@ export interface SyncJob {
   status: JobStatus;
   // snapshots: Snapshot[]; // We don't need full snapshot tree in backend for now, just paths
 }
-
