@@ -1,8 +1,7 @@
 # Amber
 
 <div align="center">
-  <img src="public/xlogo.svg" alt="Amber Logo" width="120" height="120">
-  
+  <img src="public/logo.svg" alt="Amber Logo" width="120" height="120" style="filter: hue-rotate(-25deg) brightness(1.2) saturate(2);">  
   <h1 style="margin-top: 20px;">Amber Backup</h1>
   <p><strong>Professional, Time Machine-style backups for any server.</strong></p>
 
