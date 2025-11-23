@@ -320,12 +320,14 @@ ipcMain.handle('create-sandbox-dirs', async (_, sourcePath: string, destPath: st
     await fs.mkdir(sourcePath, { recursive: true });
     await fs.mkdir(destPath, { recursive: true });
 
-    // Ensure backup.marker exists in destination for safety check
-    const markerPath = path.join(destPath, CONSTANTS.BACKUP_MARKER_FILENAME);
+    // Ensure backup marker exists in destination for safety check
+    const destBasename = path.basename(destPath);
+    const markerFilename = `.${destBasename}_backup-marker`;
+    const markerPath = path.join(destPath, markerFilename);
     try {
       await fs.access(markerPath);
     } catch {
-      await fs.writeFile(markerPath, '');
+      await fs.writeFile(markerPath, `Amber backup destination\nFolder: ${destBasename}\nCreated: ${new Date().toISOString()}\n`);
     }
 
     // Create dummy files in source if empty

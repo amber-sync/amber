@@ -236,7 +236,8 @@ export const HelpSection: React.FC = () => {
               <div>
                 <strong className="text-gray-900 dark:text-white">Backup Marker:</strong>
                 <p className="text-gray-700 dark:text-gray-300">
-                  Destination must contain a marker file to prevent accidental overwrites of non-backup drives.
+                  Amber automatically creates a marker file in your destination to identify it as a backup location.
+                  This prevents accidental overwrites of non-backup directories.
                 </p>
               </div>
             </li>

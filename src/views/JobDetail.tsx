@@ -254,7 +254,7 @@ const StatsGrid: React.FC<{ job: SyncJob }> = ({ job }) => (
     <StatCard
       icon={<Icons.Shield size={18} />}
       label="Mode"
-      value={job.mode.replace('_', ' ').toLowerCase()}
+      value={job.mode.replace('_', ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
     />
   </div>
 );
