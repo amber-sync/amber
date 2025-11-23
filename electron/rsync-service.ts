@@ -525,6 +525,10 @@ export class RsyncService {
     return p.endsWith(path.sep) ? p : p + path.sep;
   }
 
+  isJobRunning(jobId: string): boolean {
+    return this.activeJobs.has(jobId);
+  }
+
   private formatDate(date: Date): string {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, '0');

@@ -1,14 +1,32 @@
 {
   "name": "amber",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1-beta",
   "main": "dist-electron/main.js",
+  "author": "Florian P. Mahner",
+  "license": "MIT",
+  "homepage": "https://github.com/florianmahner/amber",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/florianmahner/amber.git"
+  },
+  "bugs": {
+    "url": "https://github.com/florianmahner/amber/issues"
+  },
+  "keywords": [
+    "backup",
+    "rsync",
+    "time machine",
+    "macos",
+    "electron"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:icons": "node build-icons.js",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"npm run dev\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:3000 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "tsc -p electron/tsconfig.json && vite build && electron-builder",
+    "electron:build": "npm run build:icons && tsc -p electron/tsconfig.json && vite build && electron-builder",
     "test": "mocha --require ts-node/register --project tests/tsconfig.json \"tests/**/*.test.js\""
   },
   "dependencies": {
@@ -34,8 +52,10 @@
     "electron": "^39.2.3",
     "electron-builder": "^26.0.12",
     "fs-extra": "^11.3.2",
+    "icon-gen": "^5.0.0",
     "mocha": "^11.7.5",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
@@ -50,10 +70,18 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "build/icons/**/*"
     ],
     "mac": {
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "icon": "build/icons/icon.icns"
+    },
+    "win": {
+      "icon": "build/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons/icon-512.png"
     }
   }
 }

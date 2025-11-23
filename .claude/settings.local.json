@@ -8,7 +8,8 @@
       "Bash(npm test:*)",
       "Bash(pkill:*)",
       "Bash(pkill -9 -f \"electron .\")",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npm run build:icons:*)"
     ],
     "deny": [],
     "ask": []

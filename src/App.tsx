@@ -41,38 +41,81 @@ const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
 const DEFAULT_SANDBOX_SOURCE = '/tmp/amber-sandbox/source';
 const DEFAULT_SANDBOX_DEST = '/tmp/amber-sandbox/dest';
 
-const INITIAL_JOBS: SyncJob[] = [
-  {
-    id: 'sandbox-default',
-    name: 'Sandbox Default',
-    sourcePath: DEFAULT_SANDBOX_SOURCE,
-    destPath: DEFAULT_SANDBOX_DEST,
-    mode: SyncMode.TIME_MACHINE,
-    scheduleInterval: null,
-    config: {
-      ...DEFAULT_CONFIG,
-      delete: true, // Enabled for sandbox cleanup
-      customFlags: '',
-    },
-    sshConfig: { enabled: false },
-    lastRun: null,
-    status: JobStatus.IDLE,
-    snapshots: [],
-  },
-];
+const INITIAL_JOBS: SyncJob[] = process.env.NODE_ENV === 'development'
+  ? [
+      {
+        id: 'sandbox-default',
+        name: 'Sandbox Default',
+        sourcePath: DEFAULT_SANDBOX_SOURCE,
+        destPath: DEFAULT_SANDBOX_DEST,
+        mode: SyncMode.TIME_MACHINE,
+        scheduleInterval: null,
+        config: {
+          ...DEFAULT_CONFIG,
+          delete: true, // Enabled for sandbox cleanup
+          customFlags: '',
+        },
+        sshConfig: { enabled: false },
+        lastRun: null,
+        status: JobStatus.IDLE,
+        snapshots: [],
+      },
+    ]
+  : [];
 
 export default function App() {
   const [jobs, setJobs] = useState<SyncJob[]>(INITIAL_JOBS);
   const [activeJobId, setActiveJobId] = useState<string | null>(INITIAL_JOBS[0]?.id ?? null);
   const [view, setView] = useState<View>('DASHBOARD');
   const [darkMode, setDarkMode] = useState(false);
+  const [runInBackground, setRunInBackground] = useState(true);
+  const [startOnBoot, setStartOnBoot] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } = useRsyncProgress();
   const destinationStats = useDiskStats(jobs.map(j => j.destPath));
 
-  // Create initial sandbox dirs and listen for rsync completion events
+  // Load preferences and navigation listener
   useEffect(() => {
-    if (window.electronAPI) {
+    if (window.electronAPI?.getPreferences) {
+      window.electronAPI.getPreferences().then((p: any) => {
+        setRunInBackground(p.runInBackground);
+        setStartOnBoot(p.startOnBoot);
+        setNotificationsEnabled(p.notifications);
+      }).catch(() => {});
+    }
+
+    let cleanup: (() => void) | undefined;
+    if (window.electronAPI?.onNavigate) {
+      cleanup = window.electronAPI.onNavigate((targetView: any) => setView(targetView as View));
+    }
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, []);
+
+  // Persist preferences when toggled
+  useEffect(() => {
+    if (window.electronAPI?.setPreferences) {
+      window.electronAPI.setPreferences({
+        runInBackground,
+        startOnBoot,
+        notifications: notificationsEnabled,
+      });
+    }
+  }, [runInBackground, startOnBoot, notificationsEnabled]);
+
+  // Keep main process aware of active job for tray actions
+  useEffect(() => {
+    if (window.electronAPI?.setActiveJob && activeJobId) {
+      const job = jobs.find(j => j.id === activeJobId);
+      if (job) window.electronAPI.setActiveJob(job);
+    }
+  }, [activeJobId, jobs]);
+
+  // Create initial sandbox dirs (dev only) and listen for rsync completion events
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && window.electronAPI) {
       window.electronAPI.createSandboxDirs(DEFAULT_SANDBOX_SOURCE, DEFAULT_SANDBOX_DEST)
         .catch(err => console.error('Failed to create sandbox dirs:', err));
     }
@@ -340,7 +383,12 @@ export default function App() {
             <Dashboard
               jobs={jobs}
               diskStats={destinationStats}
-              onSelectJob={(id) => { setActiveJobId(id); setView('DETAIL'); }}
+              onSelectJob={(id) => { 
+                setActiveJobId(id); 
+                const job = jobs.find(j => j.id === id);
+                if (job && window.electronAPI?.setActiveJob) window.electronAPI.setActiveJob(job);
+                setView('DETAIL'); 
+              }}
               onCreateJob={openNewJob}
             />
           )}
@@ -351,6 +399,12 @@ export default function App() {
             <AppSettings
               darkMode={darkMode}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
+              runInBackground={runInBackground}
+              startOnBoot={startOnBoot}
+              notificationsEnabled={notificationsEnabled}
+              onToggleRunInBackground={() => setRunInBackground(!runInBackground)}
+              onToggleStartOnBoot={() => setStartOnBoot(!startOnBoot)}
+              onToggleNotifications={() => setNotificationsEnabled(!notificationsEnabled)}
             />
           )}
 
@@ -471,7 +525,7 @@ const Sidebar: React.FC<{ view: View; darkMode: boolean; onToggleDarkMode: () =>
 
     <nav className="flex-1 px-4 py-4 space-y-1">
       <SidebarButton
-        label="Jobs"
+        label="Dashboard"
         icon={<Icons.Database size={18} />}
         active={view === 'DASHBOARD'}
         onClick={() => onNavigate('DASHBOARD')}
