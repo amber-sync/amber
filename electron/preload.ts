@@ -33,5 +33,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openPath: (path: string) => ipcRenderer.invoke('open-path', path),
   showItemInFolder: (path: string) => ipcRenderer.invoke('show-item-in-folder', path),
   getDiskStats: (path: string) => ipcRenderer.invoke('get-disk-stats', path),
+  getPreferences: () => ipcRenderer.invoke('prefs:get'),
+  setPreferences: (prefs: any) => ipcRenderer.invoke('prefs:set', prefs),
+  setActiveJob: (job: any) => ipcRenderer.send('active-job', job),
+  onNavigate: (callback: (view: string) => void) => {
+    const subscription = (_: any, data: any) => callback(data);
+    ipcRenderer.on('navigate-view', subscription);
+    return () => ipcRenderer.removeListener('navigate-view', subscription);
+  },
 });
  

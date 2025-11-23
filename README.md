@@ -1,7 +1,7 @@
 # Amber
 
 <div align="center">
-  <img src="public/amber-logo.svg" alt="Amber Logo" width="120" height="120">
+  <img src="public/xlogo.svg" alt="Amber Logo" width="120" height="120">
   
   <h1 style="margin-top: 20px;">Amber Backup</h1>
   <p><strong>Professional, Time Machine-style backups for any server.</strong></p>
@@ -85,4 +85,4 @@ This verifies:
 
 ## 📝 License
 
-MIT © 2024 Amber Sync Inc.
+MIT © Florian P. Mahner

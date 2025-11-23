@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, Notification } from 'electron';
 import path from 'path';
 import os from 'os';
 import fs from 'fs/promises';
@@ -6,11 +6,15 @@ import log from 'electron-log';
 import { RsyncService } from './rsync-service';
 import { SyncJob } from './types';
 import { CONSTANTS } from './constants';
+import { AppPreferences, loadPreferences, savePreferences } from './preferences';
 
 // electron-log auto-initializes in v5+
 
 let mainWindow: BrowserWindow | null = null;
 const rsyncService = new RsyncService();
+let tray: Tray | null = null;
+let lastActiveJob: SyncJob | null = null;
+let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
@@ -27,6 +31,27 @@ function createWindow() {
     },
   });
 
+  // Handle window close event - attach directly to the window instance
+  mainWindow.on('close', (e) => {
+    if (prefs.runInBackground) {
+      e.preventDefault();
+      mainWindow?.hide();
+
+      // Hide dock icon when window closes in background mode (macOS only)
+      if (process.platform === 'darwin' && app.dock) {
+        app.dock.hide();
+      }
+    }
+  });
+
+  // Show dock icon when window is shown (macOS only)
+  mainWindow.on('show', () => {
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.show();
+      app.setActivationPolicy('regular');
+    }
+  });
+
   // In development, load from localhost
   // In production, load from dist/index.html
   if (process.env.NODE_ENV === 'development') {
@@ -37,10 +62,158 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+const TRAY_FALLBACK = nativeImage.createFromDataURL(
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAIUlEQVR42mNgGAWjYBSMglEwCkb/BxQGMMIIw6SgBEBAAObQBBznnSYxAAAAAElFTkSuQmCC'
+);
+
+async function createTray() {
+  let image = TRAY_FALLBACK;
+  const candidates = [
+    path.join(__dirname, '../build/icons/tray.png'),
+    path.join(app.getAppPath(), 'build/icons/tray.png'),
+    path.join(process.resourcesPath, 'build/icons/tray.png'),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const loaded = nativeImage.createFromPath(candidate);
+      if (!loaded.isEmpty()) {
+        image = loaded;
+        if (process.platform === 'darwin') {
+          image.setTemplateImage(true);
+        }
+        break;
+      }
+    } catch {
+      // try next candidate
+    }
+  }
+
+  tray = new Tray(image);
+  tray.setToolTip('Amber');
+  // On macOS, clicking the tray icon shows the menu (no need for explicit click handler)
+  // The menu has "Open Amber" option for showing the window
+  tray.setContextMenu(buildTrayMenu());
+}
+
+function buildTrayMenu() {
+  const running = lastActiveJob ? rsyncService.isJobRunning(lastActiveJob.id) : false;
+  return Menu.buildFromTemplate([
+    {
+      label: 'Open Amber',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          // Show dock when opening from tray
+          if (process.platform === 'darwin' && app.dock) {
+            app.dock.show();
+            app.setActivationPolicy('regular');
+          }
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: lastActiveJob ? `Start Backup (${lastActiveJob.name})` : 'Start Backup (no job selected)',
+      enabled: Boolean(lastActiveJob) && !running,
+      click: () => {
+        if (lastActiveJob) handleRunJob(lastActiveJob);
+      }
+    },
+    {
+      label: lastActiveJob ? `Stop Backup (${lastActiveJob.name})` : 'Stop Backup',
+      enabled: Boolean(lastActiveJob) && running,
+      click: () => {
+        if (lastActiveJob) rsyncService.killJob(lastActiveJob.id);
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Jobs',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          if (process.platform === 'darwin' && app.dock) {
+            app.dock.show();
+            app.setActivationPolicy('regular');
+          }
+          mainWindow.webContents.send('navigate-view', 'DASHBOARD');
+        }
+      }
+    },
+    {
+      label: 'History',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          if (process.platform === 'darwin' && app.dock) {
+            app.dock.show();
+            app.setActivationPolicy('regular');
+          }
+          mainWindow.webContents.send('navigate-view', 'HISTORY');
+        }
+      }
+    },
+    {
+      label: 'Settings',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          if (process.platform === 'darwin' && app.dock) {
+            app.dock.show();
+            app.setActivationPolicy('regular');
+          }
+          mainWindow.webContents.send('navigate-view', 'APP_SETTINGS');
+        }
+      }
+    },
+    {
+      label: 'Help',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          if (process.platform === 'darwin' && app.dock) {
+            app.dock.show();
+            app.setActivationPolicy('regular');
+          }
+          mainWindow.webContents.send('navigate-view', 'HELP');
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      role: 'quit'
+    }
+  ]);
+}
+
+async function initApp() {
+  prefs = await loadPreferences();
+  app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
+
+  createWindow();
+
+  // Only create tray if running in background mode
+  if (prefs.runInBackground) {
+    await createTray();
+    // Set as accessory app (menu bar only, no dock on startup)
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.hide();
+      app.setActivationPolicy('accessory');
+    }
+  }
+}
+
+app.whenReady().then(initApp);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (!prefs.runInBackground || process.platform !== 'darwin') {
     app.quit();
   }
 });
@@ -53,8 +226,9 @@ app.on('activate', () => {
 
 // --- IPC Handlers ---
 
-ipcMain.on('run-rsync', async (event, job: SyncJob) => {
+async function handleRunJob(job: SyncJob) {
   const jobId = job.id;
+  lastActiveJob = job;
   log.info(`Received run-rsync for job ${jobId}`);
   
   const onLog = (message: string) => {
@@ -72,16 +246,34 @@ ipcMain.on('run-rsync', async (event, job: SyncJob) => {
 
   try {
     const result = await rsyncService.runBackup(job, onLog, onProgress);
+    if (prefs.notifications && Notification.isSupported()) {
+      new Notification({
+        title: `Backup ${result.success ? 'completed' : 'failed'}`,
+        body: `${job.name}: ${result.success ? 'Success' : result.error || 'Error'}`
+      }).show();
+    }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('rsync-complete', { jobId, ...result });
     }
+    tray?.setContextMenu(buildTrayMenu());
   } catch (error: any) {
     log.error(`Error in run-rsync: ${error.message}`);
+    if (prefs.notifications && Notification.isSupported()) {
+      new Notification({
+        title: 'Backup failed',
+        body: `${job.name}: ${error.message}`
+      }).show();
+    }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('rsync-log', { jobId, message: `CRITICAL ERROR: ${error.message}` });
       mainWindow.webContents.send('rsync-complete', { jobId, success: false, error: error.message });
     }
   }
+}
+
+ipcMain.on('run-rsync', async (_event, job: SyncJob) => {
+  handleRunJob(job);
+  tray?.setContextMenu(buildTrayMenu());
 });
 
 ipcMain.handle('read-dir', async (_, dirPath: string) => {
@@ -114,6 +306,7 @@ ipcMain.handle('select-directory', async () => {
 ipcMain.on('kill-rsync', (event, jobId: string) => {
   log.info(`Received kill-rsync for job ${jobId}`);
   rsyncService.killJob(jobId);
+  tray?.setContextMenu(buildTrayMenu());
 });
 
 ipcMain.handle('create-sandbox-dirs', async (_, sourcePath: string, destPath: string) => {
@@ -233,3 +426,48 @@ ipcMain.handle('get-disk-stats', async (_, volumePath: string) => {
     };
   }
 });
+
+ipcMain.handle('prefs:get', async () => prefs);
+
+ipcMain.handle('prefs:set', async (_event, partial: Partial<AppPreferences>) => {
+  const oldPrefs = { ...prefs };
+  prefs = { ...prefs, ...partial };
+  await savePreferences(prefs);
+  app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
+
+  // Handle runInBackground toggle
+  if (oldPrefs.runInBackground !== prefs.runInBackground) {
+    if (prefs.runInBackground) {
+      // Enable background mode - create tray if needed
+      if (!tray) {
+        await createTray();
+      }
+      if (process.platform === 'darwin' && app.dock) {
+        app.setActivationPolicy('accessory');
+      }
+    } else {
+      // Disable background mode - destroy tray
+      if (tray) {
+        tray.destroy();
+        tray = null;
+      }
+      if (process.platform === 'darwin' && app.dock) {
+        app.dock.show();
+        app.setActivationPolicy('regular');
+      }
+    }
+  }
+
+  if (tray) tray.setContextMenu(buildTrayMenu());
+  return prefs;
+});
+
+ipcMain.on('active-job', (_event, job: SyncJob) => {
+  lastActiveJob = job;
+  if (tray) tray.setContextMenu(buildTrayMenu());
+});
+
+app.on('before-quit', () => {
+  tray?.destroy();
+});
+

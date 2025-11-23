@@ -4,9 +4,24 @@ import { Icons } from '../components/IconComponents';
 interface AppSettingsProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  runInBackground: boolean;
+  startOnBoot: boolean;
+  notificationsEnabled: boolean;
+  onToggleRunInBackground: () => void;
+  onToggleStartOnBoot: () => void;
+  onToggleNotifications: () => void;
 }
 
-export const AppSettings: React.FC<AppSettingsProps> = ({ darkMode, onToggleDarkMode }) => (
+export const AppSettings: React.FC<AppSettingsProps> = ({
+  darkMode,
+  onToggleDarkMode,
+  runInBackground,
+  startOnBoot,
+  notificationsEnabled,
+  onToggleRunInBackground,
+  onToggleStartOnBoot,
+  onToggleNotifications
+}) => (
   <div className="p-8 space-y-6 animate-fade-in relative z-10">
     <header className="mb-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Settings</h1>
@@ -46,21 +61,21 @@ export const AppSettings: React.FC<AppSettingsProps> = ({ darkMode, onToggleDark
                   <div className="font-medium text-gray-900 dark:text-white">Run in Background</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">Keep Amber running in the macOS menu bar when closed</div>
                 </div>
-                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" defaultChecked />
+                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" checked={runInBackground} onChange={onToggleRunInBackground} />
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">Start on Boot</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">Launch Amber automatically</div>
                 </div>
-                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" defaultChecked />
+                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" checked={startOnBoot} onChange={onToggleStartOnBoot} />
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">Notifications</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">Show desktop alerts for finished jobs</div>
                 </div>
-                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" defaultChecked />
+                <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" checked={notificationsEnabled} onChange={onToggleNotifications} />
               </div>
             </div>
           </div>
@@ -93,7 +108,7 @@ export const AppSettings: React.FC<AppSettingsProps> = ({ darkMode, onToggleDark
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">App Version</span>
-              <span className="font-mono text-gray-900 dark:text-gray-200">1.0.0-beta</span>
+              <span className="font-mono text-gray-900 dark:text-gray-200">0.0.1-beta</span>
             </div>
           </div>
 
@@ -105,7 +120,7 @@ export const AppSettings: React.FC<AppSettingsProps> = ({ darkMode, onToggleDark
 
           <div className="text-center pt-2">
             <p className="text-xs text-gray-400 dark:text-gray-600">
-              © 2024 Amber Sync Inc.
+              © 2025 Florian P. Mahner
             </p>
           </div>
         </div>

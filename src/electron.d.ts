@@ -10,6 +10,10 @@ export interface ElectronAPI {
   openPath: (path: string) => Promise<string>;
   showItemInFolder: (path: string) => Promise<void>;
   getDiskStats: (path: string) => Promise<{ success: boolean; stats?: { total: number; free: number; status: 'AVAILABLE' | 'UNAVAILABLE' }; error?: string }>;
+  getPreferences: () => Promise<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>;
+  setPreferences: (prefs: Partial<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>) => Promise<any>;
+  setActiveJob: (job: any) => void;
+  onNavigate: (callback: (view: string) => void) => () => void;
 }
 
 declare global {
