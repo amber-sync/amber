@@ -13,6 +13,7 @@ module.exports = {
         animation: {
           'heartbeat': 'heartbeat 2s infinite',
           'progress-pulse': 'progress-pulse 2s linear infinite',
+          'fade-in': 'fade-in 0.4s ease-out',
         },
         keyframes: {
           heartbeat: {
@@ -22,6 +23,10 @@ module.exports = {
           'progress-pulse': {
             '0%': { transform: 'translateX(-100%)' },
             '100%': { transform: 'translateX(100%)' }
+          },
+          'fade-in': {
+            '0%': { opacity: '0', transform: 'translateY(10px)' },
+            '100%': { opacity: '1', transform: 'translateY(0)' }
           }
         }
       },

@@ -5,6 +5,7 @@ import { HistoryView } from './views/HistoryView';
 import { JobEditor } from './views/JobEditor';
 import { JobDetail } from './views/JobDetail';
 import { AppSettings } from './views/AppSettings';
+import { HelpSection } from './components/HelpSection';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
@@ -409,7 +410,7 @@ export default function App() {
           )}
 
           {view === 'HELP' && (
-            <HelpPanel />
+            <HelpSection />
           )}
 
           {view === 'DETAIL' && activeJob && (
@@ -580,80 +581,3 @@ const SidebarButton: React.FC<{ label: string; icon: React.ReactNode; active: bo
   </button>
 );
 
-const HelpPanel: React.FC = () => (
-  <div className="max-w-5xl mx-auto px-8 pb-12">
-    <div className="mt-2 bg-white/90 dark:bg-gray-900/85 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg overflow-hidden">
-      <div className="px-6 py-6 bg-gradient-to-r from-teal-50 via-amber-50 to-indigo-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border-b border-gray-100 dark:border-gray-800">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Help</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">How Amber syncs, modes, commands, and safety.</p>
-      </div>
-
-      {/* Flow */}
-      <div className="px-6 py-6 space-y-6 text-sm text-gray-800 dark:text-gray-200">
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white mb-2">Flow at a glance</p>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            {[
-              { title: '1. Source', desc: 'Local/SSH path selected in job.', color: 'bg-teal-500' },
-              { title: '2. Strategy', desc: 'Time Machine / Archive / Mirror / Custom.', color: 'bg-amber-500' },
-              { title: '3. Rsync Run', desc: 'Flags assembled per mode, optional custom command.', color: 'bg-indigo-500' },
-              { title: '4. Destination', desc: 'Writes to target; Time Machine uses dated folders & latest symlink.', color: 'bg-gray-700' },
-            ].map((step, idx) => (
-              <div key={idx} className="flex-1 min-w-[180px] bg-gray-50 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-3 shadow-sm relative overflow-hidden">
-                <div className={`absolute inset-x-0 top-0 h-1 ${step.color} opacity-70`} />
-                <p className="font-semibold text-gray-900 dark:text-white">{step.title}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">Modes</p>
-          <ul className="list-disc list-inside space-y-3 mt-2">
-            <li>
-              <span className="font-semibold">Time Machine</span>: Creates dated folders (e.g., <code className="font-mono">2025-01-12-143000</code>). Unchanged files are hard-linked to the previous backup via <code className="font-mono">--link-dest</code>, so only changes consume space. Each backup browses like a full copy, but storage is incremental.
-            </li>
-            <li>
-              <span className="font-semibold">Archive</span>: Copies everything and never deletes on destination. Good for keeping historical/deleted files in one target.
-            </li>
-            <li>
-              <span className="font-semibold">Mirror</span>: Destination matches source exactly. Anything not in source is removed on destination (<code className="font-mono">--delete</code>).
-            </li>
-            <li>
-              <span className="font-semibold">Custom</span>: Your rsync command. Leave empty to use presets; once filled, it overrides all defaults.
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">Default command profile</p>
-          <p className="mt-1 text-gray-700 dark:text-gray-300">Amber runs rsync with safety and fidelity flags:</p>
-          <code className="block bg-gray-100 dark:bg-gray-800 text-xs font-mono rounded px-3 py-2 mt-2 text-gray-800 dark:text-gray-200">
-            rsync -D --numeric-ids --links --hard-links --one-file-system --itemize-changes --stats --human-readable -a [-z] [--delete] [--link-dest=&lt;prev&gt;] [--exclude=...] source/ dest
-          </code>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Notes: <code>-a</code> implies recursive/perms/times/owner/group; <code>-z</code> for compression; <code>--delete</code> only in Mirror; <code>--link-dest</code> only in Time Machine.</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <p className="font-semibold text-gray-900 dark:text-white mb-2">Safety</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Backup marker required at destination to prevent accidents.</li>
-              <li>Stays on one filesystem (<code>--one-file-system</code>) to avoid runaway copies.</li>
-              <li>FAT detection adds <code>--modify-window=2</code> for coarse timestamps on FAT/USB volumes.</li>
-              <li>SSH host key checking on by default; disable only on trusted networks.</li>
-              <li>Mirror deletes extras; use Archive or Time Machine for retention.</li>
-            </ul>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <p className="font-semibold text-gray-900 dark:text-white mb-2">Custom commands</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Use placeholders: <code>{'{source}'}</code>, <code>{'{dest}'}</code>, <code>{'{linkDest}'}</code> (Time Machine). Once set, your command runs as-is. Clear it to return to presets.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
