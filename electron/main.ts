@@ -13,11 +13,12 @@ import { createDriveWatcher } from './drive-watcher';
 
 // electron-log auto-initializes in v5+
 
-if (process.env.ELECTRON_RUN_AS_NODE === '1') {
+if (process.env.ELECTRON_RUN_AS_NODE) {
   // Running Electron as pure Node breaks app lifecycle (app will be undefined).
-  // Fail fast to avoid half-initialized states.
+  // Fail fast to avoid half-initialized states. Value is ignored; presence is enough.
+  const val = process.env.ELECTRON_RUN_AS_NODE;
   // eslint-disable-next-line no-console
-  console.error('ELECTRON_RUN_AS_NODE is set to 1. Please unset it before running Amber.');
+  console.error(`ELECTRON_RUN_AS_NODE is set (${val}). Please unset it before running Amber.`);
   process.exit(1);
 }
 
