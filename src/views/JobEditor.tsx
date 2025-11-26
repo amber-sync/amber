@@ -1,6 +1,7 @@
 import React from 'react';
 import { SyncMode, RsyncConfig, SshConfig } from '../types';
 import { Icons } from '../components/IconComponents';
+import { HelpIconBadge } from '../components/HelpIconBadge';
 
 interface JobEditorProps {
   // Form state
@@ -82,6 +83,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   };
 
   const customSelected = jobConfig.customCommand !== undefined;
+  const MODE_ICON_SIZE = 18;
 
   const getModeStyles = (mode: SyncMode) => {
     switch (mode) {
@@ -98,12 +100,18 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-black/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
-      <div className="bg-white dark:bg-gray-900 max-w-2xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-gray-900 max-w-3xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 sticky top-0 z-10">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? 'Edit Job Settings' : 'Create Sync Job'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <HelpIconBadge icon={Icons.FolderClock} variant="indigo" size="md" />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {isEditing ? 'Edit Job Settings' : 'Create Sync Job'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Uses the same iconography and gradients as the Help tour.</p>
+            </div>
+          </div>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -116,67 +124,89 @@ export const JobEditor: React.FC<JobEditorProps> = ({
         <div className="p-8 overflow-y-auto space-y-8 scrollbar-hide">
 
           {/* Basic Info */}
-          <div className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Job Name</label>
-            <input
-              type="text"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all"
-              placeholder="e.g. Project Website Backup"
-              value={jobName}
-              onChange={e => setJobName(e.target.value)}
-            />
+          <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <HelpIconBadge icon={Icons.Rocket} variant="indigo" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Basics</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Name your sync job before picking paths and schedules.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Job Name</label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all"
+                placeholder="e.g. Project Website Backup"
+                value={jobName}
+                onChange={e => setJobName(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Source and Destination */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Icons.Server size={14} /> Source
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
-                  placeholder="user@host:/path"
-                  value={jobSource}
-                  onChange={e => setJobSource(e.target.value)}
-                />
-                <button
-                  onClick={() => onSelectDirectory('SOURCE')}
-                  className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
-                >
-                  <Icons.Folder size={20} />
-                </button>
+          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <HelpIconBadge icon={Icons.Server} variant="teal" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Paths</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Select where to pull from and where to land the snapshot.</p>
               </div>
             </div>
-            <div className="space-y-4">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Icons.HardDrive size={14} /> Destination
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
-                  placeholder="/Volumes/Backup"
-                  value={jobDest}
-                  onChange={e => setJobDest(e.target.value)}
-                />
-                <button
-                  onClick={() => onSelectDirectory('DEST')}
-                  className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
-                >
-                  <Icons.Folder size={20} />
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Icons.Server size={14} /> Source
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
+                    placeholder="user@host:/path"
+                    value={jobSource}
+                    onChange={e => setJobSource(e.target.value)}
+                  />
+                  <button
+                    onClick={() => onSelectDirectory('SOURCE')}
+                    className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
+                  >
+                    <Icons.Folder size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Icons.HardDrive size={14} /> Destination
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
+                    placeholder="/Volumes/Backup"
+                    value={jobDest}
+                    onChange={e => setJobDest(e.target.value)}
+                  />
+                  <button
+                    onClick={() => onSelectDirectory('DEST')}
+                    className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
+                  >
+                    <Icons.Folder size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* SSH Configuration */}
-          <div className="space-y-4 pt-2">
+          <div className="bg-gradient-to-r from-teal-50 via-cyan-50 to-indigo-50 dark:from-teal-900/20 dark:via-cyan-900/20 dark:to-indigo-900/20 border border-teal-200 dark:border-teal-800 rounded-2xl p-6 shadow-lg space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Icons.Shield size={14} /> Connection Details (SSH)
-              </label>
+              <div className="flex items-center gap-3">
+                <HelpIconBadge icon={Icons.Shield} variant="teal" />
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Connection Details (SSH)</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Toggle secure transport and provide SSH helpers.</p>
+                </div>
+              </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={sshEnabled} onChange={e => setSshEnabled(e.target.checked)} className="sr-only peer" />
                 <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
@@ -184,7 +214,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             </div>
 
             {sshEnabled && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/80 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Port</label>
                   <input
@@ -220,35 +250,47 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           </div>
 
           {/* Mode Selection */}
-          <div className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Sync Strategy</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <HelpIconBadge icon={Icons.Settings} variant="amber" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Sync Strategy</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Reuse Time Machine visuals for mode selection.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { m: SyncMode.TIME_MACHINE, label: 'Time Machine', desc: 'Versioned snapshots' },
-                { m: SyncMode.ARCHIVE, label: 'Archive', desc: 'Keep deleted files' },
-                { m: SyncMode.MIRROR, label: 'Mirror', desc: 'Exact replica' },
+                { m: SyncMode.TIME_MACHINE, label: 'Time Machine', desc: 'Versioned snapshots', icon: Icons.FolderClock },
+                { m: SyncMode.ARCHIVE, label: 'Archive', desc: 'Keep deleted files', icon: Icons.Archive },
+                { m: SyncMode.MIRROR, label: 'Mirror', desc: 'Exact replica', icon: Icons.RefreshCw },
               ].map((opt) => (
                 <button
                   key={opt.m}
                   onClick={() => onJobModeChange(opt.m)}
-                  className={`w-full p-4 rounded-xl border text-left transition-all ${jobMode === opt.m && !customSelected
+                  className={`w-full px-4 py-4 rounded-xl border text-left transition-all ${jobMode === opt.m && !customSelected
                       ? `${getModeStyles(opt.m).border} ${getModeStyles(opt.m).bg} ${getModeStyles(opt.m).ring}`
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                 >
-                  <div className="font-semibold text-gray-900 dark:text-white">{opt.label}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{opt.desc}</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                    <opt.icon size={MODE_ICON_SIZE} className="opacity-90" />
+                    <span className="leading-snug">{opt.label}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{opt.desc}</div>
                 </button>
               ))}
               <button
                 onClick={() => setJobConfig({ ...jobConfig, customCommand: customSelected ? undefined : '' })}
-                className={`p-4 rounded-xl border text-left transition-all ${customSelected
+                className={`px-4 py-4 rounded-xl border text-left transition-all ${customSelected
                     ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500'
                     : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
               >
-                <div className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">Custom</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Overrides defaults.</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                  <Icons.Code size={MODE_ICON_SIZE} className="opacity-90" />
+                  <span className="leading-snug">Custom</span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">Overrides defaults.</div>
               </button>
             </div>
             {jobMode === SyncMode.MIRROR && !customSelected && (
@@ -275,8 +317,14 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           )}
 
           {/* Schedule Selection */}
-          <div className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Schedule</label>
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-pink-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <HelpIconBadge icon={Icons.Clock} variant="amber" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Schedule</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Match Help tiles with soft gradients per option.</p>
+              </div>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { label: 'Manual', val: null, icon: Icons.Play },
@@ -289,8 +337,8 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                   <button
                     onClick={() => setJobSchedule(opt.val)}
                     className={`w-full h-full px-3 py-3 rounded-xl border text-sm font-medium transition-all flex flex-col items-center justify-center gap-2 ${jobSchedule === opt.val
-                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'border-amber-500 bg-white/80 dark:bg-gray-900/70 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/80'
                       }`}
                   >
                     <opt.icon size={20} />
@@ -312,8 +360,14 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           </div>
 
           {/* Exclude Patterns */}
-          <div className="pt-2">
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Exclude Patterns</label>
+          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-3">
+            <div className="flex items-center gap-3">
+              <HelpIconBadge icon={Icons.Sparkles} variant="pink" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Exclude Patterns</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Keep the job launcher consistent with Help pill styling.</p>
+              </div>
+            </div>
             <div
               className="min-h-[3.5rem] p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-wrap gap-2 items-center focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-100 dark:focus:within:ring-amber-900 transition-all cursor-text"
               onClick={() => document.getElementById('pattern-input')?.focus()}
@@ -342,7 +396,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                 className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-white min-w-[150px] h-8 px-1"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-2 pl-1">Type a file pattern and press Enter to add it.</p>
+            <p className="text-xs text-gray-400 pl-1">Type a file pattern and press Enter to add it.</p>
           </div>
 
           {/* Advanced Command */}
