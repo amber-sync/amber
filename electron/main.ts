@@ -13,6 +13,16 @@ import { createDriveWatcher } from './drive-watcher';
 
 // electron-log auto-initializes in v5+
 
+if (process.env.ELECTRON_RUN_AS_NODE === '1') {
+  // Running Electron as pure Node breaks app lifecycle (app will be undefined).
+  // Fail fast to avoid half-initialized states.
+  // eslint-disable-next-line no-console
+  console.error('ELECTRON_RUN_AS_NODE is set to 1. Please unset it before running Amber.');
+  process.exit(1);
+}
+
+const IS_DEV = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
 let mainWindow: BrowserWindow | null = null;
 const rsyncService = new RsyncService();
 let tray: Tray | null = null;
@@ -83,6 +93,16 @@ function createWindow() {
 const TRAY_FALLBACK = nativeImage.createFromDataURL(
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAIUlEQVR42mNgGAWjYBSMglEwCkb/BxQGMMIIw6SgBEBAAObQBBznnSYxAAAAAElFTkSuQmCC'
 );
+
+function configureUserDataRoot() {
+  // Keep dev data separate from production to avoid conflicts with installed app.
+  if (IS_DEV) {
+    const base = app.getPath('userData');
+    const devPath = path.join(base, 'dev');
+    app.setPath('userData', devPath);
+    log.info(`Using dev userData path: ${devPath}`);
+  }
+}
 
 async function createTray() {
   let image = TRAY_FALLBACK;
@@ -212,6 +232,7 @@ function buildTrayMenu() {
 }
 
 async function initApp() {
+  configureUserDataRoot();
   prefs = await loadPreferences();
   app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
 
