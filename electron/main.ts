@@ -112,31 +112,43 @@ function configureUserDataRoot() {
 }
 
 async function createTray() {
-  let image = TRAY_FALLBACK;
-  const candidates = [
-    path.join(__dirname, '../build/icons/tray.png'),
-    path.join(app.getAppPath(), 'build/icons/tray.png'),
-    path.join(process.resourcesPath, 'build/icons/tray.png'),
-  ];
+  try {
+    let image = TRAY_FALLBACK;
+    const candidates = [
+      path.join(__dirname, '../build/icons/tray.png'),
+      path.join(app.getAppPath(), 'build/icons/tray.png'),
+      path.join(process.resourcesPath, 'build/icons/tray.png'),
+      // Add explicit production path for macOS app bundle
+      path.join(process.resourcesPath, 'app/build/icons/tray.png')
+    ];
 
-  for (const candidate of candidates) {
-    try {
-      const loaded = nativeImage.createFromPath(candidate);
-      if (!loaded.isEmpty()) {
-        image = loaded;
-        if (process.platform === 'darwin') {
-          image.setTemplateImage(true);
+    let loadedPath = 'FALLBACK';
+
+    for (const candidate of candidates) {
+      try {
+        const loaded = nativeImage.createFromPath(candidate);
+        if (!loaded.isEmpty()) {
+          image = loaded;
+          if (process.platform === 'darwin') {
+            image.setTemplateImage(true);
+          }
+          loadedPath = candidate;
+          break;
         }
-        break;
+      } catch {
+        // try next candidate
       }
-    } catch {
-      // try next candidate
     }
-  }
 
-  tray = new Tray(image);
-  tray.setToolTip('Amber');
-  tray.setContextMenu(buildTrayMenu());
+    log.info(`Creating tray with icon from: ${loadedPath}`);
+
+    tray = new Tray(image);
+    tray.setToolTip('Amber');
+    tray.setContextMenu(buildTrayMenu());
+  } catch (error: any) {
+    log.error(`Failed to create tray: ${error.message}`);
+    // Ensure we don't crash, but maybe show a dialog if critical
+  }
 }
 
 // --- Tray Animation ---
@@ -226,102 +238,56 @@ function stopTrayAnimation() {
   }
 }
 
+// --- Tray Menu ---
+let isQuitting = false;
+
 function buildTrayMenu() {
-  const running = lastActiveJob ? rsyncService.isJobRunning(lastActiveJob.id) : false;
-  return Menu.buildFromTemplate([
-    {
-      label: 'Open Amber',
+  const jobItems = jobsCache.map(job => {
+    const isRunning = rsyncService.isJobRunning(job.id);
+    return {
+      label: isRunning ? `Running: ${job.name}` : `Run ${job.name}`,
+      enabled: !isRunning,
+      click: () => {
+        startTrayAnimation();
+        handleRunJob(job);
+        tray?.setContextMenu(buildTrayMenu()); // Update menu immediately
+      }
+    };
+  });
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Amber Backup', enabled: false },
+    { type: 'separator' },
+    ...(jobItems.length > 0 ? jobItems : [{ label: 'No jobs configured', enabled: false }]),
+    { type: 'separator' },
+    { 
+      label: 'Open Dashboard', 
       click: () => {
         if (mainWindow) {
           mainWindow.show();
           mainWindow.focus();
-          // Show dock when opening from tray
-          if (process.platform === 'darwin' && app.dock) {
-            app.dock.show();
-            app.setActivationPolicy('regular');
-          }
+        } else {
+          createWindow();
         }
-      }
+        if (process.platform === 'darwin' && app.dock) {
+          app.dock.show();
+        }
+      } 
     },
     { type: 'separator' },
-    {
-      label: lastActiveJob ? `Start Backup (${lastActiveJob.name})` : 'Start Backup (no job selected)',
-      enabled: Boolean(lastActiveJob) && !running,
+    { 
+      label: 'Quit Amber', 
       click: () => {
-        if (lastActiveJob) handleRunJob(lastActiveJob);
-      }
-    },
-    {
-      label: lastActiveJob ? `Stop Backup (${lastActiveJob.name})` : 'Stop Backup',
-      enabled: Boolean(lastActiveJob) && running,
-      click: () => {
-        if (lastActiveJob) rsyncService.killJob(lastActiveJob.id);
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Jobs',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          if (process.platform === 'darwin' && app.dock) {
-            app.dock.show();
-            app.setActivationPolicy('regular');
-          }
-          mainWindow.webContents.send('navigate-view', 'DASHBOARD');
-        }
-      }
-    },
-    {
-      label: 'History',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          if (process.platform === 'darwin' && app.dock) {
-            app.dock.show();
-            app.setActivationPolicy('regular');
-          }
-          mainWindow.webContents.send('navigate-view', 'HISTORY');
-        }
-      }
-    },
-    {
-      label: 'Settings',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          if (process.platform === 'darwin' && app.dock) {
-            app.dock.show();
-            app.setActivationPolicy('regular');
-          }
-          mainWindow.webContents.send('navigate-view', 'APP_SETTINGS');
-        }
-      }
-    },
-    {
-      label: 'Help',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          if (process.platform === 'darwin' && app.dock) {
-            app.dock.show();
-            app.setActivationPolicy('regular');
-          }
-          mainWindow.webContents.send('navigate-view', 'HELP');
-        }
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      role: 'quit'
+        isQuitting = true;
+        app.quit();
+      } 
     }
   ]);
+  return contextMenu;
 }
+
+// --- Tray Menu ---
+// (Legacy menu items removed)
 
 async function initApp() {
   fixPath(); // Fix environment first
@@ -373,10 +339,15 @@ async function initApp() {
     // Only create tray if running in background mode
     if (prefs.runInBackground) {
       await createTray();
-      // Set as accessory app (menu bar only, no dock on startup)
-      if (process.platform === 'darwin' && app.dock) {
-        app.dock.hide();
-        app.setActivationPolicy('accessory');
+      
+      // SAFETY: Only hide dock if tray was successfully created
+      if (tray) {
+        if (process.platform === 'darwin' && app.dock) {
+          app.dock.hide();
+          app.setActivationPolicy('accessory');
+        }
+      } else {
+        log.warn('Tray creation failed; keeping Dock icon visible to prevent lockout.');
       }
     }
   } catch (error: any) {
@@ -413,6 +384,8 @@ async function handleRunJob(job: SyncJob) {
   const jobId = job.id;
   lastActiveJob = job;
   log.info(`Received run-rsync for job ${jobId}`);
+  log.info(`Job Details: Name=${job.name}, Source=${job.sourcePath}, Dest=${job.destPath}, Mode=${job.mode}`);
+  log.info(`CWD: ${process.cwd()}`);
   
   const onLog = (message: string) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -429,15 +402,47 @@ async function handleRunJob(job: SyncJob) {
 
   try {
     const result = await rsyncService.runBackup(job, onLog, onProgress);
-    jobsCache = jobsCache.map(j => (j.id === jobId ? { ...j, lastRun: Date.now() } : j));
-    await saveJobs(jobsCache);
-    scheduler?.updateJobs(jobsCache);
-    if (prefs.notifications && Notification.isSupported()) {
+    
+    // Update job in cache
+    const jobIndex = jobsCache.findIndex(j => j.id === jobId);
+    if (jobIndex >= 0) {
+      const updatedJob = { ...jobsCache[jobIndex], lastRun: Date.now() };
+      
+      // Only add snapshot if files were actually transferred
+      // We check if transferSize > 0. If stats are missing, we assume changes occurred to be safe.
+      const hasChanges = result.stats && result.stats.transferSize > 0;
+      
+      if (hasChanges) {
+        // Snapshots are already handled inside rsyncService.runBackup (it returns the new snapshot)
+        // But we need to make sure we're using the updated job object if runBackup modified it
+        // Actually, runBackup returns { success, error, stats, snapshot }
+        // We need to manually append the snapshot if we want it, OR rely on runBackup doing it?
+        // Let's look at how it was before:
+        // jobsCache = jobsCache.map(j => (j.id === jobId ? { ...j, lastRun: Date.now() } : j));
+        
+        // Wait, rsyncService.runBackup DOES NOT update the global jobsCache.
+        // We need to see if runBackup returns the snapshot.
+        if (result.snapshot) {
+           updatedJob.snapshots = [...(updatedJob.snapshots || []), result.snapshot];
+        }
+      } else {
+        log.info(`Job ${jobId}: No changes detected (0 bytes transferred). Skipping history entry.`);
+      }
+
+      jobsCache[jobIndex] = updatedJob;
+      await saveJobs(jobsCache);
+      scheduler?.updateJobs(jobsCache);
+    }
+
+    // Only notify if there were changes or if it failed
+    const hasChanges = result.stats && result.stats.transferSize > 0;
+    if (prefs.notifications && Notification.isSupported() && (hasChanges || !result.success)) {
       new Notification({
         title: `Backup ${result.success ? 'completed' : 'failed'}`,
         body: `${job.name}: ${result.success ? 'Success' : result.error || 'Error'}`
       }).show();
     }
+    
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('rsync-complete', { jobId, ...result });
     }
@@ -727,7 +732,17 @@ ipcMain.on('active-job', (_event, job: SyncJob) => {
   if (tray) tray.setContextMenu(buildTrayMenu());
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', (e) => {
+  // If running in background and NOT explicitly quitting via tray, prevent quit
+  if (prefs.runInBackground && !isQuitting) {
+    e.preventDefault();
+    mainWindow?.hide();
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.hide();
+    }
+    return;
+  }
+
   tray?.destroy();
   volumeWatcher?.stop();
 });

@@ -24,3 +24,10 @@ export const formatDate = (date: Date): string => {
   const s = String(date.getSeconds()).padStart(2, '0');
   return `${y}-${m}-${d}-${h}${min}${s}`;
 };
+
+export const truncateMiddle = (str: string, maxLength: number): string => {
+  if (!str) return '';
+  if (str.length <= maxLength) return str;
+  const sideLength = Math.floor((maxLength - 3) / 2);
+  return str.slice(0, sideLength) + '...' + str.slice(-sideLength);
+};

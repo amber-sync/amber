@@ -2,7 +2,8 @@ import { spawn, ChildProcess, exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
-import { SyncJob, SyncMode } from './types';
+import os from 'os';
+import { SyncJob, SyncMode, SyncResult } from './types';
 import { CONSTANTS, MS_PER_DAY } from './constants';
 
 const execAsync = promisify(exec);
@@ -93,20 +94,40 @@ export class RsyncService {
     return null;
   }
 
-  async runBackup(job: SyncJob, onLog: (msg: string) => void, onProgress?: (data: any) => void): Promise<any> {
+  private resolvePath(p: string): string {
+    if (p.startsWith('~/')) {
+      return path.join(os.homedir(), p.slice(2));
+    }
+    if (p === '~') {
+      return os.homedir();
+    }
+    if (!path.isAbsolute(p)) {
+      // Resolve relative paths against home dir, NOT CWD (which might be / in prod)
+      return path.join(os.homedir(), p);
+    }
+    return p;
+  }
+
+  async runBackup(job: SyncJob, onLog: (msg: string) => void, onProgress: (data: any) => void): Promise<SyncResult> {
     const now = new Date();
-    const timestamp = now.toISOString().replace(/[:T]/g, '-').replace(/\..+/, ''); // YYYY-MM-DD-HH-mm-ss
     const folderName = this.formatDate(now);
 
-    const sourceBasename = path.basename(job.sourcePath);
+    // Resolve paths to ensure safety
+    const sourcePath = this.resolvePath(job.sourcePath);
+    const destPath = this.resolvePath(job.destPath);
+    
+    // Use resolved paths for operations
+    // Note: We don't mutate the job object itself to avoid confusion, but use local vars
+    
+    const sourceBasename = path.basename(sourcePath);
     // New structure: dest/source_name/timestamp
-    const targetBaseDir = path.join(job.destPath, sourceBasename);
+    const targetBaseDir = path.join(destPath, sourceBasename);
     
     // We still use the root job.destPath for the marker check
-    const rootDest = job.destPath;
+    const rootDest = destPath;
 
     onLog(`Starting backup for ${job.name}`);
-    onLog(`Source: ${job.sourcePath}`);
+    onLog(`Source: ${sourcePath}`);
     onLog(`Destination Root: ${rootDest}`);
     onLog(`Target Directory: ${targetBaseDir}`);
     onLog(`Mode: ${job.mode}`);
