@@ -38,7 +38,8 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
         fs.mkdirSync(destDir, { recursive: true });
 
         // Create backup marker file for safety check
-        fs.writeFileSync(path.join(destDir, 'backup.marker'), '');
+        const destBasename = path.basename(destDir);
+        fs.writeFileSync(path.join(destDir, `.${destBasename}_backup-marker`), '');
 
         service = new RsyncService();
 
@@ -115,7 +116,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                         'Link count should be 2 in backup');
 
                     // Verify rsync command included --hard-links flag
-                    const commandLog = logs.find(l => l.includes('rsync'));
+                    const commandLog = logs.find(l => l.startsWith('Command: rsync'));
                     expect(commandLog).to.exist;
                     expect(commandLog).to.include('--hard-links',
                         'rsync command MUST include --hard-links flag');
@@ -215,7 +216,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 try {
                     expect(result.success).to.be.true;
 
-                    const commandLog = logs.find(l => l.includes('rsync'));
+                    const commandLog = logs.find(l => l.startsWith('Command: rsync'));
                     expect(commandLog).to.exist;
                     expect(commandLog).to.include('--numeric-ids',
                         'rsync command MUST include --numeric-ids flag for UID/GID preservation');
@@ -306,7 +307,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 try {
                     expect(result.success).to.be.true;
 
-                    const commandLog = logs.find(l => l.includes('rsync'));
+                    const commandLog = logs.find(l => l.startsWith('Command: rsync'));
                     expect(commandLog).to.exist;
                     expect(commandLog).to.include('--one-file-system',
                         'rsync command MUST include --one-file-system flag to prevent crossing mounts');
@@ -484,7 +485,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                         try {
                             expect(result.success).to.be.true;
 
-                            const commandLog = logs.find(l => l.includes('rsync'));
+                            const commandLog = logs.find(l => l.startsWith('Command: rsync'));
                             expect(commandLog).to.include('--link-dest=');
 
                             // Extract link-dest path
@@ -511,7 +512,8 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
     describe('Backup Marker Safety Check', function() {
         it('should refuse to backup without marker file', function(done) {
             // Remove the marker file
-            fs.unlinkSync(path.join(destDir, 'backup.marker'));
+            const destBasename = path.basename(destDir);
+            fs.unlinkSync(path.join(destDir, `.${destBasename}_backup-marker`));
 
             fs.writeFileSync(path.join(sourceDir, 'test.txt'), 'test');
 
