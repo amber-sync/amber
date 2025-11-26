@@ -25,7 +25,7 @@
     "build": "vite build",
     "build:icons": "node build-icons.js",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k \"npm run dev\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:dev": "concurrently -k \"npm run dev\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:3000 && cross-env ELECTRON_RUN_AS_NODE=0 NODE_ENV=development electron .\"",
     "electron:build": "npm run build:icons && tsc -p electron/tsconfig.json && vite build && electron-builder",
     "test": "mocha --require ts-node/register --project tests/tsconfig.json \"tests/**/*.test.js\""
   },
