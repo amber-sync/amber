@@ -96,56 +96,84 @@ export class RsyncService {
   async runBackup(job: SyncJob, onLog: (msg: string) => void, onProgress?: (data: any) => void): Promise<any> {
     const now = new Date();
     const timestamp = now.toISOString().replace(/[:T]/g, '-').replace(/\..+/, ''); // YYYY-MM-DD-HH-mm-ss
-    // Note: ISO is YYYY-MM-DDTHH:mm:ss.sssZ. Replace : with - and T with - and remove ms
-    // Better: custom format YYYY-MM-DD-HHMMSS
     const folderName = this.formatDate(now);
 
-    let dest = job.destPath;
-    let linkDest = null;
+    const sourceBasename = path.basename(job.sourcePath);
+    // New structure: dest/source_name/timestamp
+    const targetBaseDir = path.join(job.destPath, sourceBasename);
+    
+    // We still use the root job.destPath for the marker check
+    const rootDest = job.destPath;
 
     onLog(`Starting backup for ${job.name}`);
+    onLog(`Source: ${job.sourcePath}`);
+    onLog(`Destination Root: ${rootDest}`);
+    onLog(`Target Directory: ${targetBaseDir}`);
     onLog(`Mode: ${job.mode}`);
 
-    // Ensure destination exists
-    try {
-        await fs.mkdir(dest, { recursive: true });
-    } catch (e: any) {
-        onLog(`Error creating destination: ${e.message}`);
-        return { success: false, error: e.message };
-    }
-
-    // SAFETY CHECK: Ensure backup marker exists in destination
-    // We DO NOT auto-create it here to prevent backing up to the wrong drive/folder.
-    // The UI or setup process should create this marker.
-    const destBasename = path.basename(dest);
+    // SAFETY CHECK: Ensure backup marker exists in destination ROOT
+    const destBasename = path.basename(rootDest);
     const markerFilename = `.${destBasename}_backup-marker`;
-    const markerPath = path.join(dest, markerFilename);
+    const markerPath = path.join(rootDest, markerFilename);
+    
     try {
         await fs.access(markerPath);
-        onLog(`Backup marker verified at destination`);
+        onLog(`Backup marker verified at ${markerPath}`);
     } catch (e) {
-        onLog(`Safety check failed: Backup marker missing at ${markerPath}`);
+        onLog(`Safety check failed: Backup marker missing.`);
+        onLog(`Please create an empty file named '${markerFilename}' in '${rootDest}' to verify this is the correct drive.`);
+        onLog(`Run this command: touch "${markerPath}"`);
         return {
             success: false,
-            error: `Safety check failed: Destination missing marker file (${markerFilename}). Is the drive mounted?`
+            error: `Safety check failed: Missing marker file '${markerFilename}' in destination root. See logs for details.`
         };
     }
 
+    // Ensure target subdirectory exists
+    try {
+        await fs.mkdir(targetBaseDir, { recursive: true });
+    } catch (e: any) {
+        onLog(`Error creating target directory: ${e.message}`);
+        return { success: false, error: e.message };
+    }
+
+    let finalDest = targetBaseDir; // Default for Mirror/Archive (though Mirror usually syncs TO the dir, not INTO it, but rsync behavior depends on trailing slash)
+    // Actually for Mirror/Archive, if we want "dest/source_name", we usually pass "dest" and rsync creates "source_name" if we don't put trailing slash on source.
+    // BUT here we are explicitly defining the structure.
+    // If we want the CONTENT of source to go into targetBaseDir, we use targetBaseDir as dest.
+    
+    let linkDest = null;
+
     // Setup paths for Time Machine
     if (job.mode === SyncMode.TIME_MACHINE) {
-      const latest = await this.getLatestBackup(dest);
+      // Check for previous backup in NEW structure
+      let latest = await this.getLatestBackup(targetBaseDir);
+      
       if (latest) {
-        onLog(`Found previous backup: ${path.basename(latest)}`);
+        onLog(`Found previous backup (new structure): ${path.basename(latest)}`);
         linkDest = latest;
       } else {
-        onLog(`No previous backup found. Performing full backup.`);
+        // Fallback: Check for previous backup in OLD structure (root)
+        onLog(`No previous backup in ${targetBaseDir}. Checking legacy root...`);
+        latest = await this.getLatestBackup(rootDest);
+        if (latest) {
+             onLog(`Found previous backup (legacy structure): ${path.basename(latest)}`);
+             linkDest = latest;
+        } else {
+             onLog(`No previous backup found. Performing full backup.`);
+        }
       }
-      dest = path.join(job.destPath, folderName);
+      
+      finalDest = path.join(targetBaseDir, folderName);
+    } else {
+        // For Mirror/Archive, we want to sync INTO targetBaseDir.
+        // If we want exact mirror of source content into targetBaseDir:
+        finalDest = targetBaseDir;
     }
 
     let args: string[];
     try {
-      args = await this.buildRsyncArgs(job, dest, linkDest, onLog);
+      args = await this.buildRsyncArgs(job, finalDest, linkDest, onLog);
     } catch (err: any) {
       onLog(`ERROR: ${err?.message || 'Failed to build rsync command'}`);
       return { success: false, error: err?.message || 'Failed to build rsync command' };
@@ -162,17 +190,10 @@ export class RsyncService {
       this.activeJobs.set(job.id, child);
 
       let lastProgressUpdate = 0;
-      const PROGRESS_INTERVAL_MS = 200; // Throttle updates to 5 times per second
+      const PROGRESS_INTERVAL_MS = 200;
 
       child.stdout.on('data', (data) => {
         const str = data.toString();
-        
-        // Fallback progress for older rsync (estimate based on file count if possible, or just "running")
-        // Without --info=progress2, we don't get real-time percentage easily unless we parse verbose file list.
-        // If verbose is on, we see file names.
-        
-        // Check for progress2 output (if user added it via custom flags)
-        // Format: 45,678,123 12% 10.5MB/s 0:00:04
         const progressMatch = str.match(/^\s*([\d,]+)\s+(\d+)%\s+([0-9.]+[kKMGTP]?B\/s)\s+([\d:]+)/);
         
         const now = Date.now();
@@ -186,35 +207,21 @@ export class RsyncService {
                 speed: progressMatch[3],
                 eta: progressMatch[4]
             });
-        } else if (onProgress && str.includes('to-check=')) {
-             // Partial support for --info=progress2 if available but regex missed or slightly different
-             // But main issue is it's not passed by default now.
         } else {
-            // Heuristic for standard verbose output to show "activity"
-            // If it looks like a file path (starts with / or ./ or contains /), emit "scrolling" status.
-            // Also catch "sent x bytes" lines for summary updates.
             const isFilePath = str.trim().length > 0 && !str.startsWith('sent ') && !str.startsWith('total size') && !str.startsWith('sending incremental');
             
             if (isFilePath) {
-                 // Send a "pulse" update without percentage
                  if (onProgress && shouldUpdate) {
                     lastProgressUpdate = now;
                     onProgress({
                         transferred: 'Syncing...',
-                        percentage: 0, // indeterminate
+                        percentage: 0,
                         speed: 'Calculating...',
-                        eta: null, // Send null ETA to trigger "Calculating..." display
-                        currentFile: str.trim() // Use the file path as status
+                        eta: null,
+                        currentFile: str.trim()
                     });
                  }
-                 
-                 // IMPORTANT: Do NOT log every file path to the console log/UI log.
-                 // It causes massive lag with thousands of files.
-                 // Only log if it seems NOT to be a standard file list item (e.g. headers, summaries)
-                 // But rsync -v output is mostly file list.
-                 // We suppress file list lines from onLog.
             } else {
-                // It's likely a summary line or header
                 onLog(str.trim());
             }
         }
@@ -225,35 +232,32 @@ export class RsyncService {
       child.on('close', async (code) => {
         this.activeJobs.delete(job.id);
         
-        // Gather stats from the run (simplified for now, rely on rsync stats in log usually)
-        // Ideally we parse the --stats output captured in stdout, but for now let's just scan the result.
-        
         if (code === 0) {
           onLog('Rsync finished successfully.');
           
           let snapshotFiles: any[] = [];
           
           try {
-              // Scan the destination to build file tree for snapshot
-              snapshotFiles = await this.scanDirectory(dest);
+              // Scan the destination (finalDest)
+              snapshotFiles = await this.scanDirectory(finalDest);
           } catch (e: any) {
               onLog(`Warning: Failed to scan snapshot directory: ${e.message}`);
           }
 
           if (job.mode === SyncMode.TIME_MACHINE) {
             try {
-                // Create/Update 'latest' symlink
-                const linkPath = path.join(job.destPath, CONSTANTS.LATEST_SYMLINK_NAME);
+                // Create/Update 'latest' symlink in targetBaseDir
+                const linkPath = path.join(targetBaseDir, CONSTANTS.LATEST_SYMLINK_NAME);
                 try {
                     await fs.unlink(linkPath);
-                } catch {} // Ignore if doesn't exist
+                } catch {}
 
-                // FIXED: Use relative path for portability
+                // Use relative path for portability: folderName is just the timestamp folder
                 await fs.symlink(folderName, linkPath);
-                onLog(`Updated '${CONSTANTS.LATEST_SYMLINK_NAME}' symlink to ${folderName}`);
+                onLog(`Updated '${CONSTANTS.LATEST_SYMLINK_NAME}' symlink in ${targetBaseDir}`);
 
-                // Expiration
-                await this.expireBackups(job.destPath, onLog);
+                // Expiration - only in targetBaseDir
+                await this.expireBackups(targetBaseDir, onLog);
             } catch (e: any) {
                 onLog(`Post-backup error: ${e.message}`);
             }
@@ -264,7 +268,6 @@ export class RsyncService {
               snapshot: {
                   root: snapshotFiles,
                   timestamp: now.getTime(),
-                  // Calculate size/count from scan result
                   ...this.calculateStats(snapshotFiles)
               }
           });
@@ -423,6 +426,8 @@ export class RsyncService {
       if (job.sshConfig.port) sshCmd += ` -p ${job.sshConfig.port}`;
       if (job.sshConfig.identityFile) sshCmd += ` -i ${job.sshConfig.identityFile}`;
       if (job.sshConfig.configFile) sshCmd += ` -F ${job.sshConfig.configFile}`;
+      if (job.sshConfig.proxyJump) sshCmd += ` -J ${job.sshConfig.proxyJump}`;
+      if (job.sshConfig.customSshOptions) sshCmd += ` ${job.sshConfig.customSshOptions}`;
 
       // SECURITY FIX: Only disable host key checking if explicitly enabled
       if (job.sshConfig.disableHostKeyChecking === true) {

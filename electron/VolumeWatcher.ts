@@ -1,10 +1,10 @@
-import chokidar from 'chokidar';
+import { watch } from 'chokidar';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export class VolumeWatcher extends EventEmitter {
-  private watcher: chokidar.FSWatcher | null = null;
+  private watcher: any = null; // chokidar v5 type compatibility
   private volumesPath = '/Volumes';
 
   constructor() {
@@ -15,7 +15,7 @@ export class VolumeWatcher extends EventEmitter {
     console.log('Starting VolumeWatcher on', this.volumesPath);
     
     // Ignore initial add events to avoid triggering for already mounted drives
-    this.watcher = chokidar.watch(this.volumesPath, {
+    this.watcher = watch(this.volumesPath, {
       depth: 0,
       ignoreInitial: true,
       persistent: true,

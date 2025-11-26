@@ -12,8 +12,12 @@ export interface ElectronAPI {
   getDiskStats: (path: string) => Promise<{ success: boolean; stats?: { total: number; free: number; status: 'AVAILABLE' | 'UNAVAILABLE' }; error?: string }>;
   getPreferences: () => Promise<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>;
   setPreferences: (prefs: Partial<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>) => Promise<any>;
+  testNotification: () => Promise<{ success: boolean; error?: string }>;
   setActiveJob: (job: any) => void;
   onNavigate: (callback: (view: string) => void) => () => void;
+  getJobs: () => Promise<any[]>;
+  saveJob: (job: any) => Promise<{ success: boolean; jobs: any[] }>;
+  deleteJob: (jobId: string) => Promise<{ success: boolean; jobs: any[] }>;
 }
 
 declare global {

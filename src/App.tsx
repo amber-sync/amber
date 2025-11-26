@@ -85,8 +85,13 @@ const normalizeJobFromStore = (job: any): SyncJob => ({
 });
 
 const stripSnapshotsForStore = (job: SyncJob) => {
-  const { snapshots, ...rest } = job as any;
-  return rest;
+  // Keep snapshots but remove the heavy 'root' file tree to save space
+  const snapshots = job.snapshots?.map(s => {
+    const { root, ...rest } = s;
+    return rest;
+  }) || [];
+  
+  return { ...job, snapshots };
 };
 
 export default function App() {
@@ -130,12 +135,43 @@ export default function App() {
   // Load jobs from main process (persisted store)
   useEffect(() => {
     const loadJobs = async () => {
+      // Create sandbox dirs FIRST in dev mode to avoid ENOENT errors
+      if (process.env.NODE_ENV === 'development' && window.electronAPI) {
+        try {
+          await window.electronAPI.createSandboxDirs(DEFAULT_SANDBOX_SOURCE, DEFAULT_SANDBOX_DEST);
+        } catch (err) {
+          console.error('Failed to create sandbox dirs:', err);
+        }
+      }
+
       if (window.electronAPI?.getJobs) {
         const stored = await window.electronAPI.getJobs();
         const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
-        if (normalized.length === 0 && process.env.NODE_ENV === 'development') {
-          setJobs(INITIAL_JOBS);
-          setActiveJobId(INITIAL_JOBS[0]?.id ?? null);
+        
+        // In dev mode, ensure INITIAL_JOBS (Sandbox Default) is present if not already
+        if (process.env.NODE_ENV === 'development') {
+          const initialIds = INITIAL_JOBS.map(j => j.id);
+          const missingDefaults = INITIAL_JOBS.filter(def => !normalized.find(n => n.id === def.id));
+          
+          if (missingDefaults.length > 0) {
+            // Merge missing defaults
+            const merged = [...normalized, ...missingDefaults];
+            setJobs(merged);
+            // If we had no jobs at all, select the first default
+            if (normalized.length === 0) {
+              setActiveJobId(merged[0].id);
+            } else {
+              // Keep existing selection or select first available
+              setActiveJobId(normalized[0].id);
+            }
+            // Persist the defaults so they don't disappear again
+            missingDefaults.forEach(job => {
+               window.electronAPI?.saveJob(stripSnapshotsForStore(job));
+            });
+          } else {
+            setJobs(normalized);
+            setActiveJobId(normalized[0]?.id ?? null);
+          }
         } else {
           setJobs(normalized);
           setActiveJobId(normalized[0]?.id ?? null);
@@ -172,7 +208,7 @@ export default function App() {
   const [newJobName, setNewJobName] = useState('');
   const [newJobSource, setNewJobSource] = useState('');
   const [newJobDest, setNewJobDest] = useState('');
-  const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.MIRROR);
+  const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.TIME_MACHINE);
   const [newJobSchedule, setNewJobSchedule] = useState<number | null>(null);
   const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_CONFIG });
 
@@ -181,6 +217,8 @@ export default function App() {
   const [sshPort, setSshPort] = useState('');
   const [sshKeyPath, setSshKeyPath] = useState('');
   const [sshConfigPath, setSshConfigPath] = useState('');
+  const [sshProxyJump, setSshProxyJump] = useState('');
+  const [sshCustomOptions, setSshCustomOptions] = useState('');
 
   // UI Helper State for Form
   const [tempExcludePattern, setTempExcludePattern] = useState('');
@@ -215,13 +253,8 @@ export default function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
-  // Create initial sandbox dirs (dev only) and listen for rsync completion events
+  // Listen for rsync completion events
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && window.electronAPI) {
-      window.electronAPI.createSandboxDirs(DEFAULT_SANDBOX_SOURCE, DEFAULT_SANDBOX_DEST)
-        .catch(err => console.error('Failed to create sandbox dirs:', err));
-    }
-
     if (!window.electronAPI) return;
 
     const unsubComplete = window.electronAPI.onRsyncComplete((data) => {
@@ -272,13 +305,15 @@ export default function App() {
     setNewJobName('');
     setNewJobSource('');
     setNewJobDest('');
-    setNewJobMode(SyncMode.MIRROR);
+    setNewJobMode(SyncMode.TIME_MACHINE);
     setNewJobSchedule(null);
-    setNewJobConfig({ ...MODE_PRESETS[SyncMode.MIRROR], excludePatterns: [] });
+    setNewJobConfig({ ...MODE_PRESETS[SyncMode.TIME_MACHINE], excludePatterns: [] });
     setSshEnabled(false);
     setSshPort('');
     setSshKeyPath('');
     setSshConfigPath('');
+    setSshProxyJump('');
+    setSshCustomOptions('');
     setTempExcludePattern('');
   };
 
@@ -290,7 +325,7 @@ export default function App() {
   const openNewJob = () => {
     resetForm();
     setActiveJobId(null);
-    handleJobModeChange(SyncMode.MIRROR);
+    handleJobModeChange(SyncMode.TIME_MACHINE);
     setView('JOB_EDITOR');
   };
 
@@ -317,11 +352,15 @@ export default function App() {
       setSshPort(job.sshConfig.port || '');
       setSshKeyPath(job.sshConfig.identityFile || '');
       setSshConfigPath(job.sshConfig.configFile || '');
+      setSshProxyJump(job.sshConfig.proxyJump || '');
+      setSshCustomOptions(job.sshConfig.customSshOptions || '');
     } else {
       setSshEnabled(false);
       setSshPort('');
       setSshKeyPath('');
       setSshConfigPath('');
+      setSshProxyJump('');
+      setSshCustomOptions('');
     }
 
     setTempExcludePattern('');
@@ -334,6 +373,8 @@ export default function App() {
       port: sshPort,
       identityFile: sshKeyPath,
       configFile: sshConfigPath,
+      proxyJump: sshProxyJump,
+      customSshOptions: sshCustomOptions,
     };
 
     const jobConfig: RsyncConfig = {
@@ -342,6 +383,21 @@ export default function App() {
       customCommand: newJobConfig.customCommand ? newJobConfig.customCommand.trim() : undefined,
       customFlags: '', // enforce disabled custom flags
     };
+
+    const getCronFromInterval = (interval: number | null): string | undefined => {
+      if (!interval || interval === -1) return undefined; // Manual or Auto (Run on Mount)
+      if (interval === 5) return '*/5 * * * *';
+      if (interval === 60) return '0 * * * *';
+      if (interval === 1440) return '0 15 * * *'; // Daily at 15:00
+      if (interval === 10080) return '0 0 * * 0'; // Weekly (Sunday midnight)
+      return undefined;
+    };
+
+    const scheduleConfig = newJobSchedule ? {
+      enabled: true,
+      cron: getCronFromInterval(newJobSchedule),
+      runOnMount: newJobSchedule === -1 || true, // Always run on mount if scheduled, but -1 is SPECIFICALLY for this
+    } : { enabled: false };
 
     if (activeJobId) {
       let updatedJob: SyncJob | null = null;
@@ -354,6 +410,7 @@ export default function App() {
             destPath: newJobDest,
             mode: newJobMode,
             scheduleInterval: newJobSchedule,
+            schedule: scheduleConfig,
             config: jobConfig,
             sshConfig,
           };
@@ -371,6 +428,7 @@ export default function App() {
         destPath: newJobDest,
         mode: newJobMode,
         scheduleInterval: newJobSchedule,
+        schedule: scheduleConfig,
         config: jobConfig,
         sshConfig,
         lastRun: null,
@@ -534,6 +592,8 @@ export default function App() {
               sshPort={sshPort}
               sshKeyPath={sshKeyPath}
               sshConfigPath={sshConfigPath}
+              sshProxyJump={sshProxyJump}
+              sshCustomOptions={sshCustomOptions}
               tempExcludePattern={tempExcludePattern}
               setJobName={setNewJobName}
               setJobSource={setNewJobSource}
@@ -544,6 +604,8 @@ export default function App() {
               setSshPort={setSshPort}
               setSshKeyPath={setSshKeyPath}
               setSshConfigPath={setSshConfigPath}
+              setSshProxyJump={setSshProxyJump}
+              setSshCustomOptions={setSshCustomOptions}
               setTempExcludePattern={setTempExcludePattern}
               onSave={handleSaveJob}
               onCancel={() => setView(activeJobId ? 'DETAIL' : 'DASHBOARD')}

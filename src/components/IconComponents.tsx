@@ -44,7 +44,9 @@ import {
   RefreshCw,
   Code,
   Rocket,
-  Sparkles
+  Sparkles,
+  ArrowDown,
+  AlertTriangle
 } from 'lucide-react';
 
 export const Icons = {
@@ -92,5 +94,7 @@ export const Icons = {
   RefreshCw,
   Code,
   Rocket,
-  Sparkles
+  Sparkles,
+  ArrowDown,
+  AlertTriangle
 };

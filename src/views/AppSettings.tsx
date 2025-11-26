@@ -77,6 +77,36 @@ export const AppSettings: React.FC<AppSettingsProps> = ({
                 </div>
                 <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" checked={notificationsEnabled} onChange={onToggleNotifications} />
               </div>
+              
+              {/* Test Notification Button */}
+              {notificationsEnabled && (
+                <div className="flex justify-end animate-fade-in">
+                  <button
+                    onClick={async () => {
+                      // Request permission first (Renderer)
+                      if (Notification.permission !== 'granted') {
+                        const permission = await Notification.requestPermission();
+                        if (permission !== 'granted') {
+                          alert('Notification permission denied. Please enable it in System Settings.');
+                          return;
+                        }
+                      }
+                      
+                      // Try sending from Main Process
+                      const result = await window.electronAPI.testNotification();
+                      if (!result.success) {
+                        console.error('Main process notification failed:', result.error);
+                        // Fallback: Try sending from Renderer
+                        new Notification('Amber Test (Renderer)', { body: 'Fallback notification from UI' });
+                      }
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Icons.Bell size={16} />
+                    Test Notification
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
