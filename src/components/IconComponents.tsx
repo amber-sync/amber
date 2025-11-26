@@ -1,13 +1,13 @@
 import React from 'react';
-import { 
-  HardDrive, 
-  Server, 
-  Clock, 
-  Settings, 
-  Play, 
-  Plus, 
-  Trash2, 
-  Activity, 
+import {
+  HardDrive,
+  Server,
+  Clock,
+  Settings,
+  Play,
+  Plus,
+  Trash2,
+  Activity,
   Folder,
   ArrowRight,
   Database,
@@ -38,7 +38,13 @@ import {
   History,
   Terminal,
   Info,
-  X
+  X,
+  FolderClock,
+  Archive,
+  RefreshCw,
+  Code,
+  Rocket,
+  Sparkles
 } from 'lucide-react';
 
 export const Icons = {
@@ -80,5 +86,11 @@ export const Icons = {
   History,
   Terminal,
   Info,
-  X
+  X,
+  FolderClock,
+  Archive,
+  RefreshCw,
+  Code,
+  Rocket,
+  Sparkles
 };
