@@ -42,5 +42,6 @@ export interface SyncJob {
   sshConfig?: SshConfig;
   lastRun: number | null;
   status: JobStatus;
+  snapshots?: any[];
   // snapshots: Snapshot[]; // We don't need full snapshot tree in backend for now, just paths
 }

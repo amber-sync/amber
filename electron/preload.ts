@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('rsync-progress', subscription);
     return () => ipcRenderer.removeListener('rsync-progress', subscription);
   },
+  getJobs: () => ipcRenderer.invoke('jobs:get'),
+  saveJob: (job: any) => ipcRenderer.invoke('jobs:save', job),
+  deleteJob: (jobId: string) => ipcRenderer.invoke('jobs:delete', jobId),
 
   openPath: (path: string) => ipcRenderer.invoke('open-path', path),
   showItemInFolder: (path: string) => ipcRenderer.invoke('show-item-in-folder', path),
