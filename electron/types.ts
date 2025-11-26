@@ -54,3 +54,15 @@ export interface SyncJob {
   snapshots?: any[];
   // snapshots: Snapshot[]; // We don't need full snapshot tree in backend for now, just paths
 }
+
+export interface SyncResult {
+  success: boolean;
+  error?: string;
+  stats?: {
+    transferSize: number;
+    totalTransferred: number;
+    filesTransferred: number;
+    filesTotal: number;
+  };
+  snapshot?: any;
+}

@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../components/IconComponents';
 import { Terminal } from '../components/Terminal';
-import { LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
+import { DiskStats, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
 import { formatBytes, formatSchedule } from '../utils/formatters';
 
 type SnapshotGrouping = 'ALL' | 'DAY' | 'MONTH' | 'YEAR';
 
 interface JobDetailProps {
   job: SyncJob;
+  diskStats: Record<string, DiskStats>;
   isRunning: boolean;
   progress: RsyncProgressData | null;
   logs: LogEntry[];
@@ -27,6 +28,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'];
 
 export const JobDetail: React.FC<JobDetailProps> = ({
   job,
+  diskStats,
   isRunning,
   progress,
   logs,
@@ -40,7 +42,6 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   const [snapshotGrouping, setSnapshotGrouping] = useState<SnapshotGrouping>('ALL');
 
   useEffect(() => {
-    // Reset view-specific UI when switching jobs
     setSnapshotGrouping('ALL');
     setIsTerminalExpanded(false);
   }, [job.id]);
@@ -125,10 +126,16 @@ export const JobDetail: React.FC<JobDetailProps> = ({
         onDelete={onDelete}
       />
 
-      <div className="flex-1 overflow-auto p-8 space-y-8">
-        <StatsGrid job={job} />
+      <div className="flex-1 overflow-auto p-8 space-y-6">
+        {/* Compact Storage & Stats Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <StorageUsage job={job} diskStats={diskStats} />
+          </div>
+          <StatsQuickView job={job} />
+        </div>
 
-        <div className={`transition-all duration-500 ${isTerminalExpanded ? 'fixed inset-0 z-50 bg-black/90 p-8 overflow-auto' : 'grid grid-cols-1 lg:grid-cols-5 gap-8'}`}>
+        <div className={`transition-all duration-500 ${isTerminalExpanded ? 'fixed inset-0 z-50 bg-black/90 p-8 overflow-auto' : 'grid grid-cols-1 lg:grid-cols-3 gap-6'}`}>
           {isTerminalExpanded && (
             <button
               onClick={() => setIsTerminalExpanded(false)}
@@ -138,7 +145,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
             </button>
           )}
 
-          <div className={`${isTerminalExpanded ? 'hidden' : 'lg:col-span-3 space-y-6'}`}>
+          <div className={`${isTerminalExpanded ? 'hidden' : 'lg:col-span-2 space-y-6'}`}>
             <StorageHistory chartData={chartData} />
             {analytics ? (
               <AnalyticsSection analytics={analytics} onShowFile={handleShowFile} />
@@ -236,67 +243,120 @@ const Header: React.FC<{
   </div>
 );
 
-const StatsGrid: React.FC<{ job: SyncJob }> = ({ job }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <StatCard
-      icon={<Icons.Database size={18} />}
-      label="Total Size"
-      value={formatBytes(job.snapshots[job.snapshots.length - 1]?.sizeBytes || 0)}
-    />
-    <StatCard
-      icon={<Icons.Clock size={18} />}
-      label="Last Sync"
-      value={job.lastRun ? new Date(job.lastRun).toLocaleTimeString() : 'Never'}
-    />
-    <StatCard
-      icon={<Icons.Clock size={18} />}
-      label="Schedule"
-      value={formatSchedule(job.scheduleInterval)}
-    />
-    <StatCard
-      icon={<Icons.Shield size={18} />}
-      label="Mode"
-      value={job.mode.replace('_', ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
-    />
+// Compact Storage Usage Component
+const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats> }> = ({ job, diskStats }) => {
+  const stat = diskStats[job.destPath];
+  const isAvailable = stat?.status === 'AVAILABLE';
+  const totalBytes = isAvailable ? stat.total : 0;
+  const freeBytes = isAvailable ? stat.free : 0;
+  const usedBytes = totalBytes - freeBytes;
+  const jobSize = job.snapshots[job.snapshots.length - 1]?.sizeBytes || 0;
+  
+  const usedPercent = totalBytes > 0 ? (usedBytes / totalBytes) * 100 : 0;
+  const jobPercent = totalBytes > 0 ? (jobSize / totalBytes) * 100 : 0;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Icons.HardDrive size={16} className="text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Storage</h3>
+        </div>
+        {isAvailable && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">{usedPercent.toFixed(0)}% Used</span>
+        )}
+      </div>
+
+      {isAvailable ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Capacity</div>
+              <div className="text-base font-bold text-gray-900 dark:text-white">{formatBytes(totalBytes)}</div>
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Free</div>
+              <div className="text-base font-bold text-green-600 dark:text-green-400">{formatBytes(freeBytes)}</div>
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">This Job</div>
+              <div className="text-base font-bold text-blue-600 dark:text-blue-400">{formatBytes(jobSize)}</div>
+            </div>
+          </div>
+
+          <div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              className="absolute h-full bg-gray-400 dark:bg-gray-600 transition-all"
+              style={{ width: `${usedPercent}%` }}
+            />
+            <div 
+              className="absolute h-full bg-blue-500 transition-all"
+              style={{ width: `${jobPercent}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-2 text-gray-500 dark:text-gray-400 text-xs">
+          Drive not connected
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Quick Stats View
+const StatsQuickView: React.FC<{ job: SyncJob }> = ({ job }) => (
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <Icons.Activity size={16} /> Quick Stats
+    </h3>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Last Sync</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
+          {job.lastRun ? new Date(job.lastRun).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
+        </span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Schedule</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">{formatSchedule(job.scheduleInterval)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Mode</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
+          {job.mode.replace('_', ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+        </span>
+      </div>
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Snapshots</span>
+        <span className="text-sm font-bold text-gray-900 dark:text-white">{job.snapshots.length}</span>
+      </div>
+    </div>
   </div>
 );
 
-const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
-  <div className="p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-gray-700">
-    <div className="flex items-center gap-3 mb-2 text-gray-500 dark:text-gray-400">
-      {icon}
-      <span className="text-sm font-medium">{label}</span>
-    </div>
-    <p className="text-xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
-  </div>
-);
+
 
 const StorageHistory: React.FC<{ chartData: { name: string; dataAdded: number }[] }> = ({ chartData }) => (
-  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
-    <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
-      <Icons.BarChart2 size={20} /> Storage History (Data Added)
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+    <h3 className="text-base font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
+      <Icons.BarChart2 size={18} /> Storage History (Data Added)
     </h3>
     <div className="h-64 w-full flex items-end justify-between gap-1">
       {(() => {
         const values = chartData.map(d => d.dataAdded);
         const minVal = Math.min(...values);
         const maxVal = Math.max(...values);
-        // If variance is 0 (all same), show 50% height. 
-        // Otherwise scale from min to max.
         const range = maxVal - minVal;
         
         return chartData.slice(-20).map((d, i) => {
           let heightPercent = 50;
           if (range > 0) {
-             // Scale: (val - min) / range. 
-             // We add a baseline of 10% so the smallest bar isn't 0 height.
-             heightPercent = 10 + ((d.dataAdded - minVal) / range) * 80;
+            heightPercent = 10 + ((d.dataAdded - minVal) / range) * 80;
           } else if (maxVal > 0) {
-             // All values equal and > 0
-             heightPercent = 50;
+            heightPercent = 50;
           } else {
-             // All values 0
-             heightPercent = 2;
+            heightPercent = 2;
           }
 
           return (
@@ -322,9 +382,9 @@ const StorageHistory: React.FC<{ chartData: { name: string; dataAdded: number }[
 );
 
 const AnalyticsSection: React.FC<{ analytics: JobAnalytics; onShowFile: (path: string) => void }> = ({ analytics, onShowFile }) => (
-  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
-    <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
-      <Icons.Activity size={20} /> Analytics
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+    <h3 className="text-base font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
+      <Icons.Activity size={18} /> Analytics
     </h3>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -368,7 +428,7 @@ const AnalyticsSection: React.FC<{ analytics: JobAnalytics; onShowFile: (path: s
             <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-lg text-teal-600 dark:text-teal-400 shrink-0">
-                  <Icons.File size={16} />
+                  <Icons.File size={14} />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                   {file.name}
@@ -395,11 +455,11 @@ const AnalyticsSection: React.FC<{ analytics: JobAnalytics; onShowFile: (path: s
 );
 
 const AnalyticsPlaceholder: React.FC = () => (
-  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center h-64 text-center">
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center h-64 text-center">
     <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full mb-4">
       <Icons.BarChart2 className="text-gray-400 dark:text-gray-500" size={24} />
     </div>
-    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Analytics Unavailable</h3>
+    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">Analytics Unavailable</h3>
     <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
       Detailed file analytics are only available for the current session to save space.
     </p>
@@ -415,7 +475,7 @@ const SnapshotsSection: React.FC<{
 }> = ({ job, snapshots, snapshotGrouping, onGroupingChange, onOpenSnapshot }) => (
   <div className="space-y-4">
     <div className="flex justify-between items-center">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Snapshots</h3>
+      <h3 className="text-base font-bold text-gray-900 dark:text-white">Snapshots</h3>
       <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
         {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
           <button
@@ -464,15 +524,15 @@ const SnapshotGroup: React.FC<{
       </div>
     )}
 
-    <div className={showHeader ? 'space-y-3 pl-2 border-l-2 border-gray-200 dark:border-gray-800 ml-2' : 'space-y-3'}>
+    <div className={showHeader ? 'space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-800 ml-2' : 'space-y-2'}>
       {snaps.map(snap => (
-        <div key={snap.id} className="flex items-center justify-between p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
-          <div className="flex items-center gap-4">
+        <div key={snap.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+          <div className="flex items-center gap-3">
             <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
-              <Icons.CheckCircle size={16} />
+              <Icons.CheckCircle size={14} />
             </div>
             <div>
-              <p className="font-semibold text-gray-800 dark:text-gray-200">{new Date(snap.timestamp).toLocaleString()}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{new Date(snap.timestamp).toLocaleString()}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{snap.fileCount} files • {snap.changesCount} changed</p>
             </div>
           </div>
@@ -485,7 +545,7 @@ const SnapshotGroup: React.FC<{
               className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               title="Open in Finder"
             >
-              <Icons.FolderOpen size={18} />
+              <Icons.FolderOpen size={16} />
             </button>
           </div>
         </div>
@@ -506,7 +566,7 @@ const LiveActivity: React.FC<{
   onExpand: () => void;
 }> = ({ job, isRunning, progress, logs, latestSnapshot, analytics, isTerminalExpanded, onShowFile, onExpand }) => (
   <div className={`${isTerminalExpanded ? 'w-full h-full flex flex-col' : 'lg:col-span-2'}`}>
-    <h3 className={`text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}>
+    <h3 className={`text-base font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}>
       Live Activity
       {isRunning && <span className="inline-flex w-2 h-2 bg-indigo-500 rounded-full animate-ping" />}
       {!isTerminalExpanded && (
@@ -546,9 +606,9 @@ const LiveActivity: React.FC<{
     {!isTerminalExpanded && (
       <div className="mt-6 p-4 bg-blue-50/90 dark:bg-blue-900/10 backdrop-blur-sm rounded-xl border border-blue-100 dark:border-blue-900/30">
         <div className="flex items-start gap-3">
-          <Icons.Zap className="text-blue-500 dark:text-blue-400 mt-1" size={20} />
+          <Icons.Zap className="text-blue-500 dark:text-blue-400 mt-1" size={18} />
           <div>
-            <h4 className="font-semibold text-blue-900 dark:text-blue-300">Config Insight</h4>
+            <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300">Config Insight</h4>
             <p className="text-sm text-blue-700 dark:text-blue-400 mt-1 leading-relaxed">
               {job.mode === SyncMode.TIME_MACHINE
                 ? 'Time Machine mode is active. Files are hard-linked to the previous snapshot, meaning only changed files consume new disk space.'
@@ -565,8 +625,8 @@ const LiveActivity: React.FC<{
 
     {!isTerminalExpanded && latestSnapshot && (
       <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-        <h4 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Icons.Activity size={16} /> Job Analytics
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <Icons.Activity size={14} /> Job Analytics
         </h4>
         <div className="space-y-4">
           <div>

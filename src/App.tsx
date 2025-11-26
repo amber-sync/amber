@@ -569,6 +569,7 @@ export default function App() {
           {view === 'DETAIL' && activeJob && (
             <JobDetail
               job={activeJob}
+              diskStats={destinationStats}
               isRunning={isRunning}
               progress={progress}
               logs={logs}
