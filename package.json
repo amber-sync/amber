@@ -31,17 +31,21 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "chokidar": "^5.0.0",
     "electron-log": "^5.4.3",
     "lucide-react": "^0.554.0",
+    "node-schedule": "^2.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.4.1"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
+    "@types/chokidar": "^1.7.5",
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.14.0",
+    "@types/node-schedule": "^2.1.8",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",

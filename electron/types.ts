@@ -31,13 +31,20 @@ export interface SshConfig {
   disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
 }
 
+export interface JobSchedule {
+  enabled: boolean;
+  cron?: string;
+  runOnMount?: boolean;
+}
+
 export interface SyncJob {
   id: string;
   name: string;
   sourcePath: string;
   destPath: string;
   mode: SyncMode;
-  scheduleInterval: number | null;
+  scheduleInterval: number | null; // Deprecated in favor of schedule.cron
+  schedule?: JobSchedule;
   config: RsyncConfig;
   sshConfig?: SshConfig;
   lastRun: number | null;

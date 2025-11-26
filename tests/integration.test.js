@@ -37,7 +37,8 @@ describe('RsyncService - Integration Sandbox', function() {
     await fs.ensureDir(DEST_DIR);
 
     // Create backup marker file for safety check
-    await fs.writeFile(path.join(DEST_DIR, 'backup.marker'), '');
+    const destBasename = path.basename(DEST_DIR);
+    await fs.writeFile(path.join(DEST_DIR, `.${destBasename}_backup-marker`), '');
 
     await fs.writeFile(path.join(SOURCE_DIR, 'file1.txt'), 'content 1');
     await fs.writeFile(path.join(SOURCE_DIR, 'file2.txt'), 'content 2');

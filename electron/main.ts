@@ -8,8 +8,8 @@ import { SyncJob } from './types';
 import { CONSTANTS } from './constants';
 import { AppPreferences, loadPreferences, savePreferences } from './preferences';
 import { loadJobs, saveJobs } from './store';
-import { JobScheduler } from './job-scheduler';
-import { createDriveWatcher } from './drive-watcher';
+import { JobScheduler } from './JobScheduler';
+import { VolumeWatcher } from './VolumeWatcher';
 
 // electron-log auto-initializes in v5+
 
@@ -30,20 +30,8 @@ let tray: Tray | null = null;
 let lastActiveJob: SyncJob | null = null;
 let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
 let jobsCache: SyncJob[] = [];
-let stopDriveWatcher: (() => void) | null = null;
-
-const scheduler = new JobScheduler(
-  {
-    runJob: (job) => handleRunJob(job),
-    isRunning: (jobId: string) => rsyncService.isJobRunning(jobId),
-    onBeforeRun: async (job) => {
-      // Update lastRun immediately to avoid double triggers
-      jobsCache = jobsCache.map((j) => (j.id === job.id ? { ...j, lastRun: Date.now() } : j));
-      await saveJobs(jobsCache);
-    }
-  },
-  30
-);
+const volumeWatcher = new VolumeWatcher();
+const scheduler = new JobScheduler(rsyncService, volumeWatcher);
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
@@ -239,11 +227,9 @@ async function initApp() {
 
   // Load persisted jobs before window creation
   jobsCache = await loadJobs();
-  scheduler.setJobs(jobsCache);
-  scheduler.start();
-
-  // Start drive watcher (macOS only for now)
-  stopDriveWatcher = createDriveWatcher((volumePath) => scheduler.handleVolumeMounted(volumePath));
+  jobsCache = await loadJobs();
+  scheduler.init(jobsCache);
+  volumeWatcher.start();
 
   createWindow();
 
@@ -296,7 +282,7 @@ async function handleRunJob(job: SyncJob) {
     const result = await rsyncService.runBackup(job, onLog, onProgress);
     jobsCache = jobsCache.map(j => (j.id === jobId ? { ...j, lastRun: Date.now() } : j));
     await saveJobs(jobsCache);
-    scheduler.setJobs(jobsCache);
+    scheduler.updateJobs(jobsCache);
     if (prefs.notifications && Notification.isSupported()) {
       new Notification({
         title: `Backup ${result.success ? 'completed' : 'failed'}`,
@@ -339,14 +325,14 @@ ipcMain.handle('jobs:save', async (_event, job: SyncJob) => {
     jobsCache.push(job);
   }
   await saveJobs(jobsCache);
-  scheduler.setJobs(jobsCache);
+  scheduler.updateJobs(jobsCache);
   return { success: true, jobs: jobsCache };
 });
 
 ipcMain.handle('jobs:delete', async (_event, jobId: string) => {
   jobsCache = jobsCache.filter(j => j.id !== jobId);
   await saveJobs(jobsCache);
-  scheduler.setJobs(jobsCache);
+  scheduler.updateJobs(jobsCache);
   return { success: true, jobs: jobsCache };
 });
 
@@ -552,8 +538,5 @@ ipcMain.on('active-job', (_event, job: SyncJob) => {
 
 app.on('before-quit', () => {
   tray?.destroy();
-  if (stopDriveWatcher) {
-    stopDriveWatcher();
-    stopDriveWatcher = null;
-  }
+  volumeWatcher.stop();
 });
