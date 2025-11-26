@@ -313,7 +313,14 @@ ipcMain.handle('create-sandbox-dirs', async (_, sourcePath: string, destPath: st
   try {
     // FIXED: Platform-independent temp dir check
     const tmpDir = os.tmpdir();
-    if (!sourcePath.startsWith(tmpDir) || !destPath.startsWith(tmpDir)) {
+    const isSafePath = (p: string) => {
+      if (p.startsWith(tmpDir)) return true;
+      // Handle macOS /var vs /private/var
+      if (process.platform === 'darwin' && p.startsWith('/private' + tmpDir)) return true;
+      return false;
+    };
+
+    if (!isSafePath(sourcePath) || !isSafePath(destPath)) {
       return { success: false, error: `Sandbox paths must be in ${tmpDir}` };
     }
 
