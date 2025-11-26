@@ -168,6 +168,53 @@ export default function App() {
     }
   }, [activeJobId, jobs]);
 
+  // Create/Edit Job Form State
+  const [newJobName, setNewJobName] = useState('');
+  const [newJobSource, setNewJobSource] = useState('');
+  const [newJobDest, setNewJobDest] = useState('');
+  const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.MIRROR);
+  const [newJobSchedule, setNewJobSchedule] = useState<number | null>(null);
+  const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_CONFIG });
+
+  // SSH Form State
+  const [sshEnabled, setSshEnabled] = useState(false);
+  const [sshPort, setSshPort] = useState('');
+  const [sshKeyPath, setSshKeyPath] = useState('');
+  const [sshConfigPath, setSshConfigPath] = useState('');
+
+  // UI Helper State for Form
+  const [tempExcludePattern, setTempExcludePattern] = useState('');
+
+  const persistJobToDisk = useCallback(async (job: SyncJob) => {
+    if (!window.electronAPI?.saveJob) return;
+    try {
+      const result = await window.electronAPI.saveJob(stripSnapshotsForStore(job));
+      if (result?.jobs) {
+        const normalized = result.jobs.map(normalizeJobFromStore);
+        setJobs(normalized);
+      }
+    } catch (error) {
+      console.error('Failed to persist job', error);
+    }
+  }, []);
+
+  const deleteJobFromDisk = useCallback(async (jobId: string) => {
+    if (!window.electronAPI?.deleteJob) return;
+    try {
+      const result = await window.electronAPI.deleteJob(jobId);
+      if (result?.jobs) {
+        const normalized = result.jobs.map(normalizeJobFromStore);
+        setJobs(normalized);
+      }
+    } catch (error) {
+      console.error('Failed to delete job', error);
+    }
+  }, []);
+
+  // Delete Modal State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+
   // Create initial sandbox dirs (dev only) and listen for rsync completion events
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && window.electronAPI) {
@@ -220,53 +267,6 @@ export default function App() {
       unsubComplete();
     };
   }, [persistJobToDisk]);
-
-  // Create/Edit Job Form State
-  const [newJobName, setNewJobName] = useState('');
-  const [newJobSource, setNewJobSource] = useState('');
-  const [newJobDest, setNewJobDest] = useState('');
-  const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.MIRROR);
-  const [newJobSchedule, setNewJobSchedule] = useState<number | null>(null);
-  const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_CONFIG });
-
-  // SSH Form State
-  const [sshEnabled, setSshEnabled] = useState(false);
-  const [sshPort, setSshPort] = useState('');
-  const [sshKeyPath, setSshKeyPath] = useState('');
-  const [sshConfigPath, setSshConfigPath] = useState('');
-
-  // UI Helper State for Form
-  const [tempExcludePattern, setTempExcludePattern] = useState('');
-
-  const persistJobToDisk = useCallback(async (job: SyncJob) => {
-    if (!window.electronAPI?.saveJob) return;
-    try {
-      const result = await window.electronAPI.saveJob(stripSnapshotsForStore(job));
-      if (result?.jobs) {
-        const normalized = result.jobs.map(normalizeJobFromStore);
-        setJobs(normalized);
-      }
-    } catch (error) {
-      console.error('Failed to persist job', error);
-    }
-  }, []);
-
-  const deleteJobFromDisk = useCallback(async (jobId: string) => {
-    if (!window.electronAPI?.deleteJob) return;
-    try {
-      const result = await window.electronAPI.deleteJob(jobId);
-      if (result?.jobs) {
-        const normalized = result.jobs.map(normalizeJobFromStore);
-        setJobs(normalized);
-      }
-    } catch (error) {
-      console.error('Failed to delete job', error);
-    }
-  }, []);
-
-  // Delete Modal State
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   const resetForm = () => {
     setNewJobName('');
