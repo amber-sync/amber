@@ -29,6 +29,8 @@ export interface SshConfig {
   identityFile?: string; // Path to private key
   configFile?: string;   // Path to ssh_config
   disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
+  proxyJump?: string;    // -J user@host
+  customSshOptions?: string; // Additional SSH flags
 }
 
 export interface FileNode {
@@ -47,7 +49,13 @@ export interface Snapshot {
   fileCount: number;
   changesCount: number;
   status: 'Complete' | 'Partial';
-  root: FileNode[]; // Mocked file tree for visualization
+  root?: FileNode[]; // Mocked file tree for visualization (optional for persistence)
+}
+
+export interface JobSchedule {
+  enabled: boolean;
+  cron?: string;
+  runOnMount?: boolean;
 }
 
 export interface SyncJob {
@@ -57,6 +65,7 @@ export interface SyncJob {
   destPath: string;   // e.g., /Volumes/Backups/ProjectA
   mode: SyncMode;
   scheduleInterval: number | null; // minutes, null if manual
+  schedule?: JobSchedule;
   config: RsyncConfig;
   sshConfig?: SshConfig;
   lastRun: number | null;

@@ -29,6 +29,8 @@ export interface SshConfig {
   identityFile?: string;
   configFile?: string;
   disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
+  proxyJump?: string;
+  customSshOptions?: string;
 }
 
 export interface JobSchedule {

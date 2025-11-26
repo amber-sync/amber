@@ -60,7 +60,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   const latestSnapshot = job.snapshots[job.snapshots.length - 1];
 
   const analytics = useMemo<JobAnalytics | null>(() => {
-    if (!latestSnapshot) return null;
+    if (!latestSnapshot || !latestSnapshot.root) return null;
     return calculateJobStats(latestSnapshot.root);
   }, [latestSnapshot]);
 
@@ -140,8 +140,10 @@ export const JobDetail: React.FC<JobDetailProps> = ({
 
           <div className={`${isTerminalExpanded ? 'hidden' : 'lg:col-span-3 space-y-6'}`}>
             <StorageHistory chartData={chartData} />
-            {analytics && (
+            {analytics ? (
               <AnalyticsSection analytics={analytics} onShowFile={handleShowFile} />
+            ) : (
+              <AnalyticsPlaceholder />
             )}
             <SnapshotsSection
               job={job}
@@ -276,18 +278,39 @@ const StorageHistory: React.FC<{ chartData: { name: string; dataAdded: number }[
     </h3>
     <div className="h-64 w-full flex items-end justify-between gap-1">
       {(() => {
-        const maxAdded = Math.max(...chartData.map(d => d.dataAdded), 0.1);
-        return chartData.slice(-20).map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center group relative">
-            <div
-              className="w-full mx-0.5 bg-indigo-500/80 dark:bg-indigo-600 rounded-t transition-all hover:bg-indigo-400"
-              style={{ height: `${(d.dataAdded / maxAdded) * 100}%`, minHeight: '4px' }}
-            ></div>
-            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
-              {d.name}: +{d.dataAdded.toFixed(2)} MB
+        const values = chartData.map(d => d.dataAdded);
+        const minVal = Math.min(...values);
+        const maxVal = Math.max(...values);
+        // If variance is 0 (all same), show 50% height. 
+        // Otherwise scale from min to max.
+        const range = maxVal - minVal;
+        
+        return chartData.slice(-20).map((d, i) => {
+          let heightPercent = 50;
+          if (range > 0) {
+             // Scale: (val - min) / range. 
+             // We add a baseline of 10% so the smallest bar isn't 0 height.
+             heightPercent = 10 + ((d.dataAdded - minVal) / range) * 80;
+          } else if (maxVal > 0) {
+             // All values equal and > 0
+             heightPercent = 50;
+          } else {
+             // All values 0
+             heightPercent = 2;
+          }
+
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center group relative">
+              <div
+                className="w-full mx-0.5 bg-indigo-500/80 dark:bg-indigo-600 rounded-t transition-all hover:bg-indigo-400"
+                style={{ height: `${heightPercent}%`, minHeight: '4px' }}
+              ></div>
+              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
+                {d.name}: +{d.dataAdded.toFixed(2)} MB
+              </div>
             </div>
-          </div>
-        ));
+          );
+        });
       })()}
       {chartData.length === 0 && (
         <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
@@ -368,6 +391,18 @@ const AnalyticsSection: React.FC<{ analytics: JobAnalytics; onShowFile: (path: s
         </div>
       </div>
     </div>
+  </div>
+);
+
+const AnalyticsPlaceholder: React.FC = () => (
+  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center h-64 text-center">
+    <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full mb-4">
+      <Icons.BarChart2 className="text-gray-400 dark:text-gray-500" size={24} />
+    </div>
+    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Analytics Unavailable</h3>
+    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+      Detailed file analytics are only available for the current session to save space.
+    </p>
   </div>
 );
 
@@ -481,24 +516,24 @@ const LiveActivity: React.FC<{
 
     {isRunning && progress && (
       <div className="mb-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="flex justify-between text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+        <div className="flex justify-between text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">
           <span>{progress.percentage > 0 ? `${progress.percentage}% Complete` : 'Syncing...'}</span>
           <span>
             {progress.speed}
             {progress.eta ? ` • ETA: ${progress.eta}` : ''}
           </span>
         </div>
-        <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative">
+        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
           {progress.percentage > 0 ? (
             <div
-              className="h-full bg-indigo-500 transition-all duration-300 ease-out"
+              className="h-full bg-indigo-600 dark:bg-indigo-500 transition-all duration-300 ease-out"
               style={{ width: `${progress.percentage}%` }}
             />
           ) : (
             <div className="h-full bg-indigo-500/50 w-1/3 absolute top-0 animate-progress-pulse rounded-full" />
           )}
         </div>
-        <div className="mt-2 text-xs text-gray-400 truncate">
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 truncate font-medium">
           {progress.currentFile ? `File: ${progress.currentFile}` : `Transferred: ${progress.transferred}`}
         </div>
       </div>
@@ -587,6 +622,7 @@ const calculateJobStats = (fileNodes: SyncJob['snapshots'][number]['root']): Job
   const allFiles: { name: string; size: number; path: string }[] = [];
 
   const traverse = (nodes: SyncJob['snapshots'][number]['root'], currentPath: string) => {
+    if (!nodes) return;
     for (const node of nodes) {
       if (node.type === 'FILE') {
         const ext = node.name.includes('.') ? node.name.split('.').pop()?.toLowerCase() || 'unknown' : 'no-ext';

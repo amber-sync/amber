@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDiskStats: (path: string) => ipcRenderer.invoke('get-disk-stats', path),
   getPreferences: () => ipcRenderer.invoke('prefs:get'),
   setPreferences: (prefs: any) => ipcRenderer.invoke('prefs:set', prefs),
+  testNotification: () => ipcRenderer.invoke('test-notification'),
   setActiveJob: (job: any) => ipcRenderer.send('active-job', job),
   onNavigate: (callback: (view: string) => void) => {
     const subscription = (_: any, data: any) => callback(data);

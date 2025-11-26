@@ -15,19 +15,22 @@ interface JobEditorProps {
   sshPort: string;
   sshKeyPath: string;
   sshConfigPath: string;
+  sshProxyJump: string;
+  sshCustomOptions: string;
   tempExcludePattern: string;
 
   // State setters
   setJobName: (val: string) => void;
   setJobSource: (val: string) => void;
   setJobDest: (val: string) => void;
-  setJobMode: (val: SyncMode) => void;
   setJobSchedule: (val: number | null) => void;
   setJobConfig: (val: RsyncConfig | ((prev: RsyncConfig) => RsyncConfig)) => void;
   setSshEnabled: (val: boolean) => void;
   setSshPort: (val: string) => void;
   setSshKeyPath: (val: string) => void;
   setSshConfigPath: (val: string) => void;
+  setSshProxyJump: (val: string) => void;
+  setSshCustomOptions: (val: string) => void;
   setTempExcludePattern: (val: string) => void;
 
   // Handlers
@@ -53,6 +56,8 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   sshPort,
   sshKeyPath,
   sshConfigPath,
+  sshProxyJump,
+  sshCustomOptions,
   tempExcludePattern,
   setJobName,
   setJobSource,
@@ -63,6 +68,8 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   setSshPort,
   setSshKeyPath,
   setSshConfigPath,
+  setSshProxyJump,
+  setSshCustomOptions,
   setTempExcludePattern,
   onSave,
   onCancel,
@@ -100,308 +107,213 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-black/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
-      <div className="bg-white dark:bg-gray-900 max-w-3xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <HelpIconBadge icon={Icons.FolderClock} variant="indigo" size="md" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isEditing ? 'Edit Job Settings' : 'Create Sync Job'}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Uses the same iconography and gradients as the Help tour.</p>
-            </div>
-          </div>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <Icons.XCircle size={24} />
-          </button>
-        </div>
-
+      <div className="bg-white dark:bg-gray-900 max-w-5xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Form Content */}
-        <div className="p-8 overflow-y-auto space-y-8 scrollbar-hide">
+        <div className="p-10 overflow-y-auto scrollbar-hide flex-1 relative">
+          <button 
+            onClick={onCancel} 
+            className="absolute top-8 right-8 text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 transition-colors z-10"
+          >
+            <Icons.X size={28} />
+          </button>
 
-          {/* Basic Info */}
-          <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-6 shadow-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <HelpIconBadge icon={Icons.Rocket} variant="indigo" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Basics</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Name your sync job before picking paths and schedules.</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Job Name</label>
+          <div className="max-w-6xl mx-auto grid grid-cols-12 gap-8">
+            
+            {/* Row 1: Identity & Schedule */}
+            <div className="col-span-12 md:col-span-5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Job Name</label>
               <input
                 type="text"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all"
+                className="w-full px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 outline-none transition-all font-medium text-sm"
                 placeholder="e.g. Project Website Backup"
                 value={jobName}
                 onChange={e => setJobName(e.target.value)}
               />
             </div>
-          </div>
 
-          {/* Source and Destination */}
-          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <HelpIconBadge icon={Icons.Server} variant="teal" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Paths</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Select where to pull from and where to land the snapshot.</p>
+            <div className="col-span-12 md:col-span-7 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
+               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Schedule</label>
+               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {[
+                    { label: 'Manual', val: null, icon: Icons.Play, desc: 'Run only when clicked' },
+                    { label: 'Auto', val: -1, icon: Icons.Zap, desc: 'Run when drive connects' },
+                    { label: '5m', val: 5, icon: Icons.Activity, desc: 'Every 5 minutes' },
+                    { label: '1h', val: 60, icon: Icons.Clock, desc: 'Every hour' },
+                    { label: 'Daily', val: 1440, icon: Icons.Sun, desc: 'Every day at 15:00' },
+                    { label: '1w', val: 10080, icon: Icons.Calendar, desc: 'Every week' },
+                  ].map((opt) => (
+                    <div key={opt.label} className="relative group">
+                      <button
+                        onClick={() => setJobSchedule(opt.val)}
+                        className={`w-full p-3.5 rounded-xl border transition-all flex items-center justify-center ${jobSchedule === opt.val
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                      >
+                        <opt.icon size={22} />
+                      </button>
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-lg">
+                        {opt.desc}
+                      </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+
+            {/* Row 2: Source & Dest */}
+            <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                <div className="flex-1 w-full space-y-3">
+                  <label className="block text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider flex items-center gap-2">
+                    <Icons.Server size={14} /> Source
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900 outline-none transition-all font-mono text-sm"
+                      placeholder="user@host:/path"
+                      value={jobSource}
+                      onChange={e => setJobSource(e.target.value)}
+                    />
+                    <button onClick={() => onSelectDirectory('SOURCE')} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
+                      <Icons.Folder size={22} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-gray-300 dark:text-gray-600 self-center pt-8">
+                  <Icons.ArrowRight size={28} />
+                </div>
+
+                <div className="flex-1 w-full space-y-3">
+                  <label className="block text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                    <Icons.HardDrive size={14} /> Destination
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-900 outline-none transition-all font-mono text-sm"
+                      placeholder="/Volumes/Backup"
+                      value={jobDest}
+                      onChange={e => setJobDest(e.target.value)}
+                    />
+                    <button onClick={() => onSelectDirectory('DEST')} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
+                      <Icons.Folder size={22} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <Icons.Server size={14} /> Source
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
-                    placeholder="user@host:/path"
-                    value={jobSource}
-                    onChange={e => setJobSource(e.target.value)}
-                  />
+
+            {/* Row 3: Strategy */}
+            <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Sync Strategy</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { m: SyncMode.TIME_MACHINE, label: 'Time Machine', desc: 'Snapshots', icon: Icons.FolderClock },
+                  { m: SyncMode.MIRROR, label: 'Mirror', desc: 'Exact Copy', icon: Icons.RefreshCw },
+                  { m: SyncMode.ARCHIVE, label: 'Archive', desc: 'Add Only', icon: Icons.Archive },
+                ].map((opt) => (
                   <button
-                    onClick={() => onSelectDirectory('SOURCE')}
-                    className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
+                    key={opt.m}
+                    onClick={() => onJobModeChange(opt.m)}
+                    className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 h-full ${jobMode === opt.m && !customSelected
+                        ? `${getModeStyles(opt.m).border} ${getModeStyles(opt.m).bg} ${getModeStyles(opt.m).ring}`
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
                   >
-                    <Icons.Folder size={20} />
+                    <div className={`p-2.5 rounded-xl ${jobMode === opt.m && !customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                      <opt.icon size={24} className={jobMode === opt.m && !customSelected ? 'text-gray-900 dark:text-white' : 'text-gray-500'} />
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">{opt.label}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">{opt.desc}</div>
+                    </div>
                   </button>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <Icons.HardDrive size={14} /> Destination
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:focus:ring-amber-900 outline-none transition-all font-mono text-sm"
-                    placeholder="/Volumes/Backup"
-                    value={jobDest}
-                    onChange={e => setJobDest(e.target.value)}
-                  />
-                  <button
-                    onClick={() => onSelectDirectory('DEST')}
-                    className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
-                  >
-                    <Icons.Folder size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SSH Configuration */}
-          <div className="bg-gradient-to-r from-teal-50 via-cyan-50 to-indigo-50 dark:from-teal-900/20 dark:via-cyan-900/20 dark:to-indigo-900/20 border border-teal-200 dark:border-teal-800 rounded-2xl p-6 shadow-lg space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <HelpIconBadge icon={Icons.Shield} variant="teal" />
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Connection Details (SSH)</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Toggle secure transport and provide SSH helpers.</p>
-                </div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={sshEnabled} onChange={e => setSshEnabled(e.target.checked)} className="sr-only peer" />
-                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
-              </label>
-            </div>
-
-            {sshEnabled && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/80 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Port</label>
-                  <input
-                    type="text"
-                    placeholder="22"
-                    value={sshPort}
-                    onChange={e => setSshPort(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Identity File (Key)</label>
-                  <input
-                    type="text"
-                    placeholder="~/.ssh/id_rsa"
-                    value={sshKeyPath}
-                    onChange={e => setSshKeyPath(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Config File</label>
-                  <input
-                    type="text"
-                    placeholder="~/.ssh/config"
-                    value={sshConfigPath}
-                    onChange={e => setSshConfigPath(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-amber-500 outline-none"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mode Selection */}
-          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <HelpIconBadge icon={Icons.Settings} variant="amber" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Sync Strategy</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Reuse Time Machine visuals for mode selection.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { m: SyncMode.TIME_MACHINE, label: 'Time Machine', desc: 'Versioned snapshots', icon: Icons.FolderClock },
-                { m: SyncMode.ARCHIVE, label: 'Archive', desc: 'Keep deleted files', icon: Icons.Archive },
-                { m: SyncMode.MIRROR, label: 'Mirror', desc: 'Exact replica', icon: Icons.RefreshCw },
-              ].map((opt) => (
+                ))}
+                
                 <button
-                  key={opt.m}
-                  onClick={() => onJobModeChange(opt.m)}
-                  className={`w-full px-4 py-4 rounded-xl border text-left transition-all ${jobMode === opt.m && !customSelected
-                      ? `${getModeStyles(opt.m).border} ${getModeStyles(opt.m).bg} ${getModeStyles(opt.m).ring}`
+                  onClick={() => setJobConfig({ ...jobConfig, customCommand: customSelected ? undefined : '' })}
+                  className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 ${customSelected
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 ring-1 ring-indigo-500'
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                 >
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-                    <opt.icon size={MODE_ICON_SIZE} className="opacity-90" />
-                    <span className="leading-snug">{opt.label}</span>
+                  <div className={`p-2.5 rounded-xl ${customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                    <Icons.Code size={24} className={customSelected ? 'text-indigo-600' : 'text-gray-500'} />
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{opt.desc}</div>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">Custom</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">Raw Command</div>
+                  </div>
                 </button>
-              ))}
-              <button
-                onClick={() => setJobConfig({ ...jobConfig, customCommand: customSelected ? undefined : '' })}
-                className={`px-4 py-4 rounded-xl border text-left transition-all ${customSelected
-                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500'
-                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-              >
-                <div className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-                  <Icons.Code size={MODE_ICON_SIZE} className="opacity-90" />
-                  <span className="leading-snug">Custom</span>
+              </div>
+
+              {customSelected && (
+                <textarea
+                  value={jobConfig.customCommand ?? ''}
+                  onChange={e => setJobConfig({ ...jobConfig, customCommand: e.target.value })}
+                  placeholder="rsync -a --{source} {dest}"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono text-xs min-h-[60px]"
+                />
+              )}
+            </div>
+
+            {/* Row 4: Exclusions & SSH */}
+            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm h-full flex flex-col">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Exclusions</label>
+              <div className="flex gap-3 mb-4">
+                <input
+                  type="text"
+                  value={tempExcludePattern}
+                  onChange={(e) => setTempExcludePattern(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="e.g. *.log"
+                  className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-pink-500 outline-none"
+                />
+                <button onClick={onAddPattern} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors">
+                  <Icons.Plus size={22} />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2.5 content-start flex-1">
+                {jobConfig.excludePatterns.map((p, i) => (
+                  <span key={i} className="bg-gray-100 dark:bg-gray-800 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2 border border-gray-200 dark:border-gray-700">
+                    {p}
+                    <button onClick={(e) => { e.stopPropagation(); setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i) })); }} className="hover:text-red-500 text-gray-400">
+                      <Icons.XCircle size={14} />
+                    </button>
+                  </span>
+                ))}
+                {jobConfig.excludePatterns.length === 0 && <span className="text-sm text-gray-400 italic p-1">No patterns added.</span>}
+              </div>
+            </div>
+
+            <div className={`col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-gray-100 dark:border-gray-800'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">SSH Connection</label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={sshEnabled} onChange={e => setSshEnabled(e.target.checked)} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                </label>
+              </div>
+
+              {sshEnabled ? (
+                <div className="grid grid-cols-2 gap-4 animate-fade-in flex-1 content-start">
+                  <input type="text" placeholder="22" value={sshPort} onChange={e => setSshPort(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                  <input type="text" placeholder="~/.ssh/id_rsa" value={sshKeyPath} onChange={e => setSshKeyPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                  <input type="text" placeholder="~/.ssh/config" value={sshConfigPath} onChange={e => setSshConfigPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                  <input type="text" placeholder="user@jump-host" value={sshProxyJump} onChange={e => setSshProxyJump(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                  <input type="text" placeholder="-o StrictHostKeyChecking=no" value={sshCustomOptions} onChange={e => setSshCustomOptions(e.target.value)} className="col-span-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none font-mono" />
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">Overrides defaults.</div>
-              </button>
-            </div>
-            {jobMode === SyncMode.MIRROR && !customSelected && (
-              <div className="text-xs text-red-600 dark:text-red-300 mt-1">
-                Mirror will delete files in the destination that are not present in the source.
-              </div>
-            )}
-          </div>
-
-          {/* Advanced Command (visible only when custom is enabled) */}
-          {customSelected && (
-            <div className="space-y-2 border border-red-200 dark:border-red-900/50 rounded-xl p-4 bg-red-50/50 dark:bg-red-900/10">
-              <label className="block text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider">Custom rsync command</label>
-              <textarea
-                value={jobConfig.customCommand ?? ''}
-                onChange={e => setJobConfig({ ...jobConfig, customCommand: e.target.value })}
-                placeholder="rsync -a --{source} {dest}"
-                className="w-full px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-300 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900 font-mono text-xs min-h-[70px] placeholder:text-gray-400 dark:placeholder:text-gray-600"
-              />
-              <p className="text-xs text-red-600 dark:text-red-300">
-                Overrides presets. Use carefully.
-              </p>
-            </div>
-          )}
-
-          {/* Schedule Selection */}
-          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-pink-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 shadow-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <HelpIconBadge icon={Icons.Clock} variant="amber" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Schedule</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Match Help tiles with soft gradients per option.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {[
-                { label: 'Manual', val: null, icon: Icons.Play },
-                { label: 'Heartbeat', val: 5, icon: Icons.Activity },
-                { label: 'Hourly', val: 60, icon: Icons.Clock },
-                { label: 'Daily', val: 1440, icon: Icons.Sun },
-                { label: 'Weekly', val: 10080, icon: Icons.Calendar },
-              ].map((opt) => (
-                <div key={opt.label} className="relative group">
-                  <button
-                    onClick={() => setJobSchedule(opt.val)}
-                    className={`w-full h-full px-3 py-3 rounded-xl border text-sm font-medium transition-all flex flex-col items-center justify-center gap-2 ${jobSchedule === opt.val
-                        ? 'border-amber-500 bg-white/80 dark:bg-gray-900/70 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/80'
-                      }`}
-                  >
-                    <opt.icon size={20} />
-                    {opt.label}
-                  </button>
-
-                  {/* Heartbeat Tooltip */}
-                  {opt.val === 5 && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 hidden group-hover:block animate-fade-in z-50">
-                      <div className="bg-gray-900 text-white text-xs p-2.5 rounded-lg shadow-xl text-center relative">
-                        Checks for changes every 5 minutes. Ideal for active projects.
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                      </div>
-                    </div>
-                  )}
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
+                  Local transfer only. Toggle to enable SSH.
                 </div>
-              ))}
+              )}
             </div>
+
           </div>
-
-          {/* Exclude Patterns */}
-          <div className="bg-white/80 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-lg space-y-3">
-            <div className="flex items-center gap-3">
-              <HelpIconBadge icon={Icons.Sparkles} variant="pink" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Exclude Patterns</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Keep the job launcher consistent with Help pill styling.</p>
-              </div>
-            </div>
-            <div
-              className="min-h-[3.5rem] p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-wrap gap-2 items-center focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-100 dark:focus:within:ring-amber-900 transition-all cursor-text"
-              onClick={() => document.getElementById('pattern-input')?.focus()}
-            >
-              {jobConfig.excludePatterns.map((p, i) => (
-                <span key={i} className="bg-gray-100 dark:bg-gray-700 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2 animate-fade-in">
-                  {p}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i) }));
-                    }}
-                    className="hover:text-red-500 text-gray-400 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 p-0.5"
-                  >
-                    <Icons.XCircle size={14} />
-                  </button>
-                </span>
-              ))}
-              <input
-                id="pattern-input"
-                type="text"
-                value={tempExcludePattern}
-                onChange={(e) => setTempExcludePattern(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={jobConfig.excludePatterns.length === 0 ? "Type pattern (e.g. *.log) & press Enter" : ""}
-                className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-white min-w-[150px] h-8 px-1"
-              />
-            </div>
-            <p className="text-xs text-gray-400 pl-1">Type a file pattern and press Enter to add it.</p>
-          </div>
-
-          {/* Advanced Command */}
-          <div className="space-y-4" />
-
         </div>
 
         {/* Footer */}

@@ -30,11 +30,29 @@ let tray: Tray | null = null;
 let lastActiveJob: SyncJob | null = null;
 let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
 let jobsCache: SyncJob[] = [];
-const volumeWatcher = new VolumeWatcher();
-const scheduler = new JobScheduler(rsyncService, volumeWatcher);
+// Lazy initialize these to avoid top-level crashes and ensure PATH is fixed first
+let volumeWatcher: VolumeWatcher | null = null;
+let scheduler: JobScheduler | null = null;
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
+
+// Fix PATH on macOS for double-click launch
+function fixPath() {
+  if (process.platform === 'darwin') {
+    // Ensure common binary paths are present
+    const commonPaths = ['/usr/local/bin', '/opt/homebrew/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
+    const currentPath = process.env.PATH || '';
+    const newPath = commonPaths.reduce((acc, p) => {
+      if (!acc.includes(p)) {
+        return `${p}:${acc}`;
+      }
+      return acc;
+    }, currentPath);
+    process.env.PATH = newPath;
+    log.info(`Fixed PATH: ${process.env.PATH}`);
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -118,9 +136,94 @@ async function createTray() {
 
   tray = new Tray(image);
   tray.setToolTip('Amber');
-  // On macOS, clicking the tray icon shows the menu (no need for explicit click handler)
-  // The menu has "Open Amber" option for showing the window
   tray.setContextMenu(buildTrayMenu());
+}
+
+// --- Tray Animation ---
+let trayAnimationTimer: NodeJS.Timeout | null = null;
+let isTrayActiveFrame = false;
+
+function startTrayAnimation() {
+  if (trayAnimationTimer) return; // Already animating
+
+  // Load active icon
+  let activeImage = TRAY_FALLBACK;
+  const activeCandidates = [
+    path.join(__dirname, '../build/icons/tray-active.png'),
+    path.join(app.getAppPath(), 'build/icons/tray-active.png'),
+    path.join(process.resourcesPath, 'build/icons/tray-active.png'),
+  ];
+  
+  // Helper to load image safely
+  const loadImg = (p: string) => {
+    try {
+      const img = nativeImage.createFromPath(p);
+      if (!img.isEmpty()) {
+        if (process.platform === 'darwin') img.setTemplateImage(true);
+        return img;
+      }
+    } catch {}
+    return null;
+  };
+
+  let activeIcon = TRAY_FALLBACK;
+  for (const c of activeCandidates) {
+    const img = loadImg(c);
+    if (img) { activeIcon = img; break; }
+  }
+  
+  // Re-load standard icon to ensure we have it
+  let standardIcon = TRAY_FALLBACK;
+  const standardCandidates = [
+    path.join(__dirname, '../build/icons/tray.png'),
+    path.join(app.getAppPath(), 'build/icons/tray.png'),
+    path.join(process.resourcesPath, 'build/icons/tray.png'),
+  ];
+  for (const c of standardCandidates) {
+    const img = loadImg(c);
+    if (img) { standardIcon = img; break; }
+  }
+
+  isTrayActiveFrame = false;
+  trayAnimationTimer = setInterval(() => {
+    if (!tray) return;
+    isTrayActiveFrame = !isTrayActiveFrame;
+    tray.setImage(isTrayActiveFrame ? activeIcon : standardIcon);
+  }, 500); // Toggle every 500ms
+}
+
+function stopTrayAnimation() {
+  if (trayAnimationTimer) {
+    clearInterval(trayAnimationTimer);
+    trayAnimationTimer = null;
+  }
+  
+  // Restore standard icon
+  if (tray) {
+    let standardIcon = TRAY_FALLBACK;
+    const standardCandidates = [
+      path.join(__dirname, '../build/icons/tray.png'),
+      path.join(app.getAppPath(), 'build/icons/tray.png'),
+      path.join(process.resourcesPath, 'build/icons/tray.png'),
+    ];
+    
+    const loadImg = (p: string) => {
+      try {
+        const img = nativeImage.createFromPath(p);
+        if (!img.isEmpty()) {
+          if (process.platform === 'darwin') img.setTemplateImage(true);
+          return img;
+        }
+      } catch {}
+      return null;
+    };
+
+    for (const c of standardCandidates) {
+      const img = loadImg(c);
+      if (img) { standardIcon = img; break; }
+    }
+    tray.setImage(standardIcon);
+  }
 }
 
 function buildTrayMenu() {
@@ -221,30 +324,76 @@ function buildTrayMenu() {
 }
 
 async function initApp() {
+  fixPath(); // Fix environment first
   configureUserDataRoot();
-  prefs = await loadPreferences();
-  app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
-
-  // Load persisted jobs before window creation
-  jobsCache = await loadJobs();
-  jobsCache = await loadJobs();
-  scheduler.init(jobsCache);
-  volumeWatcher.start();
-
-  createWindow();
-
-  // Only create tray if running in background mode
-  if (prefs.runInBackground) {
-    await createTray();
-    // Set as accessory app (menu bar only, no dock on startup)
-    if (process.platform === 'darwin' && app.dock) {
-      app.dock.hide();
-      app.setActivationPolicy('accessory');
+  
+  try {
+    prefs = await loadPreferences();
+    try {
+      app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
+    } catch (error) {
+      console.warn('Failed to set login item settings (expected in dev mode):', error);
     }
+
+    // Create sandbox directories in dev mode BEFORE loading jobs to avoid ENOENT errors
+    if (IS_DEV) {
+      const sourcePath = '/tmp/amber-sandbox/source';
+      const destPath = '/tmp/amber-sandbox/dest';
+      try {
+        await fs.mkdir(sourcePath, { recursive: true });
+        await fs.mkdir(destPath, { recursive: true });
+        
+        // Create backup marker
+        const destBasename = path.basename(destPath);
+        const markerPath = path.join(destPath, `.${destBasename}_backup-marker`);
+        try {
+          await fs.access(markerPath);
+        } catch {
+          await fs.writeFile(markerPath, `Amber backup destination\nFolder: ${destBasename}\nCreated: ${new Date().toISOString()}\n`);
+        }
+        log.info('Sandbox directories created');
+      } catch (error: any) {
+        log.error(`Failed to create sandbox dirs: ${error.message}`);
+      }
+    }
+
+    // Load persisted jobs before window creation
+    jobsCache = await loadJobs();
+    
+    // Initialize services
+    volumeWatcher = new VolumeWatcher();
+    scheduler = new JobScheduler(rsyncService, volumeWatcher);
+    scheduler.init(jobsCache);
+    volumeWatcher.start();
+    
+    volumeWatcher.start();
+  
+    createWindow();
+  
+    // Only create tray if running in background mode
+    if (prefs.runInBackground) {
+      await createTray();
+      // Set as accessory app (menu bar only, no dock on startup)
+      if (process.platform === 'darwin' && app.dock) {
+        app.dock.hide();
+        app.setActivationPolicy('accessory');
+      }
+    }
+  } catch (error: any) {
+    log.error(`Critical error during app init: ${error.message}`);
+    dialog.showErrorBox('Amber Startup Error', `Failed to start: ${error.message}`);
   }
 }
 
 app.whenReady().then(initApp);
+
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  log.error('Unhandled Rejection:', reason);
+});
 
 app.on('window-all-closed', () => {
   if (!prefs.runInBackground || process.platform !== 'darwin') {
@@ -282,7 +431,7 @@ async function handleRunJob(job: SyncJob) {
     const result = await rsyncService.runBackup(job, onLog, onProgress);
     jobsCache = jobsCache.map(j => (j.id === jobId ? { ...j, lastRun: Date.now() } : j));
     await saveJobs(jobsCache);
-    scheduler.updateJobs(jobsCache);
+    scheduler?.updateJobs(jobsCache);
     if (prefs.notifications && Notification.isSupported()) {
       new Notification({
         title: `Backup ${result.success ? 'completed' : 'failed'}`,
@@ -293,6 +442,7 @@ async function handleRunJob(job: SyncJob) {
       mainWindow.webContents.send('rsync-complete', { jobId, ...result });
     }
     tray?.setContextMenu(buildTrayMenu());
+    stopTrayAnimation(); // Stop animation on success
   } catch (error: any) {
     log.error(`Error in run-rsync: ${error.message}`);
     if (prefs.notifications && Notification.isSupported()) {
@@ -305,10 +455,12 @@ async function handleRunJob(job: SyncJob) {
       mainWindow.webContents.send('rsync-log', { jobId, message: `CRITICAL ERROR: ${error.message}` });
       mainWindow.webContents.send('rsync-complete', { jobId, success: false, error: error.message });
     }
+    stopTrayAnimation(); // Stop animation on error
   }
 }
 
 ipcMain.on('run-rsync', async (_event, job: SyncJob) => {
+  startTrayAnimation(); // Start animation
   handleRunJob(job);
   tray?.setContextMenu(buildTrayMenu());
 });
@@ -325,14 +477,14 @@ ipcMain.handle('jobs:save', async (_event, job: SyncJob) => {
     jobsCache.push(job);
   }
   await saveJobs(jobsCache);
-  scheduler.updateJobs(jobsCache);
+  scheduler?.updateJobs(jobsCache);
   return { success: true, jobs: jobsCache };
 });
 
 ipcMain.handle('jobs:delete', async (_event, jobId: string) => {
   jobsCache = jobsCache.filter(j => j.id !== jobId);
   await saveJobs(jobsCache);
-  scheduler.updateJobs(jobsCache);
+  scheduler?.updateJobs(jobsCache);
   return { success: true, jobs: jobsCache };
 });
 
@@ -366,6 +518,7 @@ ipcMain.handle('select-directory', async () => {
 ipcMain.on('kill-rsync', (event, jobId: string) => {
   log.info(`Received kill-rsync for job ${jobId}`);
   rsyncService.killJob(jobId);
+  stopTrayAnimation();
   tray?.setContextMenu(buildTrayMenu());
 });
 
@@ -460,9 +613,31 @@ ipcMain.handle('show-item-in-folder', async (_, filePath: string) => {
 ipcMain.handle('get-disk-stats', async (_, volumePath: string) => {
   try {
     const fs = require('fs/promises');
+    const pathModule = require('path');
+    
+    // Find the first existing parent directory to get disk stats from
+    let checkPath = volumePath;
+    while (checkPath && checkPath !== '/' && checkPath !== '.') {
+      try {
+        // Check if path exists
+        await fs.access(checkPath);
+        break; // Found an existing path
+      } catch {
+        // Move to parent directory
+        const parent = pathModule.dirname(checkPath);
+        if (parent === checkPath) break; // Reached root
+        checkPath = parent;
+      }
+    }
+    
+    // Default to root if nothing found
+    if (!checkPath || checkPath === '.') {
+      checkPath = '/';
+    }
+    
     // Check if statfs is supported (Node 18.15+)
     if (fs.statfs) {
-      const stats = await fs.statfs(volumePath);
+      const stats = await fs.statfs(checkPath);
       // bsize = optimal transfer block size
       // blocks = total data blocks in file system
       // bavail = free blocks available to unprivileged user
@@ -483,6 +658,7 @@ ipcMain.handle('get-disk-stats', async (_, volumePath: string) => {
        log.warn('fs.statfs not available');
        return { success: false, error: 'Feature not supported' };
     }
+
   } catch (error: any) {
     log.error(`Error getting disk stats for ${volumePath}: ${error.message}`);
     return { 
@@ -502,7 +678,11 @@ ipcMain.handle('prefs:set', async (_event, partial: Partial<AppPreferences>) => 
   const oldPrefs = { ...prefs };
   prefs = { ...prefs, ...partial };
   await savePreferences(prefs);
-  app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
+  try {
+    app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
+  } catch (error) {
+    console.warn('Failed to set login item settings:', error);
+  }
 
   // Handle runInBackground toggle
   if (oldPrefs.runInBackground !== prefs.runInBackground) {
@@ -531,6 +711,17 @@ ipcMain.handle('prefs:set', async (_event, partial: Partial<AppPreferences>) => 
   return prefs;
 });
 
+ipcMain.handle('test-notification', async () => {
+  if (Notification.isSupported()) {
+    new Notification({
+      title: 'Amber Notification Test',
+      body: 'This is how your backup alerts will appear.'
+    }).show();
+    return { success: true };
+  }
+  return { success: false, error: 'Notifications not supported' };
+});
+
 ipcMain.on('active-job', (_event, job: SyncJob) => {
   lastActiveJob = job;
   if (tray) tray.setContextMenu(buildTrayMenu());
@@ -538,5 +729,5 @@ ipcMain.on('active-job', (_event, job: SyncJob) => {
 
 app.on('before-quit', () => {
   tray?.destroy();
-  volumeWatcher.stop();
+  volumeWatcher?.stop();
 });
