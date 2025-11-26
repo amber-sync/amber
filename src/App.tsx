@@ -94,9 +94,10 @@ export default function App() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<View>('DASHBOARD');
   const [darkMode, setDarkMode] = useState(false);
-  const [runInBackground, setRunInBackground] = useState(true);
+  const [runInBackground, setRunInBackground] = useState(false);
   const [startOnBoot, setStartOnBoot] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } = useRsyncProgress();
   const destinationStats = useDiskStats(jobs.map(j => j.destPath));
@@ -108,7 +109,13 @@ export default function App() {
         setRunInBackground(p.runInBackground);
         setStartOnBoot(p.startOnBoot);
         setNotificationsEnabled(p.notifications);
-      }).catch(() => {});
+      }).catch(() => {
+        setRunInBackground(false);
+        setStartOnBoot(false);
+        setNotificationsEnabled(true);
+      }).finally(() => setPrefsLoaded(true));
+    } else {
+      setPrefsLoaded(true);
     }
 
     let cleanup: (() => void) | undefined;
@@ -143,6 +150,7 @@ export default function App() {
 
   // Persist preferences when toggled
   useEffect(() => {
+    if (!prefsLoaded) return;
     if (window.electronAPI?.setPreferences) {
       window.electronAPI.setPreferences({
         runInBackground,
@@ -150,7 +158,7 @@ export default function App() {
         notifications: notificationsEnabled,
       });
     }
-  }, [runInBackground, startOnBoot, notificationsEnabled]);
+  }, [runInBackground, startOnBoot, notificationsEnabled, prefsLoaded]);
 
   // Keep main process aware of active job for tray actions
   useEffect(() => {
