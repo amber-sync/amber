@@ -64,9 +64,34 @@ const INITIAL_JOBS: SyncJob[] = process.env.NODE_ENV === 'development'
     ]
   : [];
 
+const normalizeJobFromStore = (job: any): SyncJob => ({
+  id: job.id,
+  name: job.name,
+  sourcePath: job.sourcePath,
+  destPath: job.destPath,
+  mode: job.mode,
+  scheduleInterval: job.scheduleInterval ?? null,
+  config: {
+    ...DEFAULT_CONFIG,
+    ...job.config,
+    excludePatterns: job.config?.excludePatterns ?? [],
+    customCommand: job.config?.customCommand,
+    customFlags: '',
+  },
+  sshConfig: job.sshConfig ?? { enabled: false },
+  lastRun: job.lastRun ?? null,
+  status: job.status ?? JobStatus.IDLE,
+  snapshots: job.snapshots ?? [],
+});
+
+const stripSnapshotsForStore = (job: SyncJob) => {
+  const { snapshots, ...rest } = job as any;
+  return rest;
+};
+
 export default function App() {
-  const [jobs, setJobs] = useState<SyncJob[]>(INITIAL_JOBS);
-  const [activeJobId, setActiveJobId] = useState<string | null>(INITIAL_JOBS[0]?.id ?? null);
+  const [jobs, setJobs] = useState<SyncJob[]>([]);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<View>('DASHBOARD');
   const [darkMode, setDarkMode] = useState(false);
   const [runInBackground, setRunInBackground] = useState(true);
@@ -95,6 +120,27 @@ export default function App() {
     };
   }, []);
 
+  // Load jobs from main process (persisted store)
+  useEffect(() => {
+    const loadJobs = async () => {
+      if (window.electronAPI?.getJobs) {
+        const stored = await window.electronAPI.getJobs();
+        const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
+        if (normalized.length === 0 && process.env.NODE_ENV === 'development') {
+          setJobs(INITIAL_JOBS);
+          setActiveJobId(INITIAL_JOBS[0]?.id ?? null);
+        } else {
+          setJobs(normalized);
+          setActiveJobId(normalized[0]?.id ?? null);
+        }
+      } else {
+        setJobs(INITIAL_JOBS);
+        setActiveJobId(INITIAL_JOBS[0]?.id ?? null);
+      }
+    };
+    loadJobs();
+  }, []);
+
   // Persist preferences when toggled
   useEffect(() => {
     if (window.electronAPI?.setPreferences) {
@@ -110,7 +156,7 @@ export default function App() {
   useEffect(() => {
     if (window.electronAPI?.setActiveJob && activeJobId) {
       const job = jobs.find(j => j.id === activeJobId);
-      if (job) window.electronAPI.setActiveJob(job);
+      if (job) window.electronAPI.setActiveJob(stripSnapshotsForStore(job));
     }
   }, [activeJobId, jobs]);
 
@@ -124,6 +170,7 @@ export default function App() {
     if (!window.electronAPI) return;
 
     const unsubComplete = window.electronAPI.onRsyncComplete((data) => {
+      let persistedJob: SyncJob | null = null;
       if (data.success) {
         setJobs(prev => prev.map(j => {
           if (j.id === data.jobId) {
@@ -141,24 +188,30 @@ export default function App() {
 
             const newSnapshots = newSnapshot ? [...snapshots, newSnapshot] : snapshots;
 
-            return {
+            const updatedJob = {
               ...j,
               status: JobStatus.SUCCESS,
               lastRun: Date.now(),
               snapshots: newSnapshots,
             };
+            persistedJob = updatedJob;
+            return updatedJob;
           }
           return j;
         }));
       } else {
         setJobs(prev => prev.map(j => (j.id === data.jobId ? { ...j, status: JobStatus.FAILED } : j)));
       }
+
+      if (persistedJob) {
+        persistJobToDisk(persistedJob);
+      }
     });
 
     return () => {
       unsubComplete();
     };
-  }, []);
+  }, [persistJobToDisk]);
 
   // Create/Edit Job Form State
   const [newJobName, setNewJobName] = useState('');
@@ -176,6 +229,32 @@ export default function App() {
 
   // UI Helper State for Form
   const [tempExcludePattern, setTempExcludePattern] = useState('');
+
+  const persistJobToDisk = useCallback(async (job: SyncJob) => {
+    if (!window.electronAPI?.saveJob) return;
+    try {
+      const result = await window.electronAPI.saveJob(stripSnapshotsForStore(job));
+      if (result?.jobs) {
+        const normalized = result.jobs.map(normalizeJobFromStore);
+        setJobs(normalized);
+      }
+    } catch (error) {
+      console.error('Failed to persist job', error);
+    }
+  }, []);
+
+  const deleteJobFromDisk = useCallback(async (jobId: string) => {
+    if (!window.electronAPI?.deleteJob) return;
+    try {
+      const result = await window.electronAPI.deleteJob(jobId);
+      if (result?.jobs) {
+        const normalized = result.jobs.map(normalizeJobFromStore);
+        setJobs(normalized);
+      }
+    } catch (error) {
+      console.error('Failed to delete job', error);
+    }
+  }, []);
 
   // Delete Modal State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -257,8 +336,10 @@ export default function App() {
     };
 
     if (activeJobId) {
-      setJobs(prev => prev.map(j => (j.id === activeJobId
-        ? {
+      let updatedJob: SyncJob | null = null;
+      setJobs(prev => prev.map(j => {
+        if (j.id === activeJobId) {
+          updatedJob = {
             ...j,
             name: newJobName,
             sourcePath: newJobSource,
@@ -267,8 +348,12 @@ export default function App() {
             scheduleInterval: newJobSchedule,
             config: jobConfig,
             sshConfig,
-          }
-        : j)));
+          };
+          return updatedJob;
+        }
+        return j;
+      }));
+      if (updatedJob) persistJobToDisk(updatedJob);
       setView('DETAIL');
     } else {
       const job: SyncJob = {
@@ -286,6 +371,7 @@ export default function App() {
       };
       setJobs(prev => [...prev, job]);
       setActiveJobId(job.id);
+      persistJobToDisk(job);
       setView('DETAIL');
     }
     resetForm();
@@ -299,6 +385,7 @@ export default function App() {
   const executeDelete = () => {
     if (jobToDelete) {
       setJobs(prev => prev.filter(j => j.id !== jobToDelete));
+      deleteJobFromDisk(jobToDelete);
       if (activeJobId === jobToDelete) {
         setActiveJobId(null);
         setView('DASHBOARD');
@@ -580,4 +667,3 @@ const SidebarButton: React.FC<{ label: string; icon: React.ReactNode; active: bo
     {icon} {label}
   </button>
 );
-

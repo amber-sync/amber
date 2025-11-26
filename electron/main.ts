@@ -7,6 +7,9 @@ import { RsyncService } from './rsync-service';
 import { SyncJob } from './types';
 import { CONSTANTS } from './constants';
 import { AppPreferences, loadPreferences, savePreferences } from './preferences';
+import { loadJobs, saveJobs } from './store';
+import { JobScheduler } from './job-scheduler';
+import { createDriveWatcher } from './drive-watcher';
 
 // electron-log auto-initializes in v5+
 
@@ -15,6 +18,21 @@ const rsyncService = new RsyncService();
 let tray: Tray | null = null;
 let lastActiveJob: SyncJob | null = null;
 let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
+let jobsCache: SyncJob[] = [];
+let stopDriveWatcher: (() => void) | null = null;
+
+const scheduler = new JobScheduler(
+  {
+    runJob: (job) => handleRunJob(job),
+    isRunning: (jobId: string) => rsyncService.isJobRunning(jobId),
+    onBeforeRun: async (job) => {
+      // Update lastRun immediately to avoid double triggers
+      jobsCache = jobsCache.map((j) => (j.id === job.id ? { ...j, lastRun: Date.now() } : j));
+      await saveJobs(jobsCache);
+    }
+  },
+  30
+);
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
@@ -197,6 +215,14 @@ async function initApp() {
   prefs = await loadPreferences();
   app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
 
+  // Load persisted jobs before window creation
+  jobsCache = await loadJobs();
+  scheduler.setJobs(jobsCache);
+  scheduler.start();
+
+  // Start drive watcher (macOS only for now)
+  stopDriveWatcher = createDriveWatcher((volumePath) => scheduler.handleVolumeMounted(volumePath));
+
   createWindow();
 
   // Only create tray if running in background mode
@@ -246,6 +272,9 @@ async function handleRunJob(job: SyncJob) {
 
   try {
     const result = await rsyncService.runBackup(job, onLog, onProgress);
+    jobsCache = jobsCache.map(j => (j.id === jobId ? { ...j, lastRun: Date.now() } : j));
+    await saveJobs(jobsCache);
+    scheduler.setJobs(jobsCache);
     if (prefs.notifications && Notification.isSupported()) {
       new Notification({
         title: `Backup ${result.success ? 'completed' : 'failed'}`,
@@ -274,6 +303,29 @@ async function handleRunJob(job: SyncJob) {
 ipcMain.on('run-rsync', async (_event, job: SyncJob) => {
   handleRunJob(job);
   tray?.setContextMenu(buildTrayMenu());
+});
+
+ipcMain.handle('jobs:get', async () => {
+  return jobsCache;
+});
+
+ipcMain.handle('jobs:save', async (_event, job: SyncJob) => {
+  const idx = jobsCache.findIndex(j => j.id === job.id);
+  if (idx >= 0) {
+    jobsCache[idx] = job;
+  } else {
+    jobsCache.push(job);
+  }
+  await saveJobs(jobsCache);
+  scheduler.setJobs(jobsCache);
+  return { success: true, jobs: jobsCache };
+});
+
+ipcMain.handle('jobs:delete', async (_event, jobId: string) => {
+  jobsCache = jobsCache.filter(j => j.id !== jobId);
+  await saveJobs(jobsCache);
+  scheduler.setJobs(jobsCache);
+  return { success: true, jobs: jobsCache };
 });
 
 ipcMain.handle('read-dir', async (_, dirPath: string) => {
@@ -478,5 +530,8 @@ ipcMain.on('active-job', (_event, job: SyncJob) => {
 
 app.on('before-quit', () => {
   tray?.destroy();
+  if (stopDriveWatcher) {
+    stopDriveWatcher();
+    stopDriveWatcher = null;
+  }
 });
-
