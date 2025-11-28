@@ -279,7 +279,8 @@ function buildTrayMenu() {
       label: 'Quit Amber', 
       click: () => {
         isQuitting = true;
-        app.quit();
+        // Use exit() to bypass before-quit listeners and force termination
+        app.exit(0);
       } 
     }
   ]);
@@ -357,6 +358,29 @@ async function initApp() {
 }
 
 app.whenReady().then(initApp);
+
+// Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  log.info('Another instance is already running. Quitting...');
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // Someone tried to run a second instance, we should focus our window.
+    log.info('Second instance detected. Focusing window...');
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+      
+      // Also ensure Dock is visible on macOS if it was hidden
+      if (process.platform === 'darwin' && app.dock) {
+        app.dock.show();
+      }
+    }
+  });
+}
 
 process.on('uncaughtException', (error) => {
   log.error('Uncaught Exception:', error);

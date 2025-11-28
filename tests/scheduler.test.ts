@@ -10,7 +10,7 @@ class MockRsyncService extends RsyncService {
   public runBackupCalled = false;
   public lastJob: SyncJob | null = null;
 
-  async runBackup(job: SyncJob, onLog: (msg: string) => void): Promise<any> {
+  async runBackup(job: SyncJob, onLog: (msg: string) => void, onProgress: (data: any) => void): Promise<any> {
     this.runBackupCalled = true;
     this.lastJob = job;
     onLog('Mock backup started');

@@ -46,7 +46,9 @@ import {
   Rocket,
   Sparkles,
   ArrowDown,
-  AlertTriangle
+  AlertTriangle,
+  Maximize2,
+  PieChart
 } from 'lucide-react';
 
 export const Icons = {
@@ -96,5 +98,7 @@ export const Icons = {
   Rocket,
   Sparkles,
   ArrowDown,
-  AlertTriangle
+  AlertTriangle,
+  Maximize2,
+  PieChart
 };

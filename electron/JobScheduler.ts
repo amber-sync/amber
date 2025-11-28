@@ -47,7 +47,7 @@ export class JobScheduler {
       const scheduledJob = schedule.scheduleJob(job.schedule.cron, () => {
         console.log(`Executing scheduled job: ${job.name}`);
         // We need a way to log output, for now just console
-        this.rsyncService.runBackup(job, (msg) => console.log(`[${job.name}] ${msg}`));
+        this.rsyncService.runBackup(job, (msg) => console.log(`[${job.name}] ${msg}`), () => {});
       });
 
       if (scheduledJob) {
@@ -85,7 +85,7 @@ export class JobScheduler {
 
           if (this.isJobDue(job)) {
              console.log(`Job '${job.name}' is due. Starting backup...`);
-             this.rsyncService.runBackup(job, (msg) => console.log(`[${job.name}] ${msg}`));
+             this.rsyncService.runBackup(job, (msg) => console.log(`[${job.name}] ${msg}`), () => {});
           }
         } catch (error) {
           console.log(`Job '${job.name}' matched mount path but destination not accessible: ${job.destPath}`);

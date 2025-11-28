@@ -72,11 +72,11 @@ describe('RsyncService - Integration Sandbox', function() {
     };
 
     const logs = [];
-    const result = await service.runBackup(job, (msg) => logs.push(msg));
+    const result = await service.runBackup(job, (msg) => logs.push(msg), () => {});
 
     expect(result.success).to.be.true;
-    expect(await fs.pathExists(path.join(DEST_DIR, 'file1.txt'))).to.be.true;
-    expect(await fs.pathExists(path.join(DEST_DIR, 'file2.txt'))).to.be.true;
+    expect(await fs.pathExists(path.join(DEST_DIR, 'source', 'file1.txt'))).to.be.true;
+    expect(await fs.pathExists(path.join(DEST_DIR, 'source', 'file2.txt'))).to.be.true;
   });
 
   it('should execute a real TIME_MACHINE backup sequence', async () => {
@@ -101,9 +101,9 @@ describe('RsyncService - Integration Sandbox', function() {
     };
 
     // --- Run 1: Initial ---
-    await service.runBackup(job, () => {});
+    await service.runBackup(job, () => {}, () => {});
     
-    const latestLink = path.join(DEST_DIR, 'latest');
+    const latestLink = path.join(DEST_DIR, 'source', 'latest');
     expect(await fs.pathExists(latestLink), 'Latest symlink should exist').to.be.true;
     
     const snapshot1Path = await fs.realpath(latestLink);
@@ -116,7 +116,7 @@ describe('RsyncService - Integration Sandbox', function() {
     await new Promise(r => setTimeout(r, 1100));
     
     await fs.writeFile(path.join(SOURCE_DIR, 'file1.txt'), 'content 1 MODIFIED');
-    await service.runBackup(job, () => {});
+    await service.runBackup(job, () => {}, () => {});
 
     const snapshot2Path = await fs.realpath(latestLink);
     expect(snapshot2Path).to.not.equal(snapshot1Path);
@@ -151,8 +151,9 @@ describe('RsyncService - Integration Sandbox', function() {
         makeDate(0)    // Now
     ];
 
+    const targetBaseDir = path.join(DEST_DIR, 'source');
     for (const d of dirs) {
-        await fs.ensureDir(path.join(DEST_DIR, d));
+        await fs.ensureDir(path.join(targetBaseDir, d));
     }
 
     const job = {
@@ -167,11 +168,11 @@ describe('RsyncService - Integration Sandbox', function() {
         status: JobStatus.IDLE
     };
     
-    await service.runBackup(job, () => {});
+    await service.runBackup(job, () => {}, () => {});
 
-    expect(await fs.pathExists(path.join(DEST_DIR, dirs[0])), 'Oldest (400d) should remain').to.be.false;
-    expect(await fs.pathExists(path.join(DEST_DIR, dirs[1])), 'Redundant (399d) should be deleted').to.be.true;
-    expect(await fs.pathExists(path.join(DEST_DIR, dirs[2])), 'Next distinct (350d) should remain').to.be.true;
+    expect(await fs.pathExists(path.join(targetBaseDir, dirs[0])), 'Oldest (400d) should remain').to.be.false;
+    expect(await fs.pathExists(path.join(targetBaseDir, dirs[1])), 'Redundant (399d) should be deleted').to.be.true;
+    expect(await fs.pathExists(path.join(targetBaseDir, dirs[2])), 'Next distinct (350d) should remain').to.be.true;
   });
 });
 
