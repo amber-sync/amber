@@ -25,6 +25,10 @@ const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
   [SyncMode.TIME_MACHINE]: {
     recursive: true, archive: true, compress: true, delete: false, verbose: true, excludePatterns: [], customFlags: '', customCommand: undefined,
   },
+  [SyncMode.CLOUD]: {
+    // Cloud mode doesn't use rsync, but we need this for type safety
+    recursive: false, archive: false, compress: false, delete: false, verbose: false, excludePatterns: [], customFlags: '', customCommand: undefined,
+  },
 };
 
 const DEFAULT_CONFIG = MODE_PRESETS[SyncMode.TIME_MACHINE];
