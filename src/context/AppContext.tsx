@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { SyncJob, JobStatus, RsyncConfig, SyncMode } from '../types';
 import { generateUniqueId } from '../utils/idGenerator';
+import { useTheme } from './ThemeContext';
 
 interface AppContextType {
   jobs: SyncJob[];
   activeJobId: string | null;
   view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP';
-  darkMode: boolean;
   runInBackground: boolean;
   startOnBoot: boolean;
   notificationsEnabled: boolean;
@@ -15,7 +15,6 @@ interface AppContextType {
   setJobs: React.Dispatch<React.SetStateAction<SyncJob[]>>;
   setActiveJobId: (id: string | null) => void;
   setView: (view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP') => void;
-  toggleDarkMode: () => void;
   setRunInBackground: (val: boolean) => void;
   setStartOnBoot: (val: boolean) => void;
   setNotificationsEnabled: (val: boolean) => void;
@@ -90,7 +89,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP'>('DASHBOARD');
-  const [darkMode, setDarkMode] = useState(false);
   const [runInBackground, setRunInBackground] = useState(false);
   const [startOnBoot, setStartOnBoot] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -211,11 +209,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
-  // Placeholder for runSync/stopSync - these will be connected to the hook in App.tsx or moved here later
-  // For now, we'll keep the hook in App.tsx and pass it down, or refactor the hook to be used inside Context
-  // To avoid circular dependencies or complex refactors right now, we'll expose empty functions and let App.tsx handle the actual execution logic via props if needed, 
-  // OR better: Move useRsyncProgress inside here? 
-  // Let's keep it simple: The Context provides state. The App component will still orchestrate the hook for now to minimize risk.
   const runSync = (jobId: string) => { console.warn('runSync not implemented in context yet'); };
   const stopSync = (jobId: string) => { console.warn('stopSync not implemented in context yet'); };
 
@@ -224,14 +217,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       jobs,
       activeJobId,
       view,
-      darkMode,
       runInBackground,
       startOnBoot,
       notificationsEnabled,
       setJobs,
       setActiveJobId,
       setView,
-      toggleDarkMode: () => setDarkMode(!darkMode),
       setRunInBackground,
       setStartOnBoot,
       setNotificationsEnabled,
@@ -240,9 +231,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       runSync,
       stopSync
     }}>
-      <div className={darkMode ? 'dark' : ''}>
-        {children}
-      </div>
+      {children}
     </AppContext.Provider>
   );
 };

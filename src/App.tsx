@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar';
 import { AmbientBackground } from './components/AmbientBackground';
 import { DeleteJobModal } from './components/DeleteJobModal';
 import { AppContextProvider, useApp } from './context/AppContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
@@ -329,41 +330,32 @@ function AppContent() {
 
       {isTopLevel && (
         <Sidebar
-          view={view}
-          darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
+          activeView={view}
           onNavigate={setView}
         />
       )}
 
-      <main className="flex-1 overflow-auto relative z-10">
+      <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
         {view === 'DASHBOARD' && (
-          <Dashboard
-            jobs={jobs}
-            diskStats={destinationStats}
-            onSelectJob={(id) => { 
-              setActiveJobId(id); 
-              const job = jobs.find(j => j.id === id);
-              if (job && window.electronAPI?.setActiveJob) window.electronAPI.setActiveJob(job);
-              setView('DETAIL'); 
-            }}
-            onCreateJob={openNewJob}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <Dashboard
+              jobs={jobs}
+              diskStats={destinationStats}
+              onSelectJob={(id) => {
+                setActiveJobId(id);
+                const job = jobs.find(j => j.id === id);
+                if (job && window.electronAPI?.setActiveJob) window.electronAPI.setActiveJob(job);
+                setView('DETAIL');
+              }}
+              onCreateJob={openNewJob}
+            />
+          </div>
         )}
 
         {view === 'HISTORY' && <HistoryView jobs={jobs} />}
 
         {view === 'APP_SETTINGS' && (
-          <AppSettings
-            darkMode={darkMode}
-            onToggleDarkMode={toggleDarkMode}
-            runInBackground={false} // Handled by context now, but AppSettings needs update to use context or props
-            startOnBoot={false}
-            notificationsEnabled={true}
-            onToggleRunInBackground={() => {}}
-            onToggleStartOnBoot={() => {}}
-            onToggleNotifications={() => {}}
-          />
+          <AppSettings />
         )}
 
         {view === 'HELP' && (
@@ -428,8 +420,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AppContextProvider>
-      <AppContent />
-    </AppContextProvider>
+    <ThemeProvider>
+      <AppContextProvider>
+        <AppContent />
+      </AppContextProvider>
+    </ThemeProvider>
   );
 }

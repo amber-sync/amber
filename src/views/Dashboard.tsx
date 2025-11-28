@@ -26,35 +26,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Header & Compact Stats */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="no-drag">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Amber</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Rsync and Time Machine</p>
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight">Amber</h1>
+          <p className="text-text-secondary mt-1">Rsync and Time Machine</p>
         </div>
         
-        <div className="flex items-center gap-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+        <div className="flex items-center gap-6 bg-layer-1/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg">
               <Icons.Database size={18} />
             </div>
             <div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Protected</div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{formatBytes(totalProtectedSize)}</div>
+              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">Protected</div>
+              <div className="text-lg font-bold text-text-primary leading-none">{formatBytes(totalProtectedSize)}</div>
             </div>
           </div>
-          <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+          <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
               <Icons.Activity size={18} />
             </div>
             <div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Active Jobs</div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{jobs.length}</div>
+              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">Active Jobs</div>
+              <div className="text-lg font-bold text-text-primary leading-none">{jobs.length}</div>
             </div>
           </div>
         </div>
 
         <button
           onClick={onCreateJob}
-          className="flex items-center gap-2 bg-black dark:bg-white dark:text-black text-white px-5 py-2.5 rounded-full font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95 no-drag"
+          className="flex items-center gap-2 bg-accent-primary text-accent-text px-5 py-2.5 rounded-full font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95 no-drag"
         >
           <Icons.Plus size={18} /> New Job
         </button>
@@ -62,7 +62,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Jobs List */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-4 text-xs font-medium text-gray-400 uppercase tracking-wider">
+        <div className="flex items-center justify-between px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
           <div className="w-1/3">Job Name</div>
           <div className="w-1/3">Source & Destination</div>
           <div className="w-1/6 text-right">Schedule</div>
@@ -75,7 +75,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-20 text-center text-gray-400 dark:text-gray-600 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div className="py-20 text-center text-text-tertiary bg-layer-1/50 rounded-2xl border border-dashed border-border-base">
               <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
               <p>No sync jobs configured yet.</p>
             </div>
@@ -92,14 +92,14 @@ const JobRow: React.FC<{ job: SyncJob; onSelect: () => void }> = ({ job, onSelec
   return (
     <div
       onClick={onSelect}
-      className="group bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
+      className="group bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
     >
       {/* Status Icon */}
       <div className={`p-2.5 rounded-lg shrink-0 ${job.status === JobStatus.RUNNING
-          ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 animate-pulse'
+          ? 'bg-accent-secondary/20 text-accent-primary animate-pulse'
           : job.status === JobStatus.SUCCESS 
             ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+            : 'bg-layer-3 text-text-tertiary'
         }`}>
         {job.status === JobStatus.RUNNING ? <Icons.RefreshCw size={20} className="animate-spin" /> : <Icons.Database size={20} />}
       </div>
@@ -107,34 +107,34 @@ const JobRow: React.FC<{ job: SyncJob; onSelect: () => void }> = ({ job, onSelec
       {/* Job Name & Mode */}
       <div className="w-1/3 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="font-bold text-gray-900 dark:text-white truncate">{job.name}</h3>
+          <h3 className="font-bold text-text-primary truncate">{job.name}</h3>
           <ModePill mode={job.mode} />
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+        <div className="text-xs text-text-secondary truncate">
           {job.status}
         </div>
       </div>
 
       {/* Paths */}
       <div className="w-1/3 min-w-0 flex flex-col gap-1.5">
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300" title={job.sourcePath}>
-          <Icons.Server size={14} className="text-teal-500 shrink-0" />
+        <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.sourcePath}>
+          <Icons.Server size={14} className="text-accent-primary shrink-0" />
           <span className="truncate">
             <span className="font-bold">{getPathName(job.sourcePath)}</span>
-            <span className="text-gray-400 dark:text-gray-500 ml-1.5 font-mono text-[10px]">{truncateMiddle(job.sourcePath, 30)}</span>
+            <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">{truncateMiddle(job.sourcePath, 30)}</span>
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300" title={job.destPath}>
+        <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.destPath}>
           <Icons.HardDrive size={14} className="text-orange-500 shrink-0" />
           <span className="truncate">
             <span className="font-bold">{getPathName(job.destPath)}</span>
-            <span className="text-gray-400 dark:text-gray-500 ml-1.5 font-mono text-[10px]">{truncateMiddle(job.destPath, 30)}</span>
+            <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">{truncateMiddle(job.destPath, 30)}</span>
           </span>
         </div>
       </div>
 
       {/* Schedule */}
-      <div className="w-1/6 text-right text-sm text-gray-500 dark:text-gray-400">
+      <div className="w-1/6 text-right text-sm text-text-secondary">
         <div className="flex items-center justify-end gap-1.5">
           <Icons.Clock size={14} className="opacity-70" />
           {formatSchedule(job.scheduleInterval)}
@@ -143,15 +143,15 @@ const JobRow: React.FC<{ job: SyncJob; onSelect: () => void }> = ({ job, onSelec
 
       {/* Last Run */}
       <div className="w-1/6 text-right">
-        <div className="text-sm font-medium text-gray-900 dark:text-white">
+        <div className="text-sm font-medium text-text-primary">
           {job.lastRun ? new Date(job.lastRun).toLocaleDateString() : 'Never'}
         </div>
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-text-tertiary">
           {job.lastRun ? new Date(job.lastRun).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}
         </div>
       </div>
       
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary">
         <Icons.ArrowRight size={18} />
       </div>
     </div>
