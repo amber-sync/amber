@@ -1,7 +1,10 @@
 import React from 'react';
-import { SyncMode, RsyncConfig, SshConfig } from '../types';
+import { SyncMode, RsyncConfig } from '../types';
 import { Icons } from '../components/IconComponents';
-import { HelpIconBadge } from '../components/HelpIconBadge';
+import { JobIdentityForm } from '../components/job-editor/JobIdentityForm';
+import { JobScheduleForm } from '../components/job-editor/JobScheduleForm';
+import { JobSourceDestForm } from '../components/job-editor/JobSourceDestForm';
+import { JobStrategyForm } from '../components/job-editor/JobStrategyForm';
 
 interface JobEditorProps {
   // Form state
@@ -89,22 +92,6 @@ export const JobEditor: React.FC<JobEditorProps> = ({
     }
   };
 
-  const customSelected = jobConfig.customCommand !== undefined;
-  const MODE_ICON_SIZE = 18;
-
-  const getModeStyles = (mode: SyncMode) => {
-    switch (mode) {
-      case SyncMode.MIRROR:
-        return { border: 'border-teal-500', bg: 'bg-teal-50 dark:bg-teal-900/10', ring: 'ring-1 ring-teal-500' };
-      case SyncMode.ARCHIVE:
-        return { border: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/10', ring: 'ring-1 ring-amber-500' };
-      case SyncMode.TIME_MACHINE:
-        return { border: 'border-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/10', ring: 'ring-1 ring-indigo-500' };
-      default:
-        return { border: 'border-gray-300', bg: 'bg-gray-50', ring: '' };
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-black/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
       <div className="bg-white dark:bg-gray-900 max-w-5xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
@@ -120,145 +107,25 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           <div className="max-w-6xl mx-auto grid grid-cols-12 gap-8">
             
             {/* Row 1: Identity & Schedule */}
-            <div className="col-span-12 md:col-span-5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Job Name</label>
-              <input
-                type="text"
-                className="w-full px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 outline-none transition-all font-medium text-sm"
-                placeholder="e.g. Project Website Backup"
-                value={jobName}
-                onChange={e => setJobName(e.target.value)}
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-7 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
-               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Schedule</label>
-               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                  {[
-                    { label: 'Manual', val: null, icon: Icons.Play, desc: 'Run only when clicked' },
-                    { label: 'Auto', val: -1, icon: Icons.Zap, desc: 'Run when drive connects' },
-                    { label: '5m', val: 5, icon: Icons.Activity, desc: 'Every 5 minutes' },
-                    { label: '1h', val: 60, icon: Icons.Clock, desc: 'Every hour' },
-                    { label: 'Daily', val: 1440, icon: Icons.Sun, desc: 'Every day at 15:00' },
-                    { label: '1w', val: 10080, icon: Icons.Calendar, desc: 'Every week' },
-                  ].map((opt) => (
-                    <div key={opt.label} className="relative group">
-                      <button
-                        onClick={() => setJobSchedule(opt.val)}
-                        className={`w-full p-3.5 rounded-xl border transition-all flex items-center justify-center ${jobSchedule === opt.val
-                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                      >
-                        <opt.icon size={22} />
-                      </button>
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-lg">
-                        {opt.desc}
-                      </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
+            <JobIdentityForm jobName={jobName} setJobName={setJobName} />
+            <JobScheduleForm jobSchedule={jobSchedule} setJobSchedule={setJobSchedule} />
 
             {/* Row 2: Source & Dest */}
-            <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-              <div className="flex flex-col md:flex-row items-start gap-6">
-                <div className="flex-1 w-full space-y-3">
-                  <label className="block text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider flex items-center gap-2">
-                    <Icons.Server size={14} /> Source
-                  </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900 outline-none transition-all font-mono text-sm"
-                      placeholder="user@host:/path"
-                      value={jobSource}
-                      onChange={e => setJobSource(e.target.value)}
-                    />
-                    <button onClick={() => onSelectDirectory('SOURCE')} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
-                      <Icons.Folder size={22} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="text-gray-300 dark:text-gray-600 self-center pt-8">
-                  <Icons.ArrowRight size={28} />
-                </div>
-
-                <div className="flex-1 w-full space-y-3">
-                  <label className="block text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
-                    <Icons.HardDrive size={14} /> Destination
-                  </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-900 outline-none transition-all font-mono text-sm"
-                      placeholder="/Volumes/Backup"
-                      value={jobDest}
-                      onChange={e => setJobDest(e.target.value)}
-                    />
-                    <button onClick={() => onSelectDirectory('DEST')} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
-                      <Icons.Folder size={22} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <JobSourceDestForm 
+              jobSource={jobSource} 
+              jobDest={jobDest} 
+              setJobSource={setJobSource} 
+              setJobDest={setJobDest} 
+              onSelectDirectory={onSelectDirectory} 
+            />
 
             {/* Row 3: Strategy */}
-            <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm space-y-4">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Sync Strategy</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { m: SyncMode.TIME_MACHINE, label: 'Time Machine', desc: 'Snapshots', icon: Icons.FolderClock },
-                  { m: SyncMode.MIRROR, label: 'Mirror', desc: 'Exact Copy', icon: Icons.RefreshCw },
-                  { m: SyncMode.ARCHIVE, label: 'Archive', desc: 'Add Only', icon: Icons.Archive },
-                ].map((opt) => (
-                  <button
-                    key={opt.m}
-                    onClick={() => onJobModeChange(opt.m)}
-                    className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 h-full ${jobMode === opt.m && !customSelected
-                        ? `${getModeStyles(opt.m).border} ${getModeStyles(opt.m).bg} ${getModeStyles(opt.m).ring}`
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                  >
-                    <div className={`p-2.5 rounded-xl ${jobMode === opt.m && !customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                      <opt.icon size={24} className={jobMode === opt.m && !customSelected ? 'text-gray-900 dark:text-white' : 'text-gray-500'} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">{opt.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-                
-                <button
-                  onClick={() => setJobConfig({ ...jobConfig, customCommand: customSelected ? undefined : '' })}
-                  className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 ${customSelected
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 ring-1 ring-indigo-500'
-                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                >
-                  <div className={`p-2.5 rounded-xl ${customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                    <Icons.Code size={24} className={customSelected ? 'text-indigo-600' : 'text-gray-500'} />
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">Custom</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">Raw Command</div>
-                  </div>
-                </button>
-              </div>
-
-              {customSelected && (
-                <textarea
-                  value={jobConfig.customCommand ?? ''}
-                  onChange={e => setJobConfig({ ...jobConfig, customCommand: e.target.value })}
-                  placeholder="rsync -a --{source} {dest}"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono text-xs min-h-[60px]"
-                />
-              )}
-            </div>
+            <JobStrategyForm 
+              jobMode={jobMode} 
+              jobConfig={jobConfig} 
+              onJobModeChange={onJobModeChange} 
+              setJobConfig={setJobConfig} 
+            />
 
             {/* Row 4: Exclusions & SSH */}
             <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm h-full flex flex-col">
