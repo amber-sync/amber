@@ -20,7 +20,12 @@ interface JobDetailProps {
   onDelete: (jobId: string) => void;
 }
 
-// ... (Analytics interfaces unchanged)
+interface JobAnalytics {
+  fileTypes: { name: string; value: number }[];
+  largestFiles: { name: string; size: number; path: string }[];
+}
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'];
 
 export const JobDetail: React.FC<JobDetailProps> = ({
   job,
@@ -44,9 +49,59 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     setActiveBrowserPath(null);
   }, [job.id]);
 
-  // ... (Chart Data & Analytics logic unchanged)
+  const chartData = useMemo(() => job.snapshots.map((s, i, arr) => {
+    const prevSize = i > 0 ? arr[i - 1].sizeBytes : 0;
+    const dataAdded = Math.max(0, s.sizeBytes - prevSize);
+    return {
+      name: new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      size: s.sizeBytes / (1024 * 1024),
+      dataAdded: dataAdded / (1024 * 1024),
+      changes: s.changesCount,
+      timestamp: s.timestamp,
+    };
+  }), [job.snapshots]);
 
-  // ... (groupedSnapshots logic unchanged)
+  const latestSnapshot = job.snapshots[job.snapshots.length - 1];
+
+  const analytics = useMemo<JobAnalytics | null>(() => {
+    if (!latestSnapshot || !latestSnapshot.root) return null;
+    return calculateJobStats(latestSnapshot.root);
+  }, [latestSnapshot]);
+
+  const groupedSnapshots = useMemo(() => {
+    const reversedSnapshots = job.snapshots.slice().reverse();
+
+    if (snapshotGrouping === 'ALL') {
+      return reversedSnapshots.map(snap => ({ group: snap.id, label: null, snaps: [snap] }));
+    }
+
+    const groups: Record<string, typeof reversedSnapshots> = {};
+    reversedSnapshots.forEach(snap => {
+      const date = new Date(snap.timestamp);
+      let key = '';
+      if (snapshotGrouping === 'DAY') {
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        const snapDate = date.toDateString();
+        if (snapDate === today) key = 'Today';
+        else if (snapDate === yesterday) key = 'Yesterday';
+        else key = date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      } else if (snapshotGrouping === 'MONTH') {
+        key = date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      } else if (snapshotGrouping === 'YEAR') {
+        key = date.getFullYear().toString();
+      }
+
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(snap);
+    });
+
+    return Object.entries(groups).map(([label, snaps]) => ({
+      group: label,
+      label,
+      snaps,
+    }));
+  }, [job.snapshots, snapshotGrouping]);
 
   const handleOpenSnapshot = (timestamp: number) => {
     if (!window.electronAPI || !job.destPath) return;
@@ -62,7 +117,12 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     setActiveBrowserPath(fullPath);
   };
 
-  // ... (rest of render)
+  const handleShowFile = (path: string) => {
+    if (!window.electronAPI || !job.destPath || !latestSnapshot) return;
+    const folderName = buildSnapshotFolderName(latestSnapshot.timestamp);
+    const basePath = job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
+    window.electronAPI.showItemInFolder(`${basePath}${path}`);
+  };
 
   return (
     <div className="h-screen flex flex-col relative z-10">
@@ -84,9 +144,18 @@ export const JobDetail: React.FC<JobDetailProps> = ({
             </div>
         ) : (
         <div className={`transition-all duration-500 ${isTerminalExpanded ? 'fixed inset-0 z-50 bg-black/90 p-8 overflow-auto' : 'grid grid-cols-1 lg:grid-cols-3 gap-8'}`}>
-          {/* ... (Existing Grid Content) ... */}
-          {/* LEFT COLUMN */}
+          {isTerminalExpanded && (
+            <button
+              onClick={() => setIsTerminalExpanded(false)}
+              className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full z-50"
+            >
+              <Icons.XCircle size={24} />
+            </button>
+          )}
+
+          {/* LEFT COLUMN: Main Content (Storage, Terminal, Snapshots) */}
           <div className={`${isTerminalExpanded ? 'w-full h-full' : 'lg:col-span-2 space-y-8'}`}>
+            
             {!isTerminalExpanded && (
               <StorageUsage job={job} diskStats={diskStats} />
             )}
@@ -112,12 +181,18 @@ export const JobDetail: React.FC<JobDetailProps> = ({
             )}
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT COLUMN: Sidebar (Quick Stats, History, Analytics) */}
           {!isTerminalExpanded && (
             <div className="space-y-6">
               <StatsQuickView job={job} />
+              
               <StorageHistory chartData={chartData} />
-              {/* Analytics ... */}
+              
+              {analytics ? (
+                <AnalyticsSection analytics={analytics} onShowFile={handleShowFile} />
+              ) : (
+                <AnalyticsPlaceholder />
+              )}
             </div>
           )}
         </div>
@@ -126,10 +201,6 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     </div>
   );
 };
-
-// Update SnapshotsSection to accept onBrowseSnapshot
-// ... 
-
 
 const Header: React.FC<{
   job: SyncJob;
@@ -199,7 +270,6 @@ const Header: React.FC<{
   </div>
 );
 
-// Compact Storage Usage Component
 const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats> }> = ({ job, diskStats }) => {
   const stat = diskStats[job.destPath];
   const isAvailable = stat?.status === 'AVAILABLE';
