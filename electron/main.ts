@@ -11,6 +11,7 @@ import { loadJobs, saveJobs } from './store';
 import { JobScheduler } from './JobScheduler';
 import { VolumeWatcher } from './VolumeWatcher';
 import { rcloneService } from './RcloneService';
+import { rcloneInstaller } from './RcloneInstaller';
 
 // electron-log auto-initializes in v5+
 
@@ -328,6 +329,9 @@ async function initApp() {
     // Load persisted jobs before window creation
     jobsCache = await loadJobs();
     
+    // Ensure Rclone is installed
+    await rcloneInstaller.ensureInstalled();
+
     // Initialize services
     volumeWatcher = new VolumeWatcher();
     scheduler = new JobScheduler(rsyncService, volumeWatcher);

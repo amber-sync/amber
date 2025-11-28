@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { SyncJob, JobStatus, RsyncConfig, SyncMode } from '../types';
+import { SyncJob, JobStatus, RsyncConfig, SyncMode, DestinationType } from '../types';
 import { generateUniqueId } from '../utils/idGenerator';
 import { useTheme } from './ThemeContext';
 
@@ -50,6 +50,7 @@ const INITIAL_JOBS: SyncJob[] = process.env.NODE_ENV === 'development'
         scheduleInterval: null,
         config: { ...DEFAULT_CONFIG, delete: true },
         sshConfig: { enabled: false },
+        destinationType: DestinationType.LOCAL,
         lastRun: null,
         status: JobStatus.IDLE,
         snapshots: [],
@@ -72,6 +73,8 @@ const normalizeJobFromStore = (job: any): SyncJob => ({
     customFlags: '',
   },
   sshConfig: job.sshConfig ?? { enabled: false },
+  destinationType: job.destinationType ?? DestinationType.LOCAL,
+  cloudConfig: job.cloudConfig,
   lastRun: job.lastRun ?? null,
   status: job.status ?? JobStatus.IDLE,
   snapshots: job.snapshots ?? [],

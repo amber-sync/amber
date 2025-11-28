@@ -125,170 +125,175 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             <Icons.X size={28} />
           </button>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-12 gap-8">
+          <div className="max-w-6xl mx-auto space-y-8">
             
-            {/* Row 1: Identity & Schedule */}
-            <JobIdentityForm jobName={jobName} setJobName={setJobName} />
-            <JobScheduleForm jobSchedule={jobSchedule} setJobSchedule={setJobSchedule} />
+            {/* Section 1: General Settings */}
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 md:col-span-8">
+                <JobIdentityForm jobName={jobName} setJobName={setJobName} />
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <JobScheduleForm jobSchedule={jobSchedule} setJobSchedule={setJobSchedule} />
+              </div>
+            </div>
 
-            {/* Row 2: Source */}
-            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Source Path</label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={jobSource}
-                  onChange={(e) => setJobSource(e.target.value)}
-                  placeholder="/Users/me/Documents"
-                  className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+            {/* Section 2: Transfer Paths (Source -> Destination) */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-gray-50/50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+                <Icons.RefreshCw size={18} className="text-teal-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">Transfer Paths</h3>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Source */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Source (From)</label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={jobSource}
+                      onChange={(e) => setJobSource(e.target.value)}
+                      placeholder="/Users/me/Documents"
+                      className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                    />
+                    <button 
+                      onClick={() => onSelectDirectory('SOURCE')} 
+                      className="px-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                    >
+                      <Icons.Folder size={22} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Arrow separator */}
+                <div className="flex items-center gap-4">
+                  <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                  <div className="text-gray-300 dark:text-gray-600">
+                    <Icons.ArrowDown size={20} />
+                  </div>
+                  <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                </div>
+
+                {/* Destination */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Destination (To)</label>
+                    
+                    {/* Destination Type Toggle */}
+                    <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex text-xs font-medium">
+                      <button
+                        onClick={() => setDestinationType(DestinationType.LOCAL)}
+                        className={`px-3 py-1.5 rounded-md flex items-center gap-2 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      >
+                        <Icons.HardDrive size={14} />
+                        Local
+                      </button>
+                      <button
+                        onClick={() => setDestinationType(DestinationType.CLOUD)}
+                        className={`px-3 py-1.5 rounded-md flex items-center gap-2 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      >
+                        <Icons.Cloud size={14} />
+                        Cloud
+                      </button>
+                    </div>
+                  </div>
+
+                  {destinationType === DestinationType.LOCAL ? (
+                    <div className="flex gap-3 animate-fade-in">
+                      <input
+                        type="text"
+                        value={jobDest}
+                        onChange={(e) => setJobDest(e.target.value)}
+                        placeholder="/Volumes/Backup/MyFiles"
+                        className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                      />
+                      <button 
+                        onClick={() => onSelectDirectory('DEST')} 
+                        className="px-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                      >
+                        <Icons.Folder size={22} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in border border-blue-100 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl p-4">
+                      <CloudDestinationForm
+                        remoteName={cloudRemoteName}
+                        remotePath={cloudRemotePath}
+                        encrypt={cloudEncrypt}
+                        bandwidth={cloudBandwidth}
+                        onRemoteNameChange={setCloudRemoteName}
+                        onRemotePathChange={setCloudRemotePath}
+                        onEncryptChange={setCloudEncrypt}
+                        onBandwidthChange={setCloudBandwidth}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Strategy & Advanced */}
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12">
+                <JobStrategyForm 
+                  jobMode={jobMode} 
+                  jobConfig={jobConfig} 
+                  onJobModeChange={onJobModeChange} 
+                  setJobConfig={setJobConfig} 
                 />
-                <button 
-                  onClick={() => onSelectDirectory('SOURCE')} 
-                  className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
-                >
-                  <Icons.Folder size={22} />
-                </button>
               </div>
-            </div>
 
-            {/* Row 2: Destination Type Selector */}
-            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Destination Type</label>
-              <div className="flex gap-4 mb-4">
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="destinationType"
-                    checked={destinationType === DestinationType.LOCAL}
-                    onChange={() => setDestinationType(DestinationType.LOCAL)}
-                    className="sr-only peer"
-                  />
-                  <div className="p-4 border-2 rounded-xl transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                      <Icons.HardDrive size={20} className="text-gray-500" />
-                      <div>
-                        <div className="font-medium text-sm">Local Drive</div>
-                        <div className="text-xs text-gray-500">Backup to external disk</div>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="destinationType"
-                    checked={destinationType === DestinationType.CLOUD}
-                    onChange={() => setDestinationType(DestinationType.CLOUD)}
-                    className="sr-only peer"
-                  />
-                  <div className="p-4 border-2 rounded-xl transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                      <Icons.Cloud size={20} className="text-gray-500" />
-                      <div>
-                        <div className="font-medium text-sm">Cloud Storage</div>
-                        <div className="text-xs text-gray-500">S3, Drive, Dropbox...</div>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Row 3: Destination Details (conditional) */}
-            {destinationType === DestinationType.LOCAL ? (
-              <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Destination Path</label>
-                <div className="flex gap-3">
+              <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm h-full flex flex-col">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Exclusions</label>
+                <div className="flex gap-3 mb-4">
                   <input
                     type="text"
-                    value={jobDest}
-                    onChange={(e) => setJobDest(e.target.value)}
-                    placeholder="/Volumes/Backup/MyFiles"
-                    className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                    value={tempExcludePattern}
+                    onChange={(e) => setTempExcludePattern(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="e.g. *.log"
+                    className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-pink-500 outline-none"
                   />
-                  <button 
-                    onClick={() => onSelectDirectory('DEST')} 
-                    className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
-                  >
-                    <Icons.Folder size={22} />
+                  <button onClick={onAddPattern} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors">
+                    <Icons.Plus size={22} />
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Cloud Configuration</label>
-                <CloudDestinationForm
-                  remoteName={cloudRemoteName}
-                  remotePath={cloudRemotePath}
-                  encrypt={cloudEncrypt}
-                  bandwidth={cloudBandwidth}
-                  onRemoteNameChange={setCloudRemoteName}
-                  onRemotePathChange={setCloudRemotePath}
-                  onEncryptChange={setCloudEncrypt}
-                  onBandwidthChange={setCloudBandwidth}
-                />
-              </div>
-            )}
-
-            {/* Row 4: Strategy */}
-            <JobStrategyForm 
-              jobMode={jobMode} 
-              jobConfig={jobConfig} 
-              onJobModeChange={onJobModeChange} 
-              setJobConfig={setJobConfig} 
-            />
-
-            {/* Row 4: Exclusions & SSH */}
-            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm h-full flex flex-col">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Exclusions</label>
-              <div className="flex gap-3 mb-4">
-                <input
-                  type="text"
-                  value={tempExcludePattern}
-                  onChange={(e) => setTempExcludePattern(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="e.g. *.log"
-                  className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-pink-500 outline-none"
-                />
-                <button onClick={onAddPattern} className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors">
-                  <Icons.Plus size={22} />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2.5 content-start flex-1">
-                {jobConfig.excludePatterns.map((p, i) => (
-                  <span key={i} className="bg-gray-100 dark:bg-gray-800 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2 border border-gray-200 dark:border-gray-700">
-                    {p}
-                    <button onClick={(e) => { e.stopPropagation(); setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i) })); }} className="hover:text-red-500 text-gray-400">
-                      <Icons.XCircle size={14} />
-                    </button>
-                  </span>
-                ))}
-                {jobConfig.excludePatterns.length === 0 && <span className="text-sm text-gray-400 italic p-1">No patterns added.</span>}
-              </div>
-            </div>
-
-            <div className={`col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-gray-100 dark:border-gray-800'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">SSH Connection</label>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={sshEnabled} onChange={e => setSshEnabled(e.target.checked)} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
-                </label>
-              </div>
-
-              {sshEnabled ? (
-                <div className="grid grid-cols-2 gap-4 animate-fade-in flex-1 content-start">
-                  <input type="text" placeholder="22" value={sshPort} onChange={e => setSshPort(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
-                  <input type="text" placeholder="~/.ssh/id_rsa" value={sshKeyPath} onChange={e => setSshKeyPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
-                  <input type="text" placeholder="~/.ssh/config" value={sshConfigPath} onChange={e => setSshConfigPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
-                  <input type="text" placeholder="user@jump-host" value={sshProxyJump} onChange={e => setSshProxyJump(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
-                  <input type="text" placeholder="-o StrictHostKeyChecking=no" value={sshCustomOptions} onChange={e => setSshCustomOptions(e.target.value)} className="col-span-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none font-mono" />
+                <div className="flex flex-wrap gap-2.5 content-start flex-1">
+                  {jobConfig.excludePatterns.map((p, i) => (
+                    <span key={i} className="bg-gray-100 dark:bg-gray-800 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2 border border-gray-200 dark:border-gray-700">
+                      {p}
+                      <button onClick={(e) => { e.stopPropagation(); setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i) })); }} className="hover:text-red-500 text-gray-400">
+                        <Icons.XCircle size={14} />
+                      </button>
+                    </span>
+                  ))}
+                  {jobConfig.excludePatterns.length === 0 && <span className="text-sm text-gray-400 italic p-1">No patterns added.</span>}
                 </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
-                  Local transfer only. Toggle to enable SSH.
+              </div>
+
+              <div className={`col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-gray-100 dark:border-gray-800'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">SSH Connection</label>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={sshEnabled} onChange={e => setSshEnabled(e.target.checked)} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                  </label>
                 </div>
-              )}
+
+                {sshEnabled ? (
+                  <div className="grid grid-cols-2 gap-4 animate-fade-in flex-1 content-start">
+                    <input type="text" placeholder="22" value={sshPort} onChange={e => setSshPort(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                    <input type="text" placeholder="~/.ssh/id_rsa" value={sshKeyPath} onChange={e => setSshKeyPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                    <input type="text" placeholder="~/.ssh/config" value={sshConfigPath} onChange={e => setSshConfigPath(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                    <input type="text" placeholder="user@jump-host" value={sshProxyJump} onChange={e => setSshProxyJump(e.target.value)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none" />
+                    <input type="text" placeholder="-o StrictHostKeyChecking=no" value={sshCustomOptions} onChange={e => setSshCustomOptions(e.target.value)} className="col-span-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none font-mono" />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
+                    Local transfer only. Toggle to enable SSH.
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>

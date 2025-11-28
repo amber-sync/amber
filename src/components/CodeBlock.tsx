@@ -20,7 +20,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language = 'bash', t
   // Simple syntax highlighting for bash/rsync commands
   const highlightCode = (text: string) => {
     // Split by spaces but preserve quoted strings
-    const parts: JSX.Element[] = [];
+    const parts: React.ReactNode[] = [];
     const regex = /(--[\w-]+=?|"[^"]*"|'[^']*'|\{[^}]*\}|\S+)/g;
     let lastIndex = 0;
     let match;
