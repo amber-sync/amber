@@ -1,0 +1,14 @@
+/Users/florianmahner/Desktop/amber/amber-sidecar/target/release/deps/serde-3eb7f98553afb9c1.d: /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/florianmahner/Desktop/amber/amber-sidecar/target/release/build/serde-d2fa4e688f371854/out/private.rs
+
+/Users/florianmahner/Desktop/amber/amber-sidecar/target/release/deps/libserde-3eb7f98553afb9c1.rlib: /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/florianmahner/Desktop/amber/amber-sidecar/target/release/build/serde-d2fa4e688f371854/out/private.rs
+
+/Users/florianmahner/Desktop/amber/amber-sidecar/target/release/deps/libserde-3eb7f98553afb9c1.rmeta: /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/florianmahner/Desktop/amber/amber-sidecar/target/release/build/serde-d2fa4e688f371854/out/private.rs
+
+/Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/florianmahner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/florianmahner/Desktop/amber/amber-sidecar/target/release/build/serde-d2fa4e688f371854/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/florianmahner/Desktop/amber/amber-sidecar/target/release/build/serde-d2fa4e688f371854/out
