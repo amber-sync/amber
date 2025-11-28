@@ -17,6 +17,7 @@ export default function Home() {
           </div>
           <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-500 dark:text-gray-400">
             <Link href="#features" className="hover:text-foreground transition-colors">Features</Link>
+            <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
             <Link href="#download" className="hover:text-foreground transition-colors">Download</Link>
             <Link href="https://github.com/florianmahner/amber-sync" className="hover:text-foreground transition-colors">GitHub</Link>
           </nav>
