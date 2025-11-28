@@ -13,7 +13,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
-import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig } from './types';
+import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
 
 const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
   [SyncMode.MIRROR]: {
@@ -25,18 +25,14 @@ const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
   [SyncMode.TIME_MACHINE]: {
     recursive: true, archive: true, compress: true, delete: false, verbose: true, excludePatterns: [], customFlags: '', customCommand: undefined,
   },
-  [SyncMode.CLOUD]: {
-    // Cloud mode doesn't use rsync, but we need this for type safety
-    recursive: false, archive: false, compress: false, delete: false, verbose: false, excludePatterns: [], customFlags: '', customCommand: undefined,
-  },
 };
 
 const DEFAULT_CONFIG = MODE_PRESETS[SyncMode.TIME_MACHINE];
 
 function AppContent() {
   const { 
-    jobs, activeJobId, view, darkMode, 
-    setJobs, setActiveJobId, setView, toggleDarkMode,
+    jobs, activeJobId, view,
+    setJobs, setActiveJobId, setView,
     persistJob, deleteJob
   } = useApp();
 
@@ -237,6 +233,7 @@ function AppContent() {
         sourcePath: newJobSource,
         destPath: newJobDest,
         mode: newJobMode,
+        destinationType: DestinationType.LOCAL, // Default to local, can be changed to cloud later
         scheduleInterval: newJobSchedule,
         schedule: scheduleConfig,
         config: jobConfig,

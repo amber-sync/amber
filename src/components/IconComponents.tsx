@@ -48,7 +48,9 @@ import {
   ArrowDown,
   AlertTriangle,
   Maximize2,
-  PieChart
+  PieChart,
+  Cloud,
+  AlertCircle
 } from 'lucide-react';
 
 export const Icons = {
@@ -100,5 +102,7 @@ export const Icons = {
   ArrowDown,
   AlertTriangle,
   Maximize2,
-  PieChart
+  PieChart,
+  Cloud,
+  AlertCircle
 };
