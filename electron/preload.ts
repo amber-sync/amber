@@ -45,5 +45,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('navigate-view', subscription);
     return () => ipcRenderer.removeListener('navigate-view', subscription);
   },
+  // Rclone Integration
+  rcloneCheckInstalled: () => ipcRenderer.invoke('rclone:checkInstalled'),
+  rcloneListRemotes: () => ipcRenderer.invoke('rclone:listRemotes'),
+  rcloneLaunchConfig: () => ipcRenderer.invoke('rclone:launchConfig'),
+  rcloneCreateRemote: (config: any) => ipcRenderer.invoke('rclone:createRemote', config),
 });
  

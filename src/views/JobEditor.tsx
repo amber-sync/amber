@@ -128,94 +128,92 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           <div className="max-w-6xl mx-auto space-y-8">
             
             {/* Section 1: General Settings */}
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 md:col-span-8">
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-7">
                 <JobIdentityForm jobName={jobName} setJobName={setJobName} />
               </div>
-              <div className="col-span-12 md:col-span-4">
+              <div className="col-span-12 md:col-span-5">
                 <JobScheduleForm jobSchedule={jobSchedule} setJobSchedule={setJobSchedule} />
               </div>
             </div>
 
             {/* Section 2: Transfer Paths (Source -> Destination) */}
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-              <div className="bg-gray-50/50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
-                <Icons.RefreshCw size={18} className="text-teal-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Transfer Paths</h3>
+              <div className="bg-gray-50/50 dark:bg-gray-800/50 px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+                <Icons.RefreshCw size={16} className="text-teal-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Transfer Paths</h3>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-3">
                 {/* Source */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Source (From)</label>
-                  <div className="flex gap-3">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Source (From)</label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       value={jobSource}
                       onChange={(e) => setJobSource(e.target.value)}
                       placeholder="/Users/me/Documents"
-                      className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                      className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
                     />
                     <button 
                       onClick={() => onSelectDirectory('SOURCE')} 
-                      className="px-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                      className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
                     >
-                      <Icons.Folder size={22} />
+                      <Icons.Folder size={20} />
                     </button>
                   </div>
                 </div>
 
-                {/* Arrow separator */}
-                <div className="flex items-center gap-4">
-                  <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                  <div className="text-gray-300 dark:text-gray-600">
-                    <Icons.ArrowDown size={20} />
+                {/* Compact Arrow separator */}
+                <div className="flex items-center justify-center -my-1">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-1 rounded-full border border-gray-100 dark:border-gray-700 text-gray-400">
+                    <Icons.ArrowDown size={16} />
                   </div>
-                  <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
                 </div>
 
                 {/* Destination */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Destination (To)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Destination (To)</label>
                     
                     {/* Destination Type Toggle */}
-                    <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex text-xs font-medium">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg flex text-[10px] font-medium">
                       <button
                         onClick={() => setDestinationType(DestinationType.LOCAL)}
-                        className={`px-3 py-1.5 rounded-md flex items-center gap-2 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                        className={`px-2 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                       >
-                        <Icons.HardDrive size={14} />
+                        <Icons.HardDrive size={12} />
                         Local
                       </button>
                       <button
                         onClick={() => setDestinationType(DestinationType.CLOUD)}
-                        className={`px-3 py-1.5 rounded-md flex items-center gap-2 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                        className={`px-2 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                       >
-                        <Icons.Cloud size={14} />
+                        <Icons.Cloud size={12} />
                         Cloud
                       </button>
                     </div>
                   </div>
 
                   {destinationType === DestinationType.LOCAL ? (
-                    <div className="flex gap-3 animate-fade-in">
+                    <div className="flex gap-2 animate-fade-in">
                       <input
                         type="text"
                         value={jobDest}
                         onChange={(e) => setJobDest(e.target.value)}
                         placeholder="/Volumes/Backup/MyFiles"
-                        className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                        className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
                       />
                       <button 
                         onClick={() => onSelectDirectory('DEST')} 
-                        className="px-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                        className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
                       >
-                        <Icons.Folder size={22} />
+                        <Icons.Folder size={20} />
                       </button>
                     </div>
                   ) : (
-                    <div className="animate-fade-in border border-blue-100 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl p-4">
+                    <div className="animate-fade-in border border-blue-100 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl p-3">
                       <CloudDestinationForm
                         remoteName={cloudRemoteName}
                         remotePath={cloudRemotePath}
