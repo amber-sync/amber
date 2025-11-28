@@ -75,19 +75,19 @@ export const CloudDestinationForm: React.FC<CloudDestinationFormProps> = ({
             <Icons.AlertCircle size={24} className="text-orange-600 dark:text-orange-400" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-text-primary mb-2">Rclone Not Installed</h3>
+            <h3 className="font-bold text-text-primary mb-2">Rclone Not Found</h3>
             <p className="text-sm text-text-secondary mb-4">
-              Cloud backup requires Rclone. Install it to sync to S3, Google Drive, and more.
+              Cloud backup requires Rclone. The app attempts to install it automatically on startup.
             </p>
-            <div className="bg-layer-3 p-3 rounded-lg mb-4">
-              <code className="text-xs text-accent-primary">brew install rclone</code>
+            <div className="flex gap-3">
+              <button
+                onClick={checkRclone}
+                className="px-4 py-2 bg-accent-primary text-accent-text rounded-lg hover:opacity-90 transition-opacity text-sm font-medium flex items-center gap-2"
+              >
+                <Icons.RefreshCw size={16} />
+                Check Again
+              </button>
             </div>
-            <button
-              onClick={checkRclone}
-              className="px-4 py-2 bg-accent-primary text-accent-text rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
-            >
-              Re-check Installation
-            </button>
           </div>
         </div>
       </div>
