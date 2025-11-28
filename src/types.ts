@@ -2,6 +2,7 @@ export enum SyncMode {
   MIRROR = 'MIRROR',
   ARCHIVE = 'ARCHIVE',
   TIME_MACHINE = 'TIME_MACHINE', // Incremental with hard links
+  CLOUD = 'CLOUD', // Remote cloud storage via Rclone
 }
 
 export enum JobStatus {
@@ -31,6 +32,14 @@ export interface SshConfig {
   disableHostKeyChecking?: boolean; // SECURITY: explicit opt-in
   proxyJump?: string;    // -J user@host
   customSshOptions?: string; // Additional SSH flags
+}
+
+export interface CloudConfig {
+  remoteName: string; // Rclone remote name, e.g., "myS3:", "gdrive:"
+  remotePath?: string; // Optional subpath within remote
+  encrypt: boolean; // Whether to use rclone crypt layer
+  encryptPassword?: string; // Password for encryption (stored in keychain)
+  bandwidth?: string; // Bandwidth limit, e.g., "10M" for 10MB/s
 }
 
 export interface FileNode {
@@ -68,6 +77,7 @@ export interface SyncJob {
   schedule?: JobSchedule;
   config: RsyncConfig;
   sshConfig?: SshConfig;
+  cloudConfig?: CloudConfig; // Optional; only used when mode === CLOUD
   lastRun: number | null;
   status: JobStatus;
   snapshots: Snapshot[];

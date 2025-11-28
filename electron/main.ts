@@ -10,6 +10,7 @@ import { AppPreferences, loadPreferences, savePreferences } from './preferences'
 import { loadJobs, saveJobs } from './store';
 import { JobScheduler } from './JobScheduler';
 import { VolumeWatcher } from './VolumeWatcher';
+import { rcloneService } from './RcloneService';
 
 // electron-log auto-initializes in v5+
 
@@ -749,6 +750,37 @@ ipcMain.handle('test-notification', async () => {
     return { success: true };
   }
   return { success: false, error: 'Notifications not supported' };
+});
+
+// =====================
+// Rclone Cloud Integration
+// =====================
+
+ipcMain.handle('rclone:checkInstalled', async () => {
+  try {
+    return await rcloneService.checkInstalled();
+  } catch (error: any) {
+    log.error('[Rclone] Check installed error:', error);
+    return { installed: false, error: error.message };
+  }
+});
+
+ipcMain.handle('rclone:listRemotes', async () => {
+  try {
+    return await rcloneService.listRemotes();
+  } catch (error: any) {
+    log.error('[Rclone] List remotes error:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('rclone:launchConfig', async () => {
+  try {
+    return await rcloneService.launchConfig();
+  } catch (error: any) {
+    log.error('[Rclone] Launch config error:', error);
+    return { success: false, message: error.message };
+  }
 });
 
 ipcMain.on('active-job', (_event, job: SyncJob) => {
