@@ -50,7 +50,8 @@ import {
   Maximize2,
   PieChart,
   Cloud,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from 'lucide-react';
 
 export const Icons = {
@@ -104,5 +105,6 @@ export const Icons = {
   Maximize2,
   PieChart,
   Cloud,
-  AlertCircle
+  AlertCircle,
+  Tag
 };
