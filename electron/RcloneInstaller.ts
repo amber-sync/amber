@@ -15,12 +15,10 @@ const RCLONE_VERSION = '1.65.0';
  * Downloads and installs Rclone if not already present
  */
 export class RcloneInstaller {
-  private installPath: string;
-
-  constructor() {
-    // Install to app support directory
+  
+  private getInstallPath(): string {
     const appData = app.getPath('userData');
-    this.installPath = path.join(appData, 'bin');
+    return path.join(appData, 'bin');
   }
 
   private getDownloadUrl(): string {
@@ -39,7 +37,7 @@ export class RcloneInstaller {
       return true;
     } catch {
       // Check app-local installation
-      const localRclone = path.join(this.installPath, 'rclone');
+      const localRclone = path.join(this.getInstallPath(), 'rclone');
       if (fs.existsSync(localRclone)) {
         log.info('[RcloneInstaller] App-local rclone found');
         return true;
@@ -82,11 +80,12 @@ export class RcloneInstaller {
    */
   async install(): Promise<{ success: boolean; message: string }> {
     try {
-      log.info('[RcloneInstaller] Starting Rclone installation');
+      const installPath = this.getInstallPath();
+      log.info(`[RcloneInstaller] Starting Rclone installation to ${installPath}`);
 
       // Create bin directory if it doesn't exist
-      if (!fs.existsSync(this.installPath)) {
-        fs.mkdirSync(this.installPath, { recursive: true });
+      if (!fs.existsSync(installPath)) {
+        fs.mkdirSync(installPath, { recursive: true });
       }
 
       // Download zip
@@ -110,7 +109,7 @@ export class RcloneInstaller {
       // Find and copy rclone binary
       const arch = process.arch === 'arm64' ? 'arm64' : 'amd64';
       const rcloneBinary = path.join(extractDir, `rclone-v${RCLONE_VERSION}-osx-${arch}`, 'rclone');
-      const targetPath = path.join(this.installPath, 'rclone');
+      const targetPath = path.join(installPath, 'rclone');
 
       if (!fs.existsSync(rcloneBinary)) {
         // Fallback: try to find it recursively if structure is different
@@ -123,6 +122,9 @@ export class RcloneInstaller {
       // Cleanup
       fs.unlinkSync(zipPath);
       fs.rmSync(extractDir, { recursive: true, force: true });
+      
+      // Add to PATH for this session
+      process.env.PATH = `${installPath}:${process.env.PATH}`;
 
       log.info('[RcloneInstaller] Installation complete');
       
@@ -149,7 +151,7 @@ export class RcloneInstaller {
       return 'rclone';
     } catch {
       // Use local installation
-      return path.join(this.installPath, 'rclone');
+      return path.join(this.getInstallPath(), 'rclone');
     }
   }
 
