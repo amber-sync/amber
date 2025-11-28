@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Release Script for Amber
+# Usage: ./scripts/release.sh [patch|minor|major]
+#
+# This script:
+# 1. Ensures clean working directory
+# 2. Bumps version in package.json
+# 3. Creates git tag
+# 4. Pushes changes and tags to GitHub
+# 5. Triggers GitHub Actions to build and publish release
+#
+
+set -e  # Exit on error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check arguments
+if [ $# -eq 0 ]; then
+    echo -e "${RED}Error: Version bump type required${NC}"
+    echo "Usage: ./scripts/release.sh [patch|minor|major]"
+    echo ""
+    echo "Examples:"
+    echo "  ./scripts/release.sh patch  # 0.0.1 → 0.0.2"
+    echo "  ./scripts/release.sh minor  # 0.0.1 → 0.1.0"
+    echo "  ./scripts/release.sh major  # 0.0.1 → 1.0.0"
+    exit 1
+fi
+
+TYPE=$1
+
+# Validate type
+if [[ ! "$TYPE" =~ ^(patch|minor|major)$ ]]; then
+    echo -e "${RED}Error: Invalid version bump type: $TYPE${NC}"
+    echo "Must be one of: patch, minor, major"
+    exit 1
+fi
+
+# Ensure we're on main branch
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo -e "${YELLOW}Warning: Not on main branch (currently on $CURRENT_BRANCH)${NC}"
+    read -p "Continue anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+# Ensure clean working directory
+if [[ -n $(git status -s) ]]; then
+    echo -e "${RED}Error: Working directory not clean${NC}"
+    echo "Please commit or stash your changes first:"
+    git status -s
+    exit 1
+fi
+
+# Get current version
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+echo -e "${GREEN}Current version: $CURRENT_VERSION${NC}"
+
+# Bump version
+echo -e "${YELLOW}Bumping $TYPE version...${NC}"
+npm version $TYPE -m "chore: bump version to %s"
+
+# Get new version
+NEW_VERSION=$(node -p "require('./package.json').version")
+echo -e "${GREEN}✓ Version bumped to: $NEW_VERSION${NC}"
+
+# Push changes and tags
+echo -e "${YELLOW}Pushing to GitHub...${NC}"
+git push && git push --tags
+
+echo ""
+echo -e "${GREEN}═══════════════════════════════════════${NC}"
+echo -e "${GREEN}✓ Release $NEW_VERSION created!${NC}"
+echo -e "${GREEN}═══════════════════════════════════════${NC}"
+echo ""
+echo "Next steps:"
+echo "  1. GitHub Actions will build the .dmg (check: https://github.com/florianmahner/amber-sync/actions)"
+echo "  2. Release will be published at: https://github.com/florianmahner/amber-sync/releases/tag/v$NEW_VERSION"
+echo "  3. Website will automatically show new version"
+echo ""
