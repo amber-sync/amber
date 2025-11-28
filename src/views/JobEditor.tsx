@@ -1,10 +1,11 @@
-import React from 'react';
-import { SyncMode, RsyncConfig } from '../types';
+import React, { useState } from 'react';
+import { SyncMode, RsyncConfig, DestinationType } from '../types';
 import { Icons } from '../components/IconComponents';
 import { JobIdentityForm } from '../components/job-editor/JobIdentityForm';
 import { JobScheduleForm } from '../components/job-editor/JobScheduleForm';
 import { JobSourceDestForm } from '../components/job-editor/JobSourceDestForm';
 import { JobStrategyForm } from '../components/job-editor/JobStrategyForm';
+import { CloudDestinationForm } from '../components/CloudDestinationForm';
 
 interface JobEditorProps {
   // Form state
@@ -14,6 +15,11 @@ interface JobEditorProps {
   jobMode: SyncMode;
   jobSchedule: number | null;
   jobConfig: RsyncConfig;
+  destinationType: DestinationType;
+  cloudRemoteName: string;
+  cloudRemotePath: string;
+  cloudEncrypt: boolean;
+  cloudBandwidth: string;
   sshEnabled: boolean;
   sshPort: string;
   sshKeyPath: string;
@@ -28,6 +34,11 @@ interface JobEditorProps {
   setJobDest: (val: string) => void;
   setJobSchedule: (val: number | null) => void;
   setJobConfig: (val: RsyncConfig | ((prev: RsyncConfig) => RsyncConfig)) => void;
+  setDestinationType: (val: DestinationType) => void;
+  setCloudRemoteName: (val: string) => void;
+  setCloudRemotePath: (val: string) => void;
+  setCloudEncrypt: (val: boolean) => void;
+  setCloudBandwidth: (val: string) => void;
   setSshEnabled: (val: boolean) => void;
   setSshPort: (val: string) => void;
   setSshKeyPath: (val: string) => void;
@@ -55,6 +66,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   jobMode,
   jobSchedule,
   jobConfig,
+  destinationType,
+  cloudRemoteName,
+  cloudRemotePath,
+  cloudEncrypt,
+  cloudBandwidth,
   sshEnabled,
   sshPort,
   sshKeyPath,
@@ -67,6 +83,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   setJobDest,
   setJobSchedule,
   setJobConfig,
+  setDestinationType,
+  setCloudRemoteName,
+  setCloudRemotePath,
+  setCloudEncrypt,
+  setCloudBandwidth,
   setSshEnabled,
   setSshPort,
   setSshKeyPath,
@@ -110,16 +131,106 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             <JobIdentityForm jobName={jobName} setJobName={setJobName} />
             <JobScheduleForm jobSchedule={jobSchedule} setJobSchedule={setJobSchedule} />
 
-            {/* Row 2: Source & Dest */}
-            <JobSourceDestForm 
-              jobSource={jobSource} 
-              jobDest={jobDest} 
-              setJobSource={setJobSource} 
-              setJobDest={setJobDest} 
-              onSelectDirectory={onSelectDirectory} 
-            />
+            {/* Row 2: Source */}
+            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Source Path</label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={jobSource}
+                  onChange={(e) => setJobSource(e.target.value)}
+                  placeholder="/Users/me/Documents"
+                  className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                />
+                <button 
+                  onClick={() => onSelectDirectory('SOURCE')} 
+                  className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                >
+                  <Icons.Folder size={22} />
+                </button>
+              </div>
+            </div>
 
-            {/* Row 3: Strategy */}
+            {/* Row 2: Destination Type Selector */}
+            <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Destination Type</label>
+              <div className="flex gap-4 mb-4">
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="destinationType"
+                    checked={destinationType === DestinationType.LOCAL}
+                    onChange={() => setDestinationType(DestinationType.LOCAL)}
+                    className="sr-only peer"
+                  />
+                  <div className="p-4 border-2 rounded-xl transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <Icons.HardDrive size={20} className="text-gray-500" />
+                      <div>
+                        <div className="font-medium text-sm">Local Drive</div>
+                        <div className="text-xs text-gray-500">Backup to external disk</div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="destinationType"
+                    checked={destinationType === DestinationType.CLOUD}
+                    onChange={() => setDestinationType(DestinationType.CLOUD)}
+                    className="sr-only peer"
+                  />
+                  <div className="p-4 border-2 rounded-xl transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <Icons.Cloud size={20} className="text-gray-500" />
+                      <div>
+                        <div className="font-medium text-sm">Cloud Storage</div>
+                        <div className="text-xs text-gray-500">S3, Drive, Dropbox...</div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Row 3: Destination Details (conditional) */}
+            {destinationType === DestinationType.LOCAL ? (
+              <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Destination Path</label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={jobDest}
+                    onChange={(e) => setJobDest(e.target.value)}
+                    placeholder="/Volumes/Backup/MyFiles"
+                    className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                  />
+                  <button 
+                    onClick={() => onSelectDirectory('DEST')} 
+                    className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                  >
+                    <Icons.Folder size={22} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Cloud Configuration</label>
+                <CloudDestinationForm
+                  remoteName={cloudRemoteName}
+                  remotePath={cloudRemotePath}
+                  encrypt={cloudEncrypt}
+                  bandwidth={cloudBandwidth}
+                  onRemoteNameChange={setCloudRemoteName}
+                  onRemotePathChange={setCloudRemotePath}
+                  onEncryptChange={setCloudEncrypt}
+                  onBandwidthChange={setCloudBandwidth}
+                />
+              </div>
+            )}
+
+            {/* Row 4: Strategy */}
             <JobStrategyForm 
               jobMode={jobMode} 
               jobConfig={jobConfig} 
