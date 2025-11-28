@@ -59,6 +59,21 @@ Amber bridges the gap between web technologies and system utilities:
     ```
     This launches the React dev server (Vite) and the Electron container simultaneously with hot-reload.
 
+## 🌐 Website Deployment
+
+The project includes a Next.js marketing website in the `website/` directory.
+
+### Vercel Configuration
+The repository is configured to deploy the `website/` directory to Vercel automatically.
+- **Configuration**: `vercel.json` in the root directory points Vercel to the `website` folder.
+- **Build Command**: `cd website && npm install && npm run build`
+- **Output Directory**: `website/dist`
+
+To deploy manually:
+1.  Connect the repository to Vercel.
+2.  Ensure the root directory is set to `.` (default).
+3.  Vercel will detect `vercel.json` and handle the rest.
+
 ## 🖥 Usage
 
 1.  **Create a Job**: Click "New Job" and define your Source (e.g., `user@myserver.com:/var/www`) and Destination (e.g., `/Volumes/Backups/MySite`).
