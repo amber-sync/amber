@@ -34,6 +34,7 @@
     "@google/genai": "^1.30.0",
     "chokidar": "^5.0.0",
     "electron-log": "^5.4.3",
+    "keytar": "^7.9.0",
     "lucide-react": "^0.554.0",
     "node-schedule": "^2.1.1",
     "react": "^19.2.0",

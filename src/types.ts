@@ -2,7 +2,11 @@ export enum SyncMode {
   MIRROR = 'MIRROR',
   ARCHIVE = 'ARCHIVE',
   TIME_MACHINE = 'TIME_MACHINE', // Incremental with hard links
-  CLOUD = 'CLOUD', // Remote cloud storage via Rclone
+}
+
+export enum DestinationType {
+  LOCAL = 'LOCAL',
+  CLOUD = 'CLOUD',
 }
 
 export enum JobStatus {
@@ -38,8 +42,9 @@ export interface CloudConfig {
   remoteName: string; // Rclone remote name, e.g., "myS3:", "gdrive:"
   remotePath?: string; // Optional subpath within remote
   encrypt: boolean; // Whether to use rclone crypt layer
-  encryptPassword?: string; // Password for encryption (stored in keychain)
+  encryptPasswordKeychain: string; // Keychain service name for encryption password
   bandwidth?: string; // Bandwidth limit, e.g., "10M" for 10MB/s
+  provider?: string; // Provider type for UI (s3, drive, dropbox, etc.)
 }
 
 export interface FileNode {
@@ -70,14 +75,15 @@ export interface JobSchedule {
 export interface SyncJob {
   id: string;
   name: string;
-  sourcePath: string; // e.g., user@remote:/var/www
-  destPath: string;   // e.g., /Volumes/Backups/ProjectA
+  sourcePath: string; // e.g., user@remote:/var/www or /Users/me/Documents
+  destPath: string;   // Local: /Volumes/Backups/ProjectA, Cloud: myS3:/backup
   mode: SyncMode;
+  destinationType: DestinationType; // NEW: Local or Cloud
   scheduleInterval: number | null; // minutes, null if manual
   schedule?: JobSchedule;
   config: RsyncConfig;
-  sshConfig?: SshConfig;
-  cloudConfig?: CloudConfig; // Optional; only used when mode === CLOUD
+  sshConfig?: SshConfig; // For remote sources (SSH)
+  cloudConfig?: CloudConfig; // Only when destinationType === CLOUD
   lastRun: number | null;
   status: JobStatus;
   snapshots: Snapshot[];
