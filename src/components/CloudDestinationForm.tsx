@@ -35,7 +35,7 @@ export const CloudDestinationForm: React.FC<CloudDestinationFormProps> = ({
   const checkRclone = async () => {
     try {
       // @ts-ignore
-      const result = await window.electron.rcloneCheckInstalled();
+      const result = await window.electronAPI.rcloneCheckInstalled();
       setRcloneInstalled(result.installed);
       
       if (result.installed) {
@@ -52,7 +52,7 @@ export const CloudDestinationForm: React.FC<CloudDestinationFormProps> = ({
   const loadRemotes = async () => {
     try {
       // @ts-ignore
-      const remoteList = await window.electron.rcloneListRemotes();
+      const remoteList = await window.electronAPI.rcloneListRemotes();
       setRemotes(remoteList.map((r: any) => r.name));
     } catch (error) {
       console.error('Failed to load remotes:', error);

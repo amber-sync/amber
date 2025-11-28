@@ -1,4 +1,5 @@
 import { spawn, ChildProcess } from 'child_process';
+import { rcloneInstaller } from './RcloneInstaller';
 
 export interface CloudConfig {
   remoteName: string;
@@ -20,14 +21,18 @@ export interface RcloneRemote {
 }
 
 export class RcloneService {
-  private rclonePath: string = 'rclone'; // Assume in PATH
+  
+  private async getRcloneCommand(): Promise<string> {
+    return await rcloneInstaller.getRclonePath();
+  }
 
   /**
    * Check if Rclone is installed and get version
    */
   async checkInstalled(): Promise<RcloneInstallInfo> {
+    const rclonePath = await this.getRcloneCommand();
     return new Promise((resolve) => {
-      const proc = spawn(this.rclonePath, ['version'], { shell: true });
+      const proc = spawn(rclonePath, ['version'], { shell: true });
       let output = '';
 
       proc.stdout?.on('data', (data) => {
@@ -41,7 +46,7 @@ export class RcloneService {
           resolve({
             installed: true,
             version: versionMatch ? versionMatch[1] : 'unknown',
-            path: this.rclonePath,
+            path: rclonePath,
           });
         } else {
           resolve({ installed: false });
@@ -58,8 +63,9 @@ export class RcloneService {
    * List all configured Rclone remotes
    */
   async listRemotes(): Promise<RcloneRemote[]> {
+    const rclonePath = await this.getRcloneCommand();
     return new Promise((resolve, reject) => {
-      const proc = spawn(this.rclonePath, ['listremotes', '--long'], { shell: true });
+      const proc = spawn(rclonePath, ['listremotes', '--long'], { shell: true });
       let output = '';
       let errorOutput = '';
 
@@ -104,7 +110,8 @@ export class RcloneService {
    * @param cloudConfig - Cloud configuration
    * @returns ChildProcess for progress monitoring
    */
-  syncToCloud(sourcePath: string, cloudConfig: CloudConfig): ChildProcess {
+  async syncToCloud(sourcePath: string, cloudConfig: CloudConfig): Promise<ChildProcess> {
+    const rclonePath = await this.getRcloneCommand();
     const args: string[] = ['sync', sourcePath];
 
     // Build remote destination
@@ -139,9 +146,9 @@ export class RcloneService {
     // Add verbose mode for detailed logging
     args.push('-v');
 
-    console.log('[RcloneService] Command:', this.rclonePath, args.join(' '));
+    console.log('[RcloneService] Command:', rclonePath, args.join(' '));
 
-    return spawn(this.rclonePath, args, {
+    return spawn(rclonePath, args, {
       shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -152,10 +159,12 @@ export class RcloneService {
    * This allows users to set up new remotes
    */
   async launchConfig(): Promise<{ success: boolean; message?: string }> {
+    const rclonePath = await this.getRcloneCommand();
     return new Promise((resolve) => {
       // On macOS, open a new Terminal window with rclone config
       // Note: This is macOS-specific. Cross-platform support would need adjustments
-      const script = `osascript -e 'tell application "Terminal" to do script "rclone config; exit"'`;
+      // Use full path to ensure terminal finds it
+      const script = `osascript -e 'tell application "Terminal" to do script "${rclonePath} config; exit"'`;
       
       const proc = spawn(script, [], { shell: true });
 
