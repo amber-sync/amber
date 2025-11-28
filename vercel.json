@@ -1,5 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "echo \"CWD: $(pwd)\" && ls -la && if [ -d \"website\" ]; then cd website; fi && npm install && npm run build",
-  "outputDirectory": "website/dist"
-}
