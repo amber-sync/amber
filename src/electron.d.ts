@@ -18,6 +18,10 @@ export interface ElectronAPI {
   getJobs: () => Promise<any[]>;
   saveJob: (job: any) => Promise<{ success: boolean; jobs: any[] }>;
   deleteJob: (jobId: string) => Promise<{ success: boolean; jobs: any[] }>;
+  
+  // Sidecar
+  scanDirectory: (path: string, onEntry: (entry: any) => void) => Promise<void>;
+  searchDirectory: (path: string, query: string, onEntry: (entry: any) => void) => Promise<void>;
 }
 
 declare global {

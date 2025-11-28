@@ -50,5 +50,44 @@ contextBridge.exposeInMainWorld('electronAPI', {
   rcloneListRemotes: () => ipcRenderer.invoke('rclone:listRemotes'),
   rcloneLaunchConfig: () => ipcRenderer.invoke('rclone:launchConfig'),
   rcloneCreateRemote: (config: any) => ipcRenderer.invoke('rclone:createRemote', config),
+
+  // Sidecar
+  scanDirectory: (path: string, onEntry: (entry: any) => void) => {
+    const requestId = Math.random().toString(36).substring(7);
+    ipcRenderer.send('fs:scan', { path, requestId });
+    
+    const entryHandler = (_: any, entry: any) => onEntry(entry);
+    ipcRenderer.on(`fs:entry:${requestId}`, entryHandler);
+    
+    return new Promise<void>((resolve, reject) => {
+        ipcRenderer.once(`fs:end:${requestId}`, () => {
+            ipcRenderer.removeListener(`fs:entry:${requestId}`, entryHandler);
+            resolve();
+        });
+        ipcRenderer.once(`fs:error:${requestId}`, (_: any, err: string) => {
+            ipcRenderer.removeListener(`fs:entry:${requestId}`, entryHandler);
+            reject(new Error(err));
+        });
+    });
+  },
+
+  searchDirectory: (path: string, query: string, onEntry: (entry: any) => void) => {
+    const requestId = Math.random().toString(36).substring(7);
+    ipcRenderer.send('fs:search', { path, query, requestId });
+    
+    const entryHandler = (_: any, entry: any) => onEntry(entry);
+    ipcRenderer.on(`fs:entry:${requestId}`, entryHandler);
+    
+    return new Promise<void>((resolve, reject) => {
+        ipcRenderer.once(`fs:end:${requestId}`, () => {
+            ipcRenderer.removeListener(`fs:entry:${requestId}`, entryHandler);
+            resolve();
+        });
+        ipcRenderer.once(`fs:error:${requestId}`, (_: any, err: string) => {
+            ipcRenderer.removeListener(`fs:entry:${requestId}`, entryHandler);
+            reject(new Error(err));
+        });
+    });
+  }
 });
  

@@ -1,5 +1,6 @@
 import React from 'react';
 import * as Icons from 'lucide-react';
+import { SidecarBenchmark } from './SidecarBenchmark';
 
 export const HelpSection: React.FC = () => {
   const openDocs = () => {
@@ -64,6 +65,10 @@ export const HelpSection: React.FC = () => {
       <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-xs text-gray-400">
         <span>Version 1.0.0</span>
         <span>Built with ❤️ for macOS</span>
+      </div>
+      
+      <div className="mt-8">
+        <SidecarBenchmark />
       </div>
     </div>
   );

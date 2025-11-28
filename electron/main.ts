@@ -12,6 +12,7 @@ import { JobScheduler } from './JobScheduler';
 import { VolumeWatcher } from './VolumeWatcher';
 import { rcloneService } from './RcloneService';
 import { rcloneInstaller } from './RcloneInstaller';
+import { FileService } from './FileService';
 
 // electron-log auto-initializes in v5+
 
@@ -35,6 +36,7 @@ let jobsCache: SyncJob[] = [];
 // Lazy initialize these to avoid top-level crashes and ensure PATH is fixed first
 let volumeWatcher: VolumeWatcher | null = null;
 let scheduler: JobScheduler | null = null;
+const fileService = new FileService();
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
@@ -805,6 +807,26 @@ ipcMain.handle('rclone:createRemote', async (_event, config: { name: string; typ
 ipcMain.on('active-job', (_event, job: SyncJob) => {
   lastActiveJob = job;
   if (tray) tray.setContextMenu(buildTrayMenu());
+});
+
+// --- File System Sidecar ---
+ipcMain.on('fs:scan', (event, { path: dirPath, requestId }) => {
+  fileService.scan(
+    dirPath,
+    (entry) => event.reply(`fs:entry:${requestId}`, entry),
+    (err) => event.reply(`fs:error:${requestId}`, err)
+  ).then(() => event.reply(`fs:end:${requestId}`))
+   .catch((err) => event.reply(`fs:error:${requestId}`, err.message));
+});
+
+ipcMain.on('fs:search', (event, { path: dirPath, query, requestId }) => {
+  fileService.search(
+    dirPath,
+    query,
+    (entry) => event.reply(`fs:entry:${requestId}`, entry),
+    (err) => event.reply(`fs:error:${requestId}`, err)
+  ).then(() => event.reply(`fs:end:${requestId}`))
+   .catch((err) => event.reply(`fs:error:${requestId}`, err.message));
 });
 
 app.on('before-quit', (e) => {
