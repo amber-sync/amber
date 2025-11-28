@@ -83,7 +83,36 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
-      "icon": "build/icons/icon.icns"
+      "icon": "build/icons/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "Amber-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Amber ${version}",
+      "icon": "build/icons/icon.icns",
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 144,
+          "y": 150,
+          "type": "file"
+        },
+        {
+          "x": 396,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "win": {
       "icon": "build/icons/icon.ico"

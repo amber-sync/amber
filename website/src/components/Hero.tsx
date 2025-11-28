@@ -2,10 +2,43 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Download, Loader2 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+import { useEffect, useState } from "react";
+
+interface ReleaseInfo {
+  version: string;
+  downloadUrl: string | null;
+  error?: string;
+  fallback?: boolean;
+  fallbackUrl?: string;
+}
 
 export function Hero() {
+  const [release, setRelease] = useState<ReleaseInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/latest-release')
+      .then(res => res.json())
+      .then(data => {
+        setRelease(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setRelease({
+          version: APP_VERSION,
+          downloadUrl: null,
+          fallback: true,
+          fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
+        });
+        setLoading(false);
+      });
+  }, []);
+
+  const downloadUrl = release?.downloadUrl || release?.fallbackUrl || '#download';
+  const isExternalLink = downloadUrl.startsWith('http');
+
   return (
     <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center z-10">
@@ -49,13 +82,43 @@ export function Hero() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link
-            href="/download"
-            className="h-12 px-8 rounded-full bg-foreground text-background font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
-          >
-            <Download size={20} />
-            Download v{APP_VERSION}
-          </Link>
+          {isExternalLink ? (
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-12 px-8 rounded-full bg-foreground text-background font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Download size={20} />
+                  Download v{release?.version || APP_VERSION}
+                </>
+              )}
+            </a>
+          ) : (
+            <Link
+              href={downloadUrl}
+              className="h-12 px-8 rounded-full bg-foreground text-background font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Download size={20} />
+                  Download v{release?.version || APP_VERSION}
+                </>
+              )}
+            </Link>
+          )}
           <Link
             href="#features"
             className="h-12 px-8 rounded-full border border-gray-200 dark:border-gray-800 font-medium flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors backdrop-blur-sm"
