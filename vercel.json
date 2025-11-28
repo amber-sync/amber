@@ -1,12 +1,5 @@
 {
   "version": 2,
-  "framework": "nextjs",
   "buildCommand": "echo \"CWD: $(pwd)\" && ls -la && if [ -d \"website\" ]; then cd website; fi && npm install && npm run build",
-  "outputDirectory": "website/dist",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/website/$1"
-    }
-  ]
+  "outputDirectory": "website/dist"
 }
