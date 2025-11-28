@@ -18,7 +18,7 @@ export default function Home() {
           <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-500 dark:text-gray-400">
             <Link href="#features" className="hover:text-foreground transition-colors">Features</Link>
             <Link href="#download" className="hover:text-foreground transition-colors">Download</Link>
-            <Link href="https://github.com/florianmahner/amber" className="hover:text-foreground transition-colors">GitHub</Link>
+            <Link href="https://github.com/florianmahner/amber-sync" className="hover:text-foreground transition-colors">GitHub</Link>
           </nav>
         </div>
       </header>
@@ -73,7 +73,7 @@ export default function Home() {
           <div className="flex gap-6 text-sm text-gray-500">
             <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="https://github.com/florianmahner/amber" className="hover:text-foreground transition-colors">GitHub</Link>
+            <Link href="https://github.com/florianmahner/amber-sync" className="hover:text-foreground transition-colors">GitHub</Link>
           </div>
         </div>
       </footer>
