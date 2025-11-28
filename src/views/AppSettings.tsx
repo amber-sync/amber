@@ -2,6 +2,7 @@ import React from 'react';
 import { Icons } from '../components/IconComponents';
 import { useTheme, Theme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
+import { APP_VERSION } from '../../shared/version';
 
 export const AppSettings: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -168,7 +169,7 @@ export const AppSettings: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">App Version</span>
-                <span className="font-mono text-text-primary">0.0.1-beta</span>
+                <span className="font-mono text-text-primary">{APP_VERSION}</span>
               </div>
             </div>
 

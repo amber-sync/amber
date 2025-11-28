@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Download } from "lucide-react";
+import { APP_VERSION } from "@/lib/version";
 
 export function Hero() {
   return (
@@ -15,7 +16,7 @@ export function Hero() {
           className="mb-8 flex justify-center"
         >
           <span className="rounded-full bg-gray-100 dark:bg-gray-800/50 backdrop-blur-sm px-3 py-1 text-sm text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10">
-            v1.0.0 Public Beta
+            v{APP_VERSION}
           </span>
         </motion.div>
 
@@ -53,7 +54,7 @@ export function Hero() {
             className="h-12 px-8 rounded-full bg-foreground text-background font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
             <Download size={20} />
-            Download for macOS
+            Download v{APP_VERSION}
           </Link>
           <Link
             href="#features"

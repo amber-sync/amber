@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HardDrive, Clock, Zap, Shield } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { FeatureCard } from "@/components/FeatureCard";
+import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
   return (
@@ -69,7 +70,7 @@ export default function Home() {
       <footer className="w-full border-t border-gray-100 dark:border-gray-900 py-12 bg-gray-50/50 dark:bg-gray-900/20">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Amber. All rights reserved.
+            © {new Date().getFullYear()} Amber v{APP_VERSION} · All rights reserved
           </div>
           <div className="flex gap-6 text-sm text-gray-500">
             <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
