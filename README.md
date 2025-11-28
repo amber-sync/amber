@@ -44,7 +44,7 @@ Amber bridges the gap between web technologies and system utilities:
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/florianmahner/amber.git
+    git clone https://github.com/florianmahner/amber-sync.git
     cd amber
     ```
 
