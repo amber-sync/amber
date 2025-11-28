@@ -95,16 +95,16 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             };
 
             const logs = [];
-            service.runBackup(job, (msg) => logs.push(msg), null).then(result => {
+            service.runBackup(job, (msg) => logs.push(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    // Check if hard links preserved in backup
-                    const backupFile1 = path.join(destDir, 'original.txt');
-                    const backupFile2 = path.join(destDir, 'hardlink.txt');
+                    // Check if hard links preserved in backup (under 'source' subdir)
+                    const backupFile1 = path.join(destDir, 'source', 'original.txt');
+                    const backupFile2 = path.join(destDir, 'source', 'hardlink.txt');
 
-                    expect(fs.existsSync(backupFile1)).to.be.true;
-                    expect(fs.existsSync(backupFile2)).to.be.true;
+                    expect(fs.existsSync(backupFile1), `File should exist at ${backupFile1}`).to.be.true;
+                    expect(fs.existsSync(backupFile2), `File should exist at ${backupFile2}`).to.be.true;
 
                     const backupStat1 = fs.statSync(backupFile1);
                     const backupStat2 = fs.statSync(backupFile2);
@@ -160,13 +160,13 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupOriginal = path.join(destDir, 'data.bin');
-                    const backupLink1 = path.join(destDir, 'link1.bin');
-                    const backupLink2 = path.join(destDir, 'subdir', 'link2.bin');
+                    const backupOriginal = path.join(destDir, 'source', 'data.bin');
+                    const backupLink1 = path.join(destDir, 'source', 'link1.bin');
+                    const backupLink2 = path.join(destDir, 'source', 'subdir', 'link2.bin');
 
                     const inode1 = fs.statSync(backupOriginal).ino;
                     const inode2 = fs.statSync(backupLink1).ino;
@@ -212,7 +212,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             };
 
             const logs = [];
-            service.runBackup(job, (msg) => logs.push(msg), null).then(result => {
+            service.runBackup(job, (msg) => logs.push(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
@@ -255,11 +255,11 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupFile = path.join(destDir, 'ownership-test.txt');
+                    const backupFile = path.join(destDir, 'source', 'ownership-test.txt');
                     const backupStat = fs.statSync(backupFile);
 
                     expect(backupStat.uid).to.equal(originalUid,
@@ -303,7 +303,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             };
 
             const logs = [];
-            service.runBackup(job, (msg) => logs.push(msg), null).then(result => {
+            service.runBackup(job, (msg) => logs.push(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
@@ -352,17 +352,18 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job1, () => {}, null).then(result1 => {
+            service.runBackup(job1, () => {}, () => {}).then(result1 => {
                 try {
                     expect(result1.success).to.be.true;
 
                     // Get first backup directory
-                    const backups = fs.readdirSync(destDir)
+                    const targetBaseDir = path.join(destDir, 'source');
+                    const backups = fs.readdirSync(targetBaseDir)
                         .filter(d => /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(d))
                         .sort();
 
                     expect(backups).to.have.lengthOf(1);
-                    const backup1Dir = path.join(destDir, backups[0]);
+                    const backup1Dir = path.join(targetBaseDir, backups[0]);
                     const backup1Unchanged = path.join(backup1Dir, 'unchanged.txt');
                     const backup1Stat = fs.statSync(backup1Unchanged);
 
@@ -388,16 +389,16 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                             }
                         };
 
-                        service.runBackup(job2, () => {}, null).then(result2 => {
+                        service.runBackup(job2, () => {}, () => {}).then(result2 => {
                             try {
                                 expect(result2.success).to.be.true;
 
-                                const backups2 = fs.readdirSync(destDir)
+                                const backups2 = fs.readdirSync(targetBaseDir)
                                     .filter(d => /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(d))
                                     .sort();
 
                                 expect(backups2).to.have.lengthOf(2);
-                                const backup2Dir = path.join(destDir, backups2[1]);
+                                const backup2Dir = path.join(targetBaseDir, backups2[1]);
                                 const backup2Unchanged = path.join(backup2Dir, 'unchanged.txt');
                                 const backup2Changed = path.join(backup2Dir, 'willchange.txt');
                                 const backup2UnchangedStat = fs.statSync(backup2Unchanged);
@@ -481,7 +482,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                     };
 
                     const logs = [];
-                    service.runBackup(job2, (msg) => logs.push(msg), null).then(result => {
+                    service.runBackup(job2, (msg) => logs.push(msg), () => {}).then(result => {
                         try {
                             expect(result.success).to.be.true;
 
@@ -535,7 +536,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             };
 
             const logs = [];
-            service.runBackup(job, (msg) => logs.push(msg), null).then(result => {
+            service.runBackup(job, (msg) => logs.push(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.false;
                     expect(result.error).to.include('marker');
@@ -571,7 +572,7 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
                     done();
@@ -608,11 +609,11 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupFile = path.join(destDir, 'executable.sh');
+                    const backupFile = path.join(destDir, 'source', 'executable.sh');
                     const stat = fs.statSync(backupFile);
 
                     // Check mode (mask to get just permission bits)
@@ -652,11 +653,11 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupFile = path.join(destDir, 'timed.txt');
+                    const backupFile = path.join(destDir, 'source', 'timed.txt');
                     const backupMtime = fs.statSync(backupFile).mtime.getTime();
 
                     // Should be within 1 second (rsync precision)
@@ -693,11 +694,11 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupSymlink = path.join(destDir, 'symlink.txt');
+                    const backupSymlink = path.join(destDir, 'source', 'symlink.txt');
                     const lstat = fs.lstatSync(backupSymlink);
 
                     expect(lstat.isSymbolicLink()).to.be.true;
@@ -752,10 +753,14 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             fs.writeFileSync(path.join(sourceDir, 'data.txt'), 'test data');
 
             // Create simulated old backups
+            // Create simulated old backups in the correct subdirectory (dest/source)
+            const targetBaseDir = path.join(destDir, 'source');
+            fs.mkdirSync(targetBaseDir, { recursive: true });
+
             backupsToCreate.forEach(backup => {
                 const backupDate = new Date(now.getTime() - backup.daysAgo * 24 * 60 * 60 * 1000);
                 const folderName = formatTestDate(backupDate);
-                const backupDir = path.join(destDir, folderName);
+                const backupDir = path.join(targetBaseDir, folderName);
 
                 fs.mkdirSync(backupDir, { recursive: true });
                 fs.writeFileSync(path.join(backupDir, 'data.txt'), `backup from ${backup.daysAgo} days ago`);
@@ -782,12 +787,12 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
             };
 
             const logs = [];
-            service.runBackup(job, (msg) => logs.push(msg), null).then(result => {
+            service.runBackup(job, (msg) => logs.push(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    // Check which backups still exist
-                    const remaining = fs.readdirSync(destDir)
+                    // Check which backups still exist in the target subdirectory
+                    const remaining = fs.readdirSync(targetBaseDir)
                         .filter(d => /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(d));
 
                     backupsToCreate.forEach(backup => {
@@ -840,13 +845,14 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    expect(fs.existsSync(path.join(destDir, 'include.txt'))).to.be.true;
-                    expect(fs.existsSync(path.join(destDir, 'exclude.log'))).to.be.false;
-                    expect(fs.existsSync(path.join(destDir, 'node_modules'))).to.be.false;
+                    // RsyncService creates a subdirectory matching the source folder name
+                    expect(fs.existsSync(path.join(destDir, 'source', 'include.txt'))).to.be.true;
+                    expect(fs.existsSync(path.join(destDir, 'source', 'exclude.log'))).to.be.false;
+                    expect(fs.existsSync(path.join(destDir, 'source', 'node_modules'))).to.be.false;
 
                     done();
                 } catch (err) {
@@ -894,11 +900,11 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, (msg) => console.log(msg), null).then(result => {
+            service.runBackup(job, (msg) => console.log(msg), () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    const backupFile = path.join(destDir, 'large.bin');
+                    const backupFile = path.join(destDir, 'source', 'large.bin');
                     const backupSize = fs.statSync(backupFile).size;
 
                     expect(backupSize).to.equal(originalSize);
@@ -941,17 +947,18 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
-                    let backupPath = destDir;
+                    // RsyncService creates a subdirectory matching the source folder name
+                    let backupPath = path.join(destDir, 'source');
                     for (let i = 0; i < 20; i++) {
                         backupPath = path.join(backupPath, `level${i}`);
                     }
 
                     const deepFile = path.join(backupPath, 'deep.txt');
-                    expect(fs.existsSync(deepFile)).to.be.true;
+                    expect(fs.existsSync(deepFile), `Deep file should exist at ${deepFile}`).to.be.true;
                     expect(fs.readFileSync(deepFile, 'utf8')).to.equal('I am very deep');
 
                     done();
@@ -999,13 +1006,14 @@ describe('Rsync Implementation - Comprehensive Validation', function() {
                 }
             };
 
-            service.runBackup(job, () => {}, null).then(result => {
+            service.runBackup(job, () => {}, () => {}).then(result => {
                 try {
                     expect(result.success).to.be.true;
 
                     files.forEach(filename => {
-                        const backupFile = path.join(destDir, filename);
-                        expect(fs.existsSync(backupFile)).to.be.true;
+                        // RsyncService creates a subdirectory matching the source folder name
+                        const backupFile = path.join(destDir, 'source', filename);
+                        expect(fs.existsSync(backupFile), `File ${filename} should exist at ${backupFile}`).to.be.true;
                         expect(fs.readFileSync(backupFile, 'utf8')).to.equal(`content of ${filename}`);
                     });
 
