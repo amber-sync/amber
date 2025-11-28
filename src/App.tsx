@@ -46,6 +46,13 @@ function AppContent() {
   const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.TIME_MACHINE);
   const [newJobSchedule, setNewJobSchedule] = useState<number | null>(null);
   const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_CONFIG });
+  
+  // Destination Type & Cloud Config State
+  const [destinationType, setDestinationType] = useState<DestinationType>(DestinationType.LOCAL);
+  const [cloudRemoteName, setCloudRemoteName] = useState('');
+  const [cloudRemotePath, setCloudRemotePath] = useState('');
+  const [cloudEncrypt, setCloudEncrypt] = useState(false);
+  const [cloudBandwidth, setCloudBandwidth] = useState('');
 
   // SSH Form State
   const [sshEnabled, setSshEnabled] = useState(false);
@@ -386,6 +393,11 @@ function AppContent() {
             jobMode={newJobMode}
             jobSchedule={newJobSchedule}
             jobConfig={newJobConfig}
+            destinationType={destinationType}
+            cloudRemoteName={cloudRemoteName}
+            cloudRemotePath={cloudRemotePath}
+            cloudEncrypt={cloudEncrypt}
+            cloudBandwidth={cloudBandwidth}
             sshEnabled={sshEnabled}
             sshPort={sshPort}
             sshKeyPath={sshKeyPath}
@@ -398,6 +410,11 @@ function AppContent() {
             setJobDest={setNewJobDest}
             setJobSchedule={setNewJobSchedule}
             setJobConfig={setNewJobConfig}
+            setDestinationType={setDestinationType}
+            setCloudRemoteName={setCloudRemoteName}
+            setCloudRemotePath={setCloudRemotePath}
+            setCloudEncrypt={setCloudEncrypt}
+            setCloudBandwidth={setCloudBandwidth}
             setSshEnabled={setSshEnabled}
             setSshPort={setSshPort}
             setSshKeyPath={setSshKeyPath}
