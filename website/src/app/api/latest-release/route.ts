@@ -55,8 +55,10 @@ export async function GET() {
 
     const release: GitHubRelease = await response.json();
 
-    // Find the .dmg file in assets (prefer arm64, fallback to x64)
+    // Find the .dmg file in assets (prefer universal, then arm64, then any)
     const dmgAsset = release.assets.find((asset: GitHubAsset) =>
+      asset.name.endsWith('.dmg') && asset.name.includes('universal')
+    ) || release.assets.find((asset: GitHubAsset) =>
       asset.name.endsWith('.dmg') && asset.name.includes('arm64')
     ) || release.assets.find((asset: GitHubAsset) =>
       asset.name.endsWith('.dmg')

@@ -69,6 +69,45 @@ curl -X POST https://api.linear.app/graphql \
 3. **Implement**: Follow the Feature Implementation Cycle (Section 2)
 4. **Update Status**: Mark ticket as "Done" when complete (Section 6 below)
 
+### Linear Helper Script (Recommended)
+
+For faster ticket management, use the `scripts/linear.sh` helper script instead of manually crafting curl commands:
+
+**Quick Reference**:
+```bash
+# List all Todo tickets
+./scripts/linear.sh list
+
+# List Done tickets
+./scripts/linear.sh list Done
+
+# View ticket details
+./scripts/linear.sh view TIM-37
+
+# Create a new ticket
+./scripts/linear.sh create "Title" "Description"
+
+# Create ticket from JSON file
+./scripts/linear.sh create-file /tmp/ticket.json
+
+# Update ticket description
+./scripts/linear.sh update TIM-37 "New description"
+
+# Mark ticket as Done
+./scripts/linear.sh done TIM-35
+```
+
+**Benefits**:
+- ✅ No need to escape JSON or deal with curl syntax
+- ✅ Automatic state ID resolution
+- ✅ Pretty-printed output
+- ✅ Error handling built-in
+- ✅ Works with complex markdown descriptions
+
+**For complex tickets with long descriptions**, use the `create-file` approach:
+1. Create a JSON file with the ticket details (see `/tmp/legal_ticket.json` for example)
+2. Run `./scripts/linear.sh create-file /tmp/your_ticket.json`
+
 ## 1. Ticket Management Principles
 - **Granularity**: Tickets must be small, concise, and atomic. Avoid monolithic "do everything" tickets.
 - **Clear Goals**: Each ticket must have a specific goal and defined intermediate steps.

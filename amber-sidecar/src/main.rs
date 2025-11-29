@@ -2,6 +2,8 @@ use clap::{Parser, Subcommand};
 use walkdir::WalkDir;
 use serde::Serialize;
 use std::io::{self, Write};
+use std::fs;
+use std::path::Path;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -20,6 +22,12 @@ enum Commands {
     Search {
         path: String,
         query: String,
+    },
+    /// Generates dummy files for testing
+    Generate {
+        path: String,
+        #[arg(short, long, default_value_t = 10000)]
+        count: usize,
     },
 }
 
@@ -41,6 +49,9 @@ fn main() {
         }
         Commands::Search { path, query } => {
             search_directory(path, query);
+        }
+        Commands::Generate { path, count } => {
+            generate_sandbox(path, *count);
         }
     }
 }
@@ -76,6 +87,39 @@ fn search_directory(path: &str, query: &str) {
             }
         }
     }
+}
+
+fn generate_sandbox(path: &str, count: usize) {
+    let root = Path::new(path);
+    if let Err(e) = fs::create_dir_all(root) {
+        eprintln!("Failed to create root: {}", e);
+        return;
+    }
+
+    println!("Generating {} files in {}", count, path);
+
+    // Create some subdirectories
+    let subdirs = ["docs", "images", "logs", "data"];
+    for sub in &subdirs {
+        let _ = fs::create_dir_all(root.join(sub));
+    }
+
+    for i in 0..count {
+        let subdir = subdirs[i % subdirs.len()];
+        let filename = format!("file_{}.txt", i);
+        let filepath = root.join(subdir).join(filename);
+        
+        // Write minimal content
+        if let Err(e) = fs::write(&filepath, format!("Content for file {}", i)) {
+            eprintln!("Failed to write file {}: {}", filepath.display(), e);
+        }
+
+        if i % 1000 == 0 {
+            print!(".");
+            io::stdout().flush().ok();
+        }
+    }
+    println!("\nDone.");
 }
 
 fn make_json(entry: &walkdir::DirEntry) -> Option<String> {

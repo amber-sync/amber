@@ -3,21 +3,28 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const BIN = './amber-sidecar/target/release/amber-sidecar';
+// Allow binary path override via env var or arg
+const BIN = process.env.SIDECAR_BIN || process.argv[3] || './amber-sidecar/target/release/amber-sidecar';
 const TEST_DIR = path.join(os.tmpdir(), 'amber-bench');
 
 // Get count from args or default to 10k
 const TOTAL_FILES = parseInt(process.argv[2]) || 10000;
 const FILES_PER_DIR = 1000;
 const DIR_COUNT = Math.ceil(TOTAL_FILES / FILES_PER_DIR);
+const RESULTS_FILE = 'benchmark-results.json';
 
 async function run() {
+    console.log(`Using sidecar binary: ${BIN}`);
+    if (!fs.existsSync(BIN)) {
+        console.error(`Error: Sidecar binary not found at ${BIN}`);
+        process.exit(1);
+    }
+
     // 1. Setup
     console.log(`Cleaning up ${TEST_DIR}...`);
     if (fs.existsSync(TEST_DIR)) fs.rmSync(TEST_DIR, { recursive: true });
     
     console.log(`Creating ${TOTAL_FILES.toLocaleString()} files in ${TEST_DIR}...`);
-    console.log(`Structure: ${DIR_COUNT} directories x ${FILES_PER_DIR} files`);
     
     const createStart = performance.now();
     fs.mkdirSync(TEST_DIR, { recursive: true });
@@ -27,18 +34,16 @@ async function run() {
         const sub = path.join(TEST_DIR, `dir_${i}`);
         fs.mkdirSync(sub);
         
-        // Write files in batches/parallel if possible? Sync is blocking.
-        // For 1M files, sync is too slow. Let's use a buffer reuse strategy?
-        // Or just bare minimum write.
         for (let j = 0; j < FILES_PER_DIR; j++) {
             if (i * FILES_PER_DIR + j >= TOTAL_FILES) break;
             fs.writeFileSync(path.join(sub, `file_${j}.txt`), 'x');
         }
         
-        if (i % 10 === 0) process.stdout.write('.');
+        if (i % 10 === 0 && process.stdout.isTTY) process.stdout.write('.');
     }
     const createEnd = performance.now();
-    console.log(`\nCreation took: ${((createEnd - createStart) / 1000).toFixed(2)}s`);
+    const creationTime = (createEnd - createStart) / 1000;
+    console.log(`\nCreation took: ${creationTime.toFixed(2)}s`);
 
     // 2. Bench Search
     console.log('Starting Rust Search...');
@@ -55,18 +60,44 @@ async function run() {
 
     child.on('close', (code) => {
         const end = performance.now();
-        const duration = (end - start);
+        const durationMs = (end - start);
+        const durationSec = durationMs / 1000;
+        const speed = count / durationSec;
+        const mbStreamed = bytes / 1024 / 1024;
         
         console.log(`--------------------------------`);
         console.log(`Found: ${count.toLocaleString()} files`);
-        console.log(`Time:  ${duration.toFixed(2)} ms`);
-        console.log(`Speed: ${(count / (duration/1000)).toFixed(0)} files/s`);
-        console.log(`Data:  ${(bytes / 1024 / 1024).toFixed(2)} MB JSON streamed`);
+        console.log(`Time:  ${durationMs.toFixed(2)} ms`);
+        console.log(`Speed: ${speed.toFixed(0)} files/s`);
+        console.log(`Data:  ${mbStreamed.toFixed(2)} MB JSON streamed`);
         console.log(`--------------------------------`);
         
-        // Cleanup (Optional, huge delete takes time)
-        console.log('Cleanup skipped to allow manual inspection. Run script again to clean.');
-        // fs.rmSync(TEST_DIR, { recursive: true });
+        // Output JSON results
+        const results = {
+            timestamp: new Date().toISOString(),
+            files: count,
+            durationMs: durationMs,
+            speedFilesPerSec: speed,
+            dataMb: mbStreamed,
+            creationTimeSec: creationTime
+        };
+        
+        fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
+        console.log(`Results saved to ${RESULTS_FILE}`);
+
+        // Cleanup
+        console.log('Cleaning up...');
+        fs.rmSync(TEST_DIR, { recursive: true });
+        
+        if (code !== 0) {
+            console.error(`Sidecar exited with code ${code}`);
+            process.exit(code);
+        }
+    });
+    
+    child.on('error', (err) => {
+        console.error(`Failed to start sidecar: ${err.message}`);
+        process.exit(1);
     });
 }
 

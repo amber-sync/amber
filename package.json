@@ -79,7 +79,14 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "dist-electron/**/*",
       "build/icons/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/amber-sidecar",
+        "to": "amber-sidecar"
+      }
     ],
     "mac": {
       "category": "public.app-category.utilities",
@@ -87,7 +94,7 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": ["universal"]
         }
       ],
       "artifactName": "Amber-${version}-${arch}.${ext}"
