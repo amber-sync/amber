@@ -28,7 +28,8 @@ if (process.env.ELECTRON_RUN_AS_NODE) {
 const IS_DEV = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
-const rsyncService = new RsyncService();
+const fileService = new FileService();
+const rsyncService = new RsyncService(fileService);
 let tray: Tray | null = null;
 let lastActiveJob: SyncJob | null = null;
 let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
@@ -36,7 +37,7 @@ let jobsCache: SyncJob[] = [];
 // Lazy initialize these to avoid top-level crashes and ensure PATH is fixed first
 let volumeWatcher: VolumeWatcher | null = null;
 let scheduler: JobScheduler | null = null;
-const fileService = new FileService();
+// fileService already initialized above
 
 // Hardware acceleration disabled by default to prevent GPU crashes
 // app.disableHardwareAcceleration();
@@ -593,25 +594,17 @@ ipcMain.handle('create-sandbox-dirs', async (_, sourcePath: string, destPath: st
       await fs.writeFile(path.join(sourcePath, 'notes.md'), '# Sandbox Notes\nThis is a test.');
 
       // FIXED: Batched file creation for performance
-      log.info(`Creating ${CONSTANTS.SANDBOX_TOTAL_FILES} test files in batches...`);
+      log.info(`Creating ${CONSTANTS.SANDBOX_TOTAL_FILES} test files using Rust sidecar...`);
 
-      for (let batch = 0; batch < CONSTANTS.SANDBOX_TOTAL_FILES / CONSTANTS.FILE_CREATION_BATCH_SIZE; batch++) {
-        const promises = [];
-        for (let i = 0; i < CONSTANTS.FILE_CREATION_BATCH_SIZE; i++) {
-          const fileIndex = batch * CONSTANTS.FILE_CREATION_BATCH_SIZE + i;
-          const size = Math.floor(1024 * (Math.random() * 10 + 1));
-          promises.push(
-            fs.writeFile(
-              path.join(sourcePath, `dummy-${fileIndex}.dat`),
-              Buffer.alloc(size, 'a')
-            )
-          );
-        }
-        await Promise.all(promises);
-
-        if (batch % 10 === 0) {
-          log.info(`Created ${batch * CONSTANTS.FILE_CREATION_BATCH_SIZE} files...`);
-        }
+      try {
+        await fileService.generateSandbox(sourcePath, CONSTANTS.SANDBOX_TOTAL_FILES, (data) => {
+          // Optional: log progress
+        }, (err) => {
+          log.error(`Sidecar generation error: ${err}`);
+        });
+      } catch (error) {
+        log.error(`Sidecar generation failed: ${error}`);
+        throw error;
       }
 
       // Create large files in parallel

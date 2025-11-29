@@ -8,9 +8,22 @@ import { CONSTANTS, MS_PER_DAY } from './constants';
 
 const execAsync = promisify(exec);
 
+import { FileService, FileEntry } from './FileService';
+
 export class RsyncService {
 
   private activeJobs = new Map<string, ChildProcess>();
+  private fileService: FileService | null = null;
+
+  constructor(fileService?: FileService) {
+    if (fileService) {
+      this.fileService = fileService;
+    }
+  }
+
+  public setFileService(service: FileService) {
+    this.fileService = service;
+  }
 
   /**
    * Check if a filesystem is FAT (FAT32, exFAT, vfat, etc.)

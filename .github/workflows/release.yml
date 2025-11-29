@@ -26,6 +26,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-apple-darwin
+          override: true
+          components: rustfmt, clippy
+
+      - name: Build Rust Sidecar (Universal)
+        run: |
+          cd amber-sidecar
+          # Add targets
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          
+          # Build for both architectures
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+          
+          # Create universal binary using lipo
+          lipo -create -output target/release/amber-sidecar-universal \
+            target/x86_64-apple-darwin/release/amber-sidecar \
+            target/aarch64-apple-darwin/release/amber-sidecar
+            
+          # Verify universal binary
+          lipo -info target/release/amber-sidecar-universal
+          
+          # Move to expected location for electron-builder
+          # We'll put it in a 'bin' folder or root of resources
+          mkdir -p ../resources
+          cp target/release/amber-sidecar-universal ../resources/amber-sidecar
+
+      - name: Run Rust Benchmark
+        run: |
+          cd amber-sidecar
+          node ../scripts/bench-rust.js 10000 target/release/amber-sidecar-universal
+
       - name: Build icons
         run: npm run build:icons
 
