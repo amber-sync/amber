@@ -1,16 +1,7 @@
 import { useState, useCallback } from 'react';
-import { SyncJob, JobStatus, RsyncConfig, Snapshot } from '../types';
+import { SyncJob, JobStatus, Snapshot } from '../types';
 import { generateUniqueId } from '../utils/idGenerator';
-
-const DEFAULT_CONFIG: RsyncConfig = {
-  recursive: true,
-  archive: true,
-  compress: true,
-  delete: false,
-  verbose: true,
-  excludePatterns: [],
-  customFlags: '',
-};
+import { DEFAULT_JOB_CONFIG } from '../config';
 
 export function useRsyncJobs(initialJobs: SyncJob[] = []) {
   const [jobs, setJobs] = useState<SyncJob[]>(initialJobs);
@@ -98,6 +89,6 @@ export function useRsyncJobs(initialJobs: SyncJob[] = []) {
     addSnapshot,
     getJob,
     getActiveJob,
-    defaultConfig: DEFAULT_CONFIG,
+    defaultConfig: DEFAULT_JOB_CONFIG,
   };
 }

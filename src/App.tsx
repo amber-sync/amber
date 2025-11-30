@@ -18,41 +18,7 @@ import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
 import { api } from './api';
-
-const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
-  [SyncMode.MIRROR]: {
-    recursive: true,
-    archive: true,
-    compress: true,
-    delete: true,
-    verbose: true,
-    excludePatterns: [],
-    customFlags: '',
-    customCommand: undefined,
-  },
-  [SyncMode.ARCHIVE]: {
-    recursive: true,
-    archive: true,
-    compress: true,
-    delete: false,
-    verbose: true,
-    excludePatterns: [],
-    customFlags: '',
-    customCommand: undefined,
-  },
-  [SyncMode.TIME_MACHINE]: {
-    recursive: true,
-    archive: true,
-    compress: true,
-    delete: false,
-    verbose: true,
-    excludePatterns: [],
-    customFlags: '',
-    customCommand: undefined,
-  },
-};
-
-const DEFAULT_CONFIG = MODE_PRESETS[SyncMode.TIME_MACHINE];
+import { MODE_PRESETS, DEFAULT_JOB_CONFIG } from './config';
 
 function AppContent() {
   const { jobs, activeJobId, view, setJobs, setActiveJobId, setView, persistJob, deleteJob } =
@@ -70,7 +36,7 @@ function AppContent() {
   const [newJobDest, setNewJobDest] = useState('');
   const [newJobMode, setNewJobMode] = useState<SyncMode>(SyncMode.TIME_MACHINE);
   const [newJobSchedule, setNewJobSchedule] = useState<number | null>(null);
-  const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_CONFIG });
+  const [newJobConfig, setNewJobConfig] = useState<RsyncConfig>({ ...DEFAULT_JOB_CONFIG });
 
   // Destination Type & Cloud Config State
   const [destinationType, setDestinationType] = useState<DestinationType>(DestinationType.LOCAL);
