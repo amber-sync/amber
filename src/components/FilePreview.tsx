@@ -59,10 +59,13 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       setError(null);
       
       try {
+        console.log('[FilePreview] Loading image:', filePath);
         // Load image as base64 data URI
         const dataUri = await window.electronAPI.readFileAsBase64(filePath);
+        console.log('[FilePreview] Loaded base64, length:', dataUri.length);
         setContent(dataUri);
       } catch (err: any) {
+        console.error('[FilePreview] Error loading image:', err);
         setError(err.message || 'Failed to load image');
       } finally {
         setLoading(false);
@@ -117,7 +120,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
               alt={fileName}
               className="max-w-full max-h-full object-contain"
               loading="lazy"
-              onError={() => setError('Failed to load image')}
+              onLoad={() => console.log('[FilePreview] Image rendered successfully')}
+              onError={(e) => {
+                console.error('[FilePreview] Image render error:', e);
+                console.error('[FilePreview] Data URI prefix:', content?.substring(0, 100));
+                setError('Failed to render image');
+              }}
             />
           </div>
         );
