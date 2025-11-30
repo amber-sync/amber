@@ -114,12 +114,12 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-black/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
-      <div className="bg-white dark:bg-gray-900 max-w-5xl w-full rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-layer-1 max-w-5xl w-full rounded-3xl shadow-2xl border border-border-base overflow-hidden flex flex-col max-h-[90vh]">
         {/* Form Content */}
         <div className="p-10 overflow-y-auto scrollbar-hide flex-1 relative">
           <button
             onClick={onCancel}
-            className="absolute top-8 right-8 text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 transition-colors z-10"
+            className="absolute top-8 right-8 text-text-tertiary hover:text-text-secondary transition-colors z-10"
           >
             <Icons.X size={28} />
           </button>
@@ -138,8 +138,8 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             {/* Row 2: Transfer Paths (Source & Dest) */}
             <div className="grid grid-cols-12 gap-6">
               {/* Left: Source */}
-              <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm">
+                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
                   Source Path
                 </label>
                 <div className="flex gap-3">
@@ -148,11 +148,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     value={jobSource}
                     onChange={e => setJobSource(e.target.value)}
                     placeholder="/Users/me/Documents"
-                    className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                    className="flex-1 px-5 py-3 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none transition-all"
                   />
                   <button
                     onClick={() => onSelectDirectory('SOURCE')}
-                    className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                    className="px-4 bg-layer-2 hover:bg-layer-3 rounded-xl text-text-secondary transition-colors"
                   >
                     <Icons.Folder size={22} />
                   </button>
@@ -160,24 +160,24 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               </div>
 
               {/* Right: Destination */}
-              <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
                     Destination Path
                   </label>
 
                   {/* Destination Type Toggle */}
-                  <div className="bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg flex text-[10px] font-medium">
+                  <div className="bg-layer-2 p-0.5 rounded-lg flex text-2xs font-medium">
                     <button
                       onClick={() => setDestinationType(DestinationType.LOCAL)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-layer-3 text-teal-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.HardDrive size={12} />
                       Local
                     </button>
                     <button
                       onClick={() => setDestinationType(DestinationType.CLOUD)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-layer-3 text-blue-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.Cloud size={12} />
                       Cloud
@@ -192,11 +192,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                       value={jobDest}
                       onChange={e => setJobDest(e.target.value)}
                       placeholder="/Volumes/Backup/MyFiles"
-                      className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none transition-all"
+                      className="flex-1 px-5 py-3 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none transition-all"
                     />
                     <button
                       onClick={() => onSelectDirectory('DEST')}
-                      className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                      className="px-4 bg-layer-2 hover:bg-layer-3 rounded-xl text-text-secondary transition-colors"
                     >
                       <Icons.Folder size={22} />
                     </button>
@@ -228,8 +228,8 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
             {/* Row 4: Exclusions & SSH */}
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm h-full flex flex-col">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm h-full flex flex-col">
+                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
                   Exclusions
                 </label>
                 <div className="flex gap-3 mb-4">
@@ -239,11 +239,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     onChange={e => setTempExcludePattern(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="e.g. *.log"
-                    className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-pink-500 outline-none"
+                    className="flex-1 px-5 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-pink-500 outline-none"
                   />
                   <button
                     onClick={onAddPattern}
-                    className="px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-gray-500 transition-colors"
+                    className="px-4 bg-layer-2 hover:bg-layer-3 rounded-xl text-text-secondary transition-colors"
                   >
                     <Icons.Plus size={22} />
                   </button>
@@ -252,7 +252,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                   {jobConfig.excludePatterns.map((p, i) => (
                     <span
                       key={i}
-                      className="bg-gray-100 dark:bg-gray-800 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2 border border-gray-200 dark:border-gray-700"
+                      className="bg-layer-2 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-text-secondary flex items-center gap-2 border border-border-base"
                     >
                       {p}
                       <button
@@ -263,23 +263,25 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                             excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i),
                           }));
                         }}
-                        className="hover:text-red-500 text-gray-400"
+                        className="hover:text-red-500 text-text-tertiary"
                       >
                         <Icons.XCircle size={14} />
                       </button>
                     </span>
                   ))}
                   {jobConfig.excludePatterns.length === 0 && (
-                    <span className="text-sm text-gray-400 italic p-1">No patterns added.</span>
+                    <span className="text-sm text-text-tertiary italic p-1">
+                      No patterns added.
+                    </span>
                   )}
                 </div>
               </div>
 
               <div
-                className={`col-span-12 md:col-span-6 bg-white dark:bg-gray-900 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-gray-100 dark:border-gray-800'}`}
+                className={`col-span-12 md:col-span-6 bg-layer-1 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-border-base'}`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
                     SSH Connection
                   </label>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -289,7 +291,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                       onChange={e => setSshEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-layer-3 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
                   </label>
                 </div>
 
@@ -300,39 +302,39 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                       placeholder="22"
                       value={sshPort}
                       onChange={e => setSshPort(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
                     <input
                       type="text"
                       placeholder="~/.ssh/id_rsa"
                       value={sshKeyPath}
                       onChange={e => setSshKeyPath(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
                     <input
                       type="text"
                       placeholder="~/.ssh/config"
                       value={sshConfigPath}
                       onChange={e => setSshConfigPath(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
                     <input
                       type="text"
                       placeholder="user@jump-host"
                       value={sshProxyJump}
                       onChange={e => setSshProxyJump(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none"
+                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
                     <input
                       type="text"
                       placeholder="-o StrictHostKeyChecking=no"
                       value={sshCustomOptions}
                       onChange={e => setSshCustomOptions(e.target.value)}
-                      className="col-span-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-teal-500 outline-none font-mono"
+                      className="col-span-2 px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none font-mono"
                     />
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
+                  <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm italic">
                     Local transfer only. Toggle to enable SSH.
                   </div>
                 )}
@@ -342,7 +344,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between gap-3 sticky bottom-0">
+        <div className="p-6 border-t border-border-base bg-layer-2 flex items-center justify-between gap-3 sticky bottom-0">
           <div>
             {isEditing && onDelete && (
               <button
@@ -357,7 +359,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           <div className="flex gap-3">
             <button
               onClick={onCancel}
-              className="px-6 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+              className="px-6 py-2.5 rounded-xl font-medium text-text-secondary hover:bg-layer-3 transition-colors"
             >
               Cancel
             </button>

@@ -291,23 +291,20 @@ const Header: React.FC<{
   onRestore,
   titleOverride,
 }) => (
-  <div className="px-8 py-6 pt-10 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 text-gray-900 dark:text-white titlebar-drag">
+  <div className="px-8 py-6 pt-10 border-b border-border-base flex justify-between items-center sticky top-0 bg-layer-1/95 backdrop-blur-sm z-10 text-text-primary titlebar-drag">
     {isRunning && (
       <div className="absolute top-0 left-0 w-full h-1 z-20 overflow-hidden">
         <div className="w-full h-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-progress-pulse opacity-80" />
       </div>
     )}
     <div className="flex items-center gap-4 no-drag">
-      <button
-        onClick={onBack}
-        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-      >
-        <Icons.ArrowRight className="rotate-180 text-gray-500 dark:text-gray-400" />
+      <button onClick={onBack} className="p-2 hover:bg-layer-2 rounded-full transition-colors">
+        <Icons.ArrowRight className="rotate-180 text-text-secondary" />
       </button>
       <div>
         <h2 className="text-2xl font-bold">{titleOverride || job.name}</h2>
         {!titleOverride && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Icons.Server size={14} /> {job.sourcePath}
             <Icons.ArrowRight size={14} />
             <Icons.HardDrive size={14} /> {job.destPath}
@@ -323,7 +320,7 @@ const Header: React.FC<{
       >
         <Icons.Trash2 size={18} />
       </button>
-      <div className="w-px h-8 bg-gray-200 dark:bg-gray-800 self-center mx-1"></div>
+      <div className="w-px h-8 bg-border-base self-center mx-1"></div>
       <button
         onClick={() => onRestore(job.id)}
         className="px-4 py-2 border border-blue-200 dark:border-blue-800 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center gap-2"
@@ -332,7 +329,7 @@ const Header: React.FC<{
       </button>
       <button
         onClick={onOpenSettings}
-        className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
+        className="px-4 py-2 border border-border-base rounded-lg text-sm font-medium hover:bg-layer-2 text-text-primary"
       >
         Settings
       </button>
@@ -370,19 +367,19 @@ const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats
   const jobPercent = totalBytes > 0 ? (jobSize / totalBytes) * 100 : 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
+    <div className="bg-layer-1 border border-border-base rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <Icons.HardDrive size={18} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Storage Overview</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{job.destPath}</p>
+            <h3 className="text-sm font-bold text-text-primary">Storage Overview</h3>
+            <p className="text-xs text-text-secondary">{job.destPath}</p>
           </div>
         </div>
         {isAvailable && (
-          <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300">
+          <span className="text-xs font-medium px-2 py-1 bg-layer-2 rounded-md text-text-secondary">
             {usedPercent.toFixed(0)}% Used
           </span>
         )}
@@ -392,26 +389,24 @@ const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Capacity</div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatBytes(totalBytes)}
-              </div>
+              <div className="text-xs text-text-secondary mb-1">Capacity</div>
+              <div className="text-lg font-bold text-text-primary">{formatBytes(totalBytes)}</div>
             </div>
             <div className="flex-1 border-l border-gray-100 dark:border-gray-700 pl-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Free</div>
+              <div className="text-xs text-text-secondary mb-1">Free</div>
               <div className="text-lg font-bold text-green-600 dark:text-green-400">
                 {formatBytes(freeBytes)}
               </div>
             </div>
             <div className="flex-1 border-l border-gray-100 dark:border-gray-700 pl-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">This Job</div>
+              <div className="text-xs text-text-secondary mb-1">This Job</div>
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 {formatBytes(jobSize)}
               </div>
             </div>
           </div>
 
-          <div className="relative h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="relative h-3 bg-layer-2 rounded-full overflow-hidden">
             <div
               className="absolute h-full bg-gray-300 dark:bg-gray-600 transition-all"
               style={{ width: `${usedPercent}%` }}
@@ -423,7 +418,7 @@ const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats
           </div>
         </div>
       ) : (
-        <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
+        <div className="text-center py-4 text-text-secondary text-sm bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-dashed border-border-base">
           Destination drive not connected
         </div>
       )}
@@ -433,34 +428,34 @@ const StorageUsage: React.FC<{ job: SyncJob; diskStats: Record<string, DiskStats
 
 // Quick Stats View
 const StatsQuickView: React.FC<{ job: SyncJob }> = ({ job }) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+  <div className="bg-layer-1 border border-border-base rounded-xl p-5 shadow-sm">
+    <h3 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2">
       <Icons.Activity size={16} className="text-indigo-500" /> Quick Stats
     </h3>
     <div className="space-y-3">
       <div className="flex items-center justify-between group">
-        <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+        <span className="text-xs text-text-secondary group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
           Last Sync
         </span>
-        <span className="text-sm font-medium text-gray-900 dark:text-white">
+        <span className="text-sm font-medium text-text-primary">
           {job.lastRun
             ? new Date(job.lastRun).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : 'Never'}
         </span>
       </div>
       <div className="flex items-center justify-between group">
-        <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+        <span className="text-xs text-text-secondary group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
           Schedule
         </span>
-        <span className="text-sm font-medium text-gray-900 dark:text-white">
+        <span className="text-sm font-medium text-text-primary">
           {formatSchedule(job.scheduleInterval)}
         </span>
       </div>
       <div className="flex items-center justify-between group">
-        <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+        <span className="text-xs text-text-secondary group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
           Mode
         </span>
-        <span className="text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">
+        <span className="text-sm font-medium text-text-primary bg-layer-2 px-2 py-0.5 rounded text-xs">
           {job.mode
             .replace('_', ' ')
             .toLowerCase()
@@ -468,12 +463,10 @@ const StatsQuickView: React.FC<{ job: SyncJob }> = ({ job }) => (
         </span>
       </div>
       <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 group">
-        <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+        <span className="text-xs text-text-secondary group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
           Total Snapshots
         </span>
-        <span className="text-sm font-bold text-gray-900 dark:text-white">
-          {job.snapshots.length}
-        </span>
+        <span className="text-sm font-bold text-text-primary">{job.snapshots.length}</span>
       </div>
     </div>
   </div>
@@ -482,8 +475,8 @@ const StatsQuickView: React.FC<{ job: SyncJob }> = ({ job }) => (
 const StorageHistory: React.FC<{ chartData: { name: string; dataAdded: number }[] }> = ({
   chartData,
 }) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-    <h3 className="text-sm font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+  <div className="bg-layer-1 border border-border-base rounded-xl p-5 shadow-sm">
+    <h3 className="text-sm font-bold mb-4 text-text-primary flex items-center gap-2">
       <Icons.BarChart2 size={16} className="text-indigo-500" /> Data Added
     </h3>
     <div className="h-32 w-full flex items-end justify-between gap-1">
@@ -509,7 +502,7 @@ const StorageHistory: React.FC<{ chartData: { name: string; dataAdded: number }[
                 className="w-full mx-0.5 bg-indigo-500/80 dark:bg-indigo-600 rounded-t transition-all hover:bg-indigo-400"
                 style={{ height: `${heightPercent}%`, minHeight: '4px' }}
               ></div>
-              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20 shadow-lg">
+              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-2xs px-2 py-1 rounded whitespace-nowrap z-20 shadow-lg">
                 {d.name}: +{d.dataAdded.toFixed(2)} MB
               </div>
             </div>
@@ -529,9 +522,9 @@ const AnalyticsSection: React.FC<{
   analytics: JobAnalytics;
   onShowFile: (path: string) => void;
 }> = ({ analytics, onShowFile }) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm space-y-6">
+  <div className="bg-layer-1 border border-border-base rounded-xl p-5 shadow-sm space-y-6">
     <div>
-      <h3 className="text-sm font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <h3 className="text-sm font-bold mb-4 text-text-primary flex items-center gap-2">
         <Icons.PieChart size={16} className="text-indigo-500" /> File Types
       </h3>
       <div className="flex items-center gap-4">
@@ -553,8 +546,8 @@ const AnalyticsSection: React.FC<{
             }, '')})`,
           }}
         >
-          <div className="absolute inset-0 m-auto w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <span className="text-xs font-bold text-gray-900 dark:text-white">
+          <div className="absolute inset-0 m-auto w-12 h-12 bg-layer-1 rounded-full flex items-center justify-center">
+            <span className="text-xs font-bold text-text-primary">
               {analytics.fileTypes.reduce((acc, curr) => acc + curr.value, 0)}
             </span>
           </div>
@@ -566,7 +559,7 @@ const AnalyticsSection: React.FC<{
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{ backgroundColor: COLORS[i % COLORS.length] }}
               />
-              <span className="text-gray-600 dark:text-gray-300 truncate">{type.name}</span>
+              <span className="text-text-secondary truncate">{type.name}</span>
               <span className="text-gray-400 ml-auto">{type.value}</span>
             </div>
           ))}
@@ -575,7 +568,7 @@ const AnalyticsSection: React.FC<{
     </div>
 
     <div>
-      <h3 className="text-sm font-bold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+      <h3 className="text-sm font-bold mb-3 text-text-primary flex items-center gap-2">
         <Icons.File size={16} className="text-indigo-500" /> Largest Files
       </h3>
       <div className="space-y-2">
@@ -594,7 +587,7 @@ const AnalyticsSection: React.FC<{
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+              <span className="text-2xs font-mono text-text-secondary">
                 {formatBytes(file.size)}
               </span>
               <button
@@ -613,14 +606,12 @@ const AnalyticsSection: React.FC<{
 );
 
 const AnalyticsPlaceholder: React.FC = () => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm flex flex-col items-center justify-center h-48 text-center">
-    <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full mb-3">
+  <div className="bg-layer-1 border border-border-base rounded-xl p-6 shadow-sm flex flex-col items-center justify-center h-48 text-center">
+    <div className="bg-layer-2 p-3 rounded-full mb-3">
       <Icons.BarChart2 className="text-gray-400 dark:text-gray-500" size={20} />
     </div>
-    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">No Analytics</h3>
-    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-[150px]">
-      Run a sync to see file stats.
-    </p>
+    <h3 className="text-sm font-bold text-text-primary mb-1">No Analytics</h3>
+    <p className="text-xs text-text-secondary max-w-[150px]">Run a sync to see file stats.</p>
   </div>
 );
 
@@ -660,31 +651,31 @@ const SnapshotsSection: React.FC<{
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
           <Icons.Clock size={18} className="text-indigo-500" /> Snapshots
         </h3>
         <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
+          <div className="flex bg-layer-2 p-1 rounded-lg text-xs font-medium">
             <button
               onClick={() => onSortChange('date')}
-              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
             >
               Date
             </button>
             <button
               onClick={() => onSortChange('size')}
-              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
             >
               Size
             </button>
           </div>
           <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
+          <div className="flex bg-layer-2 p-1 rounded-lg text-xs font-medium">
             {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
               <button
                 key={group}
                 onClick={() => onGroupingChange(group)}
-                className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
               >
                 {group.charAt(0) + group.slice(1).toLowerCase()}
               </button>
@@ -694,7 +685,7 @@ const SnapshotsSection: React.FC<{
       </div>
 
       {snapshots.length === 0 && (
-        <div className="w-full h-32 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+        <div className="w-full h-32 bg-white/80 dark:bg-gray-800/80 border border-border-base rounded-xl flex items-center justify-center text-gray-400 text-sm">
           No snapshots yet. Run a sync to create one.
         </div>
       )}
@@ -730,13 +721,13 @@ const SnapshotGroup: React.FC<{
     {showHeader && (
       <button
         onClick={onToggle}
-        className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-all outline-none border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+        className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-layer-2 rounded-lg text-xs font-bold text-text-secondary uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-all outline-none border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
       >
         <Icons.ChevronDown
           className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
         />
         {label}
-        <span className="ml-auto text-[10px] font-medium bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full text-gray-500 dark:text-gray-400">
+        <span className="ml-auto text-2xs font-medium bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full text-text-secondary">
           {snaps.length}
         </span>
       </button>
@@ -749,36 +740,34 @@ const SnapshotGroup: React.FC<{
     >
       <div
         className={
-          showHeader
-            ? 'space-y-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 ml-2 mt-2'
-            : 'space-y-2'
+          showHeader ? 'space-y-2 pl-3 border-l-2 border-border-base ml-2 mt-2' : 'space-y-2'
         }
       >
         {snaps.map(snap => (
           <div
             key={snap.id}
-            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+            className="flex items-center justify-between p-4 bg-layer-1 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
           >
             <div className="flex items-center gap-3">
               <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
                 <Icons.CheckCircle size={14} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <p className="text-sm font-semibold text-text-primary flex items-center gap-2">
                   {new Date(snap.timestamp).toLocaleString()}
                   {snap.restored && (
-                    <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                    <span className="text-2xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
                       Restored
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-text-secondary">
                   {snap.fileCount} files • {snap.changesCount} changed
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+              <span className="text-sm font-mono text-text-secondary bg-layer-2 px-2 py-1 rounded">
                 {formatBytes(snap.sizeBytes)}
               </span>
               <button
@@ -825,7 +814,7 @@ const LiveActivity: React.FC<{
       {/* Minimal Header */}
       <div className="flex items-center justify-between mb-3">
         <h3
-          className={`text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}
+          className={`text-base font-bold text-text-primary flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}
         >
           <Icons.Activity size={18} className="text-indigo-500" /> Activity
           {isRunning && (
@@ -862,15 +851,13 @@ const LiveActivity: React.FC<{
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm font-medium text-text-primary">
                     {progress?.percentage && progress.percentage > 0
                       ? `Syncing... ${progress.percentage}%`
                       : 'Starting sync...'}
                   </span>
                   {progress?.eta && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      ETA {progress.eta}
-                    </span>
+                    <span className="text-xs text-text-secondary">ETA {progress.eta}</span>
                   )}
                 </div>
                 <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -884,7 +871,7 @@ const LiveActivity: React.FC<{
                   )}
                 </div>
                 {progress?.currentFile && (
-                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                  <p className="mt-1 text-xs text-text-secondary truncate">
                     {progress.currentFile}
                   </p>
                 )}
@@ -892,11 +879,11 @@ const LiveActivity: React.FC<{
             </>
           ) : (
             <>
-              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-layer-2 flex items-center justify-center">
                 <Icons.CheckCircle size={16} className="text-gray-400 dark:text-gray-500" />
               </div>
               <div className="flex-1">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-text-secondary">
                   {logs.length > 0 ? 'Last sync completed' : 'Ready to sync'}
                 </span>
               </div>

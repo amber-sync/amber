@@ -182,12 +182,46 @@
 }
 
 /* Dark mode shadow adjustments */
-.dark,
-.midnight,
-.cyberpunk {
+.dark {
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
+
+/* ========================================
+ * TYPOGRAPHY USAGE GUIDE
+ * ========================================
+ *
+ * TEXT SIZES:
+ * - text-2xs (10px): Badges, labels, timestamps
+ * - text-xs (11px): Secondary info, metadata
+ * - text-sm (13px): Body text, descriptions
+ * - text-base (14px): Default body text
+ * - text-lg (16px): Emphasized body, subheadings
+ * - text-xl (18px): Section headers
+ * - text-2xl (20px): Page subheadings
+ * - text-3xl (24px): Page headings
+ *
+ * TEXT COLORS (use semantic tokens, NOT gray-xxx):
+ * - text-text-primary: Main content, headings
+ * - text-text-secondary: Secondary info, descriptions
+ * - text-text-tertiary: Muted text, placeholders
+ * - text-text-quaternary: Very muted, timestamps
+ *
+ * FONT WEIGHTS:
+ * - font-normal (400): Body text
+ * - font-medium (500): Emphasized text, labels
+ * - font-semibold (600): Subheadings, buttons
+ * - font-bold (700): Headings, important text
+ *
+ * BACKGROUNDS (use layer tokens, NOT gray-xxx):
+ * - bg-layer-1: Primary surface (cards, modals)
+ * - bg-layer-2: Secondary surface (nested cards)
+ * - bg-layer-3: Tertiary surface (inputs, buttons)
+ *
+ * BORDERS (use semantic tokens):
+ * - border-border-base: Default borders
+ * - border-border-highlight: Emphasized borders
+ */
