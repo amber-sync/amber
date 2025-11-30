@@ -98,6 +98,24 @@ npm run test:rust     # Cargo test (backend)
 
 ## Agent Workflow Protocol
 
+### CRITICAL: Branch Workflow Rules
+
+**NEVER commit directly to main. ALWAYS use feature branches.**
+
+Before starting ANY ticket work:
+1. **Check current branch**: `git branch --show-current`
+2. **If on main**: Create a new feature branch FIRST
+3. **If on wrong feature branch**: Stash, switch to main, create correct branch
+
+```bash
+# MANDATORY before ANY code changes for a ticket:
+git checkout main
+git pull origin main
+git checkout -b feature/<TICKET-ID>-<short-description>
+```
+
+**One branch per ticket.** Do NOT mix multiple tickets on one branch unless explicitly grouped.
+
 ### Ticket Management (Linear)
 - **Team Key**: `TIM` (tickets like TIM-16, TIM-37)
 - **API Key**: Stored in `.env.local` as `LINEAR_API_KEY`
@@ -111,14 +129,24 @@ npm run test:rust     # Cargo test (backend)
 ```
 
 ### Feature Implementation Cycle
-1. **Create Branch**: `git checkout -b feature/<TICKET-ID>-<short-description>`
-2. **Implement & Verify**: Write code, run tests frequently
-3. **Push**: `git push -u origin feature/<TICKET-ID>-<short-description>`
+1. **ALWAYS Create Branch First**: `git checkout -b feature/<TICKET-ID>-<short-description>`
+2. **Verify branch before committing**: `git branch --show-current`
+3. **Implement & Verify**: Write code, run tests frequently
+4. **Push**: `git push -u origin feature/<TICKET-ID>-<short-description>`
 
 ### Completion & Cleanup
 ```bash
 git checkout main
+git pull origin main
 git merge feature/<TICKET-ID>-<short-description>
 git push origin main
 git branch -d feature/<TICKET-ID>-<short-description>
+git push origin --delete feature/<TICKET-ID>-<short-description>
 ```
+
+### Pre-Commit Checklist
+Before EVERY commit, verify:
+- [ ] On correct feature branch (not main)
+- [ ] Branch name matches ticket being worked on
+- [ ] Tests pass (`npm test && npm run test:rust`)
+- [ ] Lint passes (`npm run lint`)
