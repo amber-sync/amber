@@ -3,22 +3,27 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { listen, type Event } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { desktopDir } from '@tauri-apps/api/path';
-import type { SyncJob, IndexedSnapshot, FileNode, VolumeInfo } from '../types';
+import type {
+  SyncJob,
+  IndexedSnapshot,
+  FileNode,
+  VolumeInfo,
+  DirEntry,
+  Snapshot,
+  RsyncLogPayload,
+  RsyncProgressPayload,
+  RsyncCompletePayload,
+  AppPreferences,
+} from '../types';
+import { getErrorMessage } from '../types';
 
 // Event callback types
-type RsyncLogCallback = (data: { jobId: string; message: string }) => void;
-type RsyncProgressCallback = (data: {
-  jobId: string;
-  transferred: string;
-  percentage: number;
-  speed: string;
-  eta: string;
-  currentFile?: string;
-}) => void;
-type RsyncCompleteCallback = (data: { jobId: string; success: boolean; error?: string }) => void;
+type RsyncLogCallback = (data: RsyncLogPayload) => void;
+type RsyncProgressCallback = (data: RsyncProgressPayload) => void;
+type RsyncCompleteCallback = (data: RsyncCompletePayload) => void;
 
 class AmberAPI {
   // ===== Jobs =====
@@ -47,7 +52,9 @@ class AmberAPI {
 
   onRsyncLog(callback: RsyncLogCallback): () => void {
     let unlisten: (() => void) | null = null;
-    listen('rsync-log', (event: any) => callback(event.payload)).then(fn => {
+    listen<RsyncLogPayload>('rsync-log', (event: Event<RsyncLogPayload>) =>
+      callback(event.payload)
+    ).then(fn => {
       unlisten = fn;
     });
     return () => unlisten?.();
@@ -55,7 +62,9 @@ class AmberAPI {
 
   onRsyncProgress(callback: RsyncProgressCallback): () => void {
     let unlisten: (() => void) | null = null;
-    listen('rsync-progress', (event: any) => callback(event.payload)).then(fn => {
+    listen<RsyncProgressPayload>('rsync-progress', (event: Event<RsyncProgressPayload>) =>
+      callback(event.payload)
+    ).then(fn => {
       unlisten = fn;
     });
     return () => unlisten?.();
@@ -63,7 +72,9 @@ class AmberAPI {
 
   onRsyncComplete(callback: RsyncCompleteCallback): () => void {
     let unlisten: (() => void) | null = null;
-    listen('rsync-complete', (event: any) => callback(event.payload)).then(fn => {
+    listen<RsyncCompletePayload>('rsync-complete', (event: Event<RsyncCompletePayload>) =>
+      callback(event.payload)
+    ).then(fn => {
       unlisten = fn;
     });
     return () => unlisten?.();
@@ -71,7 +82,7 @@ class AmberAPI {
 
   // ===== Filesystem =====
 
-  async readDir(path: string): Promise<any[]> {
+  async readDir(path: string): Promise<DirEntry[]> {
     return invoke('read_dir', { path });
   }
 
@@ -106,8 +117,8 @@ class AmberAPI {
           status: 'AVAILABLE',
         },
       };
-    } catch (e: any) {
-      return { success: false, error: e.message || String(e) };
+    } catch (e: unknown) {
+      return { success: false, error: getErrorMessage(e) };
     }
   }
 
@@ -137,11 +148,15 @@ class AmberAPI {
 
   // ===== Snapshots =====
 
-  async listSnapshots(jobId: string, destPath: string): Promise<any[]> {
+  async listSnapshots(jobId: string, destPath: string): Promise<Snapshot[]> {
     return invoke('list_snapshots', { jobId, destPath });
   }
 
-  async getSnapshotTree(jobId: string, timestamp: number, snapshotPath: string): Promise<any[]> {
+  async getSnapshotTree(
+    jobId: string,
+    timestamp: number,
+    snapshotPath: string
+  ): Promise<FileNode[]> {
     return invoke('get_snapshot_tree', { jobId, timestamp, snapshotPath });
   }
 
@@ -154,8 +169,8 @@ class AmberAPI {
     try {
       await invoke('restore_files', { jobId: job.id, snapshotPath, files, targetPath });
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message || String(e) };
+    } catch (e: unknown) {
+      return { success: false, error: getErrorMessage(e) };
     }
   }
 
@@ -167,8 +182,8 @@ class AmberAPI {
     try {
       await invoke('restore_snapshot', { jobId: job.id, snapshotPath, targetPath });
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message || String(e) };
+    } catch (e: unknown) {
+      return { success: false, error: getErrorMessage(e) };
     }
   }
 
@@ -245,17 +260,11 @@ class AmberAPI {
 
   // ===== Preferences =====
 
-  async getPreferences(): Promise<{
-    runInBackground: boolean;
-    startOnBoot: boolean;
-    notifications: boolean;
-  }> {
+  async getPreferences(): Promise<AppPreferences> {
     return invoke('get_preferences');
   }
 
-  async setPreferences(
-    prefs: Partial<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>
-  ): Promise<any> {
+  async setPreferences(prefs: Partial<AppPreferences>): Promise<AppPreferences> {
     return invoke('set_preferences', { preferences: prefs });
   }
 

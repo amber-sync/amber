@@ -45,8 +45,8 @@ describe('groupSnapshots', () => {
     sizeBytes,
     fileCount: 10,
     changesCount: 5,
+    status: 'Complete',
     restored: false,
-    duration: 60,
     root: [],
   });
 
