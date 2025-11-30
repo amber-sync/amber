@@ -9,6 +9,7 @@ import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
 import { AmbientBackground } from './components/AmbientBackground';
 import { DeleteJobModal } from './components/DeleteJobModal';
+import { CommandPalette } from './components/CommandPalette';
 import { AppContextProvider, useApp } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
@@ -374,6 +375,8 @@ function AppContent() {
       <div className="fixed top-0 left-0 w-full h-8 z-[100] titlebar-drag" />
 
       <AmbientBackground />
+
+      <CommandPalette />
 
       <DeleteJobModal
         isOpen={showDeleteConfirm}
