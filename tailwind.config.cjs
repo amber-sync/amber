@@ -18,6 +18,7 @@ module.exports = {
           primary: 'var(--text-primary)',
           secondary: 'var(--text-secondary)',
           tertiary: 'var(--text-tertiary)',
+          quaternary: 'var(--text-quaternary)',
         },
         border: {
           base: 'var(--border-base)',
