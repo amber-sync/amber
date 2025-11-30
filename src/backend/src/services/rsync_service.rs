@@ -274,3 +274,281 @@ impl Default for RsyncService {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::job::{JobStatus, RsyncConfig, SshConfig, SyncJob, SyncMode};
+
+    fn create_test_job(mode: SyncMode) -> SyncJob {
+        SyncJob {
+            id: "test-1".to_string(),
+            name: "Test Job".to_string(),
+            source_path: "/src".to_string(),
+            dest_path: "/dest".to_string(),
+            mode,
+            status: JobStatus::Idle,
+            schedule_interval: None,
+            schedule: None,
+            config: RsyncConfig::default(),
+            ssh_config: None,
+            last_run: None,
+            snapshots: None,
+        }
+    }
+
+    #[test]
+    fn test_basic_flags() {
+        let service = RsyncService::new();
+        let job = create_test_job(SyncMode::Mirror);
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        assert!(args.contains(&"-D".to_string()));
+        assert!(args.contains(&"--numeric-ids".to_string()));
+        assert!(args.contains(&"--links".to_string()));
+        assert!(args.contains(&"--hard-links".to_string()));
+        assert!(args.contains(&"--one-file-system".to_string()));
+        assert!(args.contains(&"--itemize-changes".to_string()));
+        assert!(args.contains(&"--stats".to_string()));
+        assert!(args.contains(&"--human-readable".to_string()));
+        assert!(args.contains(&"--progress".to_string()));
+    }
+
+    #[test]
+    fn test_archive_mode_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.archive = true;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(args.contains(&"-a".to_string()));
+    }
+
+    #[test]
+    fn test_compression_enabled() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.compress = true;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(args.contains(&"-z".to_string()));
+    }
+
+    #[test]
+    fn test_compression_disabled() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.compress = false;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(!args.contains(&"-z".to_string()));
+    }
+
+    #[test]
+    fn test_delete_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.delete = true;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(args.contains(&"--delete".to_string()));
+    }
+
+    #[test]
+    fn test_no_delete_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.delete = false;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(!args.contains(&"--delete".to_string()));
+    }
+
+    #[test]
+    fn test_verbose_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.verbose = true;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(args.contains(&"-v".to_string()));
+    }
+
+    #[test]
+    fn test_ssh_config() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("2222".to_string()),
+            identity_file: Some("/key".to_string()),
+            config_file: Some("/config".to_string()),
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(ssh_cmd.contains("ssh"));
+        assert!(ssh_cmd.contains("-p 2222"));
+        assert!(ssh_cmd.contains("-i /key"));
+        assert!(ssh_cmd.contains("-F /config"));
+    }
+
+    #[test]
+    fn test_ssh_strict_host_key_disable() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: Some(true),
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(ssh_cmd.contains("StrictHostKeyChecking=no"));
+    }
+
+    #[test]
+    fn test_ssh_proxy_jump() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: Some("bastion@10.0.0.1".to_string()),
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(ssh_cmd.contains("-J bastion@10.0.0.1"));
+    }
+
+    #[test]
+    fn test_time_machine_link_dest() {
+        let service = RsyncService::new();
+        let job = create_test_job(SyncMode::TimeMachine);
+
+        let args = service.build_rsync_args(&job, "/dest/new-snapshot", Some("/dest/previous"));
+        assert!(args.contains(&"--link-dest=/dest/previous".to_string()));
+        assert!(args.contains(&"/dest/new-snapshot".to_string()));
+    }
+
+    #[test]
+    fn test_time_machine_no_link_dest() {
+        let service = RsyncService::new();
+        let job = create_test_job(SyncMode::TimeMachine);
+
+        let args = service.build_rsync_args(&job, "/dest/new-snapshot", None);
+        let link_dest = args.iter().find(|a| a.starts_with("--link-dest"));
+        assert!(link_dest.is_none());
+    }
+
+    #[test]
+    fn test_exclude_patterns() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.exclude_patterns = vec!["*.log".to_string(), "temp/".to_string()];
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(args.contains(&"--exclude=*.log".to_string()));
+        assert!(args.contains(&"--exclude=temp/".to_string()));
+    }
+
+    #[test]
+    fn test_trailing_slash_on_source() {
+        let service = RsyncService::new();
+        let job = create_test_job(SyncMode::Mirror);
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        // Source should be second to last, dest last
+        let source_idx = args.len() - 2;
+        assert_eq!(args[source_idx], "/src/");
+    }
+
+    #[test]
+    fn test_source_already_has_trailing_slash() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.source_path = "/src/".to_string();
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let source_idx = args.len() - 2;
+        assert_eq!(args[source_idx], "/src/");
+    }
+
+    #[test]
+    fn test_custom_command_substitution() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::TimeMachine);
+        job.config.custom_command = Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest/new", Some("/dest/old"));
+        assert!(args.contains(&"/src/".to_string()));
+        assert!(args.contains(&"/dest/new".to_string()));
+        assert!(args.contains(&"--link-dest=/dest/old".to_string()));
+    }
+
+    #[test]
+    fn test_custom_command_without_link_dest() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_command = Some("rsync -a {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert_eq!(args[0], "rsync");
+        assert!(args.contains(&"/src/".to_string()));
+        assert!(args.contains(&"/dest".to_string()));
+    }
+
+    #[test]
+    fn test_non_archive_mode_falls_back() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.archive = false;
+        job.config.recursive = true;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        assert!(!args.contains(&"-a".to_string()));
+        assert!(args.contains(&"--recursive".to_string()));
+        assert!(args.contains(&"--times".to_string()));
+        assert!(args.contains(&"--perms".to_string()));
+        assert!(args.contains(&"--owner".to_string()));
+        assert!(args.contains(&"--group".to_string()));
+    }
+
+    #[test]
+    fn test_backup_folder_name_format() {
+        let service = RsyncService::new();
+        let name = service.format_backup_folder_name();
+
+        // Should match pattern YYYY-MM-DD-HHMMSS
+        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}-\d{6}$").unwrap();
+        assert!(re.is_match(&name), "Folder name '{}' doesn't match expected format", name);
+    }
+
+    #[test]
+    fn test_ensure_trailing_slash() {
+        let service = RsyncService::new();
+
+        assert_eq!(service.ensure_trailing_slash("/path"), "/path/");
+        assert_eq!(service.ensure_trailing_slash("/path/"), "/path/");
+        assert_eq!(service.ensure_trailing_slash(""), "/");
+    }
+}
