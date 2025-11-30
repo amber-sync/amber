@@ -34,6 +34,7 @@ export interface ElectronAPI {
   listSnapshots: (jobId: string, destPath: string) => Promise<any[]>;
   getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => Promise<any[]>;
   readFilePreview: (filePath: string, maxLines?: number) => Promise<string>;
+  readFileAsBase64: (filePath: string) => Promise<string>;
   isDev: () => Promise<boolean>;
 }
 

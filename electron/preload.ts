@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listSnapshots: (jobId: string, destPath: string) => ipcRenderer.invoke('snapshot:list', jobId, destPath),
   getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => ipcRenderer.invoke('snapshot:getTree', jobId, timestamp, snapshotPath),
   readFilePreview: (filePath: string, maxLines?: number) => ipcRenderer.invoke('read-file-preview', filePath, maxLines),
+  readFileAsBase64: (filePath: string) => ipcRenderer.invoke('read-file-as-base64', filePath),
   isDev: () => ipcRenderer.invoke('is-dev'),
   restoreFiles: (job: any, snapshotPath: string, files: string[], targetPath: string) => ipcRenderer.invoke('snapshot:restore', job, snapshotPath, files, targetPath),
   restoreSnapshot: (job: any, snapshotPath: string, targetPath: string) => ipcRenderer.invoke('snapshot:restoreFull', job, snapshotPath, targetPath),

@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  EyeOff, // Added EyeOff
   CornerUpLeft,
   Search,
   File,
@@ -84,6 +85,7 @@ export const Icons = {
   ChevronLeft,
   ChevronRight,
   Eye,
+  EyeOff, // Added EyeOff
   CornerUpLeft,
   Search,
   File,

@@ -54,8 +54,19 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
         setError('Image too large to preview (>10MB)');
         return;
       }
-      // For images, we'll use file:// protocol directly
-      setContent(`file://${filePath}`);
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Load image as base64 data URI
+        const dataUri = await window.electronAPI.readFileAsBase64(filePath);
+        setContent(dataUri);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load image');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 

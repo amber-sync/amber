@@ -142,7 +142,11 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
               className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title={showPreview ? 'Hide Preview' : 'Show Preview'}
             >
-              <Icons.File size={16} className={showPreview ? 'text-blue-500' : 'text-gray-400'} />
+              {showPreview ? (
+                <Icons.Eye size={16} className="text-blue-500" />
+              ) : (
+                <Icons.EyeOff size={16} className="text-gray-400" />
+              )}
             </button>
           )}
         </div>
