@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { desktopDir } from '@tauri-apps/api/path';
-import type { SyncJob, IndexedSnapshot, FileNode } from '../types';
+import type { SyncJob, IndexedSnapshot, FileNode, VolumeInfo } from '../types';
 
 // Event callback types
 type RsyncLogCallback = (data: { jobId: string; message: string }) => void;
@@ -117,6 +117,22 @@ class AmberAPI {
 
   async readFileAsBase64(filePath: string): Promise<string> {
     return invoke('read_file_as_base64', { filePath });
+  }
+
+  // ===== Volume Search (TIM-47) =====
+
+  /**
+   * List mounted external volumes
+   */
+  async listVolumes(): Promise<VolumeInfo[]> {
+    return invoke('list_volumes');
+  }
+
+  /**
+   * Search files in a volume by pattern (fuzzy match)
+   */
+  async searchVolume(volumePath: string, pattern: string, limit?: number): Promise<FileNode[]> {
+    return invoke('search_volume', { volumePath, pattern, limit });
   }
 
   // ===== Snapshots =====

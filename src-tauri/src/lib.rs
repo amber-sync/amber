@@ -45,6 +45,8 @@ pub fn run() {
             commands::filesystem::open_path,
             commands::filesystem::show_item_in_folder,
             commands::filesystem::get_disk_stats,
+            commands::filesystem::list_volumes,
+            commands::filesystem::search_volume,
             // Preferences commands
             commands::preferences::get_preferences,
             commands::preferences::set_preferences,

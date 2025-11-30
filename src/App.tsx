@@ -10,6 +10,7 @@ import { Sidebar } from './components/Sidebar';
 import { AmbientBackground } from './components/AmbientBackground';
 import { DeleteJobModal } from './components/DeleteJobModal';
 import { CommandPalette } from './components/CommandPalette';
+import { FileSearchPalette } from './components/FileSearchPalette';
 import { AppContextProvider, useApp } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
@@ -415,6 +416,7 @@ function AppContent() {
       <AmbientBackground />
 
       <CommandPalette />
+      <FileSearchPalette />
 
       <DeleteJobModal
         isOpen={showDeleteConfirm}
