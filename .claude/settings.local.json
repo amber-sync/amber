@@ -34,7 +34,11 @@
       "Bash(npx tauri init:*)",
       "Bash(rustc:*)",
       "Bash(cargo:*)",
-      "Bash(npm run build:frontend:*)"
+      "Bash(npm run build:frontend:*)",
+      "Bash(tree:*)",
+      "Bash(npx husky:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:check:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.amber.app",
   "build": {
-    "frontendDist": "dist",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "vite",
-    "beforeBuildCommand": "vite build"
+    "beforeDevCommand": "npm run dev:frontend",
+    "beforeBuildCommand": "npm run build:frontend"
   },
   "app": {
     "windows": [
