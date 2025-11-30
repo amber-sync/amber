@@ -28,6 +28,8 @@
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"npm run dev\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:3000 && env -u ELECTRON_RUN_AS_NODE cross-env NODE_ENV=development electron .\"",
     "electron:build": "npm run build:icons && tsc -p electron/tsconfig.json && vite build && electron-builder",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "test": "mocha --require ts-node/register --project tests/tsconfig.json \"tests/**/*.test.js\""
   },
   "dependencies": {
@@ -42,6 +44,8 @@
     "recharts": "^3.4.1"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/cli": "^2.9.5",
     "@types/chai": "^5.2.3",
     "@types/chokidar": "^1.7.5",
     "@types/fs-extra": "^11.0.4",
@@ -94,7 +98,9 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         }
       ],
       "artifactName": "Amber-${version}-${arch}.${ext}"
