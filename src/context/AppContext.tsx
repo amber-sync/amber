@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { SyncJob, JobStatus, RsyncConfig, SyncMode, DestinationType } from '../types';
+import { SyncJob, JobStatus, SyncMode, DestinationType } from '../types';
 import { generateUniqueId } from '../utils/idGenerator';
 import { useTheme } from './ThemeContext';
 import { api } from '../api';
+import { BASE_RSYNC_CONFIG, MODE_PRESETS } from '../config';
 
 interface AppContextType {
   jobs: SyncJob[];
@@ -45,17 +46,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const DEFAULT_CONFIG: RsyncConfig = {
-  recursive: true,
-  archive: true,
-  compress: true,
-  delete: true,
-  verbose: true,
-  excludePatterns: [],
-  customFlags: '',
-  customCommand: undefined,
-};
-
 const SANDBOX_JOB: SyncJob = {
   id: 'sandbox-auto',
   name: 'Sandbox Test',
@@ -63,7 +53,7 @@ const SANDBOX_JOB: SyncJob = {
   destPath: '/Users/florianmahner/Desktop/amber-sandbox/dest',
   mode: SyncMode.TIME_MACHINE,
   scheduleInterval: null,
-  config: { ...DEFAULT_CONFIG, delete: true },
+  config: { ...MODE_PRESETS[SyncMode.MIRROR] }, // Mirror mode for sandbox (with delete)
   sshConfig: { enabled: false },
   destinationType: DestinationType.LOCAL,
   lastRun: null,
@@ -79,7 +69,7 @@ const normalizeJobFromStore = (job: any): SyncJob => ({
   mode: job.mode,
   scheduleInterval: job.scheduleInterval ?? null,
   config: {
-    ...DEFAULT_CONFIG,
+    ...BASE_RSYNC_CONFIG,
     ...job.config,
     excludePatterns: job.config?.excludePatterns ?? [],
     customCommand: job.config?.customCommand,
