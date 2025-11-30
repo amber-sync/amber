@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DiskStats } from '../types';
 import { api } from '../api';
 
@@ -7,9 +7,11 @@ const DISK_STATS_REFRESH_INTERVAL_MS = 10000;
 export function useDiskStats(paths: string[]) {
   const [stats, setStats] = useState<Record<string, DiskStats>>({});
 
+  // Create stable unique paths array
+  const uniquePaths = useMemo(() => Array.from(new Set(paths.filter(Boolean))), [paths]);
+
   useEffect(() => {
     const fetchStats = async () => {
-      const uniquePaths = Array.from(new Set(paths.filter(Boolean)));
       const newStats: Record<string, DiskStats> = {};
 
       for (const path of uniquePaths) {
@@ -23,7 +25,7 @@ export function useDiskStats(paths: string[]) {
                   free: 0,
                   status: 'UNAVAILABLE',
                 };
-        } catch (error) {
+        } catch {
           newStats[path] = {
             total: 0,
             free: 0,
@@ -39,7 +41,7 @@ export function useDiskStats(paths: string[]) {
     const interval = setInterval(fetchStats, DISK_STATS_REFRESH_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [paths.join(',')]); // Stable dependency
+  }, [uniquePaths]);
 
   return stats;
 }

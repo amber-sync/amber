@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatBytes } from '../utils/formatters';
 import { api } from '../api';
+import { getErrorMessage } from '../types';
 
 interface FilePreviewProps {
   filePath: string;
@@ -20,16 +21,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     'image' | 'text' | 'code' | 'json' | 'unsupported'
   >('unsupported');
 
-  useEffect(() => {
-    loadPreview();
-  }, [filePath]);
-
-  const getFileExtension = (name: string): string => {
+  const getFileExtension = useCallback((name: string): string => {
     const parts = name.split('.');
     return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
-  };
+  }, []);
 
-  const determinePreviewType = (ext: string): typeof previewType => {
+  const determinePreviewType = useCallback((ext: string): typeof previewType => {
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
     const codeExts = [
       'js',
@@ -56,9 +53,9 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     if (jsonExts.includes(ext)) return 'json';
     if (textExts.includes(ext)) return 'text';
     return 'unsupported';
-  };
+  }, []);
 
-  const loadPreview = async () => {
+  const loadPreview = useCallback(async () => {
     const ext = getFileExtension(fileName);
     const type = determinePreviewType(ext);
     setPreviewType(type);
@@ -78,14 +75,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       setError(null);
 
       try {
-        console.log('[FilePreview] Loading image:', filePath);
         // Load image as base64 data URI
         const dataUri = await api.readFileAsBase64(filePath);
-        console.log('[FilePreview] Loaded base64, length:', dataUri.length);
         setContent(dataUri);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[FilePreview] Error loading image:', err);
-        setError(err.message || 'Failed to load image');
+        setError(getErrorMessage(err) || 'Failed to load image');
       } finally {
         setLoading(false);
       }
@@ -104,12 +99,16 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     try {
       const fileContent = await api.readFilePreview(filePath, PREVIEW_LINES);
       setContent(fileContent);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load preview');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to load preview');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filePath, fileName, fileSize, getFileExtension, determinePreviewType]);
+
+  useEffect(() => {
+    loadPreview();
+  }, [loadPreview]);
 
   const renderPreview = () => {
     if (loading) {
@@ -141,12 +140,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
               alt={fileName}
               className="max-w-full max-h-full object-contain"
               loading="lazy"
-              onLoad={() => console.log('[FilePreview] Image rendered successfully')}
-              onError={e => {
-                console.error('[FilePreview] Image render error:', e);
-                console.error('[FilePreview] Data URI prefix:', content?.substring(0, 100));
-                setError('Failed to render image');
-              }}
+              onError={() => setError('Failed to render image')}
             />
           </div>
         );

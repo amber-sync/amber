@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as Icons from 'lucide-react';
 
 export const ComparisonSlider: React.FC = () => {
@@ -10,11 +10,16 @@ export const ComparisonSlider: React.FC = () => {
   const avgBackupSize = 2500; // MB
   const changeRate = 0.15; // 15% of files change between backups
 
-  const traditionalStorage = numBackups * avgBackupSize;
-  const timeMachineStorage = avgBackupSize + avgBackupSize * changeRate * (numBackups - 1);
-
-  const traditionalFiles = numBackups * 10000;
-  const timeMachineFiles = 10000 + 10000 * changeRate * (numBackups - 1);
+  // Memoize computed values for stable references
+  const { traditionalStorage, timeMachineStorage, traditionalFiles, timeMachineFiles } = useMemo(
+    () => ({
+      traditionalStorage: numBackups * avgBackupSize,
+      timeMachineStorage: avgBackupSize + avgBackupSize * changeRate * (numBackups - 1),
+      traditionalFiles: numBackups * 10000,
+      timeMachineFiles: 10000 + 10000 * changeRate * (numBackups - 1),
+    }),
+    [] // Constants never change
+  );
 
   // Animate counters
   useEffect(() => {
@@ -43,7 +48,7 @@ export const ComparisonSlider: React.FC = () => {
     }, interval);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [traditionalStorage, timeMachineStorage, traditionalFiles, timeMachineFiles]);
 
   const formatStorage = (mb: number) => {
     return `${(mb / 1000).toFixed(1)} GB`;

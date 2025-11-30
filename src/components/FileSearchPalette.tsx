@@ -191,6 +191,40 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
     return results.slice(0, 50);
   }, [snapshotResults, volumeResults, activeScope]);
 
+  // Handle selection (defined before handleKeyDown to use in deps)
+  const handleSelect = useCallback(
+    async (result: SearchResult, showInFinder: boolean = false) => {
+      setIsOpen(false);
+
+      if (showInFinder) {
+        // Cmd+Enter: Show in Finder
+        try {
+          await api.showItemInFolder(result.fullPath);
+        } catch (e) {
+          console.error('Failed to show in Finder:', e);
+        }
+      } else {
+        // Enter: Open file or navigate
+        if (result.file.type === 'FOLDER') {
+          // For folders in snapshots, navigate to them in the file browser
+          if (result.scope === 'snapshot' && activeJob) {
+            setActiveJobId(activeJob.id);
+            setView('DETAIL');
+            // Note: The FileBrowser would need to support path navigation
+          }
+        } else {
+          // Open file in default app
+          try {
+            await api.openPath(result.fullPath);
+          } catch (e) {
+            console.error('Failed to open file:', e);
+          }
+        }
+      }
+    },
+    [activeJob, setActiveJobId, setView]
+  );
+
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -237,41 +271,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
           break;
       }
     },
-    [isOpen, allResults, selectedIndex]
-  );
-
-  // Handle selection
-  const handleSelect = useCallback(
-    async (result: SearchResult, showInFinder: boolean = false) => {
-      setIsOpen(false);
-
-      if (showInFinder) {
-        // Cmd+Enter: Show in Finder
-        try {
-          await api.showItemInFolder(result.fullPath);
-        } catch (e) {
-          console.error('Failed to show in Finder:', e);
-        }
-      } else {
-        // Enter: Open file or navigate
-        if (result.file.type === 'FOLDER') {
-          // For folders in snapshots, navigate to them in the file browser
-          if (result.scope === 'snapshot' && activeJob) {
-            setActiveJobId(activeJob.id);
-            setView('DETAIL');
-            // Note: The FileBrowser would need to support path navigation
-          }
-        } else {
-          // Open file in default app
-          try {
-            await api.openPath(result.fullPath);
-          } catch (e) {
-            console.error('Failed to open file:', e);
-          }
-        }
-      }
-    },
-    [activeJob, setActiveJobId, setView]
+    [isOpen, allResults, selectedIndex, handleSelect]
   );
 
   // Global keyboard listener
