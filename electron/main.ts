@@ -602,6 +602,30 @@ ipcMain.handle('read-dir', async (_, dirPath: string) => {
   }
 });
 
+// File preview handler - reads file content with line limits
+ipcMain.handle('read-file-preview', async (_, filePath: string, maxLines: number = 500) => {
+  try {
+    const stats = await fs.stat(filePath);
+    const MAX_SIZE = 1024 * 1024; // 1MB max
+    
+    if (stats.size > MAX_SIZE) {
+      throw new Error(`File too large: ${stats.size} bytes`);
+    }
+
+    const content = await fs.readFile(filePath, 'utf-8');
+    const lines = content.split('\n');
+    
+    if (lines.length > maxLines) {
+      return lines.slice(0, maxLines).join('\n') + `\n\n... (truncated ${lines.length - maxLines} lines)`;
+    }
+    
+    return content;
+  } catch (error: any) {
+    log.error(`Error reading file preview ${filePath}: ${error.message}`);
+    throw error;
+  }
+});
+
 ipcMain.handle('select-directory', async () => {
   if (!mainWindow) return null;
   const result = await dialog.showOpenDialog(mainWindow, {

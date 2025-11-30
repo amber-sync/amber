@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   testNotification: () => ipcRenderer.invoke('test-notification'),
   listSnapshots: (jobId: string, destPath: string) => ipcRenderer.invoke('snapshot:list', jobId, destPath),
   getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => ipcRenderer.invoke('snapshot:getTree', jobId, timestamp, snapshotPath),
+  readFilePreview: (filePath: string, maxLines?: number) => ipcRenderer.invoke('read-file-preview', filePath, maxLines),
   isDev: () => ipcRenderer.invoke('is-dev'),
   restoreFiles: (job: any, snapshotPath: string, files: string[], targetPath: string) => ipcRenderer.invoke('snapshot:restore', job, snapshotPath, files, targetPath),
   restoreSnapshot: (job: any, snapshotPath: string, targetPath: string) => ipcRenderer.invoke('snapshot:restoreFull', job, snapshotPath, targetPath),
