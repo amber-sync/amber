@@ -1,0 +1,178 @@
+{
+  "tickets": [
+    {
+      "title": "Initialize Tauri project alongside Electron",
+      "description": "Set up Tauri alongside the existing Electron codebase to enable incremental migration.\n\n## Acceptance Criteria\n- [ ] Tauri CLI installed and configured\n- [ ] `src-tauri/` directory created\n- [ ] `tauri.conf.json` configured (app name, identifier, window settings)\n- [ ] `npm run tauri:dev` works\n- [ ] Existing `npm run electron:dev` still works\n\n## Implementation\n1. `npm install -D @tauri-apps/cli @tauri-apps/api`\n2. `npx tauri init`\n3. Configure window: 1200x800, hiddenInset titlebar\n4. Add scripts to package.json\n\n## Test Plan\n- [ ] `npm run tauri:dev` opens window with React app\n- [ ] `npm run electron:dev` unchanged",
+      "priority": 1,
+      "labels": ["tauri", "migration", "phase-1"]
+    },
+    {
+      "title": "Set up Rust backend structure in src-tauri",
+      "description": "Create Rust module structure for all backend services.\n\n## Structure\n```\nsrc-tauri/src/\n├── main.rs\n├── commands/ (jobs, rsync, snapshots, filesystem, preferences)\n├── services/ (rsync_service, snapshot_service, file_service, etc.)\n├── types/ (job, snapshot, preferences)\n└── error.rs\n```\n\n## Dependencies\n- tauri 2 with tray-icon, notification features\n- serde, tokio, tracing, thiserror, chrono\n\n## Test Plan\n- [ ] `cargo build` succeeds\n- [ ] `cargo test` passes",
+      "priority": 1,
+      "labels": ["tauri", "migration", "phase-1", "rust"]
+    },
+    {
+      "title": "Create Tauri command stubs for all IPC handlers",
+      "description": "Create Tauri command stubs mirroring every Electron IPC handler.\n\n## Commands to Port\n**Jobs**: get_jobs, save_job, delete_job\n**Rsync**: run_rsync, kill_rsync\n**Filesystem**: read_dir, select_directory, read_file_preview, read_file_as_base64, open_path, show_item_in_folder, get_disk_stats\n**Snapshots**: list_snapshots, get_snapshot_tree, restore_files, restore_snapshot\n**Preferences**: get_preferences, set_preferences\n**System**: test_notification, create_sandbox_dirs, is_dev, get_desktop_path\n**Rclone**: rclone_check_installed, rclone_list_remotes, rclone_launch_config, rclone_create_remote\n**Sidecar**: scan_directory, search_directory (streaming)\n\n## Test Plan\n- [ ] All commands compile\n- [ ] TypeScript bindings generated",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-1"]
+    },
+    {
+      "title": "Create frontend API abstraction layer",
+      "description": "Create abstraction layer that can switch between Electron IPC and Tauri commands.\n\n## Implementation\n- `src/api/types.ts` - shared types\n- `src/api/electron.ts` - wraps window.electronAPI\n- `src/api/tauri.ts` - wraps @tauri-apps/api\n- `src/api/index.ts` - auto-detects runtime\n\n```typescript\nconst isTauri = '__TAURI__' in window;\nexport const api = isTauri ? tauriApi : electronApi;\n```\n\n## Test Plan\n- [ ] App works identically in Electron mode\n- [ ] TypeScript compiles without errors",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-1", "frontend"]
+    },
+    {
+      "title": "Port FileService to Rust (integrate amber-sidecar)",
+      "description": "Migrate FileService to Rust, integrating amber-sidecar functionality directly into Tauri backend.\n\n## Current Implementation\n- Spawns amber-sidecar binary for fast directory scanning\n- Supports scan and search operations\n- Streams results via stdout parsing\n\n## Target\n- Native Rust in services/file_service.rs\n- Use walkdir/jwalk for parallel traversal\n- Stream results via Tauri events\n\n## Dependencies\nwalkdir, jwalk, rayon\n\n## Performance Targets\n- 10k files scan < 200ms\n- > 50,000 files/second throughput\n\n## Test Plan\n- [ ] Scan /tmp/amber-sandbox/source (10k files) < 200ms\n- [ ] Search finds files matching query\n- [ ] 100k+ files don't freeze UI",
+      "priority": 1,
+      "labels": ["tauri", "migration", "phase-2", "rust", "performance"]
+    },
+    {
+      "title": "Port RsyncService to Rust",
+      "description": "Migrate core RsyncService from TypeScript to Rust. This is the heart of backup functionality.\n\n## Features to Port\n- Build rsync command arguments based on SyncMode\n- Spawn rsync process\n- Parse stdout for progress updates\n- TIME_MACHINE mode with --link-dest\n- Calculate statistics from rsync output\n- Job cancellation\n\n## Acceptance Criteria\n- [ ] All sync modes work: MIRROR, ARCHIVE, TIME_MACHINE\n- [ ] Progress events stream to frontend\n- [ ] Statistics calculated correctly\n- [ ] Job cancellation works\n- [ ] SSH remote destinations work\n- [ ] Hard-link verification works\n\n## Test Plan\n- [ ] MIRROR: files deleted from dest when removed from source\n- [ ] ARCHIVE: files never deleted\n- [ ] TIME_MACHINE: hard links created for unchanged files\n- [ ] Progress updates in UI\n- [ ] Cancel stops backup immediately",
+      "priority": 1,
+      "labels": ["tauri", "migration", "phase-2", "rust", "critical"]
+    },
+    {
+      "title": "Port SnapshotService to Rust",
+      "description": "Migrate SnapshotService for listing, browsing, and restoring backup snapshots.\n\n## Features\n- List snapshots by reading timestamped directories\n- Build file tree for snapshot browser\n- Verify hard-link integrity\n- Handle restore operations\n\n## Acceptance Criteria\n- [ ] list_snapshots returns all snapshots for a job\n- [ ] get_snapshot_tree returns browseable file tree\n- [ ] Hard-link detection works (reports space savings)\n- [ ] Restore operations work correctly\n\n## Test Plan\n- [ ] Snapshots listed in reverse chronological order\n- [ ] File tree shows correct sizes/times\n- [ ] Hard-linked files correctly identified",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-2", "rust"]
+    },
+    {
+      "title": "Port JobScheduler to Rust",
+      "description": "Migrate job scheduling from node-schedule to Rust using tokio-cron-scheduler.\n\n## Features\n- Cron-based scheduling (hourly, daily, weekly)\n- Integrates with VolumeWatcher for 'on volume connect' triggers\n- Schedule survives app restart\n\n## Dependencies\ntokio-cron-scheduler = \"0.9\"\n\n## Test Plan\n- [ ] Schedule job for 1 minute from now, verify it runs\n- [ ] Restart app, verify schedule persisted\n- [ ] Disable schedule, verify job doesn't run",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-2", "rust"]
+    },
+    {
+      "title": "Port VolumeWatcher to Rust",
+      "description": "Migrate volume/disk monitoring from chokidar to native Rust.\n\n## Features\n- Watch /Volumes on macOS for mount/unmount events\n- Emit events when backup destination available\n- Trigger scheduled backups on volume connect\n\n## Dependencies\nnotify = \"6\"\n\n## Test Plan\n- [ ] Mount USB drive → event emitted\n- [ ] Unmount USB drive → event emitted\n- [ ] CPU usage < 1% when idle",
+      "priority": 3,
+      "labels": ["tauri", "migration", "phase-2", "rust"]
+    },
+    {
+      "title": "Port KeychainService to Rust",
+      "description": "Migrate secure credential storage from keytar to native Rust keychain access.\n\n## Features\n- Store credentials in macOS Keychain\n- Retrieve credentials by service/account\n- Delete credentials\n\n## Dependencies\nkeyring = \"2\"\n\n## Test Plan\n- [ ] Store test credential\n- [ ] Retrieve credential\n- [ ] Delete credential\n- [ ] Credential appears in Keychain Access.app",
+      "priority": 3,
+      "labels": ["tauri", "migration", "phase-2", "rust"]
+    },
+    {
+      "title": "Port store.ts and preferences.ts to Rust",
+      "description": "Migrate JSON file persistence for jobs and preferences.\n\n## Features\n- Jobs persist to ~/.amber/jobs.json\n- Preferences persist to ~/.amber/preferences.json\n- Handle corrupt JSON gracefully\n- Migration from Electron data location\n\n## Test Plan\n- [ ] Create job, restart app, job still exists\n- [ ] Change preference, restart, preference persisted\n- [ ] Delete jobs.json, app starts without crash",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-2", "rust"]
+    },
+    {
+      "title": "Update frontend API layer for Tauri commands",
+      "description": "Complete frontend API abstraction to call Tauri commands.\n\n## Implementation\n```typescript\nimport { invoke } from '@tauri-apps/api/core';\nimport { listen } from '@tauri-apps/api/event';\n\nexport const tauriApi = {\n  getJobs: () => invoke<SyncJob[]>('get_jobs'),\n  saveJob: (job) => invoke('save_job', { job }),\n  runRsync: async (job, onProgress) => {\n    const unlisten = await listen('rsync:progress', (e) => onProgress(e.payload));\n    await invoke('run_rsync', { job });\n    unlisten();\n  },\n};\n```\n\n## Test Plan\n- [ ] Dashboard loads jobs\n- [ ] Creating job persists it\n- [ ] Running backup shows progress\n- [ ] All views functional",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-3", "frontend"]
+    },
+    {
+      "title": "Implement Tauri event streaming for rsync progress",
+      "description": "Real-time progress streaming from Rust rsync to React frontend.\n\n## Events\n```rust\n#[derive(Serialize, Clone)]\nstruct RsyncProgress {\n    job_id: String,\n    percentage: u8,\n    transferred: String,\n    speed: String,\n    eta: String,\n    current_file: Option<String>,\n}\n\nwindow.emit(\"rsync:progress\", &progress)?;\n```\n\n## Test Plan\n- [ ] Progress bar updates smoothly\n- [ ] Speed/ETA reasonable values\n- [ ] Terminal shows rsync output",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-3"]
+    },
+    {
+      "title": "Implement system tray with Tauri",
+      "description": "Port system tray functionality from Electron to Tauri.\n\n## Features\n- Tray icon with context menu\n- List of jobs with 'Run' actions\n- 'Open Dashboard' option\n- Animated icon during backup\n- 'Quit Amber' option\n- App hides to tray when 'Run in Background' enabled\n\n## Test Plan\n- [ ] Tray icon visible\n- [ ] Menu items work\n- [ ] Animation during backup\n- [ ] Closing window hides to tray (when enabled)",
+      "priority": 3,
+      "labels": ["tauri", "migration", "phase-3"]
+    },
+    {
+      "title": "Implement native notifications with Tauri",
+      "description": "Port backup completion notifications to Tauri's notification API.\n\n## Features\n- Notification on backup complete\n- Notification on backup failure\n- Respects user preference\n\n## Test Plan\n- [ ] Complete backup → notification appears\n- [ ] Fail backup → error notification\n- [ ] Disable notifications → no notification",
+      "priority": 4,
+      "labels": ["tauri", "migration", "phase-3"]
+    },
+    {
+      "title": "Create Tauri-specific test suite",
+      "description": "Comprehensive tests for Tauri backend.\n\n## Test Categories\n**Unit Tests (Rust)**:\n- RsyncService argument building\n- Progress parsing\n- Snapshot listing\n- File tree building\n\n**Integration Tests**:\n- Command invocation\n- Event streaming\n- File operations\n\n**E2E Tests**:\n- Create job → run backup → verify files\n- Restore from snapshot\n- Schedule job → wait → verify ran\n\n## Test Plan\n- [ ] `cargo test` passes with >80% coverage\n- [ ] All existing Mocha tests pass against Tauri",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-4", "testing"]
+    },
+    {
+      "title": "Benchmark Tauri vs Electron performance",
+      "description": "Create comprehensive benchmarks comparing Tauri and Electron.\n\n## Metrics\n| Metric | Electron | Tauri Target |\n|--------|----------|-------------|\n| Startup time | TBD | < 500ms |\n| Memory (idle) | TBD | < 100MB |\n| Memory (backup) | TBD | < 200MB |\n| Dir scan (10k) | TBD | < 200ms |\n| DMG size | ~150MB | < 20MB |\n| First paint | TBD | < 300ms |\n\n## Deliverables\n- [ ] Benchmark script\n- [ ] Results documented\n- [ ] PERFORMANCE.md updated\n\n## Test Plan\n- [ ] Benchmarks reproducible\n- [ ] Tauri shows improvement in all metrics",
+      "priority": 2,
+      "labels": ["tauri", "migration", "phase-4", "performance"]
+    },
+    {
+      "title": "Migration testing - verify feature parity",
+      "description": "Comprehensive testing for 100% feature parity.\n\n## Feature Checklist\n**Dashboard**: Jobs list, status indicators, quick actions, storage timeline\n**Job Editor**: Create/edit job, source/dest selection, sync modes, schedule, exclusions, SSH\n**Job Detail**: Run/cancel backup, rsync log, progress bar, statistics\n**Snapshot Browser**: List snapshots, browse tree, preview files, restore\n**Settings**: Theme, accent color, background mode, boot, notifications\n**System**: Tray, notifications, Finder integration, volume detection\n\n## Test Plan\n- [ ] Manual QA pass through all features\n- [ ] Document any regressions",
+      "priority": 1,
+      "labels": ["tauri", "migration", "phase-4", "testing", "critical"]
+    },
+    {
+      "title": "Remove Electron dependencies and finalize",
+      "description": "Once Tauri migration complete, remove all Electron code.\n\n## Tasks\n- [ ] Remove electron/ directory\n- [ ] Remove from package.json: electron, electron-builder, electron-log, keytar, chokidar, node-schedule\n- [ ] Update build scripts\n- [ ] Update CLAUDE.md, README.md\n- [ ] Update GitHub Actions for Tauri builds\n\n## Test Plan\n- [ ] npm install succeeds without Electron\n- [ ] npm run tauri:build produces working DMG\n- [ ] CI builds pass",
+      "priority": 3,
+      "labels": ["tauri", "migration", "phase-4", "cleanup"]
+    },
+    {
+      "title": "Add SQLite metadata indexing for fast browsing",
+      "description": "SQLite-based metadata indexing for fast snapshot browsing of large backups.\n\n## Schema\n```sql\nCREATE TABLE snapshots (id, timestamp, root_path, file_count, total_size);\nCREATE TABLE files (id, snapshot_id, path, name, size, mtime, inode, is_dir);\nCREATE INDEX idx_files_path ON files(snapshot_id, path);\nCREATE INDEX idx_files_name ON files(snapshot_id, name);\n```\n\n## Performance Targets\n- List 10k files: < 50ms\n- Search by name: < 100ms\n- Diff between snapshots: < 500ms\n\n## Test Plan\n- [ ] Create backup of 100k files\n- [ ] Browse snapshot → < 100ms\n- [ ] Search files → < 200ms\n- [ ] Show diff → < 1s",
+      "priority": 2,
+      "labels": ["tauri", "performance", "database"]
+    },
+    {
+      "title": "Establish design system foundation",
+      "description": "Create comprehensive design system with foundational tokens.\n\n## Design Tokens\n**Spacing Scale (8px base)**: 4, 8, 12, 16, 24, 32, 48, 64px\n**Colors**: success, warning, error, info + surface levels\n**Border Radius**: sm(4), md(8), lg(12), xl(16), full\n\n## Deliverables\n- [ ] src/styles/tokens.css with CSS variables\n- [ ] Updated tailwind.config.js\n- [ ] docs/design-system.md\n\n## Test Plan\n- [ ] All components use design tokens\n- [ ] No hardcoded colors/spacing\n- [ ] Dark/light themes work",
+      "priority": 2,
+      "labels": ["ui-polish", "design-system"]
+    },
+    {
+      "title": "Implement typography system",
+      "description": "Establish consistent typography inspired by Warp, Linear, Raycast.\n\n## Typography\n**Fonts**: Inter (sans), JetBrains Mono (code)\n**Sizes**: xs(11), sm(13), base(14), lg(16), xl(18), 2xl(24), 3xl(30)\n**Weights**: normal(400), medium(500), semibold(600), bold(700)\n\n## Test Plan\n- [ ] Fonts load correctly\n- [ ] No FOUT\n- [ ] Terminal uses monospace\n- [ ] Text readable at all sizes",
+      "priority": 2,
+      "labels": ["ui-polish", "design-system", "typography"]
+    },
+    {
+      "title": "Implement animation system",
+      "description": "Create consistent, performant GPU-accelerated animations.\n\n## Guidelines\n**Timing**: fast(150ms), normal(200ms), slow(300ms), slower(500ms)\n**Easing**: in-out, out, in, bounce\n\n## Rules\n- Only animate transform and opacity\n- Support prefers-reduced-motion\n- No animations > 500ms\n\n## Test Plan\n- [ ] Animations 60fps\n- [ ] No layout thrashing\n- [ ] Respects reduced motion",
+      "priority": 3,
+      "labels": ["ui-polish", "design-system", "animation"]
+    },
+    {
+      "title": "Implement Command Palette",
+      "description": "Raycast/Spotlight-style command palette for keyboard-first navigation.\n\n## Features\n- Open with ⌘K\n- Fuzzy search\n- Recent commands\n- Categorized results (Jobs, Actions, Navigation)\n- Keyboard navigation\n\n## Commands\n**Jobs**: Run/Edit/Delete [job], Create new job\n**Navigation**: Dashboard, Settings, History\n**Actions**: Toggle theme, Open logs, Check updates\n\n## Test Plan\n- [ ] ⌘K opens palette\n- [ ] Escape closes\n- [ ] Arrow keys navigate\n- [ ] Enter executes\n- [ ] Fuzzy search works",
+      "priority": 2,
+      "labels": ["ui-polish", "feature", "ux"]
+    },
+    {
+      "title": "Virtualize file browser for large directories",
+      "description": "Implement virtualized scrolling for 100k+ files.\n\n## Current Problem\n- FileBrowser renders all items in DOM\n- Large directories cause UI freeze\n\n## Solution\nUse @tanstack/react-virtual for virtualized rendering.\n\n## Acceptance Criteria\n- [ ] 100k files renders smoothly\n- [ ] Scroll 60fps\n- [ ] Memory constant regardless of file count\n- [ ] Expand/collapse works\n\n## Test Plan\n- [ ] Load 100k files directory\n- [ ] Scroll is smooth (DevTools profiler)\n- [ ] Expand nested folder works",
+      "priority": 2,
+      "labels": ["ui-polish", "performance", "critical"]
+    },
+    {
+      "title": "Polish Dashboard cards",
+      "description": "Redesign Dashboard job cards for modern look.\n\n## Improvements\n- Subtle shadows for depth\n- Status indicator as colored sidebar/badge\n- Better typography hierarchy\n- Hover state with elevation\n- Action buttons on hover\n\n## Test Plan\n- [ ] Cards visually distinct\n- [ ] Hover states responsive\n- [ ] Status clear at glance\n- [ ] Light/dark mode work",
+      "priority": 3,
+      "labels": ["ui-polish", "design"]
+    },
+    {
+      "title": "Polish Terminal component",
+      "description": "Make rsync output terminal more professional and Warp-like.\n\n## Improvements\n- [ ] Better syntax highlighting\n- [ ] Timestamps on each line\n- [ ] Collapsible verbose output\n- [ ] Progress bar integrated\n- [ ] Copy output button\n- [ ] Search within output\n\n## Test Plan\n- [ ] Output readable and styled\n- [ ] Search finds text\n- [ ] Copy works\n- [ ] Performance good with 10k+ lines",
+      "priority": 3,
+      "labels": ["ui-polish", "design"]
+    },
+    {
+      "title": "Add keyboard shortcuts throughout app",
+      "description": "Comprehensive keyboard shortcuts for power users.\n\n## Shortcuts\n**Global**: ⌘K (palette), ⌘, (settings), ⌘1-5 (views), ⌘N (new job), ⌘R (run job)\n**File Browser**: ↑/↓ (nav), Enter (open), Space (preview), ⌘C (copy path)\n**Terminal**: ⌘F (search), ⌘C (copy)\n\n## Test Plan\n- [ ] All shortcuts work\n- [ ] No conflicts\n- [ ] Shortcuts shown in tooltips",
+      "priority": 3,
+      "labels": ["ui-polish", "feature", "ux"]
+    },
+    {
+      "title": "Add onboarding flow for new users",
+      "description": "First-run experience guiding users through first backup.\n\n## Flow\n1. Welcome screen\n2. Create first job wizard\n3. Explain sync modes\n4. Recommend settings\n5. First backup prompt\n\n## Test Plan\n- [ ] Fresh install shows onboarding\n- [ ] Skip works\n- [ ] Re-run from settings works\n- [ ] First backup created successfully",
+      "priority": 4,
+      "labels": ["ui-polish", "feature", "ux", "onboarding"]
+    }
+  ]
+}
