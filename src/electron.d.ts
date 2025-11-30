@@ -33,6 +33,7 @@ export interface ElectronAPI {
   searchDirectory: (path: string, query: string, onEntry: (entry: any) => void) => Promise<void>;
   listSnapshots: (jobId: string, destPath: string) => Promise<any[]>;
   getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => Promise<any[]>;
+  readFilePreview: (filePath: string, maxLines?: number) => Promise<string>;
   isDev: () => Promise<boolean>;
 }
 
