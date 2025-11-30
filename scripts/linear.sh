@@ -16,7 +16,7 @@ LINEAR_API_KEY="${LINEAR_API_KEY:-lin_api_iET7hQbDEUsQxLIdiNF2QkS6JCJrdXogGH8Q88
 LINEAR_ENDPOINT="https://api.linear.app/graphql"
 TEAM_ID="7621f957-2d9f-417f-bf41-bc25369a4df5"
 STATE_TODO="8a3d82d7-7a32-4216-a313-057fa386fbf2"
-STATE_DONE="8ae70cf7-fd9a-4669-938c-7609bfb8dfb4"
+STATE_DONE="7c9b8132-9436-4cdd-aa15-5668f709930f"
 
 # Helper function to make GraphQL requests
 linear_query() {
