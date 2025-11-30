@@ -145,7 +145,7 @@ export function isRsyncProgress(data: unknown): data is RsyncProgressData {
     typeof data === 'object' &&
     data !== null &&
     'percentage' in data &&
-    typeof (data as any).percentage === 'number'
+    typeof (data as RsyncProgressData).percentage === 'number'
   );
 }
 
@@ -154,6 +154,57 @@ export function isBackupResult(data: unknown): data is BackupResult {
     typeof data === 'object' &&
     data !== null &&
     'success' in data &&
-    typeof (data as any).success === 'boolean'
+    typeof (data as BackupResult).success === 'boolean'
   );
+}
+
+// Directory entry from filesystem commands
+export interface DirEntry {
+  name: string;
+  path: string;
+  is_directory: boolean;
+  size: number;
+  modified: number;
+}
+
+// Tauri event payload types
+export interface RsyncLogPayload {
+  jobId: string;
+  message: string;
+}
+
+export interface RsyncProgressPayload {
+  jobId: string;
+  transferred: string;
+  percentage: number;
+  speed: string;
+  eta: string;
+  currentFile?: string;
+}
+
+export interface RsyncCompletePayload {
+  jobId: string;
+  success: boolean;
+  error?: string;
+}
+
+// Preferences type
+export interface AppPreferences {
+  runInBackground: boolean;
+  startOnBoot: boolean;
+  notifications: boolean;
+}
+
+// Error extraction helper
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
 }
