@@ -43,7 +43,8 @@
       "WebFetch(domain:tauri.app)",
       "WebSearch",
       "WebFetch(domain:v2.tauri.app)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(API_KEY=\"lin_api_iET7hQbDEUsQxLIdiNF2QkS6JCJrdXogGH8Q884G\" curl:*)"
     ],
     "deny": [],
     "ask": []

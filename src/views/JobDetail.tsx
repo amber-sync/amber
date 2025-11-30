@@ -628,132 +628,163 @@ const SnapshotsSection: React.FC<{
   onSortChange,
   onOpenSnapshot,
   onBrowseSnapshot,
-}) => (
-  <div className="space-y-4">
-    <div className="flex justify-between items-center">
-      <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <Icons.Clock size={18} className="text-indigo-500" /> Snapshots
-      </h3>
-      <div className="flex items-center gap-2">
-        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
-          <button
-            onClick={() => onSortChange('date')}
-            className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
-          >
-            Date
-          </button>
-          <button
-            onClick={() => onSortChange('size')}
-            className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
-          >
-            Size
-          </button>
-        </div>
-        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
-        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
-          {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
+}) => {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Icons.Clock size={18} className="text-indigo-500" /> Snapshots
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
             <button
-              key={group}
-              onClick={() => onGroupingChange(group)}
-              className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+              onClick={() => onSortChange('date')}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
             >
-              {group.charAt(0) + group.slice(1).toLowerCase()}
+              Date
             </button>
-          ))}
+            <button
+              onClick={() => onSortChange('size')}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            >
+              Size
+            </button>
+          </div>
+          <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
+            {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
+              <button
+                key={group}
+                onClick={() => onGroupingChange(group)}
+                className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+              >
+                {group.charAt(0) + group.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {snapshots.length === 0 && (
+        <div className="w-full h-32 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+          No snapshots yet. Run a sync to create one.
+        </div>
+      )}
+
+      {snapshots.map(({ group, label, snaps }) => (
+        <SnapshotGroup
+          key={group}
+          label={label}
+          job={job}
+          snaps={snaps}
+          showHeader={snapshotGrouping !== 'ALL'}
+          isCollapsed={collapsedGroups.has(group)}
+          onToggle={() => toggleGroup(group)}
+          onOpenSnapshot={onOpenSnapshot}
+          onBrowseSnapshot={onBrowseSnapshot}
+        />
+      ))}
     </div>
-
-    {snapshots.length === 0 && (
-      <div className="w-full h-32 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center text-gray-400 text-sm">
-        No snapshots yet. Run a sync to create one.
-      </div>
-    )}
-
-    {snapshots.map(({ group, label, snaps }) => (
-      <SnapshotGroup
-        key={group}
-        label={label}
-        job={job}
-        snaps={snaps}
-        showHeader={snapshotGrouping !== 'ALL'}
-        onOpenSnapshot={onOpenSnapshot}
-        onBrowseSnapshot={onBrowseSnapshot}
-      />
-    ))}
-  </div>
-);
+  );
+};
 
 const SnapshotGroup: React.FC<{
   job: SyncJob;
   snaps: SyncJob['snapshots'];
   label: string | null;
   showHeader: boolean;
+  isCollapsed: boolean;
+  onToggle: () => void;
   onOpenSnapshot: (timestamp: number) => void;
   onBrowseSnapshot: (timestamp: number) => void;
-}> = ({ job, snaps, label, showHeader, onOpenSnapshot, onBrowseSnapshot }) => (
-  <div className={showHeader ? 'group/details space-y-3' : ''}>
+}> = ({ snaps, label, showHeader, isCollapsed, onToggle, onOpenSnapshot, onBrowseSnapshot }) => (
+  <div className={showHeader ? 'space-y-2' : ''}>
     {showHeader && (
-      <div className="py-2 bg-[#f5f5f7] dark:bg-[#0f0f10] text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-colors outline-none">
-        <Icons.ChevronDown className="w-4 h-4 -rotate-90" />
+      <button
+        onClick={onToggle}
+        className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-all outline-none border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+      >
+        <Icons.ChevronDown
+          className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+        />
         {label}
-        <span className="ml-auto text-[10px] font-normal bg-gray-200 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-600 dark:text-gray-400">
+        <span className="ml-auto text-[10px] font-medium bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full text-gray-500 dark:text-gray-400">
           {snaps.length}
         </span>
-      </div>
+      </button>
     )}
 
     <div
-      className={
-        showHeader
-          ? 'space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-800 ml-2'
-          : 'space-y-2'
-      }
+      className={`overflow-hidden transition-all duration-300 ease-out ${
+        showHeader && isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'
+      }`}
     >
-      {snaps.map(snap => (
-        <div
-          key={snap.id}
-          className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
-              <Icons.CheckCircle size={14} />
+      <div
+        className={
+          showHeader
+            ? 'space-y-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 ml-2 mt-2'
+            : 'space-y-2'
+        }
+      >
+        {snaps.map(snap => (
+          <div
+            key={snap.id}
+            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
+                <Icons.CheckCircle size={14} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  {new Date(snap.timestamp).toLocaleString()}
+                  {snap.restored && (
+                    <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                      Restored
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {snap.fileCount} files • {snap.changesCount} changed
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                {new Date(snap.timestamp).toLocaleString()}
-                {snap.restored && (
-                  <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                    Restored
-                  </span>
-                )}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {snap.fileCount} files • {snap.changesCount} changed
-              </p>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                {formatBytes(snap.sizeBytes)}
+              </span>
+              <button
+                onClick={() => onBrowseSnapshot(snap.timestamp)}
+                className="p-2 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+                title="Browse Files"
+              >
+                <Icons.Eye size={16} />
+              </button>
+              <button
+                onClick={() => onOpenSnapshot(snap.timestamp)}
+                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                title="Open in Finder"
+              >
+                <Icons.FolderOpen size={16} />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-              {formatBytes(snap.sizeBytes)}
-            </span>
-            <button
-              onClick={() => onBrowseSnapshot(snap.timestamp)}
-              className="p-2 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
-              title="Browse Files"
-            >
-              <Icons.Eye size={16} />
-            </button>
-            <button
-              onClick={() => onOpenSnapshot(snap.timestamp)}
-              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-              title="Open in Finder"
-            >
-              <Icons.FolderOpen size={16} />
-            </button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   </div>
 );
@@ -765,75 +796,129 @@ const LiveActivity: React.FC<{
   logs: LogEntry[];
   isTerminalExpanded: boolean;
   onExpand: () => void;
-}> = ({ job, isRunning, progress, logs, isTerminalExpanded, onExpand }) => (
-  <div className={`flex flex-col ${isTerminalExpanded ? 'h-full' : ''}`}>
-    <div className="flex items-center justify-between mb-4">
-      <h3
-        className={`text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}
-      >
-        <Icons.Terminal size={18} className="text-indigo-500" /> Live Activity
-        {isRunning && (
-          <span className="inline-flex w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
-        )}
-      </h3>
-      {!isTerminalExpanded && (
-        <button
-          onClick={onExpand}
-          className="text-xs font-medium text-gray-500 hover:text-indigo-500 flex items-center gap-1 transition-colors"
+}> = ({ isRunning, progress, logs, isTerminalExpanded, onExpand }) => {
+  const [showLogs, setShowLogs] = useState(false);
+
+  // Auto-expand logs when running starts
+  useEffect(() => {
+    if (isRunning && !showLogs) {
+      setShowLogs(true);
+    }
+  }, [isRunning, showLogs]);
+
+  return (
+    <div className={`flex flex-col ${isTerminalExpanded ? 'h-full' : ''}`}>
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between mb-3">
+        <h3
+          className={`text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}
         >
-          <Icons.Maximize2 size={12} /> Expand
-        </button>
-      )}
-    </div>
-
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-      {/* Terminal Header */}
-      <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-          <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-        </div>
-        <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 flex items-center gap-2">
-          <Icons.Cpu size={10} />
-          rsync process
-        </div>
-      </div>
-
-      {/* Progress Bar (Inside Terminal Look) */}
-      {isRunning && progress && (
-        <div className="bg-white dark:bg-gray-800 p-4 border-b border-gray-100 dark:border-gray-700 transition-colors duration-300">
-          <div className="flex justify-between text-xs font-mono text-gray-600 dark:text-gray-300 mb-2">
-            <span>{progress.percentage > 0 ? `${progress.percentage}%` : 'Calculating...'}</span>
-            <span>
-              {progress.speed} • ETA: {progress.eta || '--:--'}
+          <Icons.Activity size={18} className="text-indigo-500" /> Activity
+          {isRunning && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-          </div>
-          <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            {progress.percentage > 0 ? (
-              <div
-                className="h-full bg-indigo-500 transition-all duration-300 ease-out"
-                style={{ width: `${progress.percentage}%` }}
-              />
-            ) : (
-              <div className="h-full bg-indigo-500/50 w-1/3 animate-progress-pulse rounded-full" />
-            )}
-          </div>
-          <div className="mt-2 text-[10px] font-mono text-gray-500 truncate">
-            {progress.currentFile
-              ? `> ${progress.currentFile}`
-              : `> Transferred: ${progress.transferred}`}
+          )}
+        </h3>
+        {!isTerminalExpanded && (
+          <button
+            onClick={onExpand}
+            className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+            title="Fullscreen"
+          >
+            <Icons.Maximize2 size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Compact Activity Card */}
+      <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm overflow-hidden transition-all duration-300">
+        {/* Status Bar - Always Visible */}
+        <div className="px-4 py-3 flex items-center gap-3">
+          {isRunning ? (
+            <>
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Icons.RefreshCw
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400 animate-spin"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {progress?.percentage && progress.percentage > 0
+                      ? `Syncing... ${progress.percentage}%`
+                      : 'Starting sync...'}
+                  </span>
+                  {progress?.eta && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      ETA {progress.eta}
+                    </span>
+                  )}
+                </div>
+                <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  {progress?.percentage && progress.percentage > 0 ? (
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ease-out rounded-full"
+                      style={{ width: `${progress.percentage}%` }}
+                    />
+                  ) : (
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 w-1/3 animate-progress-pulse rounded-full" />
+                  )}
+                </div>
+                {progress?.currentFile && (
+                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                    {progress.currentFile}
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <Icons.CheckCircle size={16} className="text-gray-400 dark:text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {logs.length > 0 ? 'Last sync completed' : 'Ready to sync'}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Toggle Logs Button */}
+          <button
+            onClick={() => setShowLogs(!showLogs)}
+            className={`p-2 rounded-lg transition-all ${
+              showLogs
+                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title={showLogs ? 'Hide logs' : 'Show logs'}
+          >
+            <Icons.Terminal size={16} />
+          </button>
+        </div>
+
+        {/* Collapsible Logs Section */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-out ${
+            showLogs ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="border-t border-gray-200/50 dark:border-gray-700/50">
+            <div className={isTerminalExpanded ? 'flex-1' : 'h-64'}>
+              <Terminal logs={logs} isRunning={isRunning} variant="embedded" />
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Terminal Output */}
-      <div className={isTerminalExpanded ? 'flex-1' : 'h-64'}>
-        <Terminal logs={logs} isRunning={isRunning} variant="embedded" />
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const buildSnapshotFolderName = (timestamp: number) => {
   const date = new Date(timestamp);
