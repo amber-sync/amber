@@ -61,13 +61,21 @@ npm run build
 
 ```
 amber/
-├── src/
-│   ├── frontend/      # React frontend
-│   └── backend/       # Rust/Tauri backend
-├── tests/             # Test files and fixtures
-├── scripts/           # Build utilities
-├── docs/              # Documentation
-└── public/            # Static assets
+├── src/                 # React frontend (TypeScript, Vite, Tailwind)
+│   ├── api/             # Tauri IPC bindings
+│   ├── components/      # React components
+│   ├── context/         # React context providers
+│   ├── views/           # Page components
+│   └── __tests__/       # Frontend tests (Vitest)
+├── src-tauri/           # Rust/Tauri backend
+│   ├── src/commands/    # IPC command handlers
+│   ├── src/services/    # Business logic
+│   ├── src/types/       # Data structures
+│   └── tests/           # Rust integration tests
+├── tests/fixtures/      # Shared test fixtures
+├── scripts/             # Build utilities
+├── docs/                # Documentation
+└── public/              # Static assets
 ```
 
 ## Usage
