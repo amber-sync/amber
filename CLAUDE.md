@@ -10,11 +10,14 @@ Amber Backup is a macOS desktop application for Time Machine-style incremental b
 
 ```
 amber/
-├── frontend/          # React frontend (TypeScript, Vite, Tailwind)
-├── backend/           # Rust/Tauri backend
+├── src/
+│   ├── frontend/      # React frontend (TypeScript, Vite, Tailwind)
+│   └── backend/       # Rust/Tauri backend
+├── tests/
+│   └── fixtures/      # Rsync test fixtures (sandbox)
 ├── scripts/           # Build and utility scripts
 ├── docs/              # Documentation
-└── tests/             # Test files
+└── public/            # Static assets
 ```
 
 ## Development Commands
@@ -33,27 +36,27 @@ npm run typecheck      # TypeScript type checking
 
 ## Architecture
 
-### Frontend (frontend/)
+### Frontend (src/frontend/)
 - **React 19** with TypeScript, Vite, Tailwind CSS
 - **Context API** for state: `AppContext` (jobs, navigation), `ThemeContext` (light/dark/accent)
 - **Views**: Dashboard, JobDetail, JobEditor, AppSettings, RestoreWizard
 - **Components**: FileBrowser (tree nav), FilePreview (split-view), Terminal (rsync output)
-- **API Layer**: `frontend/api/index.ts` - Tauri IPC bindings
+- **API Layer**: `src/frontend/api/index.ts` - Tauri IPC bindings
 
-### Backend (backend/)
+### Backend (src/backend/)
 - **Tauri v2** with Rust
-- **Commands** (`backend/src/commands/`):
+- **Commands** (`src/backend/src/commands/`):
   - `jobs.rs`: Job CRUD operations
   - `rsync.rs`: Rsync execution and control
   - `snapshots.rs`: Snapshot listing and restoration
   - `filesystem.rs`: File operations, directory browsing
   - `preferences.rs`: App settings
-- **Services** (`backend/src/services/`):
+- **Services** (`src/backend/src/services/`):
   - `rsync_service.rs`: Rsync command building and process management
   - `snapshot_service.rs`: Snapshot discovery and metadata
   - `file_service.rs`: File I/O, base64 encoding
   - `store.rs`: JSON-based persistence
-- **Types** (`backend/src/types/`): Shared data structures
+- **Types** (`src/backend/src/types/`): Shared data structures
 
 ## Key Patterns
 
@@ -70,8 +73,8 @@ const jobs = await invoke('get_jobs');
 ```
 
 ### Type Definitions
-- Frontend types: `frontend/types.ts`
-- Backend types: `backend/src/types/`
+- Frontend types: `src/frontend/types.ts`
+- Backend types: `src/backend/src/types/`
 
 ## Code Quality
 

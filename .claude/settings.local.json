@@ -38,7 +38,8 @@
       "Bash(tree:*)",
       "Bash(npx husky:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run format:check:*)"
+      "Bash(npm run format:check:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []
