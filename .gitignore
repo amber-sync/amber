@@ -27,7 +27,7 @@ dist_electron_build
 # Generated files
 benchmark-results.json
 *.generated.ts
-src/frontend/generated/bindings.ts
+src/generated/bindings.ts
 
 # Build outputs
 build/
@@ -42,7 +42,7 @@ playwright-report/
 test-results/
 
 # Rust
-src/backend/target/
+src-tauri/target/
 target/llvm-cov/
 
 # Environment

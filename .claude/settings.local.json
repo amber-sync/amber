@@ -39,7 +39,11 @@
       "Bash(npx husky:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run format:check:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:tauri.app)",
+      "WebSearch",
+      "WebFetch(domain:v2.tauri.app)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
