@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icons } from './IconComponents';
 
-type View = 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP';
+type View = 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
 
 interface SidebarProps {
   activeView: View;

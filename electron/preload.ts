@@ -39,6 +39,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPreferences: () => ipcRenderer.invoke('prefs:get'),
   setPreferences: (prefs: any) => ipcRenderer.invoke('prefs:set', prefs),
   testNotification: () => ipcRenderer.invoke('test-notification'),
+  listSnapshots: (jobId: string, destPath: string) => ipcRenderer.invoke('snapshot:list', jobId, destPath),
+  getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => ipcRenderer.invoke('snapshot:getTree', jobId, timestamp, snapshotPath),
+  isDev: () => ipcRenderer.invoke('is-dev'),
+  restoreFiles: (job: any, snapshotPath: string, files: string[], targetPath: string) => ipcRenderer.invoke('snapshot:restore', job, snapshotPath, files, targetPath),
+  restoreSnapshot: (job: any, snapshotPath: string, targetPath: string) => ipcRenderer.invoke('snapshot:restoreFull', job, snapshotPath, targetPath),
+  getDesktopPath: () => ipcRenderer.invoke('app:getDesktopPath'),
+  
+  // Sandbox / Dev Tools
+  initSandbox: () => ipcRenderer.invoke('sandbox:init'),
+  sandboxStep2: () => ipcRenderer.invoke('sandbox:step2'),
+  sandboxStep3: () => ipcRenderer.invoke('sandbox:step3'),
+  createMockBackups: () => ipcRenderer.invoke('sandbox:mockBackups'),
+
   setActiveJob: (job: any) => ipcRenderer.send('active-job', job),
   onNavigate: (callback: (view: string) => void) => {
     const subscription = (_: any, data: any) => callback(data);

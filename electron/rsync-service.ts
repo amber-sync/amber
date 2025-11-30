@@ -302,6 +302,7 @@ export class RsyncService {
               snapshot: {
                   root: snapshotFiles,
                   timestamp: now.getTime(),
+                  path: finalDest, // Add path for analytics/restore
                   ...this.calculateStats(snapshotFiles)
               }
           });
@@ -654,5 +655,116 @@ export class RsyncService {
         onLog(`Failed to prune ${dir}: ${e.message}`);
       }
     }
+
+  }
+
+  async restoreFiles(
+    job: SyncJob,
+    snapshotPath: string,
+    files: string[],
+    targetPath: string,
+    onLog: (msg: string) => void
+  ): Promise<SyncResult> {
+    const safeLog = onLog || (() => {});
+    safeLog(`Starting restore of ${files.length} files from ${snapshotPath} to ${targetPath}`);
+
+    // Ensure target directory exists
+    try {
+      await fs.mkdir(targetPath, { recursive: true });
+    } catch (e: any) {
+      return { success: false, error: `Failed to create target directory: ${e.message}` };
+    }
+
+    // Build rsync command
+    // We use --files-from to handle the list of files efficiently
+    const args = [
+      '-av',
+      '--progress',
+      '--files-from=-', // Read files from stdin
+      '--from0',        // Expect null-terminated file names (safer)
+      snapshotPath,
+      targetPath
+    ];
+
+    safeLog(`Command: rsync ${args.join(' ')}`);
+
+    return new Promise((resolve) => {
+      const child = spawn('rsync', args);
+      
+      // Write files to stdin, null-terminated
+      const fileList = files.join('\0');
+      child.stdin.write(fileList);
+      child.stdin.end();
+
+      child.stdout.on('data', (data) => safeLog(data.toString().trim()));
+      child.stderr.on('data', (data) => safeLog(`ERROR: ${data.toString().trim()}`));
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          safeLog('Restore completed successfully.');
+          resolve({ success: true });
+        } else {
+          safeLog(`Restore failed with code ${code}`);
+          resolve({ success: false, error: `Rsync exited with code ${code}` });
+        }
+      });
+
+      child.on('error', (err) => {
+        safeLog(`Failed to start rsync: ${err.message}`);
+        resolve({ success: false, error: err.message });
+      });
+    });
+  }
+
+  async restoreSnapshot(
+    job: SyncJob,
+    snapshotPath: string,
+    targetPath: string,
+    onLog: (msg: string) => void
+  ): Promise<SyncResult> {
+    const safeLog = onLog || (() => {});
+    safeLog(`Starting FULL restore from ${snapshotPath} to ${targetPath}`);
+
+    // Ensure target directory exists
+    try {
+      await fs.mkdir(targetPath, { recursive: true });
+    } catch (e: any) {
+      return { success: false, error: `Failed to create target directory: ${e.message}` };
+    }
+
+    // Build rsync command for full restore
+    // Note: We use trailing slash on source to copy CONTENTS of snapshot into target
+    const src = snapshotPath.endsWith(path.sep) ? snapshotPath : `${snapshotPath}${path.sep}`;
+    
+    const args = [
+      '-av',
+      '--progress',
+      src,
+      targetPath
+    ];
+
+    safeLog(`Command: rsync ${args.join(' ')}`);
+
+    return new Promise((resolve) => {
+      const child = spawn('rsync', args);
+
+      child.stdout.on('data', (data) => safeLog(data.toString().trim()));
+      child.stderr.on('data', (data) => safeLog(`ERROR: ${data.toString().trim()}`));
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          safeLog('Full restore completed successfully.');
+          resolve({ success: true });
+        } else {
+          safeLog(`Restore failed with code ${code}`);
+          resolve({ success: false, error: `Rsync exited with code ${code}` });
+        }
+      });
+
+      child.on('error', (err) => {
+        safeLog(`Failed to start rsync: ${err.message}`);
+        resolve({ success: false, error: err.message });
+      });
+    });
   }
 }

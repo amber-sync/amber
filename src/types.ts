@@ -63,6 +63,9 @@ export interface Snapshot {
   fileCount: number;
   changesCount: number;
   status: 'Complete' | 'Partial';
+  restored?: boolean;
+  restoredDate?: number;
+  path?: string; // Path to the snapshot folder
   root?: FileNode[]; // Mocked file tree for visualization (optional for persistence)
 }
 
