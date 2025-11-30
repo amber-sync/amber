@@ -45,7 +45,7 @@ export const CommandPalette: React.FC = () => {
   const listRef = useRef<HTMLDivElement>(null);
 
   const { jobs, setView, setActiveJobId, runSync } = useApp();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isDark } = useTheme();
 
   // Build command list
   const commands = useMemo<Command[]>(() => {
@@ -142,24 +142,22 @@ export const CommandPalette: React.FC = () => {
       });
     });
 
-    // Theme commands
-    const themes = [
-      { id: 'light', name: 'Light' },
-      { id: 'dark', name: 'Dark' },
-      { id: 'midnight', name: 'Midnight' },
-      { id: 'amber', name: 'Amber' },
-      { id: 'cyberpunk', name: 'Cyberpunk' },
+    // Theme commands - only light, dark, system
+    const themes: { id: 'light' | 'dark' | 'system'; name: string; description: string }[] = [
+      { id: 'system', name: 'System', description: 'Follow system appearance' },
+      { id: 'light', name: 'Light', description: 'Light appearance' },
+      { id: 'dark', name: 'Dark', description: 'Dark appearance' },
     ];
 
     themes.forEach(t => {
       cmds.push({
         id: `theme-${t.id}`,
         title: `Set ${t.name} Theme`,
-        description: `Switch to ${t.name.toLowerCase()} appearance`,
+        description: t.description,
         category: 'theme',
         icon: <PaletteIcon />,
         action: () => {
-          setTheme(t.id as any);
+          setTheme(t.id);
           setIsOpen(false);
         },
       });
@@ -174,13 +172,14 @@ export const CommandPalette: React.FC = () => {
       icon: <MoonIcon />,
       shortcut: '⌘T',
       action: () => {
-        setTheme(theme === 'dark' ? 'light' : 'dark');
+        // Toggle between light and dark, skipping system
+        setTheme(theme === 'dark' || (theme === 'system' && isDark) ? 'light' : 'dark');
         setIsOpen(false);
       },
     });
 
     return cmds;
-  }, [jobs, theme, setView, setActiveJobId, setTheme, runSync]);
+  }, [jobs, theme, isDark, setView, setActiveJobId, setTheme, runSync]);
 
   // Filter commands based on query
   const filteredCommands = useMemo(() => {
