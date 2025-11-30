@@ -32,6 +32,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:rust": "cd src-tauri && cargo test",
+    "bench": "cd src-tauri && cargo bench",
+    "bench:rust": "cd src-tauri && cargo bench",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write .",
