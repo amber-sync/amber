@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { List, RowComponentProps } from 'react-window';
 import { Icons } from './IconComponents';
 import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
 import { api } from '../api';
 import { logger } from '../utils/logger';
+
+const ROW_HEIGHT = 40;
 
 interface FileEntry {
   name: string;
@@ -43,6 +46,28 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FileEntry[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // TIM-58: Virtual scrolling
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const [listHeight, setListHeight] = useState(400);
+
+  // TIM-58: Measure container height for virtual scrolling
+  useEffect(() => {
+    const container = listContainerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setListHeight(entry.contentRect.height);
+      }
+    });
+
+    resizeObserver.observe(container);
+    // Initial measurement
+    setListHeight(container.clientHeight);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Check if snapshot is indexed
   useEffect(() => {
@@ -305,8 +330,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           <div className="text-right">Modified</div>
         </div>
 
-        {/* File List */}
-        <div className="flex-1 overflow-y-auto">
+        {/* File List - TIM-58: Virtual Scrolling */}
+        <div className="flex-1 overflow-hidden" ref={listContainerRef}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-gray-500 dark:text-gray-400">Loading...</div>
@@ -321,56 +346,65 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
               <div>{searchResults !== null ? 'No files found' : 'Empty directory'}</div>
             </div>
           ) : (
-            displayEntries.map(entry => {
-              const isSelected = selectedFiles.has(entry.path);
-              const isPreviewSelected = selectedFileForPreview?.path === entry.path;
+            <List
+              style={{ height: listHeight }}
+              rowCount={displayEntries.length}
+              rowHeight={ROW_HEIGHT}
+              overscanCount={5}
+              rowComponent={({ rowIndex, style }: RowComponentProps) => {
+                const entry = displayEntries[rowIndex];
+                const isSelected = selectedFiles.has(entry.path);
+                const isPreviewSelected = selectedFileForPreview?.path === entry.path;
 
-              return (
-                <div
-                  key={entry.path}
-                  onClick={() => handleEntryClick(entry)}
-                  className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 transition-colors ${
-                    isPreviewSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  }`}
-                >
-                  {/* Checkbox */}
-                  <div className="flex items-center">
-                    {selectable && (
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={e => toggleSelection(e as any, entry.path)}
-                        onClick={e => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
-                      />
-                    )}
-                  </div>
+                return (
+                  <div
+                    style={style}
+                    onClick={() => handleEntryClick(entry)}
+                    className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 items-center hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 transition-colors ${
+                      isPreviewSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    }`}
+                  >
+                    {/* Checkbox */}
+                    <div className="flex items-center">
+                      {selectable && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={e => toggleSelection(e as React.MouseEvent, entry.path)}
+                          onClick={e => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                        />
+                      )}
+                    </div>
 
-                  {/* Name */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    {entry.isDirectory ? (
-                      <Icons.Folder
-                        size={16}
-                        className="text-blue-500 dark:text-blue-400 flex-shrink-0"
-                      />
-                    ) : (
-                      <Icons.File size={16} className="text-gray-400 flex-shrink-0" />
-                    )}
-                    <span className="truncate text-gray-700 dark:text-gray-300">{entry.name}</span>
-                  </div>
+                    {/* Name */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      {entry.isDirectory ? (
+                        <Icons.Folder
+                          size={16}
+                          className="text-blue-500 dark:text-blue-400 flex-shrink-0"
+                        />
+                      ) : (
+                        <Icons.File size={16} className="text-gray-400 flex-shrink-0" />
+                      )}
+                      <span className="truncate text-gray-700 dark:text-gray-300">
+                        {entry.name}
+                      </span>
+                    </div>
 
-                  {/* Size */}
-                  <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-sm">
-                    {!entry.isDirectory && formatBytes(entry.size)}
-                  </div>
+                    {/* Size */}
+                    <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-sm">
+                      {!entry.isDirectory && formatBytes(entry.size)}
+                    </div>
 
-                  {/* Modified */}
-                  <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-xs">
-                    {entry.modified.toLocaleDateString()}
+                    {/* Modified */}
+                    <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-xs">
+                      {entry.modified.toLocaleDateString()}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              }}
+            />
           )}
         </div>
       </div>
