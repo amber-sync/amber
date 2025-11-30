@@ -2,8 +2,9 @@ import React from 'react';
 import { Icons } from '../components/IconComponents';
 import { useTheme, Theme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
-import { APP_VERSION } from '../../shared/version';
 import { api } from '../api';
+
+const APP_VERSION = '0.0.1-beta';
 
 export const AppSettings: React.FC = () => {
   const { theme, setTheme } = useTheme();

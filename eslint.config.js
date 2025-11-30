@@ -9,10 +9,9 @@ export default tseslint.config(
     ignores: [
       'node_modules/',
       'dist/',
-      'backend/',
+      'src/backend/',
       'website/',
       'scripts/',
-      'electron/',
       'tests/',
       '*.config.js',
       '*.config.cjs',
@@ -24,7 +23,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   // React/TypeScript files
   {
-    files: ['frontend/**/*.{ts,tsx}'],
+    files: ['src/frontend/**/*.{ts,tsx}'],
     plugins: {
       react,
       'react-hooks': reactHooks,

@@ -27,7 +27,11 @@ dist_electron_build
 # Generated files
 benchmark-results.json
 *.generated.ts
-frontend/generated/bindings.ts
+src/frontend/generated/bindings.ts
+
+# Build outputs
+build/
+dist/
 
 # Coverage
 coverage/
@@ -38,9 +42,12 @@ playwright-report/
 test-results/
 
 # Rust
-backend/target/
+src/backend/target/
 target/llvm-cov/
 
 # Environment
 .env.local
 .env*.local
+
+# Local development
+tickets/
