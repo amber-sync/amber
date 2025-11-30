@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import type { FileNode } from '../types';
+import { logger } from '../utils/logger';
 
 export interface VolumeInfo {
   name: string;
@@ -201,7 +202,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
         try {
           await api.showItemInFolder(result.fullPath);
         } catch (e) {
-          console.error('Failed to show in Finder:', e);
+          logger.error('Failed to show in Finder', e);
         }
       } else {
         // Enter: Open file or navigate
@@ -217,7 +218,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
           try {
             await api.openPath(result.fullPath);
           } catch (e) {
-            console.error('Failed to open file:', e);
+            logger.error('Failed to open file', e);
           }
         }
       }

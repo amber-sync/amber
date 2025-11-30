@@ -19,6 +19,7 @@ import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
 import { api } from './api';
 import { MODE_PRESETS, DEFAULT_JOB_CONFIG } from './config';
+import { logger } from './utils/logger';
 
 function AppContent() {
   const { jobs, activeJobId, view, setJobs, setActiveJobId, setView, persistJob, deleteJob } =
@@ -100,9 +101,9 @@ function AppContent() {
         if (snapshot?.path && snapshot?.timestamp) {
           try {
             await api.indexSnapshot(data.jobId, snapshot.timestamp, snapshot.path);
-            console.log(`Indexed snapshot for job ${data.jobId}`);
+            logger.debug('Indexed snapshot', { jobId: data.jobId });
           } catch (err) {
-            console.warn('Failed to index snapshot:', err);
+            logger.warn('Failed to index snapshot (non-fatal)', { jobId: data.jobId });
             // Non-fatal - fallback to filesystem scan
           }
         }

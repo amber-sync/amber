@@ -4,6 +4,7 @@ import { FileBrowser } from '../components/FileBrowser';
 import { SyncJob, Snapshot } from '../types';
 import { formatBytes } from '../utils/formatters';
 import { api } from '../api';
+import { logger } from '../utils/logger';
 
 interface RestoreWizardProps {
   job: SyncJob;
@@ -71,7 +72,7 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
       alert(`Successfully restored ${selectedFiles.size} files to ${targetPath}`);
       onBack();
     } catch (err) {
-      console.error('Restore error:', err);
+      logger.error('Restore error', err);
       alert('Failed to restore files');
     } finally {
       setIsRestoring(false);
@@ -106,7 +107,7 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
         alert(`Restore failed: ${result.error}`);
       }
     } catch (err) {
-      console.error('Restore error:', err);
+      logger.error('Restore error', err);
       alert('Failed to restore snapshot');
     } finally {
       setIsRestoring(false);

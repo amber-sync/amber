@@ -3,6 +3,7 @@ import { Icons } from './IconComponents';
 import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
 import { api } from '../api';
+import { logger } from '../utils/logger';
 
 interface FileEntry {
   name: string;
@@ -51,7 +52,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         .then(indexed => {
           setIsIndexed(indexed);
           if (indexed) {
-            console.log(`Snapshot ${snapshotTimestamp} is indexed, using fast SQLite queries`);
+            logger.debug('Using indexed snapshot queries', { snapshotTimestamp });
           }
         })
         .catch(() => setIsIndexed(false));
@@ -152,7 +153,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         }));
         setSearchResults(formatted);
       } catch (err) {
-        console.error('Search failed:', err);
+        logger.error('Search failed', err);
         setSearchResults([]);
       } finally {
         setIsSearching(false);

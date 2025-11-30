@@ -3,6 +3,7 @@ import { Icons } from '../components/IconComponents';
 import { DiskStats, FileNode, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
 import { FileBrowser } from '../components/FileBrowser';
 import { api } from '../api';
+import { logger } from '../utils/logger';
 import {
   JobDetailHeader,
   StorageUsage,
@@ -95,7 +96,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     api
       .getSnapshotTree(job.id, latestSnapshot.timestamp, (latestSnapshot as any).path)
       .then(tree => setLatestSnapshotTree(tree))
-      .catch(err => console.error('Failed to fetch snapshot tree for analytics:', err));
+      .catch(err => logger.error('Failed to fetch snapshot tree for analytics', err));
   }, [latestSnapshot, job.id]);
 
   // Calculate analytics from latest snapshot
