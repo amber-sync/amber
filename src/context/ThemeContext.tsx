@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Theme = 'light' | 'dark' | 'system';
-export type AccentColor = 'teal' | 'blue' | 'indigo' | 'violet' | 'orange' | 'pink';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  accentColor: AccentColor;
-  setAccentColor: (color: AccentColor) => void;
   isDark: boolean;
   effectiveTheme: Exclude<Theme, 'system'>; // The actual theme being applied
 }
@@ -25,13 +22,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return (localStorage.getItem('amber-theme') as Theme) || 'system';
     }
     return 'system';
-  });
-
-  const [accentColor, setAccentColor] = useState<AccentColor>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('amber-accent') as AccentColor) || 'teal';
-    }
-    return 'teal';
   });
 
   // Calculate effective theme (resolve 'system' to actual theme)
@@ -81,16 +71,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('amber-theme', theme);
   }, [effectiveTheme, theme]);
 
-  useEffect(() => {
-    localStorage.setItem('amber-accent', accentColor);
-  }, [accentColor]);
-
   const isDark = effectiveTheme === 'dark';
 
   return (
-    <ThemeContext.Provider
-      value={{ theme, setTheme, accentColor, setAccentColor, isDark, effectiveTheme }}
-    >
+    <ThemeContext.Provider value={{ theme, setTheme, isDark, effectiveTheme }}>
       {children}
     </ThemeContext.Provider>
   );
