@@ -267,3 +267,216 @@ struct ScanEntry {
     size: u64,
     modified: i64,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn create_test_service() -> (SnapshotService, TempDir) {
+        let temp_dir = TempDir::new().unwrap();
+        let service = SnapshotService::new(temp_dir.path());
+        (service, temp_dir)
+    }
+
+    #[test]
+    fn test_parse_backup_timestamp() {
+        let (service, _temp) = create_test_service();
+        let re = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$").unwrap();
+
+        // Test: 2024-03-15-143022
+        let caps = re.captures("2024-03-15-143022").unwrap();
+        let ts = service.parse_backup_timestamp(&caps);
+
+        // Should be March 15, 2024 at 14:30:22 UTC
+        let expected = chrono::NaiveDate::from_ymd_opt(2024, 3, 15)
+            .unwrap()
+            .and_hms_opt(14, 30, 22)
+            .unwrap()
+            .and_utc()
+            .timestamp_millis();
+
+        assert_eq!(ts, expected);
+    }
+
+    #[test]
+    fn test_parse_backup_timestamp_midnight() {
+        let (service, _temp) = create_test_service();
+        let re = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$").unwrap();
+
+        let caps = re.captures("2025-01-01-000000").unwrap();
+        let ts = service.parse_backup_timestamp(&caps);
+
+        let expected = chrono::NaiveDate::from_ymd_opt(2025, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()
+            .and_utc()
+            .timestamp_millis();
+
+        assert_eq!(ts, expected);
+    }
+
+    #[test]
+    fn test_calculate_stats_empty() {
+        let (service, _temp) = create_test_service();
+        let nodes: Vec<FileNode> = vec![];
+
+        let (size, count) = service.calculate_stats(&nodes);
+        assert_eq!(size, 0);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_calculate_stats_files_only() {
+        let (service, _temp) = create_test_service();
+        let nodes = vec![
+            FileNode {
+                id: "file1".to_string(),
+                name: "file1.txt".to_string(),
+                node_type: "FILE".to_string(),
+                size: 100,
+                modified: 0,
+                children: None,
+                path: "/test/file1.txt".to_string(),
+            },
+            FileNode {
+                id: "file2".to_string(),
+                name: "file2.txt".to_string(),
+                node_type: "FILE".to_string(),
+                size: 200,
+                modified: 0,
+                children: None,
+                path: "/test/file2.txt".to_string(),
+            },
+        ];
+
+        let (size, count) = service.calculate_stats(&nodes);
+        assert_eq!(size, 300);
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_calculate_stats_nested_folders() {
+        let (service, _temp) = create_test_service();
+        let nodes = vec![FileNode {
+            id: "folder1".to_string(),
+            name: "folder1".to_string(),
+            node_type: "FOLDER".to_string(),
+            size: 0,
+            modified: 0,
+            path: "/test/folder1".to_string(),
+            children: Some(vec![
+                FileNode {
+                    id: "file1".to_string(),
+                    name: "file1.txt".to_string(),
+                    node_type: "FILE".to_string(),
+                    size: 100,
+                    modified: 0,
+                    children: None,
+                    path: "/test/folder1/file1.txt".to_string(),
+                },
+                FileNode {
+                    id: "subfolder".to_string(),
+                    name: "subfolder".to_string(),
+                    node_type: "FOLDER".to_string(),
+                    size: 0,
+                    modified: 0,
+                    path: "/test/folder1/subfolder".to_string(),
+                    children: Some(vec![FileNode {
+                        id: "file2".to_string(),
+                        name: "file2.txt".to_string(),
+                        node_type: "FILE".to_string(),
+                        size: 500,
+                        modified: 0,
+                        children: None,
+                        path: "/test/folder1/subfolder/file2.txt".to_string(),
+                    }]),
+                },
+            ]),
+        }];
+
+        let (size, count) = service.calculate_stats(&nodes);
+        assert_eq!(size, 600);
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_list_snapshots_empty_dir() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .unwrap();
+        assert!(snapshots.is_empty());
+    }
+
+    #[test]
+    fn test_list_snapshots_filters_non_matching() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create valid snapshot dirs
+        std::fs::create_dir_all(dest_dir.join("2024-03-15-140000")).unwrap();
+        std::fs::create_dir_all(dest_dir.join("2024-03-16-080000")).unwrap();
+
+        // Create invalid dirs
+        std::fs::create_dir_all(dest_dir.join("not-a-snapshot")).unwrap();
+        std::fs::create_dir_all(dest_dir.join("latest")).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 2);
+    }
+
+    #[test]
+    fn test_list_snapshots_sorted_newest_first() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        std::fs::create_dir_all(dest_dir.join("2024-01-01-120000")).unwrap();
+        std::fs::create_dir_all(dest_dir.join("2024-06-15-090000")).unwrap();
+        std::fs::create_dir_all(dest_dir.join("2024-03-10-180000")).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 3);
+        assert!(snapshots[0].timestamp > snapshots[1].timestamp);
+        assert!(snapshots[1].timestamp > snapshots[2].timestamp);
+    }
+
+    #[test]
+    fn test_cache_path_format() {
+        let (service, _temp) = create_test_service();
+        let path = service.get_cache_path("job-123", 1700000000000);
+
+        assert!(path.to_string_lossy().contains("job-123-1700000000000.json"));
+    }
+
+    #[test]
+    fn test_scan_directory_with_real_files() {
+        let (service, temp) = create_test_service();
+        let test_dir = temp.path().join("scan-test");
+        std::fs::create_dir_all(&test_dir).unwrap();
+
+        // Create files
+        std::fs::write(test_dir.join("file1.txt"), "hello").unwrap();
+        std::fs::write(test_dir.join("file2.txt"), "world").unwrap();
+        std::fs::create_dir_all(test_dir.join("subdir")).unwrap();
+        std::fs::write(test_dir.join("subdir/nested.txt"), "nested").unwrap();
+
+        let entries = service.scan_directory(test_dir.to_str().unwrap()).unwrap();
+
+        assert_eq!(entries.len(), 4); // file1, file2, subdir, nested
+        assert!(entries.iter().any(|e| e.name == "file1.txt" && !e.is_dir));
+        assert!(entries.iter().any(|e| e.name == "subdir" && e.is_dir));
+    }
+}
