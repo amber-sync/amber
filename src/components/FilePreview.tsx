@@ -82,7 +82,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     if (loading) {
       return (
         <div className="flex items-center justify-center h-full">
-          <div className="text-gray-500">Loading preview...</div>
+          <div className="text-gray-500 dark:text-gray-400">Loading preview...</div>
         </div>
       );
     }
@@ -90,9 +90,9 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="text-red-500 mb-2">⚠️ {error}</div>
-          <div className="text-sm text-gray-400">File: {fileName}</div>
-          <div className="text-sm text-gray-400">Size: {formatBytes(fileSize)}</div>
+          <div className="text-red-500 dark:text-red-400 mb-2">⚠️ {error}</div>
+          <div className="text-sm text-gray-400 dark:text-gray-500">File: {fileName}</div>
+          <div className="text-sm text-gray-400 dark:text-gray-500">Size: {formatBytes(fileSize)}</div>
         </div>
       );
     }
@@ -100,7 +100,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     switch (previewType) {
       case 'image':
         return (
-          <div className="flex items-center justify-center h-full p-4 bg-gray-900">
+          <div className="flex items-center justify-center h-full p-4 bg-gray-50 dark:bg-gray-900">
             <img
               src={content || ''}
               alt={fileName}
@@ -115,12 +115,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       case 'text':
       case 'json':
         return (
-          <div className="h-full overflow-auto">
-            <pre className="p-4 text-sm font-mono text-gray-300 whitespace-pre-wrap">
+          <div className="h-full overflow-auto bg-white dark:bg-gray-900">
+            <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-300 whitespace-pre-wrap">
               {content}
             </pre>
             {fileSize > MAX_TEXT_SIZE && (
-              <div className="p-4 text-sm text-yellow-500 border-t border-gray-700">
+              <div className="p-4 text-sm text-yellow-600 dark:text-yellow-500 border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/10">
                 ⚠️ Preview truncated - file is larger than {formatBytes(MAX_TEXT_SIZE)}
               </div>
             )}
@@ -130,20 +130,20 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       case 'unsupported':
       default:
         return (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
             <div className="text-6xl mb-4">📄</div>
-            <div className="text-lg mb-2">{fileName}</div>
+            <div className="text-lg mb-2 text-gray-700 dark:text-gray-300">{fileName}</div>
             <div className="text-sm mb-1">Size: {formatBytes(fileSize)}</div>
-            <div className="text-sm text-gray-500">Preview not available for this file type</div>
+            <div className="text-sm">Preview not available for this file type</div>
           </div>
         );
     }
   };
 
   return (
-    <div className="h-full w-full bg-gray-800 border-l border-gray-700">
-      <div className="h-12 px-4 flex items-center border-b border-gray-700 bg-gray-850">
-        <div className="text-sm font-medium text-gray-300 truncate">{fileName}</div>
+    <div className="h-full w-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+      <div className="h-12 px-4 flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{fileName}</div>
       </div>
       <div className="h-[calc(100%-3rem)] overflow-hidden">
         {renderPreview()}
