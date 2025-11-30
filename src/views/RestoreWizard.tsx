@@ -272,6 +272,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
                   selectable={true}
                   selectedFiles={selectedFiles}
                   onSelectionChange={handleFileSelection}
+                  jobId={job.id}
+                  snapshotTimestamp={activeSnapshot.timestamp}
                 />
               </div>
             </div>

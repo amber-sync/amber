@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { desktopDir } from '@tauri-apps/api/path';
-import type { SyncJob } from '../types';
+import type { SyncJob, IndexedSnapshot, FileNode } from '../types';
 
 // Event callback types
 type RsyncLogCallback = (data: { jobId: string; message: string }) => void;
@@ -88,9 +88,7 @@ class AmberAPI {
     return invoke('show_item_in_folder', { path });
   }
 
-  async getDiskStats(
-    path: string
-  ): Promise<{
+  async getDiskStats(path: string): Promise<{
     success: boolean;
     stats?: { total: number; free: number; status: 'AVAILABLE' | 'UNAVAILABLE' };
     error?: string;
@@ -156,6 +154,77 @@ class AmberAPI {
     } catch (e: any) {
       return { success: false, error: e.message || String(e) };
     }
+  }
+
+  // ===== Snapshot Indexing (TIM-46) =====
+
+  /**
+   * Index a snapshot for fast browsing (call after backup completes)
+   */
+  async indexSnapshot(
+    jobId: string,
+    timestamp: number,
+    snapshotPath: string
+  ): Promise<IndexedSnapshot> {
+    return invoke('index_snapshot', { jobId, timestamp, snapshotPath });
+  }
+
+  /**
+   * Check if a snapshot is already indexed
+   */
+  async isSnapshotIndexed(jobId: string, timestamp: number): Promise<boolean> {
+    return invoke('is_snapshot_indexed', { jobId, timestamp });
+  }
+
+  /**
+   * Get directory contents from SQLite index (fast)
+   */
+  async getIndexedDirectory(
+    jobId: string,
+    timestamp: number,
+    parentPath: string
+  ): Promise<FileNode[]> {
+    return invoke('get_indexed_directory', { jobId, timestamp, parentPath });
+  }
+
+  /**
+   * Search files in a snapshot by pattern
+   */
+  async searchSnapshotFiles(
+    jobId: string,
+    timestamp: number,
+    pattern: string,
+    limit?: number
+  ): Promise<FileNode[]> {
+    return invoke('search_snapshot_files', { jobId, timestamp, pattern, limit });
+  }
+
+  /**
+   * Get snapshot statistics from index
+   */
+  async getSnapshotStats(
+    jobId: string,
+    timestamp: number
+  ): Promise<{ fileCount: number; totalSize: number }> {
+    const [fileCount, totalSize] = await invoke<[number, number]>('get_snapshot_stats', {
+      jobId,
+      timestamp,
+    });
+    return { fileCount, totalSize };
+  }
+
+  /**
+   * Delete a snapshot from the index
+   */
+  async deleteSnapshotIndex(jobId: string, timestamp: number): Promise<void> {
+    return invoke('delete_snapshot_index', { jobId, timestamp });
+  }
+
+  /**
+   * Delete all indexed snapshots for a job
+   */
+  async deleteJobIndex(jobId: string): Promise<void> {
+    return invoke('delete_job_index', { jobId });
   }
 
   // ===== Preferences =====
