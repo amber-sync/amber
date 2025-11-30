@@ -18,6 +18,7 @@ interface JobDetailProps {
   onStop: (jobId: string) => void;
   onOpenSettings: () => void;
   onDelete: (jobId: string) => void;
+  onRestore: (jobId: string) => void;
 }
 
 interface JobAnalytics {
@@ -38,15 +39,18 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   onStop,
   onOpenSettings,
   onDelete,
+  onRestore,
 }) => {
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
   const [snapshotGrouping, setSnapshotGrouping] = useState<SnapshotGrouping>('ALL');
   const [activeBrowserPath, setActiveBrowserPath] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'date' | 'size'>('date');
 
   useEffect(() => {
     setSnapshotGrouping('ALL');
     setIsTerminalExpanded(false);
     setActiveBrowserPath(null);
+    setSortBy('date');
   }, [job.id]);
 
   const chartData = useMemo(() => job.snapshots.map((s, i, arr) => {
@@ -62,21 +66,44 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   }), [job.snapshots]);
 
   const latestSnapshot = job.snapshots[job.snapshots.length - 1];
+  const [latestSnapshotTree, setLatestSnapshotTree] = useState<FileNode[] | null>(null);
 
-  const analytics = useMemo<JobAnalytics | null>(() => {
-    if (!latestSnapshot || !latestSnapshot.root) return null;
-    return calculateJobStats(latestSnapshot.root);
-  }, [latestSnapshot]);
-
-  const groupedSnapshots = useMemo(() => {
-    const reversedSnapshots = job.snapshots.slice().reverse();
-
-    if (snapshotGrouping === 'ALL') {
-      return reversedSnapshots.map(snap => ({ group: snap.id, label: null, snaps: [snap] }));
+  useEffect(() => {
+    if (!latestSnapshot) return;
+    if (latestSnapshot.root) {
+      setLatestSnapshotTree(latestSnapshot.root);
+      return;
     }
 
-    const groups: Record<string, typeof reversedSnapshots> = {};
-    reversedSnapshots.forEach(snap => {
+    // Fetch tree if missing
+    if (window.electronAPI?.getSnapshotTree) {
+      window.electronAPI.getSnapshotTree(job.id, latestSnapshot.timestamp, (latestSnapshot as any).path)
+        .then(tree => setLatestSnapshotTree(tree))
+        .catch(err => console.error('Failed to fetch snapshot tree for analytics:', err));
+    }
+  }, [latestSnapshot, job.id]);
+
+  const analytics = useMemo<JobAnalytics | null>(() => {
+    if (!latestSnapshotTree) return null;
+    return calculateJobStats(latestSnapshotTree);
+  }, [latestSnapshotTree]);
+
+  const groupedSnapshots = useMemo(() => {
+    // Sort first
+    const sortedSnapshots = [...job.snapshots].sort((a, b) => {
+      if (sortBy === 'date') {
+        return b.timestamp - a.timestamp; // Newest first
+      } else {
+        return b.sizeBytes - a.sizeBytes; // Largest first
+      }
+    });
+
+    if (snapshotGrouping === 'ALL') {
+      return sortedSnapshots.map(snap => ({ group: snap.id, label: null, snaps: [snap] }));
+    }
+
+    const groups: Record<string, typeof sortedSnapshots> = {};
+    sortedSnapshots.forEach(snap => {
       const date = new Date(snap.timestamp);
       let key = '';
       if (snapshotGrouping === 'DAY') {
@@ -96,12 +123,21 @@ export const JobDetail: React.FC<JobDetailProps> = ({
       groups[key].push(snap);
     });
 
+    // If sorting by size, we might want to sort the GROUPS by some metric?
+    // For now, let's keep groups sorted by date (keys are roughly date-based)
+    // Actually, Object.entries might not preserve order.
+    // Let's rely on the insertion order which usually follows date if we iterate sortedSnapshots (which is sorted by date or size).
+    // If sorted by size, the groups might appear in random date order if we just iterate.
+    // But typically users want to see groups in Date order, and contents sorted by Size?
+    // Or if SortBy=Size, maybe disable grouping?
+    // Let's keep it simple: The groups are created in the order of sortedSnapshots.
+    
     return Object.entries(groups).map(([label, snaps]) => ({
       group: label,
       label,
       snaps,
     }));
-  }, [job.snapshots, snapshotGrouping]);
+  }, [job.snapshots, snapshotGrouping, sortBy]);
 
   const handleOpenSnapshot = (timestamp: number) => {
     if (!window.electronAPI || !job.destPath) return;
@@ -134,6 +170,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
         onStop={onStop}
         onOpenSettings={onOpenSettings}
         onDelete={onDelete}
+        onRestore={onRestore}
         titleOverride={activeBrowserPath ? 'File Browser' : undefined}
       />
 
@@ -175,6 +212,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({
                 snapshots={groupedSnapshots}
                 snapshotGrouping={snapshotGrouping}
                 onGroupingChange={setSnapshotGrouping}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
                 onOpenSnapshot={handleOpenSnapshot}
                 onBrowseSnapshot={handleBrowseSnapshot}
               />
@@ -210,8 +249,9 @@ const Header: React.FC<{
   onStop: (jobId: string) => void;
   onOpenSettings: () => void;
   onDelete: (jobId: string) => void;
+  onRestore: (jobId: string) => void;
   titleOverride?: string;
-}> = ({ job, isRunning, onBack, onRun, onStop, onOpenSettings, onDelete, titleOverride }) => (
+}> = ({ job, isRunning, onBack, onRun, onStop, onOpenSettings, onDelete, onRestore, titleOverride }) => (
   <div className="px-8 py-6 pt-10 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 text-gray-900 dark:text-white titlebar-drag">
     {isRunning && (
       <div className="absolute top-0 left-0 w-full h-1 z-20 overflow-hidden">
@@ -245,6 +285,12 @@ const Header: React.FC<{
         <Icons.Trash2 size={18} />
       </button>
       <div className="w-px h-8 bg-gray-200 dark:bg-gray-800 self-center mx-1"></div>
+      <button
+        onClick={() => onRestore(job.id)}
+        className="px-4 py-2 border border-blue-200 dark:border-blue-800 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center gap-2"
+      >
+        <Icons.RotateCcw size={16} /> Restore
+      </button>
       <button
         onClick={onOpenSettings}
         className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
@@ -500,24 +546,43 @@ const SnapshotsSection: React.FC<{
   snapshots: { group: string; label: string | null; snaps: SyncJob['snapshots'] }[];
   snapshotGrouping: SnapshotGrouping;
   onGroupingChange: (grouping: SnapshotGrouping) => void;
+  sortBy: 'date' | 'size';
+  onSortChange: (sort: 'date' | 'size') => void;
   onOpenSnapshot: (timestamp: number) => void;
   onBrowseSnapshot: (timestamp: number) => void;
-}> = ({ job, snapshots, snapshotGrouping, onGroupingChange, onOpenSnapshot, onBrowseSnapshot }) => (
+}> = ({ job, snapshots, snapshotGrouping, onGroupingChange, sortBy, onSortChange, onOpenSnapshot, onBrowseSnapshot }) => (
   <div className="space-y-4">
     <div className="flex justify-between items-center">
       <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <Icons.Clock size={18} className="text-indigo-500" /> Snapshots
       </h3>
-      <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
-        {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
+      <div className="flex items-center gap-2">
+        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
           <button
-            key={group}
-            onClick={() => onGroupingChange(group)}
-            className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            onClick={() => onSortChange('date')}
+            className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
           >
-            {group.charAt(0) + group.slice(1).toLowerCase()}
+            Date
           </button>
-        ))}
+          <button
+            onClick={() => onSortChange('size')}
+            className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+          >
+            Size
+          </button>
+        </div>
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-medium">
+          {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
+            <button
+              key={group}
+              onClick={() => onGroupingChange(group)}
+              className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            >
+              {group.charAt(0) + group.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
 
@@ -566,7 +631,14 @@ const SnapshotGroup: React.FC<{
               <Icons.CheckCircle size={14} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{new Date(snap.timestamp).toLocaleString()}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                {new Date(snap.timestamp).toLocaleString()}
+                {snap.restored && (
+                  <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                    Restored
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{snap.fileCount} files • {snap.changesCount} changed</p>
             </div>
           </div>

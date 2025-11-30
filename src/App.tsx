@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
+import { RestoreWizard } from './views/RestoreWizard';
 import { HistoryView } from './views/HistoryView';
 import { JobEditor } from './views/JobEditor';
 import { JobDetail } from './views/JobDetail';
@@ -14,6 +15,7 @@ import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
+
 
 const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
   [SyncMode.MIRROR]: {
@@ -38,6 +40,9 @@ function AppContent() {
 
   const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } = useRsyncProgress();
   const destinationStats = useDiskStats(jobs.map(j => j.destPath));
+
+  // Restore Wizard State
+  const [restoreJobId, setRestoreJobId] = useState<string | null>(null);
 
   // Create/Edit Job Form State
   const [newJobName, setNewJobName] = useState('');
@@ -321,6 +326,46 @@ function AppContent() {
     addLog('Stopping sync...', 'warning');
   }, [addLog]);
 
+  const handleOpenRestore = (jobId: string) => {
+    setRestoreJobId(jobId);
+    setView('RESTORE_WIZARD');
+  };
+
+  const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: any) => {
+    if (!restoreJobId) return;
+    const job = jobs.find(j => j.id === restoreJobId);
+    if (!job) return;
+
+    addLog(`Starting restore for ${files.length} files to ${targetPath}...`);
+    
+    if (window.electronAPI?.restoreFiles) {
+      try {
+        // Use snapshot.path for the source
+        const result = await window.electronAPI.restoreFiles(job, snapshot.path, files, targetPath);
+        
+        if (result.success) {
+           // Mark snapshot as restored
+           const updatedJob = {
+             ...job,
+             snapshots: job.snapshots.map(s => s.id === snapshot.id ? { ...s, restored: true, restoredDate: Date.now() } : s)
+           };
+           setJobs(prev => prev.map(j => j.id === job.id ? updatedJob : j));
+           persistJob(updatedJob);
+           addLog(`Successfully restored files to ${targetPath}`);
+        } else {
+           addLog(`Restore failed: ${result.error}`, 'error');
+        }
+      } catch (e: any) {
+        addLog(`Restore failed: ${e.message}`, 'error');
+      }
+    } else {
+      console.log('Restoring:', files, 'to', targetPath);
+    }
+
+    setView('DETAIL');
+    setRestoreJobId(null);
+  };
+
   const isTopLevel = ['DASHBOARD', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(view);
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
@@ -382,7 +427,25 @@ function AppContent() {
             onStop={stopSync}
             onOpenSettings={openSettings}
             onDelete={promptDelete}
+            onRestore={() => handleOpenRestore(activeJob.id)}
           />
+        )}
+
+        {view === 'RESTORE_WIZARD' && restoreJobId && (
+          (() => {
+            const job = jobs.find(j => j.id === restoreJobId);
+            if (!job) return null;
+            return (
+              <RestoreWizard
+                job={job}
+                onBack={() => {
+                  setRestoreJobId(null);
+                  setView('DETAIL');
+                }}
+                onRestore={handleRestoreFiles}
+              />
+            );
+          })()
         )}
 
         {view === 'JOB_EDITOR' && (

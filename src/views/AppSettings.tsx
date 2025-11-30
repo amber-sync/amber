@@ -124,9 +124,9 @@ export const AppSettings: React.FC = () => {
                         }
                         
                         // Try sending from Main Process
-                        const result = await window.electronAPI.testNotification();
-                        if (!result.success) {
-                          console.error('Main process notification failed:', result.error);
+                        const success = await window.electronAPI.testNotification();
+                        if (!success) {
+                          console.error('Main process notification failed');
                           // Fallback: Try sending from Renderer
                           new Notification('Amber Test (Renderer)', { body: 'Fallback notification from UI' });
                         }
@@ -140,6 +140,7 @@ export const AppSettings: React.FC = () => {
                 )}
               </div>
             </div>
+
           </div>
         </div>
 

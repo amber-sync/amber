@@ -27,9 +27,17 @@ if (process.env.ELECTRON_RUN_AS_NODE) {
 
 const IS_DEV = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+import { SnapshotService } from './SnapshotService';
+import { SandboxService } from './SandboxService';
+
 let mainWindow: BrowserWindow | null = null;
+
+// Initialize services
 const fileService = new FileService();
 const rsyncService = new RsyncService(fileService);
+const snapshotService = new SnapshotService(fileService);
+const sandboxService = new SandboxService(snapshotService);
+
 let tray: Tray | null = null;
 let lastActiveJob: SyncJob | null = null;
 let prefs: AppPreferences = { runInBackground: false, startOnBoot: false, notifications: true };
@@ -302,6 +310,14 @@ async function initApp() {
   try {
     prefs = await loadPreferences();
     try {
+      if (IS_DEV) {
+        log.info('Dev mode detected: Creating mock backups...');
+        await sandboxService.createMockBackups();
+      }
+    } catch (e) {
+      log.error('Failed to create mock backups', e);
+    }
+    try {
       app.setLoginItemSettings({ openAtLogin: prefs.startOnBoot });
     } catch (error) {
       console.warn('Failed to set login item settings (expected in dev mode):', error);
@@ -527,17 +543,62 @@ ipcMain.handle('jobs:delete', async (_event, jobId: string) => {
 
 ipcMain.handle('read-dir', async (_, dirPath: string) => {
   try {
-    const items = await fs.readdir(dirPath, { withFileTypes: true });
-    return items.map((item: any) => ({
-      name: item.name,
-      isDirectory: item.isDirectory(),
-      path: path.join(dirPath, item.name),
-      size: 0,
-      modified: 0
-    }));
+    // Use Rust sidecar for blazingly fast listing
+    const items: any[] = [];
+    await new Promise<void>((resolve, reject) => {
+      fileService.scan(
+        dirPath,
+        (entry) => items.push({
+          name: entry.name,
+          isDirectory: entry.is_dir,
+          path: entry.path,
+          size: entry.size,
+          modified: entry.modified // Sidecar returns ms
+        }),
+        (err) => {
+          log.error(`Sidecar scan error for ${dirPath}: ${err}`);
+          // Fallback to empty or partial results? 
+          // If sidecar fails, we might want to reject or return error object
+          // But fileService.scan might emit error for individual files? 
+          // No, onError is for process errors usually.
+          reject(new Error(err));
+        }
+      ).then(resolve).catch(reject);
+    });
+    
+    // Sort: Folders first, then files
+    items.sort((a, b) => {
+      if (a.isDirectory === b.isDirectory) {
+        return a.name.localeCompare(b.name);
+      }
+      return a.isDirectory ? -1 : 1;
+    });
+
+    return items;
   } catch (error: any) {
     log.error(`Error reading dir ${dirPath}: ${error.message}`);
-    return { error: error.message };
+    // Fallback to Node.js if sidecar fails completely
+    try {
+        const items = await fs.readdir(dirPath, { withFileTypes: true });
+        const results = await Promise.all(items.map(async (item: any) => {
+          const itemPath = path.join(dirPath, item.name);
+          try {
+            const stats = await fs.stat(itemPath);
+            return {
+              name: item.name,
+              isDirectory: item.isDirectory(),
+              path: itemPath,
+              size: stats.size,
+              modified: stats.mtimeMs
+            };
+          } catch (e) {
+            return null;
+          }
+        }));
+        return results.filter((item: any) => item !== null);
+    } catch (fallbackError: any) {
+        return { error: fallbackError.message };
+    }
   }
 });
 
@@ -835,4 +896,62 @@ app.on('before-quit', (e) => {
 
   tray?.destroy();
   volumeWatcher?.stop();
+});
+
+// [NEW] Snapshot IPC Handlers
+ipcMain.handle('snapshot:list', async (_, jobId: string, destPath: string) => {
+  log.info(`Listing snapshots for job ${jobId}`);
+  return await snapshotService.listSnapshots(jobId, destPath);
+});
+
+ipcMain.handle('snapshot:getTree', async (_, jobId: string, timestamp: number, snapshotPath: string) => {
+  log.info(`Getting snapshot tree for ${jobId} at ${timestamp}`);
+  return await snapshotService.getSnapshotTree(jobId, timestamp, snapshotPath);
+});
+
+ipcMain.handle('snapshot:restore', async (event, job, snapshotPath, files, targetPath) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return await rsyncService.restoreFiles(job, snapshotPath, files, targetPath, (msg) => {
+    win?.webContents.send('restore:progress', msg);
+  });
+});
+
+ipcMain.handle('snapshot:restoreFull', async (event, job, snapshotPath, targetPath) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return await rsyncService.restoreSnapshot(job, snapshotPath, targetPath, (msg) => {
+    win?.webContents.send('restore:progress', msg);
+  });
+});
+
+ipcMain.handle('sandbox:init', async () => {
+  log.info('Initializing sandbox environment...');
+  return await sandboxService.initSandbox();
+});
+
+ipcMain.handle('sandbox:step2', async () => {
+  log.info('Simulating sandbox step 2...');
+  await sandboxService.simulateStep2();
+  return { success: true };
+});
+
+ipcMain.handle('is-dev', () => {
+  return IS_DEV;
+});
+
+ipcMain.handle('sandbox:step3', async () => {
+  log.info('Simulating sandbox step 3...');
+  await sandboxService.simulateStep3();
+  return { success: true };
+});
+ipcMain.handle('sandbox:mockBackups', async () => {
+  log.info('Creating mock backups...');
+  return await sandboxService.createMockBackups();
+});
+
+ipcMain.handle('app:isDev', () => {
+  return IS_DEV;
+});
+
+ipcMain.handle('app:getDesktopPath', () => {
+  return app.getPath('desktop');
 });

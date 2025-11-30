@@ -51,7 +51,10 @@ import {
   PieChart,
   Cloud,
   AlertCircle,
-  Tag
+  Tag,
+  RotateCcw,
+  Check,
+  ArrowUp
 } from 'lucide-react';
 
 export const Icons = {
@@ -106,5 +109,8 @@ export const Icons = {
   PieChart,
   Cloud,
   AlertCircle,
-  Tag
+  Tag,
+  RotateCcw,
+  Check,
+  ArrowUp
 };

@@ -11,7 +11,7 @@
     "baseUrl": ".",
     "allowJs": true
   },
-  "include": ["tests/**/*.ts", "tests/**/*.js", "electron/**/*.ts"],
+  "include": ["**/*.ts", "../electron/**/*.ts", "../src/**/*.ts"],
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS"

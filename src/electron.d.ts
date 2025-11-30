@@ -12,8 +12,17 @@ export interface ElectronAPI {
   getDiskStats: (path: string) => Promise<{ success: boolean; stats?: { total: number; free: number; status: 'AVAILABLE' | 'UNAVAILABLE' }; error?: string }>;
   getPreferences: () => Promise<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>;
   setPreferences: (prefs: Partial<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>) => Promise<any>;
-  testNotification: () => Promise<{ success: boolean; error?: string }>;
-  setActiveJob: (job: any) => void;
+  testNotification: () => Promise<boolean>;
+  restoreFiles: (job: SyncJob, snapshotPath: string, files: string[], targetPath: string) => Promise<{ success: boolean; error?: string }>;
+  restoreSnapshot: (job: any, snapshotPath: string, targetPath: string) => Promise<{ success: boolean; error?: string }>;
+  getDesktopPath: () => Promise<string>;
+  
+  initSandbox: () => Promise<{ source: string; dest: string }>;
+  sandboxStep2: () => Promise<{ success: boolean }>;
+  sandboxStep3: () => Promise<{ success: boolean }>;
+  createMockBackups: () => Promise<{ source: string; dest: string }>;
+
+  setActiveJob: (job: SyncJob) => void;
   onNavigate: (callback: (view: string) => void) => () => void;
   getJobs: () => Promise<any[]>;
   saveJob: (job: any) => Promise<{ success: boolean; jobs: any[] }>;
@@ -22,6 +31,9 @@ export interface ElectronAPI {
   // Sidecar
   scanDirectory: (path: string, onEntry: (entry: any) => void) => Promise<void>;
   searchDirectory: (path: string, query: string, onEntry: (entry: any) => void) => Promise<void>;
+  listSnapshots: (jobId: string, destPath: string) => Promise<any[]>;
+  getSnapshotTree: (jobId: string, timestamp: number, snapshotPath: string) => Promise<any[]>;
+  isDev: () => Promise<boolean>;
 }
 
 declare global {

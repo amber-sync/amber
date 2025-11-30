@@ -6,7 +6,7 @@ import { useTheme } from './ThemeContext';
 interface AppContextType {
   jobs: SyncJob[];
   activeJobId: string | null;
-  view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP';
+  view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
   runInBackground: boolean;
   startOnBoot: boolean;
   notificationsEnabled: boolean;
@@ -14,7 +14,7 @@ interface AppContextType {
   // Actions
   setJobs: React.Dispatch<React.SetStateAction<SyncJob[]>>;
   setActiveJobId: (id: string | null) => void;
-  setView: (view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP') => void;
+  setView: (view: 'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD') => void;
   setRunInBackground: (val: boolean) => void;
   setStartOnBoot: (val: boolean) => void;
   setNotificationsEnabled: (val: boolean) => void;
@@ -39,24 +39,20 @@ const DEFAULT_CONFIG: RsyncConfig = {
   customCommand: undefined,
 };
 
-const INITIAL_JOBS: SyncJob[] = process.env.NODE_ENV === 'development'
-  ? [
-      {
-        id: 'sandbox-default',
-        name: 'Sandbox Default',
-        sourcePath: '/tmp/amber-sandbox/source',
-        destPath: '/tmp/amber-sandbox/dest',
-        mode: SyncMode.TIME_MACHINE,
-        scheduleInterval: null,
-        config: { ...DEFAULT_CONFIG, delete: true },
-        sshConfig: { enabled: false },
-        destinationType: DestinationType.LOCAL,
-        lastRun: null,
-        status: JobStatus.IDLE,
-        snapshots: [],
-      },
-    ]
-  : [];
+const SANDBOX_JOB: SyncJob = {
+  id: 'sandbox-auto',
+  name: 'Sandbox Test',
+  sourcePath: '/Users/florianmahner/Desktop/amber-sandbox/source',
+  destPath: '/Users/florianmahner/Desktop/amber-sandbox/dest',
+  mode: SyncMode.TIME_MACHINE,
+  scheduleInterval: null,
+  config: { ...DEFAULT_CONFIG, delete: true },
+  sshConfig: { enabled: false },
+  destinationType: DestinationType.LOCAL,
+  lastRun: null,
+  status: JobStatus.IDLE,
+  snapshots: [],
+};
 
 const normalizeJobFromStore = (job: any): SyncJob => ({
   id: job.id,
@@ -91,7 +87,7 @@ const stripSnapshotsForStore = (job: SyncJob) => {
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [view, setView] = useState<'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP'>('DASHBOARD');
+  const [view, setView] = useState<'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD'>('DASHBOARD');
   const [runInBackground, setRunInBackground] = useState(false);
   const [startOnBoot, setStartOnBoot] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -99,19 +95,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Load preferences
   useEffect(() => {
-    if (window.electronAPI?.getPreferences) {
-      window.electronAPI.getPreferences().then((p: any) => {
-        setRunInBackground(p.runInBackground);
-        setStartOnBoot(p.startOnBoot);
-        setNotificationsEnabled(p.notifications);
-      }).catch(() => {
-        setRunInBackground(false);
-        setStartOnBoot(false);
-        setNotificationsEnabled(true);
-      }).finally(() => setPrefsLoaded(true));
-    } else {
-      setPrefsLoaded(true);
-    }
+    const loadPrefs = async () => {
+      if (window.electronAPI?.getPreferences) {
+        const prefs = await window.electronAPI.getPreferences();
+        setRunInBackground(prefs.runInBackground);
+        setStartOnBoot(prefs.startOnBoot);
+        setNotificationsEnabled(prefs.notifications);
+        setPrefsLoaded(true);
+      }
+    };
+    loadPrefs();
 
     let cleanup: (() => void) | undefined;
     if (window.electronAPI?.onNavigate) {
@@ -137,42 +130,56 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Load jobs
   useEffect(() => {
     const loadJobs = async () => {
-      if (process.env.NODE_ENV === 'development' && window.electronAPI) {
-        try {
-          await window.electronAPI.createSandboxDirs('/tmp/amber-sandbox/source', '/tmp/amber-sandbox/dest');
-        } catch (err) {
-          console.error('Failed to create sandbox dirs:', err);
-        }
-      }
-
+      console.log('AppContext: Loading jobs...');
+      
       if (window.electronAPI?.getJobs) {
-        const stored = await window.electronAPI.getJobs();
-        const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
-        
-        if (process.env.NODE_ENV === 'development') {
-          const initialIds = INITIAL_JOBS.map(j => j.id);
-          const missingDefaults = INITIAL_JOBS.filter(def => !normalized.find(n => n.id === def.id));
+        try {
+          const stored = await window.electronAPI.getJobs();
+          console.log('AppContext: Stored jobs:', stored);
+          const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
           
-          if (missingDefaults.length > 0) {
-            const merged = [...normalized, ...missingDefaults];
-            setJobs(merged);
-            if (normalized.length === 0) setActiveJobId(merged[0].id);
-            else setActiveJobId(normalized[0].id);
+          const isDev = await window.electronAPI.isDev();
+          console.log('AppContext: isDev:', isDev);
+
+          if (isDev) {
+            console.log('AppContext: Dev mode detected. Checking for sandbox job...');
             
-            missingDefaults.forEach(job => {
-               window.electronAPI?.saveJob(stripSnapshotsForStore(job));
-            });
+            // Check if we already have a sandbox job
+            const existingSandbox = normalized.find(j => j.id === SANDBOX_JOB.id);
+            
+            if (!existingSandbox) {
+               console.log('AppContext: Sandbox job not found. Creating it...');
+               // If not found, add it and save it
+               await window.electronAPI.saveJob(stripSnapshotsForStore(SANDBOX_JOB));
+               
+               // Scan for snapshots immediately
+               console.log('AppContext: Scanning for snapshots...');
+               const snapshots = await window.electronAPI.listSnapshots(SANDBOX_JOB.id, SANDBOX_JOB.destPath);
+               console.log('AppContext: Snapshots found:', snapshots.length);
+               const jobWithSnapshots = { ...SANDBOX_JOB, snapshots };
+               
+               setJobs([jobWithSnapshots]);
+               setActiveJobId(SANDBOX_JOB.id);
+            } else {
+               console.log('AppContext: Sandbox job found. Refreshing snapshots...');
+               // If found, use stored but refresh snapshots
+               const snapshots = await window.electronAPI.listSnapshots(existingSandbox.id, existingSandbox.destPath);
+               console.log('AppContext: Snapshots found:', snapshots.length);
+               const updatedJob = { ...existingSandbox, snapshots };
+               
+               setJobs([updatedJob]);
+               setActiveJobId(updatedJob.id);
+            }
           } else {
             setJobs(normalized);
             setActiveJobId(normalized[0]?.id ?? null);
           }
-        } else {
-          setJobs(normalized);
-          setActiveJobId(normalized[0]?.id ?? null);
+        } catch (err) {
+            console.error('AppContext: Error loading jobs:', err);
         }
       } else {
-        setJobs(INITIAL_JOBS);
-        setActiveJobId(INITIAL_JOBS[0]?.id ?? null);
+        console.warn('AppContext: electronAPI not available');
+        setJobs([]);
       }
     };
     loadJobs();
