@@ -1,6 +1,8 @@
 use crate::error::Result;
-use crate::services::file_service::{FileEntry, FileService};
+use crate::services::file_service::FileEntry;
+use crate::state::AppState;
 use serde::{Deserialize, Serialize};
+use tauri::State;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,9 +27,8 @@ impl From<FileEntry> for DirEntry {
 }
 
 #[tauri::command]
-pub async fn read_dir(path: String) -> Result<Vec<DirEntry>> {
-    let service = FileService::new();
-    let entries = service.scan_directory(&path)?;
+pub async fn read_dir(state: State<'_, AppState>, path: String) -> Result<Vec<DirEntry>> {
+    let entries = state.file_service.scan_directory(&path)?;
     Ok(entries.into_iter().map(DirEntry::from).collect())
 }
 
@@ -39,27 +40,29 @@ pub async fn select_directory() -> Result<Option<String>> {
 }
 
 #[tauri::command]
-pub async fn read_file_preview(file_path: String, max_lines: Option<usize>) -> Result<String> {
-    let service = FileService::new();
-    service.read_file_preview(&file_path, max_lines.unwrap_or(100))
+pub async fn read_file_preview(
+    state: State<'_, AppState>,
+    file_path: String,
+    max_lines: Option<usize>,
+) -> Result<String> {
+    state
+        .file_service
+        .read_file_preview(&file_path, max_lines.unwrap_or(100))
 }
 
 #[tauri::command]
-pub async fn read_file_as_base64(file_path: String) -> Result<String> {
-    let service = FileService::new();
-    service.read_file_base64(&file_path)
+pub async fn read_file_as_base64(state: State<'_, AppState>, file_path: String) -> Result<String> {
+    state.file_service.read_file_base64(&file_path)
 }
 
 #[tauri::command]
-pub async fn open_path(path: String) -> Result<()> {
-    let service = FileService::new();
-    service.open_path(&path)
+pub async fn open_path(state: State<'_, AppState>, path: String) -> Result<()> {
+    state.file_service.open_path(&path)
 }
 
 #[tauri::command]
-pub async fn show_item_in_folder(path: String) -> Result<()> {
-    let service = FileService::new();
-    service.show_in_folder(&path)
+pub async fn show_item_in_folder(state: State<'_, AppState>, path: String) -> Result<()> {
+    state.file_service.show_in_folder(&path)
 }
 
 #[tauri::command]

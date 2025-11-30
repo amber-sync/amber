@@ -2,12 +2,21 @@
 pub mod commands;
 pub mod error;
 pub mod services;
+pub mod state;
 pub mod types;
+
+pub use state::AppState;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            // Initialize application state with all services
+            let app_state = AppState::new()
+                .expect("Failed to initialize application state");
+            app.manage(app_state);
+
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
