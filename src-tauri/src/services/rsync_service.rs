@@ -1,4 +1,4 @@
-use crate::error::{AmberError, Result};
+use crate::error::Result;
 use crate::types::job::{SyncJob, SyncMode};
 use chrono::Local;
 use regex::Regex;

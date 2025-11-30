@@ -3,6 +3,7 @@ import { Icons } from '../components/IconComponents';
 import { useTheme, Theme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
 import { APP_VERSION } from '../../shared/version';
+import { api } from '../api';
 
 export const AppSettings: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -123,10 +124,10 @@ export const AppSettings: React.FC = () => {
                           }
                         }
                         
-                        // Try sending from Main Process
-                        const success = await window.electronAPI.testNotification();
+                        // Try sending from backend
+                        const success = await api.testNotification();
                         if (!success) {
-                          console.error('Main process notification failed');
+                          console.error('Backend notification failed');
                           // Fallback: Try sending from Renderer
                           new Notification('Amber Test (Renderer)', { body: 'Fallback notification from UI' });
                         }

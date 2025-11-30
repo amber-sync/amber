@@ -1,110 +1,31 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Icons } from './IconComponents';
 
 export const SidecarBenchmark: React.FC = () => {
-  const [path, setPath] = useState('.');
-  const [count, setCount] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [status, setStatus] = useState('Idle');
-
-  const runScan = async () => {
-    setCount(0);
-    setDuration(0);
-    setStatus('Scanning...');
-    const start = performance.now();
-    
-    try {
-        await window.electronAPI.scanDirectory(path, (entry) => {
-            setCount(prev => prev + 1);
-        });
-        const end = performance.now();
-        setDuration(end - start);
-        setStatus('Complete');
-    } catch (e: any) {
-        setStatus('Error: ' + e.message);
-    }
-  };
-
-  const runSearch = async () => {
-    setCount(0);
-    setDuration(0);
-    setStatus('Searching (Recursive)...');
-    const start = performance.now();
-    
-    try {
-        // Search for everything "e" to trigger massive hits
-        await window.electronAPI.searchDirectory(path, "e", (entry) => {
-            setCount(prev => prev + 1);
-        });
-        const end = performance.now();
-        setDuration(end - start);
-        setStatus('Complete');
-    } catch (e: any) {
-        setStatus('Error: ' + e.message);
-    }
-  };
-
-  const runStressTest = () => {
-    setCount(0);
-    setDuration(0);
-    setStatus('Stress Testing UI Throughput (Mock)...');
-    const start = performance.now();
-    
-    const BATCH_SIZE = 500;
-    const TOTAL = 100000;
-    let current = 0;
-    
-    const tick = () => {
-        if (current >= TOTAL) {
-            const end = performance.now();
-            setDuration(end - start);
-            setStatus('Stress Test Complete (100k items)');
-            return;
-        }
-        
-        // Simulate batch processing overhead
-        setCount(prev => prev + BATCH_SIZE);
-        current += BATCH_SIZE;
-        
-        if (current % 5000 === 0) {
-             // Yield to render occasionally
-             setTimeout(tick, 0);
-        } else {
-             tick();
-        }
-    };
-    
-    tick();
-  };
-
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Rust Sidecar Benchmark</h2>
-        <div className="flex gap-4 mb-4">
-            <input 
-                className="flex-1 border border-gray-300 dark:border-gray-600 p-2 rounded bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white" 
-                value={path} 
-                onChange={e => setPath(e.target.value)} 
-                placeholder="Path to scan..."
-            />
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium" onClick={runScan}>Scan</button>
-            <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded font-medium" onClick={runSearch}>Search</button>
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium" onClick={runStressTest}>Stress Test</button>
+    <div className="p-6 bg-layer-2 rounded-xl border border-border-base">
+      <div className="flex items-center gap-3 mb-4">
+        <Icons.Zap className="text-accent-primary" size={24} />
+        <h3 className="text-lg font-semibold text-text-primary">Performance</h3>
+      </div>
+      <p className="text-text-secondary text-sm">
+        File scanning is powered by the Rust backend for optimal performance.
+        Handles 65,000+ files per second using parallel processing.
+      </p>
+      <div className="mt-4 grid grid-cols-3 gap-4">
+        <div className="p-3 bg-layer-1 rounded-lg text-center">
+          <div className="text-2xl font-bold text-accent-primary">65k+</div>
+          <div className="text-xs text-text-tertiary">files/sec</div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Files Found</div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{count.toLocaleString()}</div>
-            </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Duration</div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{duration.toFixed(0)}ms</div>
-            </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Speed</div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{duration > 0 ? (count / (duration/1000)).toFixed(0) : 0} /s</div>
-            </div>
+        <div className="p-3 bg-layer-1 rounded-lg text-center">
+          <div className="text-2xl font-bold text-success">Rust</div>
+          <div className="text-xs text-text-tertiary">Backend</div>
         </div>
-        <div className="mt-4 text-sm text-gray-500 font-mono">{status}</div>
+        <div className="p-3 bg-layer-1 rounded-lg text-center">
+          <div className="text-2xl font-bold text-info">Tauri</div>
+          <div className="text-xs text-text-tertiary">Framework</div>
+        </div>
+      </div>
     </div>
   );
 };

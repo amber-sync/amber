@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { LogEntry, RsyncProgressData } from '../types';
+import { api } from '../api';
 
 const PROGRESS_UPDATE_INTERVAL_MS = 200;
 const LOG_FLUSH_INTERVAL_MS = 200;
@@ -12,10 +13,8 @@ export function useRsyncProgress() {
   const logBufferRef = useRef<LogEntry[]>([]);
 
   useEffect(() => {
-    if (!window.electronAPI) return;
-
     // Log subscription
-    const unsubLog = window.electronAPI.onRsyncLog((data) => {
+    const unsubLog = api.onRsyncLog((data) => {
       logBufferRef.current.push({
         message: data.message,
         timestamp: Date.now(),
@@ -38,7 +37,7 @@ export function useRsyncProgress() {
     }, LOG_FLUSH_INTERVAL_MS);
 
     // Progress subscription
-    const unsubProgress = window.electronAPI.onRsyncProgress((data) => {
+    const unsubProgress = api.onRsyncProgress((data) => {
       setProgress({
         percentage: data.percentage,
         speed: data.speed,
@@ -49,7 +48,7 @@ export function useRsyncProgress() {
     });
 
     // Complete subscription
-    const unsubComplete = window.electronAPI.onRsyncComplete((data) => {
+    const unsubComplete = api.onRsyncComplete((data) => {
       setIsRunning(false);
       setProgress(null);
 

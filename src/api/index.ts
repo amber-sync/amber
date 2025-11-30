@@ -1,332 +1,167 @@
 /**
- * Unified API abstraction layer for Amber Backup
- * Supports both Electron IPC and Tauri commands
+ * Tauri API abstraction layer for Amber Backup
  */
 
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { open } from '@tauri-apps/plugin-dialog';
+import { desktopDir } from '@tauri-apps/api/path';
 import type { SyncJob } from '../types';
 
-// Detect which runtime we're in
-const isTauri = '__TAURI__' in window;
-const isElectron = 'electronAPI' in window;
-
-// Event emitter for rsync events (Tauri uses Tauri events, Electron uses IPC)
+// Event callback types
 type RsyncLogCallback = (data: { jobId: string; message: string }) => void;
 type RsyncProgressCallback = (data: { jobId: string; transferred: string; percentage: number; speed: string; eta: string; currentFile?: string }) => void;
 type RsyncCompleteCallback = (data: { jobId: string; success: boolean; error?: string }) => void;
 
 class AmberAPI {
-  private tauriInvoke: ((cmd: string, args?: any) => Promise<any>) | null = null;
-  private tauriListen: ((event: string, handler: (event: any) => void) => Promise<() => void>) | null = null;
-
-  constructor() {
-    if (isTauri) {
-      // Dynamically import Tauri API
-      import('@tauri-apps/api/core').then((mod) => {
-        this.tauriInvoke = mod.invoke;
-      });
-      import('@tauri-apps/api/event').then((mod) => {
-        this.tauriListen = mod.listen;
-      });
-    }
-  }
-
   // ===== Jobs =====
 
   async getJobs(): Promise<SyncJob[]> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('get_jobs');
-    }
-    if (isElectron) {
-      return window.electronAPI.getJobs();
-    }
-    throw new Error('No backend available');
+    return invoke('get_jobs');
   }
 
   async saveJob(job: SyncJob): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('save_job', { job });
-    }
-    if (isElectron) {
-      await window.electronAPI.saveJob(job);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('save_job', { job });
   }
 
   async deleteJob(jobId: string): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('delete_job', { jobId });
-    }
-    if (isElectron) {
-      await window.electronAPI.deleteJob(jobId);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('delete_job', { jobId });
   }
 
   // ===== Rsync Operations =====
 
   async runRsync(job: SyncJob): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('run_rsync', { job });
-    }
-    if (isElectron) {
-      window.electronAPI.runRsync(job);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('run_rsync', { job });
   }
 
   async killRsync(jobId: string): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('kill_rsync', { jobId });
-    }
-    if (isElectron) {
-      window.electronAPI.killRsync(jobId);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('kill_rsync', { jobId });
   }
 
   onRsyncLog(callback: RsyncLogCallback): () => void {
-    if (isTauri && this.tauriListen) {
-      let unlisten: (() => void) | null = null;
-      this.tauriListen('rsync-log', (event: any) => callback(event.payload)).then((fn) => {
-        unlisten = fn;
-      });
-      return () => unlisten?.();
-    }
-    if (isElectron) {
-      return window.electronAPI.onRsyncLog(callback);
-    }
-    return () => {};
+    let unlisten: (() => void) | null = null;
+    listen('rsync-log', (event: any) => callback(event.payload)).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
   }
 
   onRsyncProgress(callback: RsyncProgressCallback): () => void {
-    if (isTauri && this.tauriListen) {
-      let unlisten: (() => void) | null = null;
-      this.tauriListen('rsync-progress', (event: any) => callback(event.payload)).then((fn) => {
-        unlisten = fn;
-      });
-      return () => unlisten?.();
-    }
-    if (isElectron) {
-      return window.electronAPI.onRsyncProgress(callback);
-    }
-    return () => {};
+    let unlisten: (() => void) | null = null;
+    listen('rsync-progress', (event: any) => callback(event.payload)).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
   }
 
   onRsyncComplete(callback: RsyncCompleteCallback): () => void {
-    if (isTauri && this.tauriListen) {
-      let unlisten: (() => void) | null = null;
-      this.tauriListen('rsync-complete', (event: any) => callback(event.payload)).then((fn) => {
-        unlisten = fn;
-      });
-      return () => unlisten?.();
-    }
-    if (isElectron) {
-      return window.electronAPI.onRsyncComplete(callback);
-    }
-    return () => {};
+    let unlisten: (() => void) | null = null;
+    listen('rsync-complete', (event: any) => callback(event.payload)).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
   }
 
   // ===== Filesystem =====
 
   async readDir(path: string): Promise<any[]> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('read_dir', { path });
-    }
-    if (isElectron) {
-      return window.electronAPI.readDir(path);
-    }
-    throw new Error('No backend available');
+    return invoke('read_dir', { path });
   }
 
   async selectDirectory(): Promise<string | null> {
-    if (isTauri) {
-      // Use Tauri dialog plugin
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const selected = await open({ directory: true });
-      return selected as string | null;
-    }
-    if (isElectron) {
-      return window.electronAPI.selectDirectory();
-    }
-    throw new Error('No backend available');
+    const selected = await open({ directory: true });
+    return selected as string | null;
   }
 
   async openPath(path: string): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('open_path', { path });
-    }
-    if (isElectron) {
-      await window.electronAPI.openPath(path);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('open_path', { path });
   }
 
   async showItemInFolder(path: string): Promise<void> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('show_item_in_folder', { path });
-    }
-    if (isElectron) {
-      await window.electronAPI.showItemInFolder(path);
-      return;
-    }
-    throw new Error('No backend available');
+    return invoke('show_item_in_folder', { path });
   }
 
   async getDiskStats(path: string): Promise<{ success: boolean; stats?: { total: number; free: number; status: 'AVAILABLE' | 'UNAVAILABLE' }; error?: string }> {
-    if (isTauri && this.tauriInvoke) {
-      try {
-        const result = await this.tauriInvoke('get_disk_stats', { path });
-        // Parse df output
-        return { success: true, stats: { total: 0, free: 0, status: 'AVAILABLE' } };
-      } catch (e: any) {
-        return { success: false, error: e.message };
-      }
+    try {
+      const result = await invoke<{ totalBytes: number; availableBytes: number }>('get_volume_info', { path });
+      return {
+        success: true,
+        stats: {
+          total: result.totalBytes,
+          free: result.availableBytes,
+          status: 'AVAILABLE'
+        }
+      };
+    } catch (e: any) {
+      return { success: false, error: e.message || String(e) };
     }
-    if (isElectron) {
-      return window.electronAPI.getDiskStats(path);
-    }
-    throw new Error('No backend available');
   }
 
   async readFilePreview(filePath: string, maxLines?: number): Promise<string> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('read_file_preview', { filePath, maxLines });
-    }
-    if (isElectron) {
-      return window.electronAPI.readFilePreview(filePath, maxLines);
-    }
-    throw new Error('No backend available');
+    return invoke('read_file_preview', { filePath, maxLines });
   }
 
   async readFileAsBase64(filePath: string): Promise<string> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('read_file_as_base64', { filePath });
-    }
-    if (isElectron) {
-      return window.electronAPI.readFileAsBase64(filePath);
-    }
-    throw new Error('No backend available');
+    return invoke('read_file_as_base64', { filePath });
   }
 
   // ===== Snapshots =====
 
   async listSnapshots(jobId: string, destPath: string): Promise<any[]> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('list_snapshots', { jobId, destPath });
-    }
-    if (isElectron) {
-      return window.electronAPI.listSnapshots(jobId, destPath);
-    }
-    throw new Error('No backend available');
+    return invoke('list_snapshots', { jobId, destPath });
   }
 
   async getSnapshotTree(jobId: string, timestamp: number, snapshotPath: string): Promise<any[]> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('get_snapshot_tree', { jobId, timestamp, snapshotPath });
-    }
-    if (isElectron) {
-      return window.electronAPI.getSnapshotTree(jobId, timestamp, snapshotPath);
-    }
-    throw new Error('No backend available');
+    return invoke('get_snapshot_tree', { jobId, timestamp, snapshotPath });
   }
 
   async restoreFiles(job: SyncJob, snapshotPath: string, files: string[], targetPath: string): Promise<{ success: boolean; error?: string }> {
-    if (isTauri && this.tauriInvoke) {
-      try {
-        await this.tauriInvoke('restore_files', { jobId: job.id, snapshotPath, files, targetPath });
-        return { success: true };
-      } catch (e: any) {
-        return { success: false, error: e.message };
-      }
+    try {
+      await invoke('restore_files', { jobId: job.id, snapshotPath, files, targetPath });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || String(e) };
     }
-    if (isElectron) {
-      return window.electronAPI.restoreFiles(job, snapshotPath, files, targetPath);
-    }
-    throw new Error('No backend available');
   }
 
   async restoreSnapshot(job: SyncJob, snapshotPath: string, targetPath: string): Promise<{ success: boolean; error?: string }> {
-    if (isTauri && this.tauriInvoke) {
-      try {
-        await this.tauriInvoke('restore_snapshot', { jobId: job.id, snapshotPath, targetPath });
-        return { success: true };
-      } catch (e: any) {
-        return { success: false, error: e.message };
-      }
+    try {
+      await invoke('restore_snapshot', { jobId: job.id, snapshotPath, targetPath });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || String(e) };
     }
-    if (isElectron) {
-      return window.electronAPI.restoreSnapshot(job, snapshotPath, targetPath);
-    }
-    throw new Error('No backend available');
   }
 
   // ===== Preferences =====
 
   async getPreferences(): Promise<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('get_preferences');
-    }
-    if (isElectron) {
-      return window.electronAPI.getPreferences();
-    }
-    throw new Error('No backend available');
+    return invoke('get_preferences');
   }
 
   async setPreferences(prefs: Partial<{ runInBackground: boolean; startOnBoot: boolean; notifications: boolean }>): Promise<any> {
-    if (isTauri && this.tauriInvoke) {
-      return this.tauriInvoke('set_preferences', { preferences: prefs });
-    }
-    if (isElectron) {
-      return window.electronAPI.setPreferences(prefs);
-    }
-    throw new Error('No backend available');
+    return invoke('set_preferences', { preferences: prefs });
   }
 
   async testNotification(): Promise<boolean> {
-    if (isTauri && this.tauriInvoke) {
-      await this.tauriInvoke('test_notification');
-      return true;
-    }
-    if (isElectron) {
-      return window.electronAPI.testNotification();
-    }
-    throw new Error('No backend available');
+    await invoke('test_notification');
+    return true;
   }
 
   // ===== Utilities =====
 
   async isDev(): Promise<boolean> {
-    if (isTauri) {
-      return import.meta.env.DEV;
-    }
-    if (isElectron) {
-      return window.electronAPI.isDev();
-    }
-    return false;
+    return import.meta.env.DEV;
   }
 
   async getDesktopPath(): Promise<string> {
-    if (isTauri) {
-      const { desktopDir } = await import('@tauri-apps/api/path');
-      return desktopDir();
-    }
-    if (isElectron) {
-      return window.electronAPI.getDesktopPath();
-    }
-    throw new Error('No backend available');
+    return desktopDir();
   }
 
   // ===== Runtime Info =====
 
-  get runtime(): 'tauri' | 'electron' | 'none' {
-    if (isTauri) return 'tauri';
-    if (isElectron) return 'electron';
-    return 'none';
+  get runtime(): 'tauri' {
+    return 'tauri';
   }
 }
 

@@ -25,7 +25,16 @@
       "Bash(git restore:*)",
       "Bash(git tag:*)",
       "Bash(python3:*)",
-      "Bash(./scripts/linear.sh:*)"
+      "Bash(./scripts/linear.sh:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:chatgpt.com)",
+      "Bash(rm:*)",
+      "Bash(./scripts/next-ticket.sh:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tauri init:*)",
+      "Bash(rustc:*)",
+      "Bash(cargo:*)",
+      "Bash(npm run build:frontend:*)"
     ],
     "deny": [],
     "ask": []

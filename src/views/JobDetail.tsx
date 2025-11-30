@@ -4,6 +4,7 @@ import { Terminal } from '../components/Terminal';
 import { DiskStats, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
 import { formatBytes, formatSchedule } from '../utils/formatters';
 import { FileBrowser } from '../components/FileBrowser';
+import { api } from '../api';
 
 type SnapshotGrouping = 'ALL' | 'DAY' | 'MONTH' | 'YEAR';
 
@@ -76,11 +77,9 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     }
 
     // Fetch tree if missing
-    if (window.electronAPI?.getSnapshotTree) {
-      window.electronAPI.getSnapshotTree(job.id, latestSnapshot.timestamp, (latestSnapshot as any).path)
-        .then(tree => setLatestSnapshotTree(tree))
-        .catch(err => console.error('Failed to fetch snapshot tree for analytics:', err));
-    }
+    api.getSnapshotTree(job.id, latestSnapshot.timestamp, (latestSnapshot as any).path)
+      .then(tree => setLatestSnapshotTree(tree))
+      .catch(err => console.error('Failed to fetch snapshot tree for analytics:', err));
   }, [latestSnapshot, job.id]);
 
   const analytics = useMemo<JobAnalytics | null>(() => {
@@ -140,10 +139,10 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   }, [job.snapshots, snapshotGrouping, sortBy]);
 
   const handleOpenSnapshot = (timestamp: number) => {
-    if (!window.electronAPI || !job.destPath) return;
+    if (!job.destPath) return;
     const folderName = buildSnapshotFolderName(timestamp);
     const fullPath = job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
-    window.electronAPI.openPath(fullPath);
+    api.openPath(fullPath);
   };
   
   const handleBrowseSnapshot = (timestamp: number) => {
@@ -154,10 +153,10 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   };
 
   const handleShowFile = (path: string) => {
-    if (!window.electronAPI || !job.destPath || !latestSnapshot) return;
+    if (!job.destPath || !latestSnapshot) return;
     const folderName = buildSnapshotFolderName(latestSnapshot.timestamp);
     const basePath = job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
-    window.electronAPI.showItemInFolder(`${basePath}${path}`);
+    api.showItemInFolder(`${basePath}${path}`);
   };
 
   return (

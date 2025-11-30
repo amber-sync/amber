@@ -36,7 +36,7 @@ pub async fn restore_files(
     use std::process::Command;
 
     // Use rsync to restore specific files
-    let mut args = vec![
+    let args = vec![
         "-av".to_string(),
         "--progress".to_string(),
         "--files-from=-".to_string(),

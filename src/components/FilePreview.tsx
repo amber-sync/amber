@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatBytes } from '../utils/formatters';
+import { api } from '../api';
 
 interface FilePreviewProps {
   filePath: string;
@@ -61,7 +62,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       try {
         console.log('[FilePreview] Loading image:', filePath);
         // Load image as base64 data URI
-        const dataUri = await window.electronAPI.readFileAsBase64(filePath);
+        const dataUri = await api.readFileAsBase64(filePath);
         console.log('[FilePreview] Loaded base64, length:', dataUri.length);
         setContent(dataUri);
       } catch (err: any) {
@@ -83,7 +84,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     setError(null);
 
     try {
-      const fileContent = await window.electronAPI.readFilePreview(filePath, PREVIEW_LINES);
+      const fileContent = await api.readFilePreview(filePath, PREVIEW_LINES);
       setContent(fileContent);
     } catch (err: any) {
       setError(err.message || 'Failed to load preview');
