@@ -69,6 +69,16 @@ export interface Snapshot {
   root?: FileNode[]; // Mocked file tree for visualization (optional for persistence)
 }
 
+// TIM-46: SQLite indexed snapshot metadata
+export interface IndexedSnapshot {
+  id: number;
+  job_id: string;
+  timestamp: number;
+  root_path: string;
+  file_count: number;
+  total_size: number;
+}
+
 export interface JobSchedule {
   enabled: boolean;
   cron?: string;

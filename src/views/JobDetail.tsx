@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../components/IconComponents';
 import { Terminal } from '../components/Terminal';
-import { DiskStats, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
+import { DiskStats, FileNode, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
 import { formatBytes, formatSchedule } from '../utils/formatters';
 import { FileBrowser } from '../components/FileBrowser';
 import { api } from '../api';
@@ -45,12 +45,14 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
   const [snapshotGrouping, setSnapshotGrouping] = useState<SnapshotGrouping>('ALL');
   const [activeBrowserPath, setActiveBrowserPath] = useState<string | null>(null);
+  const [activeBrowserTimestamp, setActiveBrowserTimestamp] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'size'>('date');
 
   useEffect(() => {
     setSnapshotGrouping('ALL');
     setIsTerminalExpanded(false);
     setActiveBrowserPath(null);
+    setActiveBrowserTimestamp(null);
     setSortBy('date');
   }, [job.id]);
 
@@ -166,6 +168,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     const fullPath =
       job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
     setActiveBrowserPath(fullPath);
+    setActiveBrowserTimestamp(timestamp);
   };
 
   const handleShowFile = (path: string) => {
@@ -181,7 +184,14 @@ export const JobDetail: React.FC<JobDetailProps> = ({
       <Header
         job={job}
         isRunning={isRunning}
-        onBack={activeBrowserPath ? () => setActiveBrowserPath(null) : onBack}
+        onBack={
+          activeBrowserPath
+            ? () => {
+                setActiveBrowserPath(null);
+                setActiveBrowserTimestamp(null);
+              }
+            : onBack
+        }
         onRun={onRun}
         onStop={onStop}
         onOpenSettings={onOpenSettings}
@@ -193,7 +203,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({
       <div className="flex-1 overflow-auto p-8">
         {activeBrowserPath ? (
           <div className="h-full animate-fade-in">
-            <FileBrowser initialPath={activeBrowserPath} />
+            <FileBrowser
+              initialPath={activeBrowserPath}
+              jobId={job.id}
+              snapshotTimestamp={activeBrowserTimestamp ?? undefined}
+            />
           </div>
         ) : (
           <div

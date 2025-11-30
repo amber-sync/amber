@@ -95,7 +95,7 @@ function AppContent() {
 
   // Listen for rsync completion events
   useEffect(() => {
-    const unsubComplete = api.onRsyncComplete(data => {
+    const unsubComplete = api.onRsyncComplete(async data => {
       let persistedJob: SyncJob | null = null;
       if (data.success) {
         setJobs(prev =>
@@ -127,6 +127,18 @@ function AppContent() {
             return j;
           })
         );
+
+        // TIM-46: Index the new snapshot for fast browsing
+        const snapshot = (data as any).snapshot;
+        if (snapshot?.path && snapshot?.timestamp) {
+          try {
+            await api.indexSnapshot(data.jobId, snapshot.timestamp, snapshot.path);
+            console.log(`Indexed snapshot for job ${data.jobId}`);
+          } catch (err) {
+            console.warn('Failed to index snapshot:', err);
+            // Non-fatal - fallback to filesystem scan
+          }
+        }
       } else {
         setJobs(prev =>
           prev.map(j => (j.id === data.jobId ? { ...j, status: JobStatus.FAILED } : j))
