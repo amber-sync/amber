@@ -79,6 +79,15 @@ export interface IndexedSnapshot {
   total_size: number;
 }
 
+// TIM-47: Volume info for file search palette
+export interface VolumeInfo {
+  name: string;
+  path: string;
+  totalBytes: number;
+  freeBytes: number;
+  isExternal: boolean;
+}
+
 export interface JobSchedule {
   enabled: boolean;
   cron?: string;
