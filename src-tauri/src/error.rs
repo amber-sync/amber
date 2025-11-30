@@ -28,6 +28,9 @@ pub enum AmberError {
     #[error("Volume error: {0}")]
     Volume(String),
 
+    #[error("Index error: {0}")]
+    Index(String),
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
