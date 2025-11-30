@@ -626,6 +626,39 @@ ipcMain.handle('read-file-preview', async (_, filePath: string, maxLines: number
   }
 });
 
+// Read image files as base64 for preview
+ipcMain.handle('read-file-as-base64', async (_, filePath: string) => {
+  try {
+    const stats = await fs.stat(filePath);
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB max for images
+    
+    if (stats.size > MAX_SIZE) {
+      throw new Error(`Image too large: ${stats.size} bytes`);
+    }
+
+    const buffer = await fs.readFile(filePath);
+    const base64 = buffer.toString('base64');
+    
+    // Determine mime type from extension
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp'
+    };
+    
+    const mimeType = mimeTypes[ext || ''] || 'image/png';
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error: any) {
+    log.error(`Error reading image ${filePath}: ${error.message}`);
+    throw error;
+  }
+});
+
 ipcMain.handle('select-directory', async () => {
   if (!mainWindow) return null;
   const result = await dialog.showOpenDialog(mainWindow, {
