@@ -10,9 +10,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/frontend/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["src/frontend/**/*"],
-  "exclude": ["node_modules", "dist", "src/backend"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src-tauri"]
 }

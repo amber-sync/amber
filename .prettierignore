@@ -1,6 +1,6 @@
 node_modules/
 dist/
-src/backend/target/
+src-tauri/
 website/
 *.md
 package-lock.json

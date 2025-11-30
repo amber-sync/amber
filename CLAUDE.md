@@ -10,11 +10,17 @@ Amber Backup is a macOS desktop application for Time Machine-style incremental b
 
 ```
 amber/
-├── src/
-│   ├── frontend/      # React frontend (TypeScript, Vite, Tailwind)
-│   └── backend/       # Rust/Tauri backend
+├── src/               # React frontend (TypeScript, Vite, Tailwind)
+│   ├── api/
+│   ├── components/
+│   ├── context/
+│   ├── views/
+│   └── __tests__/     # Frontend tests
+├── src-tauri/         # Rust/Tauri backend
+│   ├── src/
+│   └── tests/         # Rust integration tests
 ├── tests/
-│   └── fixtures/      # Rsync test fixtures (sandbox)
+│   └── fixtures/      # Shared rsync test fixtures
 ├── scripts/           # Build and utility scripts
 ├── docs/              # Documentation
 └── public/            # Static assets
@@ -36,27 +42,27 @@ npm run typecheck      # TypeScript type checking
 
 ## Architecture
 
-### Frontend (src/frontend/)
+### Frontend (src/)
 - **React 19** with TypeScript, Vite, Tailwind CSS
 - **Context API** for state: `AppContext` (jobs, navigation), `ThemeContext` (light/dark/accent)
 - **Views**: Dashboard, JobDetail, JobEditor, AppSettings, RestoreWizard
 - **Components**: FileBrowser (tree nav), FilePreview (split-view), Terminal (rsync output)
-- **API Layer**: `src/frontend/api/index.ts` - Tauri IPC bindings
+- **API Layer**: `src/api/index.ts` - Tauri IPC bindings
 
-### Backend (src/backend/)
+### Backend (src-tauri/)
 - **Tauri v2** with Rust
-- **Commands** (`src/backend/src/commands/`):
+- **Commands** (`src-tauri/src/commands/`):
   - `jobs.rs`: Job CRUD operations
   - `rsync.rs`: Rsync execution and control
   - `snapshots.rs`: Snapshot listing and restoration
   - `filesystem.rs`: File operations, directory browsing
   - `preferences.rs`: App settings
-- **Services** (`src/backend/src/services/`):
+- **Services** (`src-tauri/src/services/`):
   - `rsync_service.rs`: Rsync command building and process management
   - `snapshot_service.rs`: Snapshot discovery and metadata
   - `file_service.rs`: File I/O, base64 encoding
   - `store.rs`: JSON-based persistence
-- **Types** (`src/backend/src/types/`): Shared data structures
+- **Types** (`src-tauri/src/types/`): Shared data structures
 
 ## Key Patterns
 
@@ -73,8 +79,8 @@ const jobs = await invoke('get_jobs');
 ```
 
 ### Type Definitions
-- Frontend types: `src/frontend/types.ts`
-- Backend types: `src/backend/src/types/`
+- Frontend types: `src/types.ts`
+- Backend types: `src-tauri/src/types/`
 
 ## Code Quality
 
