@@ -19,6 +19,9 @@ pub enum AmberError {
     #[error("Keychain error: {0}")]
     Keychain(String),
 
+    #[error("Store error: {0}")]
+    Store(String),
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
