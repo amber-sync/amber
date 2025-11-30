@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { formatBytes } from '../utils/formatters';
 import { api } from '../api';
 import { getErrorMessage } from '../types';
+import { logger } from '../utils/logger';
 
 interface FilePreviewProps {
   filePath: string;
@@ -79,7 +80,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
         const dataUri = await api.readFileAsBase64(filePath);
         setContent(dataUri);
       } catch (err: unknown) {
-        console.error('[FilePreview] Error loading image:', err);
+        logger.error('Error loading image', err);
         setError(getErrorMessage(err) || 'Failed to load image');
       } finally {
         setLoading(false);

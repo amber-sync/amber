@@ -3,6 +3,7 @@ import { Icons } from '../components/IconComponents';
 import { useTheme, Theme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
+import { logger } from '../utils/logger';
 
 const APP_VERSION = '0.0.1-beta';
 
@@ -141,7 +142,7 @@ export const AppSettings: React.FC = () => {
                         // Try sending from backend
                         const success = await api.testNotification();
                         if (!success) {
-                          console.error('Backend notification failed');
+                          logger.error('Backend notification failed');
                           // Fallback: Try sending from Renderer
                           new Notification('Amber Test (Renderer)', {
                             body: 'Fallback notification from UI',

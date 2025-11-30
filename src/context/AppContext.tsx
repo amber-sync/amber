@@ -4,6 +4,7 @@ import { generateUniqueId } from '../utils/idGenerator';
 import { useTheme } from './ThemeContext';
 import { api } from '../api';
 import { BASE_RSYNC_CONFIG, MODE_PRESETS } from '../config';
+import { logger } from '../utils/logger';
 
 interface AppContextType {
   jobs: SyncJob[];
@@ -113,7 +114,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setNotificationsEnabled(prefs.notifications);
         setPrefsLoaded(true);
       } catch (err) {
-        console.error('Failed to load preferences:', err);
+        logger.error('Failed to load preferences', err);
         setPrefsLoaded(true);
       }
     };
@@ -129,46 +130,46 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         startOnBoot,
         notifications: notificationsEnabled,
       })
-      .catch(err => console.error('Failed to save preferences:', err));
+      .catch(err => logger.error('Failed to save preferences', err));
   }, [runInBackground, startOnBoot, notificationsEnabled, prefsLoaded]);
 
   // Load jobs
   useEffect(() => {
     const loadJobs = async () => {
-      console.log('AppContext: Loading jobs...');
+      logger.debug('Loading jobs...');
 
       try {
         const stored = await api.getJobs();
-        console.log('AppContext: Stored jobs:', stored);
+        logger.debug('Stored jobs loaded', { count: Array.isArray(stored) ? stored.length : 0 });
         const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
 
         const isDev = await api.isDev();
-        console.log('AppContext: isDev:', isDev);
+        logger.debug('Environment check', { isDev });
 
         if (isDev) {
-          console.log('AppContext: Dev mode detected. Checking for sandbox job...');
+          logger.debug('Dev mode detected, checking for sandbox job');
 
           // Check if we already have a sandbox job
           const existingSandbox = normalized.find(j => j.id === SANDBOX_JOB.id);
 
           if (!existingSandbox) {
-            console.log('AppContext: Sandbox job not found. Creating it...');
+            logger.debug('Sandbox job not found, creating it');
             // If not found, add it and save it
             await api.saveJob(stripSnapshotsForStore(SANDBOX_JOB));
 
             // Scan for snapshots immediately
-            console.log('AppContext: Scanning for snapshots...');
+            logger.debug('Scanning for snapshots');
             const snapshots = await api.listSnapshots(SANDBOX_JOB.id, SANDBOX_JOB.destPath);
-            console.log('AppContext: Snapshots found:', snapshots.length);
+            logger.debug('Snapshots found', { count: snapshots.length });
             const jobWithSnapshots = { ...SANDBOX_JOB, snapshots };
 
             setJobs([jobWithSnapshots]);
             setActiveJobId(SANDBOX_JOB.id);
           } else {
-            console.log('AppContext: Sandbox job found. Refreshing snapshots...');
+            logger.debug('Sandbox job found, refreshing snapshots');
             // If found, use stored but refresh snapshots
             const snapshots = await api.listSnapshots(existingSandbox.id, existingSandbox.destPath);
-            console.log('AppContext: Snapshots found:', snapshots.length);
+            logger.debug('Snapshots found', { count: snapshots.length });
             const updatedJob = { ...existingSandbox, snapshots };
 
             setJobs([updatedJob]);
@@ -179,7 +180,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setActiveJobId(normalized[0]?.id ?? null);
         }
       } catch (err) {
-        console.error('AppContext: Error loading jobs:', err);
+        logger.error('Error loading jobs', err);
         setJobs([]);
       }
     };
@@ -194,7 +195,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
       setJobs(normalized);
     } catch (error) {
-      console.error('Failed to persist job', error);
+      logger.error('Failed to persist job', error);
     }
   }, []);
 
@@ -206,15 +207,15 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
       setJobs(normalized);
     } catch (error) {
-      console.error('Failed to delete job', error);
+      logger.error('Failed to delete job', error);
     }
   }, []);
 
-  const runSync = (jobId: string) => {
-    console.warn('runSync not implemented in context yet');
+  const runSync = (_jobId: string) => {
+    logger.warn('runSync not implemented in context yet');
   };
-  const stopSync = (jobId: string) => {
-    console.warn('stopSync not implemented in context yet');
+  const stopSync = (_jobId: string) => {
+    logger.warn('stopSync not implemented in context yet');
   };
 
   return (
