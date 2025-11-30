@@ -28,6 +28,13 @@ pub fn run() {
             // Snapshot commands
             commands::snapshots::list_snapshots,
             commands::snapshots::get_snapshot_tree,
+            commands::snapshots::get_indexed_directory,
+            commands::snapshots::index_snapshot,
+            commands::snapshots::is_snapshot_indexed,
+            commands::snapshots::search_snapshot_files,
+            commands::snapshots::get_snapshot_stats,
+            commands::snapshots::delete_snapshot_index,
+            commands::snapshots::delete_job_index,
             commands::snapshots::restore_files,
             commands::snapshots::restore_snapshot,
             // Filesystem commands

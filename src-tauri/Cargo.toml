@@ -29,6 +29,7 @@ chrono = { version = "0.4", features = ["serde"] }
 walkdir = "2"
 jwalk = "0.8"
 rayon = "1"
+num_cpus = "1"
 base64 = "0.22"
 open = "5"
 shell-words = "1"
@@ -42,6 +43,8 @@ keyring = "3"
 notify = "7"
 # UUID for job scheduler
 uuid = { version = "1", features = ["v4"] }
+# TIM-46: SQLite metadata index for fast snapshot browsing
+rusqlite = { version = "0.32", features = ["bundled"] }
 # Type-safe IPC (commented out until specta v2 stable)
 # specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde_json", "uuid"] }
 # specta-typescript = "0.0.9"
