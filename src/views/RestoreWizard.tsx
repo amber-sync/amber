@@ -3,6 +3,7 @@ import { Icons } from '../components/IconComponents';
 import { FileBrowser } from '../components/FileBrowser';
 import { SyncJob, Snapshot } from '../types';
 import { formatBytes } from '../utils/formatters';
+import { api } from '../api';
 
 interface RestoreWizardProps {
   job: SyncJob;
@@ -62,7 +63,7 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
     try {
       // For now, restore to a 'Restored' folder on Desktop
       // In real app, we might ask user for location or restore in-place
-      const desktop = await window.electronAPI.getDesktopPath?.() || '/tmp'; // Fallback
+      const desktop = await api.getDesktopPath().catch(() => '/tmp');
       const targetPath = `${desktop}/Restored-${activeSnapshot.id}`;
       
       await onRestore(Array.from(selectedFiles), targetPath, activeSnapshot);
@@ -83,10 +84,10 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
     setIsRestoring(true);
     
     try {
-      const desktop = await window.electronAPI.getDesktopPath?.() || '/tmp';
+      const desktop = await api.getDesktopPath().catch(() => '/tmp');
       const targetPath = `${desktop}/Restored-Full-${activeSnapshot.id}`;
-      
-      const result = await window.electronAPI.restoreSnapshot(
+
+      const result = await api.restoreSnapshot(
         job,
         snapshotPath, // Use snapshotPath as the source for the full snapshot
         targetPath

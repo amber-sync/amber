@@ -6,7 +6,8 @@
   "build": {
     "frontendDist": "dist",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "vite",
+    "beforeBuildCommand": "vite build"
   },
   "app": {
     "windows": [
@@ -16,7 +17,7 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
-        "titleBarStyle": "overlay"
+        "titleBarStyle": "Overlay"
       }
     ],
     "security": {

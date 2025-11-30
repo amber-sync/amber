@@ -16,6 +16,7 @@ import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
+import { api } from './api';
 
 
 const MODE_PRESETS: Record<SyncMode, RsyncConfig> = {
@@ -77,9 +78,7 @@ function AppContent() {
 
   // Listen for rsync completion events
   useEffect(() => {
-    if (!window.electronAPI) return;
-
-    const unsubComplete = window.electronAPI.onRsyncComplete((data) => {
+    const unsubComplete = api.onRsyncComplete((data) => {
       let persistedJob: SyncJob | null = null;
       if (data.success) {
         setJobs(prev => prev.map(j => {
@@ -295,8 +294,7 @@ function AppContent() {
   };
 
   const handleSelectDirectory = async (target: 'SOURCE' | 'DEST') => {
-    if (!window.electronAPI) return;
-    const path = await window.electronAPI.selectDirectory();
+    const path = await api.selectDirectory();
     if (path) {
       if (target === 'SOURCE') setNewJobSource(path);
       else setNewJobDest(path);
@@ -313,17 +311,14 @@ function AppContent() {
     clearLogs();
     addLog(`Starting sync for ${job.name}...`);
 
-    if (window.electronAPI) {
-      window.electronAPI.runRsync(job);
-    } else {
-      addLog('Electron API not available.', 'error');
+    api.runRsync(job).catch((err) => {
+      addLog(`Error starting sync: ${err}`, 'error');
       setIsRunning(false);
-    }
+    });
   }, [jobs, setIsRunning, clearLogs, addLog, setJobs]);
 
   const stopSync = useCallback((jobId: string) => {
-    if (!window.electronAPI) return;
-    window.electronAPI.killRsync(jobId);
+    api.killRsync(jobId);
     addLog('Stopping sync...', 'warning');
   }, [addLog]);
 
@@ -339,28 +334,24 @@ function AppContent() {
 
     addLog(`Starting restore for ${files.length} files to ${targetPath}...`);
     
-    if (window.electronAPI?.restoreFiles) {
-      try {
-        // Use snapshot.path for the source
-        const result = await window.electronAPI.restoreFiles(job, snapshot.path, files, targetPath);
-        
-        if (result.success) {
-           // Mark snapshot as restored
-           const updatedJob = {
-             ...job,
-             snapshots: job.snapshots.map(s => s.id === snapshot.id ? { ...s, restored: true, restoredDate: Date.now() } : s)
-           };
-           setJobs(prev => prev.map(j => j.id === job.id ? updatedJob : j));
-           persistJob(updatedJob);
-           addLog(`Successfully restored files to ${targetPath}`);
-        } else {
-           addLog(`Restore failed: ${result.error}`, 'error');
-        }
-      } catch (e: any) {
-        addLog(`Restore failed: ${e.message}`, 'error');
+    try {
+      // Use snapshot.path for the source
+      const result = await api.restoreFiles(job, snapshot.path, files, targetPath);
+
+      if (result.success) {
+         // Mark snapshot as restored
+         const updatedJob = {
+           ...job,
+           snapshots: job.snapshots.map(s => s.id === snapshot.id ? { ...s, restored: true, restoredDate: Date.now() } : s)
+         };
+         setJobs(prev => prev.map(j => j.id === job.id ? updatedJob : j));
+         persistJob(updatedJob);
+         addLog(`Successfully restored files to ${targetPath}`);
+      } else {
+         addLog(`Restore failed: ${result.error}`, 'error');
       }
-    } else {
-      console.log('Restoring:', files, 'to', targetPath);
+    } catch (e: any) {
+      addLog(`Restore failed: ${e.message}`, 'error');
     }
 
     setView('DETAIL');
@@ -400,7 +391,7 @@ function AppContent() {
               onSelectJob={(id) => {
                 setActiveJobId(id);
                 const job = jobs.find(j => j.id === id);
-                if (job && window.electronAPI?.setActiveJob) window.electronAPI.setActiveJob(job);
+                // Active job tracking is handled by the context
                 setView('DETAIL');
               }}
               onCreateJob={openNewJob}

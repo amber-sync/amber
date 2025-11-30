@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from './IconComponents';
 import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
+import { api } from '../api';
 
 interface FileEntry {
   name: string;
@@ -45,7 +46,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const result = await window.electronAPI.readDir(path);
+      const result = await api.readDir(path);
       const formatted: FileEntry[] = result.map((item: any) => ({
         name: item.name,
         path: item.path,

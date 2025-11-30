@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { SyncJob, JobStatus, RsyncConfig, SyncMode, DestinationType } from '../types';
 import { generateUniqueId } from '../utils/idGenerator';
 import { useTheme } from './ThemeContext';
+import { api } from '../api';
 
 interface AppContextType {
   jobs: SyncJob[];
@@ -10,7 +11,7 @@ interface AppContextType {
   runInBackground: boolean;
   startOnBoot: boolean;
   notificationsEnabled: boolean;
-  
+
   // Actions
   setJobs: React.Dispatch<React.SetStateAction<SyncJob[]>>;
   setActiveJobId: (id: string | null) => void;
@@ -18,7 +19,7 @@ interface AppContextType {
   setRunInBackground: (val: boolean) => void;
   setStartOnBoot: (val: boolean) => void;
   setNotificationsEnabled: (val: boolean) => void;
-  
+
   // Job Operations
   persistJob: (job: SyncJob) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
@@ -96,124 +97,103 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Load preferences
   useEffect(() => {
     const loadPrefs = async () => {
-      if (window.electronAPI?.getPreferences) {
-        const prefs = await window.electronAPI.getPreferences();
+      try {
+        const prefs = await api.getPreferences();
         setRunInBackground(prefs.runInBackground);
         setStartOnBoot(prefs.startOnBoot);
         setNotificationsEnabled(prefs.notifications);
         setPrefsLoaded(true);
+      } catch (err) {
+        console.error('Failed to load preferences:', err);
+        setPrefsLoaded(true);
       }
     };
     loadPrefs();
-
-    let cleanup: (() => void) | undefined;
-    if (window.electronAPI?.onNavigate) {
-      cleanup = window.electronAPI.onNavigate((targetView: any) => setView(targetView));
-    }
-    return () => {
-      if (cleanup) cleanup();
-    };
   }, []);
 
   // Persist preferences
   useEffect(() => {
     if (!prefsLoaded) return;
-    if (window.electronAPI?.setPreferences) {
-      window.electronAPI.setPreferences({
-        runInBackground,
-        startOnBoot,
-        notifications: notificationsEnabled,
-      });
-    }
+    api.setPreferences({
+      runInBackground,
+      startOnBoot,
+      notifications: notificationsEnabled,
+    }).catch(err => console.error('Failed to save preferences:', err));
   }, [runInBackground, startOnBoot, notificationsEnabled, prefsLoaded]);
 
   // Load jobs
   useEffect(() => {
     const loadJobs = async () => {
       console.log('AppContext: Loading jobs...');
-      
-      if (window.electronAPI?.getJobs) {
-        try {
-          const stored = await window.electronAPI.getJobs();
-          console.log('AppContext: Stored jobs:', stored);
-          const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
-          
-          const isDev = await window.electronAPI.isDev();
-          console.log('AppContext: isDev:', isDev);
 
-          if (isDev) {
-            console.log('AppContext: Dev mode detected. Checking for sandbox job...');
-            
-            // Check if we already have a sandbox job
-            const existingSandbox = normalized.find(j => j.id === SANDBOX_JOB.id);
-            
-            if (!existingSandbox) {
-               console.log('AppContext: Sandbox job not found. Creating it...');
-               // If not found, add it and save it
-               await window.electronAPI.saveJob(stripSnapshotsForStore(SANDBOX_JOB));
-               
-               // Scan for snapshots immediately
-               console.log('AppContext: Scanning for snapshots...');
-               const snapshots = await window.electronAPI.listSnapshots(SANDBOX_JOB.id, SANDBOX_JOB.destPath);
-               console.log('AppContext: Snapshots found:', snapshots.length);
-               const jobWithSnapshots = { ...SANDBOX_JOB, snapshots };
-               
-               setJobs([jobWithSnapshots]);
-               setActiveJobId(SANDBOX_JOB.id);
-            } else {
-               console.log('AppContext: Sandbox job found. Refreshing snapshots...');
-               // If found, use stored but refresh snapshots
-               const snapshots = await window.electronAPI.listSnapshots(existingSandbox.id, existingSandbox.destPath);
-               console.log('AppContext: Snapshots found:', snapshots.length);
-               const updatedJob = { ...existingSandbox, snapshots };
-               
-               setJobs([updatedJob]);
-               setActiveJobId(updatedJob.id);
-            }
+      try {
+        const stored = await api.getJobs();
+        console.log('AppContext: Stored jobs:', stored);
+        const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
+
+        const isDev = await api.isDev();
+        console.log('AppContext: isDev:', isDev);
+
+        if (isDev) {
+          console.log('AppContext: Dev mode detected. Checking for sandbox job...');
+
+          // Check if we already have a sandbox job
+          const existingSandbox = normalized.find(j => j.id === SANDBOX_JOB.id);
+
+          if (!existingSandbox) {
+             console.log('AppContext: Sandbox job not found. Creating it...');
+             // If not found, add it and save it
+             await api.saveJob(stripSnapshotsForStore(SANDBOX_JOB));
+
+             // Scan for snapshots immediately
+             console.log('AppContext: Scanning for snapshots...');
+             const snapshots = await api.listSnapshots(SANDBOX_JOB.id, SANDBOX_JOB.destPath);
+             console.log('AppContext: Snapshots found:', snapshots.length);
+             const jobWithSnapshots = { ...SANDBOX_JOB, snapshots };
+
+             setJobs([jobWithSnapshots]);
+             setActiveJobId(SANDBOX_JOB.id);
           } else {
-            setJobs(normalized);
-            setActiveJobId(normalized[0]?.id ?? null);
+             console.log('AppContext: Sandbox job found. Refreshing snapshots...');
+             // If found, use stored but refresh snapshots
+             const snapshots = await api.listSnapshots(existingSandbox.id, existingSandbox.destPath);
+             console.log('AppContext: Snapshots found:', snapshots.length);
+             const updatedJob = { ...existingSandbox, snapshots };
+
+             setJobs([updatedJob]);
+             setActiveJobId(updatedJob.id);
           }
-        } catch (err) {
-            console.error('AppContext: Error loading jobs:', err);
+        } else {
+          setJobs(normalized);
+          setActiveJobId(normalized[0]?.id ?? null);
         }
-      } else {
-        console.warn('AppContext: electronAPI not available');
-        setJobs([]);
+      } catch (err) {
+          console.error('AppContext: Error loading jobs:', err);
+          setJobs([]);
       }
     };
     loadJobs();
   }, []);
 
-  // Keep main process aware of active job
-  useEffect(() => {
-    if (window.electronAPI?.setActiveJob && activeJobId) {
-      const job = jobs.find(j => j.id === activeJobId);
-      if (job) window.electronAPI.setActiveJob(stripSnapshotsForStore(job));
-    }
-  }, [activeJobId, jobs]);
-
   const persistJob = useCallback(async (job: SyncJob) => {
-    if (!window.electronAPI?.saveJob) return;
     try {
-      const result = await window.electronAPI.saveJob(stripSnapshotsForStore(job));
-      if (result?.jobs) {
-        const normalized = result.jobs.map(normalizeJobFromStore);
-        setJobs(normalized);
-      }
+      await api.saveJob(stripSnapshotsForStore(job));
+      // Re-fetch jobs to stay in sync
+      const stored = await api.getJobs();
+      const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
+      setJobs(normalized);
     } catch (error) {
       console.error('Failed to persist job', error);
     }
   }, []);
 
   const deleteJob = useCallback(async (jobId: string) => {
-    if (!window.electronAPI?.deleteJob) return;
     try {
-      const result = await window.electronAPI.deleteJob(jobId);
-      if (result?.jobs) {
-        const normalized = result.jobs.map(normalizeJobFromStore);
-        setJobs(normalized);
-      }
+      await api.deleteJob(jobId);
+      // Re-fetch jobs to stay in sync
+      const stored = await api.getJobs();
+      const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
+      setJobs(normalized);
     } catch (error) {
       console.error('Failed to delete job', error);
     }

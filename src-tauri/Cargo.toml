@@ -34,3 +34,11 @@ open = "5"
 shell-words = "1"
 regex = "1"
 dirs = "5"
+# TIM-113: Job scheduler
+tokio-cron-scheduler = "0.13"
+# TIM-114: Keychain access
+keyring = "3"
+# TIM-115: Volume watcher
+notify = "7"
+# UUID for job scheduler
+uuid = { version = "1", features = ["v4"] }

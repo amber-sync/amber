@@ -22,6 +22,12 @@ pub enum AmberError {
     #[error("Store error: {0}")]
     Store(String),
 
+    #[error("Scheduler error: {0}")]
+    Scheduler(String),
+
+    #[error("Volume error: {0}")]
+    Volume(String),
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
