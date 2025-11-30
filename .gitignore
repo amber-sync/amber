@@ -23,3 +23,24 @@ dist_electron_build
 *.njsproj
 *.sln
 *.sw?
+
+# Generated files
+benchmark-results.json
+*.generated.ts
+frontend/generated/bindings.ts
+
+# Coverage
+coverage/
+.nyc_output/
+
+# E2E Testing
+playwright-report/
+test-results/
+
+# Rust
+backend/target/
+target/llvm-cov/
+
+# Environment
+.env.local
+.env*.local
