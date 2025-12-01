@@ -13,11 +13,10 @@ export const JobIdentityForm: React.FC<JobIdentityFormProps> = ({ jobName, setJo
       <SectionHeader variant="form-label">Job Name</SectionHeader>
       <div className="flex-1 flex items-center">
         <TextInput
-          variant="large"
           value={jobName}
           onChange={e => setJobName(e.target.value)}
           placeholder="e.g. Daily Backup"
-          icon={<Icons.Tag size={20} />}
+          icon={<Icons.Tag size={18} />}
         />
       </div>
     </Panel>
