@@ -25,7 +25,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   if (variant === 'embedded') {
     return (
       <div
-        className={`h-full overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-600 font-mono text-xs p-4 ${className}`}
+        className={`h-full overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-text-tertiary font-mono text-xs p-4 ${className}`}
         ref={scrollRef}
       >
         {logs.map((log, i) => (
@@ -36,7 +36,7 @@ export const Terminal: React.FC<TerminalProps> = ({
                   ? 'text-red-400'
                   : log.level === 'warning'
                     ? 'text-yellow-400'
-                    : 'text-gray-500'
+                    : 'text-text-tertiary'
               }`}
             >
               [{new Date(log.timestamp).toLocaleTimeString()}]
@@ -47,7 +47,7 @@ export const Terminal: React.FC<TerminalProps> = ({
                   ? 'text-red-400'
                   : log.level === 'warning'
                     ? 'text-yellow-400'
-                    : 'text-gray-300'
+                    : 'text-text-secondary'
               }
             >
               {log.message}
@@ -61,16 +61,16 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-[#1e1e1e] rounded-lg p-4 font-mono text-xs text-gray-800 dark:text-green-400 h-64 overflow-hidden flex flex-col shadow-inner border border-gray-200 dark:border-gray-700 transition-colors duration-300 ${className}`}
+      className={`bg-layer-1 rounded-lg p-4 font-mono text-xs text-text-primary h-64 overflow-hidden flex flex-col shadow-inner border border-border-base transition-colors duration-300 ${className}`}
     >
-      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border-base">
         <div className="w-3 h-3 rounded-full bg-red-500" />
         <div className="w-3 h-3 rounded-full bg-yellow-500" />
         <div className="w-3 h-3 rounded-full bg-green-500" />
-        <span className="text-gray-400 dark:text-gray-500 ml-2">sync_process — -zsh</span>
+        <span className="text-text-tertiary ml-2">sync_process — -zsh</span>
       </div>
       <div
-        className="flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
+        className="flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-text-tertiary"
         ref={scrollRef}
       >
         {logs.map((log, i) => (
@@ -81,7 +81,7 @@ export const Terminal: React.FC<TerminalProps> = ({
                   ? 'text-red-500 dark:text-red-400'
                   : log.level === 'warning'
                     ? 'text-yellow-500 dark:text-yellow-400'
-                    : 'text-gray-400 dark:text-gray-500'
+                    : 'text-text-tertiary'
               }`}
             >
               [{new Date(log.timestamp).toLocaleTimeString()}]
@@ -99,7 +99,7 @@ export const Terminal: React.FC<TerminalProps> = ({
             </span>
           </div>
         ))}
-        {isRunning && <div className="animate-pulse dark:text-green-400 text-gray-800">_</div>}
+        {isRunning && <div className="animate-pulse text-green-400">_</div>}
       </div>
     </div>
   );
