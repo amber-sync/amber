@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icons } from '../IconComponents';
 import { SyncJob } from '../../types';
 import { formatBytes } from '../../utils/formatters';
+import { Panel, SectionHeader } from '../ui';
 
 export type SnapshotGrouping = 'ALL' | 'DAY' | 'MONTH' | 'YEAR';
 
@@ -42,31 +43,35 @@ export const SnapshotList: React.FC<SnapshotListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-          <Icons.Clock size={18} className="text-indigo-500" /> Snapshots
-        </h3>
+        <SectionHeader
+          variant="panel"
+          icon={<Icons.Clock size={18} className="text-indigo-500" />}
+          className="mb-0 text-base"
+        >
+          Snapshots
+        </SectionHeader>
         <div className="flex items-center gap-2">
           <div className="flex bg-layer-2 p-1 rounded-lg text-xs font-medium">
             <button
               onClick={() => onSortChange('date')}
-              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'date' ? 'bg-layer-1 shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
             >
               Date
             </button>
             <button
               onClick={() => onSortChange('size')}
-              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
+              className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'size' ? 'bg-layer-1 shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
             >
               Size
             </button>
           </div>
-          <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+          <div className="w-px h-4 bg-border-base mx-1"></div>
           <div className="flex bg-layer-2 p-1 rounded-lg text-xs font-medium">
             {(['ALL', 'DAY', 'MONTH', 'YEAR'] as SnapshotGrouping[]).map(group => (
               <button
                 key={group}
                 onClick={() => onGroupingChange(group)}
-                className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-white dark:bg-gray-700 shadow text-text-primary' : 'text-text-secondary hover:text-gray-900 dark:hover:text-gray-200'}`}
+                className={`px-3 py-1.5 rounded-md transition-all ${snapshotGrouping === group ? 'bg-layer-1 shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
               >
                 {group.charAt(0) + group.slice(1).toLowerCase()}
               </button>
@@ -76,9 +81,12 @@ export const SnapshotList: React.FC<SnapshotListProps> = ({
       </div>
 
       {snapshots.length === 0 && (
-        <div className="w-full h-32 bg-white/80 dark:bg-gray-800/80 border border-border-base rounded-xl flex items-center justify-center text-gray-400 text-sm">
+        <Panel
+          variant="card"
+          className="h-32 flex items-center justify-center text-text-tertiary text-sm"
+        >
           No snapshots yet. Run a sync to create one.
-        </div>
+        </Panel>
       )}
 
       {snapshots.map(({ group, label, snaps }) => (
@@ -120,13 +128,13 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
     {showHeader && (
       <button
         onClick={onToggle}
-        className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-layer-2 rounded-lg text-xs font-bold text-text-secondary uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-all outline-none border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+        className="w-full py-2.5 px-3 bg-layer-2 hover:bg-layer-1 rounded-lg text-xs font-bold text-text-secondary uppercase tracking-wider cursor-pointer select-none flex items-center gap-2 transition-all outline-none border border-transparent hover:border-border-base"
       >
         <Icons.ChevronDown
           className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
         />
         {label}
-        <span className="ml-auto text-2xs font-medium bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full text-text-secondary">
+        <span className="ml-auto text-2xs font-medium bg-layer-1 px-2.5 py-1 rounded-full text-text-secondary">
           {snaps.length}
         </span>
       </button>
@@ -145,7 +153,7 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
         {snaps.map(snap => (
           <div
             key={snap.id}
-            className="flex items-center justify-between p-4 bg-layer-1 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+            className="flex items-center justify-between p-4 bg-layer-1 border border-border-base rounded-xl hover:bg-layer-2 transition-colors group"
           >
             <div className="flex items-center gap-3">
               <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
@@ -171,14 +179,14 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
               </span>
               <button
                 onClick={() => onBrowseSnapshot(snap.timestamp)}
-                className="p-2 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+                className="p-2 rounded-lg text-text-tertiary hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
                 title="Browse Files"
               >
                 <Icons.Eye size={16} />
               </button>
               <button
                 onClick={() => onOpenSnapshot(snap.timestamp)}
-                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                className="p-2 rounded-lg text-text-tertiary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 title="Open in Finder"
               >
                 <Icons.FolderOpen size={16} />
