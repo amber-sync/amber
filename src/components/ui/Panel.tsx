@@ -2,11 +2,13 @@ import React from 'react';
 
 export type PanelVariant = 'card' | 'form' | 'modal' | 'floating';
 
+type TagType = 'div' | 'section' | 'article' | 'aside' | 'main';
+
 interface PanelProps {
   variant?: PanelVariant;
   children: React.ReactNode;
   className?: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: TagType;
 }
 
 const variantStyles: Record<PanelVariant, string> = {
@@ -20,9 +22,9 @@ export const Panel: React.FC<PanelProps> = ({
   variant = 'card',
   children,
   className = '',
-  as: Component = 'div',
+  as: Tag = 'div',
 }) => {
   const baseStyles = variantStyles[variant];
 
-  return <Component className={`${baseStyles} ${className}`.trim()}>{children}</Component>;
+  return <Tag className={`${baseStyles} ${className}`.trim()}>{children}</Tag>;
 };

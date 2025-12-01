@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Icons } from '../IconComponents';
 import { Terminal } from '../Terminal';
 import { LogEntry, RsyncProgressData } from '../../types';
+import { Panel, SectionHeader } from '../ui';
 
 interface LiveActivityProps {
   isRunning: boolean;
@@ -31,21 +32,23 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
     <div className={`flex flex-col ${isTerminalExpanded ? 'h-full' : ''}`}>
       {/* Minimal Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3
-          className={`text-base font-bold text-text-primary flex items-center gap-2 ${isTerminalExpanded ? 'text-white' : ''}`}
+        <SectionHeader
+          variant="panel"
+          icon={<Icons.Activity size={18} className="text-indigo-500" />}
+          className={`mb-0 text-base ${isTerminalExpanded ? 'text-white' : ''}`}
         >
-          <Icons.Activity size={18} className="text-indigo-500" /> Activity
+          Activity
           {isRunning && (
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-2 w-2 ml-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
           )}
-        </h3>
+        </SectionHeader>
         {!isTerminalExpanded && (
           <button
             onClick={onExpand}
-            className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
             title="Fullscreen"
           >
             <Icons.Maximize2 size={14} />
@@ -54,7 +57,7 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
       </div>
 
       {/* Compact Activity Card */}
-      <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm overflow-hidden transition-all duration-300">
+      <Panel variant="floating" className="overflow-hidden transition-all duration-300 !p-0">
         {/* Status Bar - Always Visible */}
         <div className="px-4 py-3 flex items-center gap-3">
           {isRunning ? (
@@ -78,7 +81,7 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
                     <span className="text-xs text-text-secondary">ETA {progress.eta}</span>
                   )}
                 </div>
-                <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-full h-1 bg-layer-2 rounded-full overflow-hidden">
                   {progress?.percentage && progress.percentage > 0 ? (
                     <div
                       className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ease-out rounded-full"
@@ -114,7 +117,7 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
             className={`p-2 rounded-lg transition-all ${
               showLogs
                 ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'text-text-tertiary hover:bg-layer-2'
             }`}
             title={showLogs ? 'Hide logs' : 'Show logs'}
           >
@@ -128,13 +131,13 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
             showLogs ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="border-t border-gray-200/50 dark:border-gray-700/50">
+          <div className="border-t border-border-base">
             <div className={isTerminalExpanded ? 'flex-1' : 'h-64'}>
               <Terminal logs={logs} isRunning={isRunning} variant="embedded" />
             </div>
           </div>
         </div>
-      </div>
+      </Panel>
     </div>
   );
 };

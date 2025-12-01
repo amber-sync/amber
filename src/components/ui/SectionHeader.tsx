@@ -2,12 +2,14 @@ import React from 'react';
 
 export type SectionHeaderVariant = 'panel' | 'form-label' | 'page';
 
+type TagType = 'h1' | 'h2' | 'h3' | 'h4' | 'label' | 'span';
+
 interface SectionHeaderProps {
   variant?: SectionHeaderVariant;
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'label' | 'span';
+  as?: TagType;
 }
 
 const variantStyles: Record<SectionHeaderVariant, string> = {
@@ -16,7 +18,7 @@ const variantStyles: Record<SectionHeaderVariant, string> = {
   page: 'text-3xl font-bold text-text-primary tracking-tight',
 };
 
-const defaultTags: Record<SectionHeaderVariant, SectionHeaderProps['as']> = {
+const defaultTags: Record<SectionHeaderVariant, TagType> = {
   panel: 'h3',
   'form-label': 'label',
   page: 'h1',
@@ -29,18 +31,18 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   className = '',
   as,
 }) => {
-  const Component = as || defaultTags[variant];
+  const Tag = as || defaultTags[variant];
   const baseStyles = variantStyles[variant];
 
   // For panel variant with icon, wrap in flex container
   if (variant === 'panel' && icon) {
     return (
-      <Component className={`${baseStyles} ${className}`.trim()}>
+      <Tag className={`${baseStyles} ${className}`.trim()}>
         {icon}
         {children}
-      </Component>
+      </Tag>
     );
   }
 
-  return <Component className={`${baseStyles} ${className}`.trim()}>{children}</Component>;
+  return <Tag className={`${baseStyles} ${className}`.trim()}>{children}</Tag>;
 };
