@@ -114,7 +114,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-black/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
+    <div className="min-h-screen bg-app/50 flex items-center justify-center p-6 backdrop-blur-md z-50 absolute top-0 left-0 w-full">
       <div className="bg-layer-1 max-w-5xl w-full rounded-3xl shadow-2xl border border-border-base overflow-hidden flex flex-col max-h-[90vh]">
         {/* Form Content */}
         <div className="p-10 overflow-y-auto scrollbar-hide flex-1 relative">
