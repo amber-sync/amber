@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
 import { SyncMode, RsyncConfig } from '../../types';
+import { Panel, SectionHeader, TextArea } from '../ui';
 
 interface JobStrategyFormProps {
   jobMode: SyncMode;
@@ -38,15 +39,15 @@ export const JobStrategyForm: React.FC<JobStrategyFormProps> = ({
           ring: 'ring-1 ring-indigo-500',
         };
       default:
-        return { border: 'border-gray-300', bg: 'bg-gray-50', ring: '' };
+        return { border: 'border-border-base', bg: 'bg-layer-2', ring: '' };
     }
   };
 
   return (
-    <div className="col-span-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+    <Panel variant="form" className="col-span-12 space-y-4">
+      <SectionHeader variant="form-label" className="mb-0">
         Sync Strategy
-      </label>
+      </SectionHeader>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
@@ -64,28 +65,24 @@ export const JobStrategyForm: React.FC<JobStrategyFormProps> = ({
             className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 h-full ${
               jobMode === opt.m && !customSelected
                 ? `${getModeStyles(opt.m).border} ${getModeStyles(opt.m).bg} ${getModeStyles(opt.m).ring}`
-                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                : 'border-border-base hover:bg-layer-2'
             }`}
           >
             <div
-              className={`p-2.5 rounded-xl ${jobMode === opt.m && !customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}
+              className={`p-2.5 rounded-xl ${jobMode === opt.m && !customSelected ? 'bg-layer-1' : 'bg-layer-2'}`}
             >
               <opt.icon
                 size={24}
                 className={
-                  jobMode === opt.m && !customSelected
-                    ? 'text-gray-900 dark:text-white'
-                    : 'text-gray-500'
+                  jobMode === opt.m && !customSelected ? 'text-text-primary' : 'text-text-tertiary'
                 }
               />
             </div>
             <div>
-              <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">
+              <div className="font-bold text-text-primary text-sm whitespace-nowrap">
                 {opt.label}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">
-                {opt.desc}
-              </div>
+              <div className="text-xs text-text-secondary leading-tight mt-1">{opt.desc}</div>
             </div>
           </button>
         ))}
@@ -97,36 +94,31 @@ export const JobStrategyForm: React.FC<JobStrategyFormProps> = ({
           className={`relative p-5 rounded-xl border text-left transition-all flex items-center gap-4 ${
             customSelected
               ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 ring-1 ring-indigo-500'
-              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+              : 'border-border-base hover:bg-layer-2'
           }`}
         >
-          <div
-            className={`p-2.5 rounded-xl ${customSelected ? 'bg-white dark:bg-black/20' : 'bg-gray-100 dark:bg-gray-800'}`}
-          >
+          <div className={`p-2.5 rounded-xl ${customSelected ? 'bg-layer-1' : 'bg-layer-2'}`}>
             <Icons.Code
               size={24}
-              className={customSelected ? 'text-indigo-600' : 'text-gray-500'}
+              className={customSelected ? 'text-indigo-600' : 'text-text-tertiary'}
             />
           </div>
           <div>
-            <div className="font-bold text-gray-900 dark:text-white text-sm whitespace-nowrap">
-              Custom
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight mt-1">
-              Raw Command
-            </div>
+            <div className="font-bold text-text-primary text-sm whitespace-nowrap">Custom</div>
+            <div className="text-xs text-text-secondary leading-tight mt-1">Raw Command</div>
           </div>
         </button>
       </div>
 
       {customSelected && (
-        <textarea
+        <TextArea
+          variant="mono"
           value={jobConfig.customCommand ?? ''}
           onChange={e => setJobConfig({ ...jobConfig, customCommand: e.target.value })}
           placeholder="rsync -a --{source} {dest}"
-          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono text-xs min-h-[60px]"
+          className="min-h-[60px] text-xs"
         />
       )}
-    </div>
+    </Panel>
   );
 };

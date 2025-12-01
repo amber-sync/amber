@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SyncMode, RsyncConfig, DestinationType } from '../types';
 import { Icons } from '../components/IconComponents';
 import { JobIdentityForm } from '../components/job-editor/JobIdentityForm';
 import { JobScheduleForm } from '../components/job-editor/JobScheduleForm';
 import { JobStrategyForm } from '../components/job-editor/JobStrategyForm';
 import { CloudDestinationForm } from '../components/CloudDestinationForm';
+import { Panel, SectionHeader, TextInput } from '../components/ui';
 
 interface JobEditorProps {
   // Form state
@@ -138,17 +139,13 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             {/* Row 2: Transfer Paths (Source & Dest) */}
             <div className="grid grid-cols-12 gap-6">
               {/* Left: Source */}
-              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm">
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-                  Source Path
-                </label>
+              <Panel variant="form" className="col-span-12 md:col-span-6">
+                <SectionHeader variant="form-label">Source Path</SectionHeader>
                 <div className="flex gap-3">
-                  <input
-                    type="text"
+                  <TextInput
                     value={jobSource}
                     onChange={e => setJobSource(e.target.value)}
                     placeholder="/Users/me/Documents"
-                    className="flex-1 px-5 py-3 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none transition-all"
                   />
                   <button
                     onClick={() => onSelectDirectory('SOURCE')}
@@ -157,27 +154,27 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     <Icons.Folder size={22} />
                   </button>
                 </div>
-              </div>
+              </Panel>
 
               {/* Right: Destination */}
-              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm relative overflow-hidden">
+              <Panel variant="form" className="col-span-12 md:col-span-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  <SectionHeader variant="form-label" className="mb-0">
                     Destination Path
-                  </label>
+                  </SectionHeader>
 
                   {/* Destination Type Toggle */}
                   <div className="bg-layer-2 p-0.5 rounded-lg flex text-2xs font-medium">
                     <button
                       onClick={() => setDestinationType(DestinationType.LOCAL)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-white dark:bg-layer-3 text-teal-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-layer-1 text-teal-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.HardDrive size={12} />
                       Local
                     </button>
                     <button
                       onClick={() => setDestinationType(DestinationType.CLOUD)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-white dark:bg-layer-3 text-blue-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-layer-1 text-blue-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.Cloud size={12} />
                       Cloud
@@ -187,12 +184,10 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
                 {destinationType === DestinationType.LOCAL ? (
                   <div className="flex gap-3 animate-fade-in">
-                    <input
-                      type="text"
+                    <TextInput
                       value={jobDest}
                       onChange={e => setJobDest(e.target.value)}
                       placeholder="/Volumes/Backup/MyFiles"
-                      className="flex-1 px-5 py-3 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none transition-all"
                     />
                     <button
                       onClick={() => onSelectDirectory('DEST')}
@@ -215,7 +210,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     />
                   </div>
                 )}
-              </div>
+              </Panel>
             </div>
 
             {/* Row 3: Strategy */}
@@ -228,18 +223,14 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
             {/* Row 4: Exclusions & SSH */}
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 md:col-span-6 bg-layer-1 border border-border-base rounded-2xl p-6 shadow-sm h-full flex flex-col">
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-                  Exclusions
-                </label>
+              <Panel variant="form" className="col-span-12 md:col-span-6 h-full flex flex-col">
+                <SectionHeader variant="form-label">Exclusions</SectionHeader>
                 <div className="flex gap-3 mb-4">
-                  <input
-                    type="text"
+                  <TextInput
                     value={tempExcludePattern}
                     onChange={e => setTempExcludePattern(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="e.g. *.log"
-                    className="flex-1 px-5 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-pink-500 outline-none"
                   />
                   <button
                     onClick={onAddPattern}
@@ -275,15 +266,16 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     </span>
                   )}
                 </div>
-              </div>
+              </Panel>
 
-              <div
-                className={`col-span-12 md:col-span-6 bg-layer-1 border rounded-2xl p-6 shadow-sm h-full flex flex-col transition-all ${sshEnabled ? 'border-teal-500 ring-1 ring-teal-500' : 'border-border-base'}`}
+              <Panel
+                variant="form"
+                className={`col-span-12 md:col-span-6 h-full flex flex-col transition-all ${sshEnabled ? '!border-teal-500 ring-1 ring-teal-500' : ''}`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  <SectionHeader variant="form-label" className="mb-0">
                     SSH Connection
-                  </label>
+                  </SectionHeader>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -291,46 +283,38 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                       onChange={e => setSshEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-layer-3 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-layer-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border-base after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
                   </label>
                 </div>
 
                 {sshEnabled ? (
                   <div className="grid grid-cols-2 gap-4 animate-fade-in flex-1 content-start">
-                    <input
-                      type="text"
+                    <TextInput
                       placeholder="22"
                       value={sshPort}
                       onChange={e => setSshPort(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
-                    <input
-                      type="text"
+                    <TextInput
                       placeholder="~/.ssh/id_rsa"
                       value={sshKeyPath}
                       onChange={e => setSshKeyPath(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
-                    <input
-                      type="text"
+                    <TextInput
                       placeholder="~/.ssh/config"
                       value={sshConfigPath}
                       onChange={e => setSshConfigPath(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
-                    <input
-                      type="text"
+                    <TextInput
                       placeholder="user@jump-host"
                       value={sshProxyJump}
                       onChange={e => setSshProxyJump(e.target.value)}
-                      className="px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none"
                     />
-                    <input
-                      type="text"
+                    <TextInput
+                      variant="mono"
                       placeholder="-o StrictHostKeyChecking=no"
                       value={sshCustomOptions}
                       onChange={e => setSshCustomOptions(e.target.value)}
-                      className="col-span-2 px-4 py-2.5 rounded-xl border border-border-base bg-layer-2 text-sm focus:border-teal-500 outline-none font-mono"
+                      className="col-span-2"
                     />
                   </div>
                 ) : (
@@ -338,7 +322,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     Local transfer only. Toggle to enable SSH.
                   </div>
                 )}
-              </div>
+              </Panel>
             </div>
           </div>
         </div>

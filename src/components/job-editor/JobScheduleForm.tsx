@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
+import { Panel, SectionHeader } from '../ui';
 
 interface JobScheduleFormProps {
   jobSchedule: number | null;
@@ -20,10 +21,8 @@ export const JobScheduleForm: React.FC<JobScheduleFormProps> = ({
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex flex-col h-full">
-      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-        Schedule
-      </label>
+    <Panel variant="form" className="flex flex-col h-full">
+      <SectionHeader variant="form-label">Schedule</SectionHeader>
       <div className="grid grid-cols-3 gap-2">
         {options.map(opt => (
           <div key={opt.label} className="relative group">
@@ -32,7 +31,7 @@ export const JobScheduleForm: React.FC<JobScheduleFormProps> = ({
               className={`w-full py-3 px-1 rounded-xl border transition-all flex flex-col items-center justify-center gap-1 ${
                 jobSchedule === opt.val
                   ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
-                  : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  : 'border-border-base text-text-tertiary hover:bg-layer-2'
               }`}
             >
               <opt.icon size={18} />
@@ -45,6 +44,6 @@ export const JobScheduleForm: React.FC<JobScheduleFormProps> = ({
           </div>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 };
