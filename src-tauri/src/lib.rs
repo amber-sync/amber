@@ -11,6 +11,7 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Initialize application state with all services
             let app_state = AppState::new()
@@ -48,7 +49,6 @@ pub fn run() {
             commands::snapshots::restore_snapshot,
             // Filesystem commands
             commands::filesystem::read_dir,
-            commands::filesystem::select_directory,
             commands::filesystem::read_file_preview,
             commands::filesystem::read_file_as_base64,
             commands::filesystem::open_path,
