@@ -231,7 +231,30 @@ impl RsyncService {
                 #[cfg(unix)]
                 {
                     use std::process::Command;
-                    let _ = Command::new("kill").arg(pid.to_string()).status();
+                    // First try to kill the process group (handles child processes)
+                    // Use SIGKILL (-9) to force termination
+                    let _ = Command::new("kill")
+                        .args(["-9", &format!("-{}", pid)]) // Negative PID kills process group
+                        .status();
+
+                    // Also kill the specific PID in case process group kill didn't work
+                    let _ = Command::new("kill")
+                        .args(["-9", &pid.to_string()])
+                        .status();
+
+                    // Additionally, try pkill to catch any orphaned rsync children
+                    let _ = Command::new("pkill")
+                        .args(["-9", "-P", &pid.to_string()])
+                        .status();
+                }
+
+                #[cfg(windows)]
+                {
+                    use std::process::Command;
+                    // On Windows, use taskkill with /T to kill child processes
+                    let _ = Command::new("taskkill")
+                        .args(["/PID", &pid.to_string(), "/T", "/F"])
+                        .status();
                 }
             }
         }

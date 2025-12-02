@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
 import { HistoryView } from './views/HistoryView';
-import { JobEditor } from './views/JobEditor';
+import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { JobDetail } from './views/JobDetail';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
@@ -60,6 +60,10 @@ function AppContent() {
   // Delete Modal State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+
+  // Job Editor Variant (for testing different designs)
+  // Options: 'classic' | 'stepper' | 'accordion' | 'twopanel'
+  const [jobEditorVariant] = useState<JobEditorVariant>('twopanel');
 
   // Listen for rsync completion events
   useEffect(() => {
@@ -328,11 +332,23 @@ function AppContent() {
   );
 
   const stopSync = useCallback(
-    (jobId: string) => {
-      api.killRsync(jobId);
+    async (jobId: string) => {
       addLog('Stopping sync...', 'warning');
+
+      try {
+        await api.killRsync(jobId);
+
+        // Update job status to IDLE
+        setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.IDLE } : j)));
+
+        // Reset running state
+        setIsRunning(false);
+        addLog('Sync stopped', 'warning');
+      } catch (err) {
+        addLog(`Error stopping sync: ${err}`, 'error');
+      }
     },
-    [addLog]
+    [addLog, setJobs, setIsRunning]
   );
 
   const handleOpenRestore = (jobId: string) => {
@@ -453,7 +469,8 @@ function AppContent() {
           })()}
 
         {view === 'JOB_EDITOR' && (
-          <JobEditor
+          <JobEditorWrapper
+            variant={jobEditorVariant}
             jobName={newJobName}
             jobSource={newJobSource}
             jobDest={newJobDest}
