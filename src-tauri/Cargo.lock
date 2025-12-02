@@ -124,7 +124,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-log",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.17",
  "tokio",
  "tokio-cron-scheduler",
  "tokio-test",
