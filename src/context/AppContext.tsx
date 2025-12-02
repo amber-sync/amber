@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { SyncJob, JobStatus, SyncMode, DestinationType } from '../types';
-import { generateUniqueId } from '../utils/idGenerator';
-import { useTheme } from './ThemeContext';
 import { api } from '../api';
 import { BASE_RSYNC_CONFIG, MODE_PRESETS } from '../config';
 import { logger } from '../utils/logger';
@@ -211,12 +209,36 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
-  const runSync = (_jobId: string) => {
-    logger.warn('runSync not implemented in context yet');
-  };
-  const stopSync = (_jobId: string) => {
-    logger.warn('stopSync not implemented in context yet');
-  };
+  const runSync = useCallback(
+    (jobId: string) => {
+      const job = jobs.find(j => j.id === jobId);
+      if (!job) {
+        logger.error('runSync: Job not found', { jobId });
+        return;
+      }
+
+      // Update job status to RUNNING
+      setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.RUNNING } : j)));
+
+      // Start the rsync process
+      api.runRsync(job).catch(err => {
+        logger.error('runSync: Failed to start rsync', { jobId, error: err });
+        // Revert status on error
+        setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.FAILED } : j)));
+      });
+    },
+    [jobs]
+  );
+
+  const stopSync = useCallback(async (jobId: string) => {
+    try {
+      await api.killRsync(jobId);
+      // Update job status to IDLE
+      setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.IDLE } : j)));
+    } catch (err) {
+      logger.error('stopSync: Failed to stop rsync', { jobId, error: err });
+    }
+  }, []);
 
   return (
     <AppContext.Provider
