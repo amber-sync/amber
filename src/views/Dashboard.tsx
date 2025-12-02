@@ -43,54 +43,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="p-8 space-y-8 relative z-10 max-w-7xl mx-auto">
-      {/* Header & Compact Stats */}
-      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+    <div className="p-8 space-y-6 relative z-10 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="no-drag">
           <h1 className="text-3xl font-bold text-text-primary tracking-tight">Amber</h1>
           <p className="text-text-secondary mt-1">Rsync and Time Machine</p>
-        </div>
-
-        <div className="flex items-center gap-6 bg-layer-1/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg">
-              <Icons.Database size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Protected
-              </div>
-              <div className="text-lg font-bold text-text-primary leading-none">
-                {formatBytes(totalProtectedSize)}
-              </div>
-            </div>
-          </div>
-          <div className="w-px h-8 bg-border-base" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-              <Icons.Activity size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Active Jobs
-              </div>
-              <div className="text-lg font-bold text-text-primary leading-none">{jobs.length}</div>
-            </div>
-          </div>
-          <div className="w-px h-8 bg-border-base" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
-              <Icons.Archive size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Snapshots
-              </div>
-              <div className="text-lg font-bold text-text-primary leading-none">
-                {totalSnapshots}
-              </div>
-            </div>
-          </div>
         </div>
 
         <button
@@ -101,51 +59,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </button>
       </div>
 
-      {/* Analytics Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />
-        <StorageProjection jobs={jobs} diskStats={diskStats} />
-        <FileTypeBreakdown jobs={jobs} />
-      </div>
-
-      {/* Selected Day Details */}
-      {selectedDay && (
-        <div className="bg-layer-1 rounded-xl border border-border-base p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-text-primary">
-              Backups on {format(selectedDay.date, 'MMMM d, yyyy')}
-            </h3>
-            <button
-              onClick={() => setSelectedDay(null)}
-              className="p-1 hover:bg-layer-2 rounded-lg text-text-tertiary"
-            >
-              <Icons.X size={16} />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {selectedDay.backups.map((backup, index) => (
-              <div
-                key={`${backup.jobId}-${index}`}
-                onClick={() => onSelectJob(backup.jobId)}
-                className="flex items-center justify-between p-2 hover:bg-layer-2 rounded-lg cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${backup.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
-                  />
-                  <span className="text-sm text-text-primary">{backup.jobName}</span>
-                </div>
-                <span className="text-xs text-text-tertiary">
-                  {format(new Date(backup.timestamp), 'h:mm a')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Jobs List */}
-      <div className="space-y-4">
+      {/* Jobs List - Primary Content */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
           <div className="w-1/3">Job Name</div>
           <div className="w-1/3">Source & Destination</div>
@@ -159,13 +74,74 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-20 text-center text-text-tertiary bg-layer-1/50 rounded-2xl border border-dashed border-border-base">
+            <div className="py-16 text-center text-text-tertiary bg-layer-1/50 rounded-2xl border border-dashed border-border-base">
               <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
               <p>No sync jobs configured yet.</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Analytics Section */}
+      {jobs.length > 0 && (
+        <div className="pt-6 border-t border-border-base">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-text-primary">Analytics</h2>
+            <div className="flex items-center gap-4 text-sm text-text-secondary">
+              <span className="flex items-center gap-1.5">
+                <Icons.Database size={14} className="text-orange-500" />
+                {formatBytes(totalProtectedSize)} protected
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Icons.Archive size={14} className="text-green-500" />
+                {totalSnapshots} snapshots
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />
+            <StorageProjection jobs={jobs} diskStats={diskStats} />
+            <FileTypeBreakdown jobs={jobs} />
+          </div>
+
+          {/* Selected Day Details */}
+          {selectedDay && (
+            <div className="mt-4 bg-layer-1 rounded-xl border border-border-base p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-text-primary">
+                  Backups on {format(selectedDay.date, 'MMMM d, yyyy')}
+                </h3>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="p-1 hover:bg-layer-2 rounded-lg text-text-tertiary"
+                >
+                  <Icons.X size={16} />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {selectedDay.backups.map((backup, index) => (
+                  <div
+                    key={`${backup.jobId}-${index}`}
+                    onClick={() => onSelectJob(backup.jobId)}
+                    className="flex items-center justify-between p-2 hover:bg-layer-2 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${backup.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
+                      />
+                      <span className="text-sm text-text-primary">{backup.jobName}</span>
+                    </div>
+                    <span className="text-xs text-text-tertiary">
+                      {format(new Date(backup.timestamp), 'h:mm a')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
