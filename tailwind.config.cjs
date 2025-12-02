@@ -14,6 +14,11 @@ module.exports = {
           2: 'var(--bg-layer-2)',
           3: 'var(--bg-layer-3)',
         },
+        glass: {
+          DEFAULT: 'var(--glass-bg)',
+          elevated: 'var(--glass-bg-elevated)',
+          border: 'var(--glass-border)',
+        },
         text: {
           primary: 'var(--text-primary)',
           secondary: 'var(--text-secondary)',
@@ -119,6 +124,12 @@ module.exports = {
         'glow-accent': 'var(--glow-accent)',
         'glow-error': 'var(--glow-error)',
         'glow-success': 'var(--glow-success)',
+        // New enhanced shadows
+        'glow': 'var(--shadow-glow)',
+        'card': 'var(--shadow-card)',
+        'elevated': 'var(--shadow-elevated)',
+        'float': 'var(--shadow-float)',
+        'glass': 'var(--glass-shadow)',
       },
 
       // Z-index
@@ -148,6 +159,14 @@ module.exports = {
         'elastic': 'var(--ease-elastic)',
       },
 
+      // Background Gradients
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-success': 'var(--gradient-success)',
+        'gradient-danger': 'var(--gradient-danger)',
+        'gradient-surface': 'var(--gradient-surface)',
+      },
+
       // Animations
       animation: {
         'heartbeat': 'heartbeat 2s infinite',
@@ -162,6 +181,8 @@ module.exports = {
         'slide-in-down': 'slide-in-down 0.3s ease-out',
         'spin-slow': 'spin 2s linear infinite',
         'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+        'collapse-down': 'collapse-down 0.2s ease-out',
+        'collapse-up': 'collapse-up 0.2s ease-out',
       },
       keyframes: {
         'heartbeat': {
@@ -207,6 +228,14 @@ module.exports = {
         'pulse-subtle': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.7' }
+        },
+        'collapse-down': {
+          '0%': { opacity: '0', height: '0', transform: 'translateY(-8px)' },
+          '100%': { opacity: '1', height: 'var(--radix-collapsible-content-height)', transform: 'translateY(0)' }
+        },
+        'collapse-up': {
+          '0%': { opacity: '1', height: 'var(--radix-collapsible-content-height)' },
+          '100%': { opacity: '0', height: '0' }
         }
       },
 

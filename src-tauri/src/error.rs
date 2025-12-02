@@ -43,6 +43,10 @@ pub enum AmberError {
     #[error("Volume error: {0}")]
     Volume(String),
 
+    // Rclone cloud operations
+    #[error("Rclone error: {0}")]
+    Rclone(String),
+
     // Database index operations
     #[error("Index error: {0}")]
     Index(String),

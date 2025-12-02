@@ -30,9 +30,10 @@
    * TYPOGRAPHY
    * ======================================== */
 
-  /* Font Families */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Menlo', monospace;
+  /* Font Families - SF Pro for native macOS feel */
+  --font-sans:
+    'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
 
   /* Font Sizes */
   --text-2xs: 10px;

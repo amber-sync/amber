@@ -81,6 +81,24 @@ pub struct JobSchedule {
     pub run_on_mount: Option<bool>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DestinationType {
+    Local,
+    Cloud,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudConfig {
+    pub remote_name: String,
+    pub remote_path: Option<String>,
+    pub encrypt: bool,
+    pub encrypt_password_keychain: Option<String>,
+    pub bandwidth: Option<String>,
+    pub provider: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncJob {
@@ -90,10 +108,12 @@ pub struct SyncJob {
     pub dest_path: String,
     pub mode: SyncMode,
     pub status: JobStatus,
+    pub destination_type: Option<DestinationType>,
     pub schedule_interval: Option<i64>,
     pub schedule: Option<JobSchedule>,
     pub config: RsyncConfig,
     pub ssh_config: Option<SshConfig>,
+    pub cloud_config: Option<CloudConfig>,
     pub last_run: Option<i64>,
     pub snapshots: Option<Vec<serde_json::Value>>,
 }
@@ -107,10 +127,12 @@ impl Default for SyncJob {
             dest_path: String::new(),
             mode: SyncMode::Archive,
             status: JobStatus::Idle,
+            destination_type: Some(DestinationType::Local),
             schedule_interval: None,
             schedule: None,
             config: RsyncConfig::default(),
             ssh_config: None,
+            cloud_config: None,
             last_run: None,
             snapshots: None,
         }

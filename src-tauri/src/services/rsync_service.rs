@@ -311,10 +311,12 @@ mod tests {
             dest_path: "/dest".to_string(),
             mode,
             status: JobStatus::Idle,
+            destination_type: None,
             schedule_interval: None,
             schedule: None,
             config: RsyncConfig::default(),
             ssh_config: None,
+            cloud_config: None,
             last_run: None,
             snapshots: None,
         }
