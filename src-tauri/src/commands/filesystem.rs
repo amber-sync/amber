@@ -33,13 +33,6 @@ pub async fn read_dir(state: State<'_, AppState>, path: String) -> Result<Vec<Di
 }
 
 #[tauri::command]
-pub async fn select_directory() -> Result<Option<String>> {
-    // In Tauri v2, dialog must be handled via the dialog plugin from frontend
-    // This is a placeholder - actual implementation uses tauri-plugin-dialog
-    Ok(None)
-}
-
-#[tauri::command]
 pub async fn read_file_preview(
     state: State<'_, AppState>,
     file_path: String,
