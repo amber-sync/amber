@@ -273,6 +273,36 @@ class AmberAPI {
     return true;
   }
 
+  // ===== Rclone (Cloud Backup) =====
+
+  /**
+   * Check if rclone is installed and get version info
+   */
+  async checkRclone(): Promise<{ installed: boolean; version?: string; configPath?: string }> {
+    return invoke('check_rclone');
+  }
+
+  /**
+   * List all configured rclone remotes
+   */
+  async listRcloneRemotes(): Promise<{ name: string; remoteType: string }[]> {
+    return invoke('list_rclone_remotes');
+  }
+
+  /**
+   * Run an rclone sync job for cloud backup
+   */
+  async runRclone(job: SyncJob): Promise<void> {
+    return invoke('run_rclone', { job });
+  }
+
+  /**
+   * Kill a running rclone sync job
+   */
+  async killRclone(jobId: string): Promise<void> {
+    return invoke('kill_rclone', { jobId });
+  }
+
   // ===== Utilities =====
 
   async isDev(): Promise<boolean> {

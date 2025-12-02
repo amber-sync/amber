@@ -19,6 +19,24 @@
     --accent-primary: #0d9488; /* Teal-600 */
     --accent-secondary: #ccfbf1; /* Teal-100 */
     --accent-text: #ffffff;
+
+    /* Glass Effects (Light) */
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-bg-elevated: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #0d9488, #0ea5e9);
+    --gradient-success: linear-gradient(135deg, #10b981, #0d9488);
+    --gradient-danger: linear-gradient(135deg, #ef4444, #f97316);
+    --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+
+    /* Enhanced Shadows */
+    --shadow-glow: 0 0 40px rgba(13, 148, 136, 0.12);
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.12);
+    --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.15);
   }
 
   .dark {
@@ -35,6 +53,24 @@
     --accent-primary: #2dd4bf; /* Teal-400 */
     --accent-secondary: #134e4a; /* Teal-900 */
     --accent-text: #000000;
+
+    /* Glass Effects (Dark) */
+    --glass-bg: rgba(17, 24, 39, 0.72);
+    --glass-bg-elevated: rgba(31, 41, 55, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    /* Gradients (Dark) */
+    --gradient-primary: linear-gradient(135deg, #2dd4bf, #38bdf8);
+    --gradient-success: linear-gradient(135deg, #34d399, #2dd4bf);
+    --gradient-danger: linear-gradient(135deg, #f87171, #fb923c);
+    --gradient-surface: linear-gradient(180deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.6));
+
+    /* Enhanced Shadows (Dark) */
+    --shadow-glow: 0 0 40px rgba(45, 212, 191, 0.15);
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.4);
+    --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 }
 

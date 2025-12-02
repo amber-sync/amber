@@ -35,6 +35,11 @@ pub fn run() {
             // Rsync commands
             commands::rsync::run_rsync,
             commands::rsync::kill_rsync,
+            // Rclone commands
+            commands::rclone::check_rclone,
+            commands::rclone::list_rclone_remotes,
+            commands::rclone::run_rclone,
+            commands::rclone::kill_rclone,
             // Snapshot commands
             commands::snapshots::list_snapshots,
             commands::snapshots::get_snapshot_tree,
