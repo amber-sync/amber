@@ -24,6 +24,7 @@ import type {
   BackupManifest,
   ManifestSnapshot,
   ManifestSnapshotStatus,
+  MountStatus,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -151,6 +152,23 @@ class AmberAPI {
    */
   async searchVolume(volumePath: string, pattern: string, limit?: number): Promise<FileNode[]> {
     return invoke('search_volume', { volumePath, pattern, limit });
+  }
+
+  // ===== Mount Detection (TIM-109) =====
+
+  /**
+   * Check if a single path is accessible/mounted
+   */
+  async isPathMounted(path: string): Promise<MountStatus> {
+    return invoke('is_path_mounted', { path });
+  }
+
+  /**
+   * Check mount status for multiple destination paths at once
+   * More efficient than calling isPathMounted for each path
+   */
+  async checkDestinations(paths: string[]): Promise<MountStatus[]> {
+    return invoke('check_destinations', { paths });
   }
 
   // ===== Snapshots =====

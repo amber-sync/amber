@@ -290,3 +290,11 @@ export interface DevDbStats {
   fts_index_entries: number;
   db_size_bytes: number;
 }
+
+// TIM-109: Mount detection types
+export interface MountStatus {
+  path: string;
+  mounted: boolean;
+  isExternal: boolean;
+  volumeName?: string;
+}
