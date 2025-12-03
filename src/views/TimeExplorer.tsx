@@ -4,6 +4,7 @@ import { Snapshot, JobAggregateStats, SnapshotDensity, SyncJob } from '../types'
 import { api } from '../api';
 import { Icons } from '../components/IconComponents';
 import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
+import { ActionBar } from '../components/explorer/ActionBar';
 
 /**
  * TimeExplorer - Unified backup browsing experience (TIM-129)
@@ -12,13 +13,16 @@ import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
  * for exploring backups of a single job.
  */
 export function TimeExplorer() {
-  const { activeJobId, jobs, setView, setActiveJobId } = useApp();
+  const { activeJobId, jobs, setView, setActiveJobId, runSync, stopSync } = useApp();
   const job = jobs.find((j: SyncJob) => j.id === activeJobId);
 
   // Handle job switching from the header dropdown
   const handleJobSwitch = (jobId: string) => {
     setActiveJobId(jobId);
   };
+
+  // Check if this job is running (from job status or context)
+  const isRunning = job?.status === 'RUNNING';
 
   // Date filtering state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -109,36 +113,15 @@ export function TimeExplorer() {
       />
 
       {/* Action Bar - TIM-131 */}
-      <div className="border-b border-stone-200 bg-stone-50 px-6 py-3 dark:border-stone-700 dark:bg-stone-800/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">
-              <Icons.Play className="h-4 w-4" />
-              Run Backup
-            </button>
-            <button
-              onClick={() => api.openPath(job.destPath)}
-              className="flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-            >
-              <Icons.FolderOpen className="h-4 w-4" />
-              Open Destination
-            </button>
-            <button
-              onClick={() => setActivePanel('restore')}
-              className="flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-            >
-              <Icons.RotateCcw className="h-4 w-4" />
-              Restore
-            </button>
-          </div>
-          <div className="text-sm text-stone-500 dark:text-stone-400">
-            Status: <span className="font-medium text-stone-700 dark:text-stone-300">Idle</span>
-            {job.lastRun && (
-              <span className="ml-2">Last run: {new Date(job.lastRun).toLocaleDateString()}</span>
-            )}
-          </div>
-        </div>
-      </div>
+      <ActionBar
+        job={job}
+        isRunning={isRunning}
+        progress={null}
+        onRunBackup={() => runSync(job.id)}
+        onStopBackup={() => stopSync(job.id)}
+        onRestore={() => setActivePanel('restore')}
+        onEdit={() => setActivePanel('edit')}
+      />
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
