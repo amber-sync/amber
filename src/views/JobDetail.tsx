@@ -120,26 +120,29 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   );
 
   // Handlers
-  const handleOpenSnapshot = (timestamp: number) => {
+  const handleOpenSnapshot = (timestamp: number, folderName?: string) => {
     if (!job.destPath) return;
-    const folderName = buildSnapshotFolderName(timestamp);
+    // Use provided folderName from manifest, or fallback to generating from timestamp
+    const folder = folderName ?? buildSnapshotFolderName(timestamp);
     const fullPath =
-      job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
+      job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folder}` : job.destPath;
     api.openPath(fullPath);
   };
 
-  const handleBrowseSnapshot = (timestamp: number) => {
+  const handleBrowseSnapshot = (timestamp: number, folderName?: string) => {
     if (!job.destPath) return;
-    const folderName = buildSnapshotFolderName(timestamp);
+    // Use provided folderName from manifest, or fallback to generating from timestamp
+    const folder = folderName ?? buildSnapshotFolderName(timestamp);
     const fullPath =
-      job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
+      job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folder}` : job.destPath;
     setActiveBrowserPath(fullPath);
     setActiveBrowserTimestamp(timestamp);
   };
 
   const handleShowFile = (path: string) => {
     if (!job.destPath || !latestSnapshot) return;
-    const folderName = buildSnapshotFolderName(latestSnapshot.timestamp);
+    // Use path from manifest (stored folder name), or fallback to generating from timestamp
+    const folderName = latestSnapshot.path ?? buildSnapshotFolderName(latestSnapshot.timestamp);
     const basePath =
       job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
     // Path from index is relative (e.g., "Archive/file.csv"), needs leading slash

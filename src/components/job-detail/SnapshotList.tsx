@@ -13,8 +13,8 @@ interface SnapshotListProps {
   onGroupingChange: (grouping: SnapshotGrouping) => void;
   sortBy: 'date' | 'size';
   onSortChange: (sort: 'date' | 'size') => void;
-  onOpenSnapshot: (timestamp: number) => void;
-  onBrowseSnapshot: (timestamp: number) => void;
+  onOpenSnapshot: (timestamp: number, folderName?: string) => void;
+  onBrowseSnapshot: (timestamp: number, folderName?: string) => void;
 }
 
 export const SnapshotList: React.FC<SnapshotListProps> = ({
@@ -111,8 +111,8 @@ interface SnapshotGroupProps {
   showHeader: boolean;
   isCollapsed: boolean;
   onToggle: () => void;
-  onOpenSnapshot: (timestamp: number) => void;
-  onBrowseSnapshot: (timestamp: number) => void;
+  onOpenSnapshot: (timestamp: number, folderName?: string) => void;
+  onBrowseSnapshot: (timestamp: number, folderName?: string) => void;
 }
 
 const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
@@ -179,14 +179,14 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
                 {formatBytes(snap.sizeBytes)}
               </span>
               <button
-                onClick={() => onBrowseSnapshot(snap.timestamp)}
+                onClick={() => onBrowseSnapshot(snap.timestamp, snap.path)}
                 className="p-2 rounded-lg text-text-tertiary hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
                 title="Browse Files"
               >
                 <Icons.Eye size={16} />
               </button>
               <button
-                onClick={() => onOpenSnapshot(snap.timestamp)}
+                onClick={() => onOpenSnapshot(snap.timestamp, snap.path)}
                 className="p-2 rounded-lg text-text-tertiary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 title="Open in Finder"
               >
