@@ -41,7 +41,7 @@ tokio-cron-scheduler = "0.13"
 # TIM-114: Keychain access
 keyring = "3"
 # TIM-115: Volume watcher
-notify = "7"
+notify = "8"
 # UUID for job scheduler
 uuid = { version = "1", features = ["v4"] }
 # TIM-46: SQLite metadata index for fast snapshot browsing
