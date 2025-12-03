@@ -319,8 +319,10 @@ export interface JobWithStatus extends Omit<SyncJob, 'snapshots'> {
   isExternal: boolean;
   /** Volume name if external */
   volumeName?: string;
-  /** Snapshots loaded from manifest (when mounted) - always present */
+  /** Snapshots loaded from manifest or cache - always present */
   snapshots: SnapshotInfo[];
   /** Source of snapshot data: "manifest" or "cache" or "none" */
   snapshotSource: string;
+  /** When the cache was last updated (unix ms), only set when source is "cache" */
+  cachedAt?: number;
 }
