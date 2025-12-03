@@ -100,11 +100,13 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
 
         if (isIndexed && jobId && snapshotTimestamp) {
           // TIM-46: Use fast SQLite query
+          // Convert current absolute path to relative path for SQLite query
           const relativePath = path === initialPath ? '' : path.replace(initialPath + '/', '');
           const result = await api.getIndexedDirectory(jobId, snapshotTimestamp, relativePath);
 
           formatted = result.map((item: any) => ({
             name: item.name,
+            // SQLite stores ABSOLUTE paths in the 'path' column - use directly
             path: item.path,
             // Use centralized isDirectory() from types.ts - matches Rust file_type module
             isDirectory: isDirectory(item.type),
@@ -173,6 +175,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         const results = await api.searchSnapshotFiles(jobId, snapshotTimestamp, query, 100);
         const formatted: FileEntry[] = results.map((item: any) => ({
           name: item.name,
+          // SQLite stores ABSOLUTE paths in the 'path' column - use directly
           path: item.path,
           // Use centralized isDirectory() from types.ts - matches Rust file_type module
           isDirectory: isDirectory(item.type),
