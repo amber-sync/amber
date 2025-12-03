@@ -101,6 +101,22 @@ pub struct LargestFile {
     pub path: String,
 }
 
+/// Aggregate statistics for a job (TIM-127)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobAggregateStats {
+    /// Total number of snapshots for this job
+    pub total_snapshots: i64,
+    /// Total size in bytes across all snapshots (logical, not deduplicated)
+    pub total_size_bytes: i64,
+    /// Total file count across all snapshots
+    pub total_files: i64,
+    /// Timestamp of the first snapshot (milliseconds), None if no snapshots
+    pub first_snapshot_ms: Option<i64>,
+    /// Timestamp of the last snapshot (milliseconds), None if no snapshots
+    pub last_snapshot_ms: Option<i64>,
+}
+
 impl IndexService {
     /// Create or open the index database at the default app data location
     pub fn new(app_data_dir: &Path) -> Result<Self> {
@@ -654,6 +670,49 @@ impl IndexService {
         Ok(result)
     }
 
+    /// Get aggregate statistics for all snapshots of a job (TIM-127)
+    pub fn get_job_aggregate_stats(&self, job_id: &str) -> Result<JobAggregateStats> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Get aggregate stats from snapshots table in a single query
+        let result = conn
+            .query_row(
+                "SELECT
+                    COUNT(*) as total_snapshots,
+                    COALESCE(SUM(total_size), 0) as total_size,
+                    COALESCE(SUM(file_count), 0) as total_files,
+                    MIN(timestamp) as first_snapshot,
+                    MAX(timestamp) as last_snapshot
+                 FROM snapshots
+                 WHERE job_id = ?",
+                params![job_id],
+                |row| {
+                    let total_snapshots: i64 = row.get(0)?;
+                    Ok(JobAggregateStats {
+                        total_snapshots,
+                        total_size_bytes: row.get(1)?,
+                        total_files: row.get(2)?,
+                        // Only set timestamps if there are snapshots
+                        first_snapshot_ms: if total_snapshots > 0 {
+                            row.get(3)?
+                        } else {
+                            None
+                        },
+                        last_snapshot_ms: if total_snapshots > 0 {
+                            row.get(4)?
+                        } else {
+                            None
+                        },
+                    })
+                },
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to query aggregate stats: {}", e)))?;
+
+        Ok(result)
+    }
+
     /// Check if a snapshot is indexed
     pub fn is_indexed(&self, job_id: &str, timestamp: i64) -> Result<bool> {
         let conn = self.conn.lock().map_err(|e| {
@@ -1177,6 +1236,49 @@ mod tests {
 
         // Verify ordering (newest first)
         assert!(all[0].timestamp > all[1].timestamp);
+    }
+
+    #[test]
+    fn test_get_job_aggregate_stats() {
+        let (service, temp_dir) = create_test_service();
+
+        // Test with no snapshots
+        let empty_stats = service.get_job_aggregate_stats("nonexistent").unwrap();
+        assert_eq!(empty_stats.total_snapshots, 0);
+        assert_eq!(empty_stats.total_size_bytes, 0);
+        assert_eq!(empty_stats.total_files, 0);
+        assert!(empty_stats.first_snapshot_ms.is_none());
+        assert!(empty_stats.last_snapshot_ms.is_none());
+
+        // Create snapshots with different sizes
+        let snapshot1 = temp_dir.path().join("snapshot1");
+        std::fs::create_dir_all(&snapshot1).unwrap();
+        std::fs::write(snapshot1.join("file1.txt"), "hello").unwrap(); // 5 bytes
+        std::fs::write(snapshot1.join("file2.txt"), "world!").unwrap(); // 6 bytes
+
+        let snapshot2 = temp_dir.path().join("snapshot2");
+        std::fs::create_dir_all(&snapshot2).unwrap();
+        std::fs::write(snapshot2.join("file3.txt"), "test data here").unwrap(); // 14 bytes
+
+        // Index both snapshots
+        let ts1 = 1704067200000_i64; // Jan 1, 2024
+        let ts2 = 1706745600000_i64; // Feb 1, 2024
+
+        service
+            .index_snapshot("job1", ts1, snapshot1.to_str().unwrap())
+            .unwrap();
+        service
+            .index_snapshot("job1", ts2, snapshot2.to_str().unwrap())
+            .unwrap();
+
+        // Get aggregate stats
+        let stats = service.get_job_aggregate_stats("job1").unwrap();
+
+        assert_eq!(stats.total_snapshots, 2);
+        assert_eq!(stats.total_files, 3); // 2 + 1 files
+        assert_eq!(stats.total_size_bytes, 25); // 5 + 6 + 14 bytes
+        assert_eq!(stats.first_snapshot_ms, Some(ts1));
+        assert_eq!(stats.last_snapshot_ms, Some(ts2));
     }
 
     #[test]
