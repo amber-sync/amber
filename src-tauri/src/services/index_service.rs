@@ -204,6 +204,10 @@ impl IndexService {
         conn.execute_batch("PRAGMA journal_mode=WAL;")
             .map_err(|e| AmberError::Index(format!("Failed to set WAL mode: {}", e)))?;
 
+        // Enable foreign key enforcement (SQLite has this OFF by default!)
+        conn.execute_batch("PRAGMA foreign_keys = ON;")
+            .map_err(|e| AmberError::Index(format!("Failed to enable foreign keys: {}", e)))?;
+
         // Check current version
         let version: i32 = conn
             .query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -219,32 +223,47 @@ impl IndexService {
     /// Run database migrations
     fn run_migrations(&self, conn: &Connection, from_version: i32) -> Result<()> {
         if from_version < 1 {
-            // Initial schema
+            // Initial schema (v1)
             conn.execute_batch(
                 r#"
-                -- Snapshots table
+                -- =================================================================
+                -- SCHEMA DOCUMENTATION
+                -- =================================================================
+                -- Timestamps:
+                --   - snapshots.timestamp: Unix MILLISECONDS
+                --   - files.mtime: Unix SECONDS (converted to ms at API boundary)
+                --   - snapshots.created_at: Unix SECONDS (default)
+                --
+                -- File types (files.file_type):
+                --   - 'file': Regular file
+                --   - 'dir': Directory
+                --   - 'symlink': Symbolic link
+                --   Note: Always lowercase, matches Rust file_type module
+                -- =================================================================
+
+                -- Snapshots table: One entry per backup snapshot
                 CREATE TABLE IF NOT EXISTS snapshots (
                     id INTEGER PRIMARY KEY,
                     job_id TEXT NOT NULL,
-                    timestamp INTEGER NOT NULL,
+                    timestamp INTEGER NOT NULL,           -- Unix MILLISECONDS
                     root_path TEXT NOT NULL,
                     file_count INTEGER DEFAULT 0,
-                    total_size INTEGER DEFAULT 0,
-                    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+                    total_size INTEGER DEFAULT 0,         -- Bytes
+                    created_at INTEGER DEFAULT (strftime('%s', 'now')),  -- Unix SECONDS
                     UNIQUE(job_id, timestamp)
                 );
 
-                -- Files table (indexed for fast lookup)
+                -- Files table: All files/directories in each snapshot
                 CREATE TABLE IF NOT EXISTS files (
                     id INTEGER PRIMARY KEY,
                     snapshot_id INTEGER NOT NULL,
-                    path TEXT NOT NULL,
-                    name TEXT NOT NULL,
-                    parent_path TEXT NOT NULL,
-                    size INTEGER NOT NULL,
-                    mtime INTEGER NOT NULL,
-                    inode INTEGER,
-                    file_type TEXT NOT NULL,
+                    path TEXT NOT NULL,                   -- Relative path from snapshot root
+                    name TEXT NOT NULL,                   -- Filename only
+                    parent_path TEXT NOT NULL,            -- Parent directory path
+                    size INTEGER NOT NULL,                -- Bytes (0 for directories)
+                    mtime INTEGER NOT NULL,               -- Unix SECONDS (API multiplies by 1000)
+                    inode INTEGER,                        -- Unix inode for dedup detection
+                    file_type TEXT NOT NULL,              -- 'file' | 'dir' | 'symlink'
                     FOREIGN KEY (snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
                 );
 
