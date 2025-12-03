@@ -392,7 +392,7 @@ function AppContent() {
         // Mark snapshot as restored
         const updatedJob = {
           ...job,
-          snapshots: job.snapshots.map(s =>
+          snapshots: (job.snapshots ?? []).map(s =>
             s.id === snapshot.id ? { ...s, restored: true, restoredDate: Date.now() } : s
           ),
         };

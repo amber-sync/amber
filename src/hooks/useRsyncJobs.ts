@@ -56,7 +56,7 @@ export function useRsyncJobs(initialJobs: SyncJob[] = []) {
           };
           return {
             ...j,
-            snapshots: [...j.snapshots, newSnapshot],
+            snapshots: [...(j.snapshots ?? []), newSnapshot],
             lastRun: Date.now(),
             status: JobStatus.SUCCESS,
           };

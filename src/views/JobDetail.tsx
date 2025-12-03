@@ -65,7 +65,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   // Chart data for storage history
   const chartData = useMemo(
     () =>
-      job.snapshots.map((s, i, arr) => {
+      (job.snapshots ?? []).map((s, i, arr) => {
         const prevSize = i > 0 ? arr[i - 1].sizeBytes : 0;
         const dataAdded = Math.max(0, s.sizeBytes - prevSize);
         return {
@@ -79,11 +79,12 @@ export const JobDetail: React.FC<JobDetailProps> = ({
           timestamp: s.timestamp,
         };
       }),
-    [job.snapshots]
+    [job.snapshots ?? []]
   );
 
   // Latest snapshot and its file tree for analytics
-  const latestSnapshot = job.snapshots[job.snapshots.length - 1];
+  const snapshots = job.snapshots ?? [];
+  const latestSnapshot = snapshots[snapshots.length - 1];
   const [latestSnapshotTree, setLatestSnapshotTree] = useState<FileNode[] | null>(null);
 
   useEffect(() => {
@@ -107,8 +108,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({
 
   // Group snapshots based on grouping preference
   const groupedSnapshots = useMemo(
-    () => groupSnapshots(job.snapshots, snapshotGrouping, sortBy),
-    [job.snapshots, snapshotGrouping, sortBy]
+    () => groupSnapshots(job.snapshots ?? [], snapshotGrouping, sortBy),
+    [job.snapshots ?? [], snapshotGrouping, sortBy]
   );
 
   // Handlers

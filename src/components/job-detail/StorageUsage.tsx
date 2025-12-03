@@ -15,7 +15,8 @@ export const StorageUsage: React.FC<StorageUsageProps> = ({ job, diskStats }) =>
   const totalBytes = isAvailable ? stat.total : 0;
   const freeBytes = isAvailable ? stat.free : 0;
   const usedBytes = totalBytes - freeBytes;
-  const jobSize = job.snapshots[job.snapshots.length - 1]?.sizeBytes || 0;
+  const snapshots = job.snapshots ?? [];
+  const jobSize = snapshots[snapshots.length - 1]?.sizeBytes || 0;
 
   const usedPercent = totalBytes > 0 ? (usedBytes / totalBytes) * 100 : 0;
   const jobPercent = totalBytes > 0 ? (jobSize / totalBytes) * 100 : 0;

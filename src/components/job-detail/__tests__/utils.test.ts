@@ -39,7 +39,7 @@ describe('groupSnapshots', () => {
     timestamp: number,
     id: string,
     sizeBytes = 1000
-  ): SyncJob['snapshots'][0] => ({
+  ): NonNullable<SyncJob['snapshots']>[0] => ({
     id,
     timestamp,
     sizeBytes,

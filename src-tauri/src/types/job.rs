@@ -115,6 +115,10 @@ pub struct SyncJob {
     pub ssh_config: Option<SshConfig>,
     pub cloud_config: Option<CloudConfig>,
     pub last_run: Option<i64>,
+    /// DEPRECATED: Snapshots are now stored in manifest.json on the backup drive.
+    /// This field is kept for reading old jobs.json files during migration.
+    /// It is not serialized when saving jobs.
+    #[serde(skip_serializing, default)]
     pub snapshots: Option<Vec<serde_json::Value>>,
 }
 

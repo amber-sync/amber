@@ -28,11 +28,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [selectedDay, setSelectedDay] = useState<{ date: Date; backups: DayBackup[] } | null>(null);
 
   const totalProtectedSize = jobs.reduce((acc, job) => {
-    const latest = job.snapshots[job.snapshots.length - 1];
+    const snapshots = job.snapshots ?? [];
+    const latest = snapshots[snapshots.length - 1];
     return acc + (latest?.sizeBytes || 0);
   }, 0);
 
-  const totalSnapshots = jobs.reduce((acc, job) => acc + job.snapshots.length, 0);
+  const totalSnapshots = jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0);
 
   const handleDayClick = (date: Date, backups: DayBackup[]) => {
     if (backups.length > 0) {

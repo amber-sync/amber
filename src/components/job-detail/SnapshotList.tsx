@@ -135,7 +135,7 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
         />
         {label}
         <span className="ml-auto text-2xs font-medium bg-layer-1 px-2.5 py-1 rounded-full text-text-secondary">
-          {snaps.length}
+          {(snaps ?? []).length}
         </span>
       </button>
     )}
@@ -150,7 +150,7 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
           showHeader ? 'space-y-2 pl-3 border-l-2 border-border-base ml-2 mt-2' : 'space-y-2'
         }
       >
-        {snaps.map(snap => (
+        {(snaps ?? []).map(snap => (
           <div
             key={snap.id}
             className="flex items-center justify-between p-4 bg-layer-1 border border-border-base rounded-xl hover:bg-layer-2 transition-colors group"
