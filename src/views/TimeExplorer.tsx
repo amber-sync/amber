@@ -5,6 +5,8 @@ import { api } from '../api';
 import { Icons } from '../components/IconComponents';
 import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
 import { ActionBar } from '../components/explorer/ActionBar';
+import { StatsSummary } from '../components/explorer/StatsSummary';
+import { useJobStats } from '../hooks/useJobStats';
 
 /**
  * TimeExplorer - Unified backup browsing experience (TIM-129)
@@ -31,14 +33,13 @@ export function TimeExplorer() {
   // Snapshot state
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [snapshotsLoading, setSnapshotsLoading] = useState(true);
 
   // Panel state
   const [activePanel, setActivePanel] = useState<'edit' | 'restore' | 'detail' | null>(null);
 
-  // Stats state (will be fetched from backend)
-  const [stats, setStats] = useState<JobAggregateStats | null>(null);
-  const [density, setDensity] = useState<SnapshotDensity[]>([]);
+  // Use the useJobStats hook for stats and density (TIM-132)
+  const { stats, density, loading: statsLoading } = useJobStats(job?.destPath, job?.id, 'month');
 
   // File browser state
   const [browserPath, setBrowserPath] = useState<string | null>(null);
@@ -48,32 +49,19 @@ export function TimeExplorer() {
   useEffect(() => {
     if (!job) return;
 
-    const loadData = async () => {
-      setLoading(true);
+    const loadSnapshots = async () => {
+      setSnapshotsLoading(true);
       try {
-        // Load snapshots from destination
         const snapshotList = await api.listSnapshots(job.id, job.destPath);
         setSnapshots(snapshotList);
-
-        // Load aggregate stats
-        const jobStats = await api.getJobAggregateStatsOnDestination(job.destPath, job.id);
-        setStats(jobStats);
-
-        // Load density for month view
-        const monthDensity = await api.getSnapshotDensityOnDestination(
-          job.destPath,
-          job.id,
-          'month'
-        );
-        setDensity(monthDensity);
       } catch (error) {
-        console.error('Failed to load Time Explorer data:', error);
+        console.error('Failed to load snapshots:', error);
       } finally {
-        setLoading(false);
+        setSnapshotsLoading(false);
       }
     };
 
-    loadData();
+    loadSnapshots();
   }, [job]);
 
   // Handle back navigation
@@ -128,42 +116,7 @@ export function TimeExplorer() {
         {/* Left Column: Stats + Date Navigator + Snapshot List */}
         <div className="flex w-80 flex-col border-r border-stone-200 dark:border-stone-700">
           {/* Stats Summary - TIM-132 */}
-          <div className="border-b border-stone-200 p-4 dark:border-stone-700">
-            {loading ? (
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 w-24 rounded bg-stone-200 dark:bg-stone-700" />
-                <div className="h-6 w-32 rounded bg-stone-200 dark:bg-stone-700" />
-              </div>
-            ) : stats ? (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-stone-500 dark:text-stone-400">Backups</div>
-                  <div className="text-lg font-semibold">{stats.totalSnapshots}</div>
-                </div>
-                <div>
-                  <div className="text-stone-500 dark:text-stone-400">Total Size</div>
-                  <div className="text-lg font-semibold">{formatBytes(stats.totalSizeBytes)}</div>
-                </div>
-                <div>
-                  <div className="text-stone-500 dark:text-stone-400">Files</div>
-                  <div className="text-lg font-semibold">{stats.totalFiles.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div className="text-stone-500 dark:text-stone-400">Since</div>
-                  <div className="text-lg font-semibold">
-                    {stats.firstSnapshotMs
-                      ? new Date(stats.firstSnapshotMs).toLocaleDateString(undefined, {
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : '-'}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-stone-500">No stats available</div>
-            )}
-          </div>
+          <StatsSummary stats={stats} loading={statsLoading} />
 
           {/* Date Navigator - TIM-133 */}
           <div className="border-b border-stone-200 p-4 dark:border-stone-700">
@@ -227,7 +180,7 @@ export function TimeExplorer() {
 
           {/* Snapshot List */}
           <div className="flex-1 overflow-auto">
-            {loading ? (
+            {snapshotsLoading ? (
               <div className="p-4">
                 <div className="animate-pulse space-y-3">
                   {[1, 2, 3].map(i => (
