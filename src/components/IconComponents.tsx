@@ -60,6 +60,8 @@ import {
   ArrowUp,
   Filter,
   Hand,
+  Square,
+  Pencil,
 } from 'lucide-react';
 
 export const Icons = {
@@ -123,4 +125,6 @@ export const Icons = {
   ArrowUp,
   Filter,
   Hand,
+  Square,
+  Pencil,
 };
