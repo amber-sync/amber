@@ -7,6 +7,7 @@ import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
 import { ActionBar } from '../components/explorer/ActionBar';
 import { StatsSummary } from '../components/explorer/StatsSummary';
 import { DateNavigator } from '../components/explorer/DateNavigator';
+import { SlidePanel } from '../components/explorer/panels/SlidePanel';
 import { useJobStats } from '../hooks/useJobStats';
 
 /**
@@ -268,34 +269,45 @@ export function TimeExplorer() {
         </div>
       </div>
 
-      {/* Slide-out panels placeholder - TIM-134+ */}
-      {activePanel && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setActivePanel(null)} />
-          <div className="absolute bottom-0 right-0 top-0 w-96 bg-white shadow-xl dark:bg-stone-900">
-            <div className="flex items-center justify-between border-b border-stone-200 p-4 dark:border-stone-700">
-              <h2 className="text-lg font-semibold">
-                {activePanel === 'edit'
-                  ? 'Edit Job'
-                  : activePanel === 'restore'
-                    ? 'Restore Files'
-                    : 'Snapshot Details'}
-              </h2>
-              <button
-                onClick={() => setActivePanel(null)}
-                className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                <Icons.X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4">
-              <p className="text-sm text-stone-500">
-                Panel content will be implemented in TIM-134, TIM-135, TIM-136
-              </p>
-            </div>
-          </div>
+      {/* Edit Job Panel - TIM-135 */}
+      <SlidePanel
+        isOpen={activePanel === 'edit'}
+        onClose={() => setActivePanel(null)}
+        title="Edit Job"
+        width="lg"
+      >
+        <div className="p-4">
+          <p className="text-sm text-stone-500">
+            Edit job panel content will be implemented in TIM-135
+          </p>
         </div>
-      )}
+      </SlidePanel>
+
+      {/* Restore Panel - TIM-136 */}
+      <SlidePanel
+        isOpen={activePanel === 'restore'}
+        onClose={() => setActivePanel(null)}
+        title="Restore Files"
+        width="lg"
+      >
+        <div className="p-4">
+          <p className="text-sm text-stone-500">
+            Restore panel content will be implemented in TIM-136
+          </p>
+        </div>
+      </SlidePanel>
+
+      {/* Snapshot Detail Panel */}
+      <SlidePanel
+        isOpen={activePanel === 'detail'}
+        onClose={() => setActivePanel(null)}
+        title="Snapshot Details"
+        width="md"
+      >
+        <div className="p-4">
+          <p className="text-sm text-stone-500">Snapshot details panel content</p>
+        </div>
+      </SlidePanel>
     </div>
   );
 }
