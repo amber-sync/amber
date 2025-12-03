@@ -9,14 +9,38 @@ use std::sync::{Arc, Mutex};
 
 const LATEST_SYMLINK_NAME: &str = "latest";
 
+/// Info about a running or completed backup
+#[derive(Debug, Clone)]
+pub struct BackupInfo {
+    pub job_id: String,
+    pub folder_name: String,
+    pub snapshot_path: PathBuf,
+    pub target_base: PathBuf,
+    pub start_time: i64,
+}
+
 pub struct RsyncService {
     active_jobs: Arc<Mutex<HashMap<String, u32>>>, // job_id -> pid
+    backup_info: Arc<Mutex<HashMap<String, BackupInfo>>>, // job_id -> backup info
 }
 
 impl RsyncService {
     pub fn new() -> Self {
         Self {
             active_jobs: Arc::new(Mutex::new(HashMap::new())),
+            backup_info: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Get backup info for a job (available after spawn_rsync)
+    pub fn get_backup_info(&self, job_id: &str) -> Option<BackupInfo> {
+        self.backup_info.lock().ok()?.get(job_id).cloned()
+    }
+
+    /// Remove backup info after completion
+    pub fn clear_backup_info(&self, job_id: &str) {
+        if let Ok(mut info) = self.backup_info.lock() {
+            info.remove(job_id);
         }
     }
 
@@ -195,13 +219,15 @@ impl RsyncService {
         let target_base = Path::new(&job.dest_path).join(source_basename);
         std::fs::create_dir_all(&target_base)?;
 
-        let (final_dest, link_dest) = if job.mode == SyncMode::TimeMachine {
+        let (final_dest, link_dest, folder_name) = if job.mode == SyncMode::TimeMachine {
             let folder_name = self.format_backup_folder_name();
             let final_dest = target_base.join(&folder_name);
             let link_dest = self.get_latest_backup(target_base.to_str().unwrap_or(""));
-            (final_dest, link_dest)
+            (final_dest, link_dest, folder_name)
         } else {
-            (target_base.clone(), None)
+            // For non-TimeMachine modes, use a consistent folder name
+            let folder_name = "current".to_string();
+            (target_base.clone(), None, folder_name)
         };
 
         let args = self.build_rsync_args(
@@ -219,6 +245,18 @@ impl RsyncService {
         // Track active job
         if let Ok(mut jobs) = self.active_jobs.lock() {
             jobs.insert(job.id.clone(), child.id());
+        }
+
+        // Store backup info for later retrieval
+        let backup_info = BackupInfo {
+            job_id: job.id.clone(),
+            folder_name,
+            snapshot_path: final_dest,
+            target_base,
+            start_time: chrono::Utc::now().timestamp_millis(),
+        };
+        if let Ok(mut info) = self.backup_info.lock() {
+            info.insert(job.id.clone(), backup_info);
         }
 
         Ok(child)

@@ -1,0 +1,72 @@
+{
+  "epic": "Repository-Centric Architecture Refactor",
+  "description": "Refactor Amber to use a repository-centric architecture where backup metadata lives ON the backup drive (like Time Machine/Borg), with local cache being disposable and rebuildable.",
+  "tickets": [
+    {
+      "id": "ARCH-01",
+      "title": "Create manifest.json schema and writer",
+      "description": "## Overview\nCreate the manifest.json file that will live on the backup destination drive.\n\n## Schema\n```json\n{\n  \"version\": 1,\n  \"machineId\": \"MacBook-Pro-abc123\",\n  \"createdAt\": 1704067200000,\n  \"updatedAt\": 1704153600000,\n  \"snapshots\": [\n    {\n      \"id\": \"1704067200000\",\n      \"timestamp\": 1704067200000,\n      \"folderName\": \"2024-01-01-120000\",\n      \"fileCount\": 1234,\n      \"totalSize\": 5678901234,\n      \"status\": \"Complete\"\n    }\n  ]\n}\n```\n\n## Tasks\n- [ ] Create Rust struct for manifest\n- [ ] Add serde serialization\n- [ ] Create `write_manifest()` function\n- [ ] Create `read_manifest()` function\n- [ ] Add versioning for future migrations\n\n## Files\n- `src-tauri/src/types/manifest.rs` (new)\n- `src-tauri/src/services/manifest_service.rs` (new)",
+      "branch": "feature/ARCH-01-manifest-schema"
+    },
+    {
+      "id": "ARCH-02",
+      "title": "Write manifest after backup completes",
+      "description": "## Overview\nAfter each successful backup, update the manifest.json on the destination drive.\n\n## Tasks\n- [ ] Call `write_manifest()` after rsync completes successfully\n- [ ] Add new snapshot entry to manifest\n- [ ] Update `updatedAt` timestamp\n- [ ] Handle case where manifest doesn't exist (first backup)\n\n## Dependencies\n- ARCH-01 (manifest schema)\n\n## Files\n- `src-tauri/src/services/rsync_service.rs`\n- `src-tauri/src/commands/rsync.rs`",
+      "branch": "feature/ARCH-02-write-manifest-on-backup"
+    },
+    {
+      "id": "ARCH-03",
+      "title": "Remove snapshots array from jobs.json",
+      "description": "## Overview\nMake job definitions lightweight by removing the embedded snapshots array.\n\n## Current jobs.json\n```json\n{\n  \"id\": \"job-123\",\n  \"name\": \"Documents\",\n  \"sourcePath\": \"/Users/me/Documents\",\n  \"destPath\": \"/Volumes/Backup/Documents\",\n  \"snapshots\": [...]  // REMOVE THIS\n}\n```\n\n## New jobs.json\n```json\n{\n  \"id\": \"job-123\",\n  \"name\": \"Documents\",\n  \"sourcePath\": \"/Users/me/Documents\",\n  \"destPath\": \"/Volumes/Backup/Documents\"\n  // No snapshots - read from manifest on dest\n}\n```\n\n## Tasks\n- [ ] Remove `snapshots` field from SyncJob type\n- [ ] Update store.rs to not save snapshots\n- [ ] Add migration to strip snapshots from existing jobs.json\n- [ ] Update frontend SyncJob type\n\n## Files\n- `src-tauri/src/types/job.rs`\n- `src-tauri/src/services/store.rs`\n- `src/types.ts`",
+      "branch": "feature/ARCH-03-lightweight-jobs"
+    },
+    {
+      "id": "ARCH-04",
+      "title": "Add destination mount detection",
+      "description": "## Overview\nDetect if a job's destination path is currently mounted/accessible.\n\n## Tasks\n- [ ] Create `is_path_mounted()` function in Rust\n- [ ] Add `mounted: boolean` field to job response\n- [ ] Create `check_destinations()` command\n- [ ] Poll mount status periodically (or use FSEvents)\n\n## API\n```typescript\ninterface JobWithStatus {\n  ...job,\n  mounted: boolean,\n  lastSeen?: number  // Last time we saw it mounted\n}\n```\n\n## Files\n- `src-tauri/src/services/mount_service.rs` (new)\n- `src-tauri/src/commands/filesystem.rs`",
+      "branch": "feature/ARCH-04-mount-detection"
+    },
+    {
+      "id": "ARCH-05",
+      "title": "Load snapshots from manifest when mounted",
+      "description": "## Overview\nWhen destination is mounted, read snapshots from manifest.json instead of jobs.json.\n\n## Flow\n```\nget_jobs()\n  → For each job:\n    → Check if destPath is mounted\n    → If mounted: read manifest.json, return snapshots\n    → If not mounted: return cached snapshots (or empty)\n```\n\n## Tasks\n- [ ] Update `get_jobs` command to check mount status\n- [ ] Read manifest.json when mounted\n- [ ] Merge job config with manifest snapshots\n- [ ] Add `source: 'manifest' | 'cache'` to response\n\n## Dependencies\n- ARCH-01 (manifest schema)\n- ARCH-04 (mount detection)\n\n## Files\n- `src-tauri/src/commands/jobs.rs`",
+      "branch": "feature/ARCH-05-load-from-manifest"
+    },
+    {
+      "id": "ARCH-06",
+      "title": "Create local snapshot cache",
+      "description": "## Overview\nCache snapshot metadata locally for offline access. This cache is disposable and rebuilt from manifest when connected.\n\n## Cache location\n```\n~/.amber/cache/\n  └── snapshots/\n      └── {job-id}.json  // Cached snapshot list\n```\n\n## Tasks\n- [ ] Create cache directory structure\n- [ ] Write snapshot cache after reading manifest\n- [ ] Read from cache when destination not mounted\n- [ ] Add `cached: boolean` flag to indicate stale data\n- [ ] Clear cache when job is deleted\n\n## Files\n- `src-tauri/src/services/cache_service.rs` (new)\n- `src-tauri/src/commands/jobs.rs`",
+      "branch": "feature/ARCH-06-snapshot-cache"
+    },
+    {
+      "id": "ARCH-07",
+      "title": "Add online/offline badge to UI",
+      "description": "## Overview\nShow visual indicator when a job's destination is not mounted.\n\n## Design\n- Green dot = mounted, data fresh\n- Orange dot = mounted, syncing\n- Gray dot = not mounted, showing cached data\n- Badge text: \"Offline\" or \"Last seen: 2 days ago\"\n\n## Tasks\n- [ ] Add `mounted` prop to job cards\n- [ ] Create `ConnectionStatus` component\n- [ ] Show \"Offline\" badge on job detail\n- [ ] Disable \"Run Backup\" when offline\n- [ ] Show \"cached\" indicator on snapshot list\n\n## Files\n- `src/components/ConnectionStatus.tsx` (new)\n- `src/components/JobCard.tsx`\n- `src/views/JobDetail.tsx`",
+      "branch": "feature/ARCH-07-offline-badge"
+    },
+    {
+      "id": "ARCH-08",
+      "title": "Refactor delete job flow",
+      "description": "## Overview\nUpdate job deletion to handle local config vs backup data separately.\n\n## Flow\n```\nUser clicks \"Delete Job\"\n  → Show modal:\n    \"Delete job configuration?\"\n    [ ] Also delete backup data (X GB) - disabled if offline\n    [Cancel] [Delete]\n  → If confirmed:\n    → Remove from jobs.json\n    → Clear local cache\n    → If checkbox + mounted: delete backup folder\n```\n\n## Tasks\n- [ ] Update DeleteJobModal with checkbox\n- [ ] Show backup size in modal\n- [ ] Disable data deletion when offline\n- [ ] Create `delete_job_data` command\n- [ ] Clear cache on delete\n\n## Files\n- `src/components/DeleteJobModal.tsx`\n- `src-tauri/src/commands/jobs.rs`\n- `src-tauri/src/services/cache_service.rs`",
+      "branch": "feature/ARCH-08-delete-flow"
+    },
+    {
+      "id": "ARCH-09",
+      "title": "Store file index on backup drive",
+      "description": "## Overview\nMove the SQLite file index to the backup destination so it travels with the data.\n\n## Location\n```\n/Volumes/Backup/\n  └── .amber-meta/\n      ├── manifest.json\n      └── index.db      // File index for all snapshots\n```\n\n## Tasks\n- [ ] Create `.amber-meta` directory on first backup\n- [ ] Write index.db to destination after indexing\n- [ ] Read index.db from destination when browsing\n- [ ] Fall back to local cache if destination offline\n\n## Dependencies\n- ARCH-01, ARCH-04, ARCH-06\n\n## Files\n- `src-tauri/src/services/index_service.rs`",
+      "branch": "feature/ARCH-09-index-on-drive"
+    },
+    {
+      "id": "ARCH-10",
+      "title": "Add orphan backup detection",
+      "description": "## Overview\nDetect backup folders on a drive that have no matching job in jobs.json.\n\n## Flow\n```\nDrive mounted\n  → Scan for .amber-meta folders\n  → Check each against known jobs\n  → If no match: \"Orphan backup found\"\n  → Offer to import or ignore\n```\n\n## Tasks\n- [ ] Create `scan_for_backups` command\n- [ ] Compare against jobs.json\n- [ ] Create OrphanBackupModal component\n- [ ] Allow import (create job from manifest)\n- [ ] Allow ignore (add to ignore list)\n\n## Files\n- `src-tauri/src/commands/filesystem.rs`\n- `src/components/OrphanBackupModal.tsx` (new)\n- `src/App.tsx`",
+      "branch": "feature/ARCH-10-orphan-detection"
+    },
+    {
+      "id": "ARCH-11",
+      "title": "Migration script for existing data",
+      "description": "## Overview\nMigrate existing jobs.json with embedded snapshots to the new architecture.\n\n## Migration steps\n1. Read existing jobs.json\n2. For each job with snapshots:\n   - If destPath mounted: write manifest.json\n   - Cache snapshots locally\n   - Strip snapshots from job\n3. Write updated jobs.json\n4. Show migration report\n\n## Tasks\n- [ ] Create migration detection (check version)\n- [ ] Implement migration logic\n- [ ] Add rollback capability\n- [ ] Show progress UI during migration\n- [ ] Bump jobs.json version\n\n## Files\n- `src-tauri/src/services/migration_service.rs` (new)\n- `src-tauri/src/commands/migration.rs` (new)",
+      "branch": "feature/ARCH-11-migration"
+    }
+  ]
+}
