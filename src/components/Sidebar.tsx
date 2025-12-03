@@ -4,6 +4,7 @@ import { Icons } from './IconComponents';
 type View =
   | 'DASHBOARD'
   | 'TIMELINE'
+  | 'TIME_EXPLORER'
   | 'JOB_EDITOR'
   | 'DETAIL'
   | 'HISTORY'
@@ -57,6 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
         icon={<Icons.History size={18} />}
         active={activeView === 'TIMELINE'}
         onClick={() => onNavigate('TIMELINE')}
+      />
+      <SidebarButton
+        label="Time Explorer"
+        icon={<Icons.Clock size={18} />}
+        active={activeView === 'TIME_EXPLORER'}
+        onClick={() => onNavigate('TIME_EXPLORER')}
       />
       <SidebarButton
         label="History"

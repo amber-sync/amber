@@ -5,6 +5,7 @@ import { RestoreWizard } from './views/RestoreWizard';
 import { HistoryView } from './views/HistoryView';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { JobDetail } from './views/JobDetail';
+import { TimeExplorer } from './views/TimeExplorer';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
@@ -412,7 +413,14 @@ function AppContent() {
     setRestoreJobId(null);
   };
 
-  const isTopLevel = ['DASHBOARD', 'TIMELINE', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(view);
+  const isTopLevel = [
+    'DASHBOARD',
+    'TIMELINE',
+    'TIME_EXPLORER',
+    'HISTORY',
+    'APP_SETTINGS',
+    'HELP',
+  ].includes(view);
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
   return (
@@ -456,6 +464,8 @@ function AppContent() {
         )}
 
         {view === 'TIMELINE' && <TimelineView jobs={jobs} diskStats={destinationStats} />}
+
+        {view === 'TIME_EXPLORER' && <TimeExplorer />}
 
         {view === 'HISTORY' && <HistoryView jobs={jobs} />}
 

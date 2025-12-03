@@ -10,6 +10,7 @@ interface AppContextType {
   view:
     | 'DASHBOARD'
     | 'TIMELINE'
+    | 'TIME_EXPLORER'
     | 'JOB_EDITOR'
     | 'DETAIL'
     | 'HISTORY'
@@ -27,6 +28,7 @@ interface AppContextType {
     view:
       | 'DASHBOARD'
       | 'TIMELINE'
+      | 'TIME_EXPLORER'
       | 'JOB_EDITOR'
       | 'DETAIL'
       | 'HISTORY'
@@ -84,6 +86,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [view, setView] = useState<
     | 'DASHBOARD'
     | 'TIMELINE'
+    | 'TIME_EXPLORER'
     | 'JOB_EDITOR'
     | 'DETAIL'
     | 'HISTORY'
