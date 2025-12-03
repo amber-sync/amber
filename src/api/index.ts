@@ -25,6 +25,7 @@ import type {
   ManifestSnapshot,
   ManifestSnapshotStatus,
   MountStatus,
+  JobWithStatus,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -38,6 +39,15 @@ class AmberAPI {
 
   async getJobs(): Promise<SyncJob[]> {
     return invoke('get_jobs');
+  }
+
+  /**
+   * Get jobs with mount status and snapshots from manifests
+   * This is the preferred endpoint for the UI - includes live mount detection
+   * and loads snapshots from manifest.json when destination is mounted
+   */
+  async getJobsWithStatus(): Promise<JobWithStatus[]> {
+    return invoke('get_jobs_with_status');
   }
 
   async saveJob(job: SyncJob): Promise<void> {
