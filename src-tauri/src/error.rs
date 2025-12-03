@@ -72,6 +72,9 @@ pub enum AmberError {
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
 
+    #[error("Not found: {0}")]
+    NotFound(String),
+
     #[error("Operation cancelled")]
     Cancelled,
 }
