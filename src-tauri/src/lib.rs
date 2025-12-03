@@ -67,6 +67,8 @@ pub fn run() {
         commands::filesystem::get_volume_info,
         commands::filesystem::list_volumes,
         commands::filesystem::search_volume,
+        commands::filesystem::is_path_mounted,
+        commands::filesystem::check_destinations,
         // Preferences commands
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,
@@ -123,6 +125,8 @@ pub fn run() {
         commands::filesystem::get_volume_info,
         commands::filesystem::list_volumes,
         commands::filesystem::search_volume,
+        commands::filesystem::is_path_mounted,
+        commands::filesystem::check_destinations,
         // Preferences commands
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,

@@ -294,3 +294,73 @@ fn fuzzy_match(pattern: &str, text: &str) -> bool {
 
     false
 }
+
+// ===== TIM-109: Mount detection =====
+
+/// Mount status for a destination path
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MountStatus {
+    pub path: String,
+    pub mounted: bool,
+    pub is_external: bool,
+    pub volume_name: Option<String>,
+}
+
+/// Check if a single path is accessible (mounted/exists)
+#[tauri::command]
+pub async fn is_path_mounted(path: String) -> Result<MountStatus> {
+    let path_obj = std::path::Path::new(&path);
+
+    // Check if path exists and is accessible
+    let mounted = path_obj.exists() && path_obj.is_dir();
+
+    // Determine if path is on external volume
+    let is_external = path.starts_with("/Volumes/")
+        && !path.starts_with("/Volumes/Macintosh HD");
+
+    // Extract volume name if external
+    let volume_name = if is_external {
+        path.strip_prefix("/Volumes/")
+            .and_then(|rest| rest.split('/').next())
+            .map(String::from)
+    } else {
+        None
+    };
+
+    Ok(MountStatus {
+        path,
+        mounted,
+        is_external,
+        volume_name,
+    })
+}
+
+/// Check mount status for multiple paths (batch operation)
+#[tauri::command]
+pub async fn check_destinations(paths: Vec<String>) -> Result<Vec<MountStatus>> {
+    let mut results = Vec::with_capacity(paths.len());
+
+    for path in paths {
+        let path_obj = std::path::Path::new(&path);
+        let mounted = path_obj.exists() && path_obj.is_dir();
+        let is_external = path.starts_with("/Volumes/")
+            && !path.starts_with("/Volumes/Macintosh HD");
+        let volume_name = if is_external {
+            path.strip_prefix("/Volumes/")
+                .and_then(|rest| rest.split('/').next())
+                .map(String::from)
+        } else {
+            None
+        };
+
+        results.push(MountStatus {
+            path,
+            mounted,
+            is_external,
+            volume_name,
+        });
+    }
+
+    Ok(results)
+}
