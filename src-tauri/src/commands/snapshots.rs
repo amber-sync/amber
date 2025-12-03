@@ -193,3 +193,49 @@ pub async fn restore_snapshot(
 
     Ok(())
 }
+
+// ===== TIM-112: Destination-based index storage =====
+
+use crate::services::manifest_service;
+
+/// Get the path to the index database on a destination drive
+#[tauri::command]
+pub async fn get_destination_index_path(dest_path: String) -> Result<String> {
+    let path = manifest_service::get_index_path(&dest_path);
+    Ok(path.to_string_lossy().to_string())
+}
+
+/// Check if a destination has an index database
+#[tauri::command]
+pub async fn destination_has_index(dest_path: String) -> Result<bool> {
+    let path = manifest_service::get_index_path(&dest_path);
+    Ok(path.exists())
+}
+
+/// Export the local index database to the destination drive
+/// This copies the index.db to {dest_path}/.amber-meta/index.db
+#[tauri::command]
+pub async fn export_index_to_destination(
+    state: State<'_, AppState>,
+    dest_path: String,
+) -> Result<()> {
+    use tokio::fs;
+
+    // Get source (local) index path
+    let local_index = state.index_service.get_db_path();
+
+    // Get destination index path
+    let dest_index = manifest_service::get_index_path(&dest_path);
+
+    // Ensure .amber-meta directory exists
+    let meta_dir = manifest_service::get_meta_dir(&dest_path);
+    if !meta_dir.exists() {
+        fs::create_dir_all(&meta_dir).await?;
+    }
+
+    // Copy the database file
+    fs::copy(&local_index, &dest_index).await?;
+
+    log::info!("Exported index to {:?}", dest_index);
+    Ok(())
+}

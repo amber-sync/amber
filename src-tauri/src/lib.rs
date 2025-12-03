@@ -59,6 +59,9 @@ pub fn run() {
         commands::snapshots::delete_job_index,
         commands::snapshots::restore_files,
         commands::snapshots::restore_snapshot,
+        commands::snapshots::get_destination_index_path,
+        commands::snapshots::destination_has_index,
+        commands::snapshots::export_index_to_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
@@ -122,6 +125,9 @@ pub fn run() {
         commands::snapshots::delete_job_index,
         commands::snapshots::restore_files,
         commands::snapshots::restore_snapshot,
+        commands::snapshots::get_destination_index_path,
+        commands::snapshots::destination_has_index,
+        commands::snapshots::export_index_to_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,

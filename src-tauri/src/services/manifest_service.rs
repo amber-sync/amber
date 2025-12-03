@@ -7,6 +7,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub const AMBER_META_DIR: &str = ".amber-meta";
 /// Manifest filename
 pub const MANIFEST_FILENAME: &str = "manifest.json";
+/// Index database filename (TIM-112)
+pub const INDEX_FILENAME: &str = "index.db";
 
 /// Get the path to the .amber-meta directory for a destination
 pub fn get_meta_dir(dest_path: &str) -> PathBuf {
@@ -16,6 +18,11 @@ pub fn get_meta_dir(dest_path: &str) -> PathBuf {
 /// Get the full path to the manifest file
 pub fn get_manifest_path(dest_path: &str) -> PathBuf {
     get_meta_dir(dest_path).join(MANIFEST_FILENAME)
+}
+
+/// Get the full path to the index database on the destination
+pub fn get_index_path(dest_path: &str) -> PathBuf {
+    get_meta_dir(dest_path).join(INDEX_FILENAME)
 }
 
 /// Check if a manifest exists at the destination
