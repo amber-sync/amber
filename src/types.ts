@@ -298,3 +298,29 @@ export interface MountStatus {
   isExternal: boolean;
   volumeName?: string;
 }
+
+// TIM-110: Snapshot info from manifest (compatible with Snapshot type)
+export interface SnapshotInfo {
+  id: string;
+  timestamp: number;
+  sizeBytes: number;
+  fileCount: number;
+  changesCount: number;
+  status: 'Complete' | 'Partial' | 'Failed';
+  duration?: number;
+  path?: string;
+}
+
+// TIM-110: Job with mount status and manifest snapshots
+export interface JobWithStatus extends Omit<SyncJob, 'snapshots'> {
+  /** Whether the destination is currently mounted/accessible */
+  mounted: boolean;
+  /** Whether the destination is an external volume */
+  isExternal: boolean;
+  /** Volume name if external */
+  volumeName?: string;
+  /** Snapshots loaded from manifest (when mounted) - always present */
+  snapshots: SnapshotInfo[];
+  /** Source of snapshot data: "manifest" or "cache" or "none" */
+  snapshotSource: string;
+}

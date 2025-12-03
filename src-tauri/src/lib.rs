@@ -33,6 +33,7 @@ pub fn run() {
     let builder = builder.invoke_handler(tauri::generate_handler![
         // Job commands
         commands::jobs::get_jobs,
+        commands::jobs::get_jobs_with_status,
         commands::jobs::save_job,
         commands::jobs::delete_job,
         // Rsync commands
@@ -91,6 +92,7 @@ pub fn run() {
     let builder = builder.invoke_handler(tauri::generate_handler![
         // Job commands
         commands::jobs::get_jobs,
+        commands::jobs::get_jobs_with_status,
         commands::jobs::save_job,
         commands::jobs::delete_job,
         // Rsync commands
