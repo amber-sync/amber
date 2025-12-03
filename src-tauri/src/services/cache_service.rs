@@ -137,6 +137,8 @@ pub async fn delete_snapshot_cache(job_id: &str) -> Result<(), CacheError> {
 }
 
 /// Clear all snapshot caches
+/// Note: Currently unused but kept for future "clear cache" feature
+#[allow(dead_code)]
 pub async fn clear_all_caches() -> Result<(), CacheError> {
     let cache_dir = get_snapshots_cache_dir();
 

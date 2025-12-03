@@ -4,6 +4,7 @@ pub mod error;
 pub mod services;
 pub mod state;
 pub mod types;
+pub mod utils;
 
 pub use state::AppState;
 use tauri::Manager;

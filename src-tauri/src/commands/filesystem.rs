@@ -315,24 +315,14 @@ pub async fn is_path_mounted(path: String) -> Result<MountStatus> {
     // Check if path exists and is accessible
     let mounted = path_obj.exists() && path_obj.is_dir();
 
-    // Determine if path is on external volume
-    let is_external = path.starts_with("/Volumes/")
-        && !path.starts_with("/Volumes/Macintosh HD");
-
-    // Extract volume name if external
-    let volume_name = if is_external {
-        path.strip_prefix("/Volumes/")
-            .and_then(|rest| rest.split('/').next())
-            .map(String::from)
-    } else {
-        None
-    };
+    // Get volume info using shared helper
+    let vol_info = crate::utils::get_volume_info(&path);
 
     Ok(MountStatus {
         path,
         mounted,
-        is_external,
-        volume_name,
+        is_external: vol_info.is_external,
+        volume_name: vol_info.volume_name,
     })
 }
 
@@ -344,21 +334,13 @@ pub async fn check_destinations(paths: Vec<String>) -> Result<Vec<MountStatus>> 
     for path in paths {
         let path_obj = std::path::Path::new(&path);
         let mounted = path_obj.exists() && path_obj.is_dir();
-        let is_external = path.starts_with("/Volumes/")
-            && !path.starts_with("/Volumes/Macintosh HD");
-        let volume_name = if is_external {
-            path.strip_prefix("/Volumes/")
-                .and_then(|rest| rest.split('/').next())
-                .map(String::from)
-        } else {
-            None
-        };
+        let vol_info = crate::utils::get_volume_info(&path);
 
         results.push(MountStatus {
             path,
             mounted,
-            is_external,
-            volume_name,
+            is_external: vol_info.is_external,
+            volume_name: vol_info.volume_name,
         });
     }
 
