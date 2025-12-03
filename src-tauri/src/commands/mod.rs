@@ -6,6 +6,7 @@ pub mod snapshots;
 pub mod filesystem;
 pub mod preferences;
 pub mod manifest;
+pub mod migration;
 
 // Dev-only commands
 #[cfg(debug_assertions)]

@@ -77,6 +77,9 @@ pub enum AmberError {
 
     #[error("Operation cancelled")]
     Cancelled,
+
+    #[error("Migration error: {0}")]
+    Migration(String),
 }
 
 impl serde::Serialize for AmberError {

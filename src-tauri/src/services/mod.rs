@@ -10,6 +10,7 @@ pub mod keychain_service;
 pub mod store;
 pub mod manifest_service;
 pub mod cache_service;
+pub mod migration_service;
 
 // Dev-only modules
 #[cfg(debug_assertions)]
