@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::services::cache_service;
 use crate::services::manifest_service;
 use crate::services::store::Store;
 use crate::types::job::SyncJob;
@@ -59,10 +60,12 @@ pub struct JobWithStatus {
     pub is_external: bool,
     /// Volume name if external
     pub volume_name: Option<String>,
-    /// Snapshots loaded from manifest (when mounted)
+    /// Snapshots loaded from manifest or cache
     pub snapshots: Vec<SnapshotInfo>,
     /// Source of snapshot data: "manifest" or "cache" or "none"
     pub snapshot_source: String,
+    /// When the cache was last updated (unix ms), only set when source is "cache"
+    pub cached_at: Option<i64>,
 }
 
 #[tauri::command]
@@ -97,23 +100,40 @@ pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
             None
         };
 
-        // Load snapshots from manifest if mounted
-        let (snapshots, snapshot_source) = if mounted {
+        // Load snapshots from manifest if mounted, otherwise from cache
+        let (snapshots, snapshot_source, cached_at) = if mounted {
             match manifest_service::read_manifest(&job.dest_path).await {
                 Ok(Some(manifest)) => {
+                    // Update the local cache with fresh data
+                    let manifest_snapshots = manifest.snapshots.clone();
+                    if let Err(e) = cache_service::write_snapshot_cache(&job.id, manifest_snapshots).await {
+                        log::warn!("Failed to update snapshot cache for job {}: {}", job.id, e);
+                    }
+
                     let snaps: Vec<SnapshotInfo> = manifest
                         .snapshots
                         .into_iter()
                         .map(SnapshotInfo::from)
                         .collect();
-                    (snaps, "manifest".to_string())
+                    (snaps, "manifest".to_string(), None)
                 }
-                Ok(None) => (Vec::new(), "none".to_string()),
-                Err(_) => (Vec::new(), "none".to_string()),
+                Ok(None) => (Vec::new(), "none".to_string(), None),
+                Err(_) => (Vec::new(), "none".to_string(), None),
             }
         } else {
-            // TODO: TIM-111 - Load from local cache when not mounted
-            (Vec::new(), "none".to_string())
+            // Not mounted - try to load from cache
+            match cache_service::read_snapshot_cache(&job.id).await {
+                Ok(Some(cache)) => {
+                    let snaps: Vec<SnapshotInfo> = cache
+                        .snapshots
+                        .into_iter()
+                        .map(SnapshotInfo::from)
+                        .collect();
+                    (snaps, "cache".to_string(), Some(cache.cached_at))
+                }
+                Ok(None) => (Vec::new(), "none".to_string(), None),
+                Err(_) => (Vec::new(), "none".to_string(), None),
+            }
         };
 
         results.push(JobWithStatus {
@@ -123,6 +143,7 @@ pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
             volume_name,
             snapshots,
             snapshot_source,
+            cached_at,
         });
     }
 
@@ -138,5 +159,11 @@ pub async fn save_job(job: SyncJob) -> Result<()> {
 #[tauri::command]
 pub async fn delete_job(job_id: String) -> Result<()> {
     let store = get_store();
+
+    // Clear the snapshot cache for this job
+    if let Err(e) = cache_service::delete_snapshot_cache(&job_id).await {
+        log::warn!("Failed to delete snapshot cache for job {}: {}", job_id, e);
+    }
+
     store.delete_job(&job_id)
 }
