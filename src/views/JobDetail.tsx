@@ -86,17 +86,17 @@ export const JobDetail: React.FC<JobDetailProps> = ({
   const latestSnapshot = snapshots[snapshots.length - 1];
   const [analytics, setAnalytics] = useState<JobAnalyticsData | null>(null);
 
-  // Fetch analytics directly from SQLite index (fast!)
+  // Fetch analytics from destination-based SQLite index (TIM-127)
   useEffect(() => {
-    if (!latestSnapshot) {
+    if (!latestSnapshot || !job.destPath) {
       setAnalytics(null);
       return;
     }
 
-    // Parallel fetch of file type stats and largest files from SQLite
+    // Parallel fetch of file type stats and largest files from destination index
     Promise.all([
-      api.getFileTypeStats(job.id, latestSnapshot.timestamp, 5),
-      api.getLargestFiles(job.id, latestSnapshot.timestamp, 5),
+      api.getFileTypeStatsOnDestination(job.destPath, job.id, latestSnapshot.timestamp, 5),
+      api.getLargestFilesOnDestination(job.destPath, job.id, latestSnapshot.timestamp, 5),
     ])
       .then(([fileTypeStats, largestFiles]) => {
         setAnalytics({
@@ -108,10 +108,10 @@ export const JobDetail: React.FC<JobDetailProps> = ({
         });
       })
       .catch(err => {
-        logger.error('Failed to fetch analytics from index', err);
+        logger.error('Failed to fetch analytics from destination index', err);
         setAnalytics(null);
       });
-  }, [latestSnapshot, job.id]);
+  }, [latestSnapshot, job.id, job.destPath]);
 
   // Group snapshots based on grouping preference
   const groupedSnapshots = useMemo(
@@ -176,6 +176,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({
               initialPath={activeBrowserPath}
               jobId={job.id}
               snapshotTimestamp={activeBrowserTimestamp ?? undefined}
+              destPath={job.destPath}
             />
           </div>
         ) : (

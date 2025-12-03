@@ -29,6 +29,9 @@ pub struct ManifestSnapshot {
     pub status: ManifestSnapshotStatus,
     /// Duration of backup in milliseconds (if completed)
     pub duration_ms: Option<u64>,
+    /// Number of files changed since previous snapshot (optional for backwards compat)
+    #[serde(default)]
+    pub changes_count: Option<u64>,
 }
 
 /// The manifest file that lives on the backup destination drive
@@ -134,6 +137,29 @@ impl ManifestSnapshot {
             total_size,
             status,
             duration_ms,
+            changes_count: None,
+        }
+    }
+
+    /// Create a new snapshot entry with changes count
+    pub fn new_with_changes(
+        folder_name: String,
+        file_count: u64,
+        total_size: u64,
+        status: ManifestSnapshotStatus,
+        duration_ms: Option<u64>,
+        changes_count: Option<u64>,
+    ) -> Self {
+        let timestamp = chrono::Utc::now().timestamp_millis();
+        Self {
+            id: timestamp.to_string(),
+            timestamp,
+            folder_name,
+            file_count,
+            total_size,
+            status,
+            duration_ms,
+            changes_count,
         }
     }
 
@@ -153,6 +179,7 @@ impl ManifestSnapshot {
             total_size,
             status,
             duration_ms: None,
+            changes_count: None,
         }
     }
 }

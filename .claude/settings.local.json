@@ -54,7 +54,8 @@
       "Bash(__NEW_LINE__ echo -e \"\\n=== 2. Cache timestamp (app data) ===\")",
       "Bash(__NEW_LINE__ echo -e \"\\n=== 3. SQLite index timestamp (app data) ===\")",
       "Bash(__NEW_LINE__ echo -e \"\\n=== 4. SQLite index timestamp (mock-data) ===\")",
-      "Bash(__NEW_LINE__ echo -e \"\\n=== Rust DirEntry (filesystem) ===\")"
+      "Bash(__NEW_LINE__ echo -e \"\\n=== Rust DirEntry (filesystem) ===\")",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []

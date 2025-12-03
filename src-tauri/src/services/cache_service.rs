@@ -66,12 +66,17 @@ pub async fn write_snapshot_cache(
 ) -> Result<(), CacheError> {
     let cache_dir = get_snapshots_cache_dir();
 
-    // Create cache directory if it doesn't exist
-    if !cache_dir.exists() {
-        fs::create_dir_all(&cache_dir).await.map_err(|e| {
-            CacheError::IoError(format!("Failed to create cache directory: {}", e))
-        })?;
-    }
+    log::debug!(
+        "write_snapshot_cache: job_id={}, cache_dir={:?}, exists={}",
+        job_id,
+        cache_dir,
+        cache_dir.exists()
+    );
+
+    // Always try to create cache directory (create_dir_all is idempotent)
+    fs::create_dir_all(&cache_dir).await.map_err(|e| {
+        CacheError::IoError(format!("Failed to create cache directory: {}", e))
+    })?;
 
     let cache = SnapshotCache::new(job_id.to_string(), snapshots);
     let cache_path = get_job_cache_path(job_id);
@@ -81,10 +86,23 @@ pub async fn write_snapshot_cache(
         CacheError::SerializeError(format!("Failed to serialize cache: {}", e))
     })?;
 
-    // Write atomically
-    let temp_path = cache_path.with_extension("json.tmp");
+    // Write atomically using a unique temp file name to avoid race conditions
+    // when multiple concurrent writes happen for the same job
+    let unique_id = std::process::id();
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let temp_path = cache_dir.join(format!("{}.json.{}.{}.tmp", job_id, unique_id, timestamp));
+    log::debug!(
+        "write_snapshot_cache: creating temp file at {:?}",
+        temp_path
+    );
     let mut file = fs::File::create(&temp_path).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to create temp cache file: {}", e))
+        CacheError::IoError(format!(
+            "Failed to create temp cache file at {:?}: {}",
+            temp_path, e
+        ))
     })?;
 
     file.write_all(contents.as_bytes()).await.map_err(|e| {
@@ -95,8 +113,16 @@ pub async fn write_snapshot_cache(
         CacheError::IoError(format!("Failed to sync cache: {}", e))
     })?;
 
+    log::debug!(
+        "write_snapshot_cache: renaming {:?} to {:?}",
+        temp_path,
+        cache_path
+    );
     fs::rename(&temp_path, &cache_path).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to rename cache file: {}", e))
+        CacheError::IoError(format!(
+            "Failed to rename cache file from {:?} to {:?}: {}",
+            temp_path, cache_path, e
+        ))
     })?;
 
     Ok(())
@@ -179,22 +205,35 @@ mod tests {
     use super::*;
     use crate::types::manifest::ManifestSnapshotStatus;
 
+    /// Initialize data_dir for tests using a temp directory
+    fn setup_test_data_dir() {
+        use std::sync::Once;
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            let temp_dir = std::env::temp_dir().join("amber-test-cache");
+            let _ = std::fs::create_dir_all(&temp_dir);
+            data_dir::init(temp_dir);
+        });
+    }
+
     #[tokio::test]
     async fn test_write_and_read_cache() {
+        setup_test_data_dir();
+
         let job_id = "test-job-cache-001";
 
-        let snapshots = vec![
-            ManifestSnapshot::new(
-                "2024-01-01-120000".to_string(),
-                100,
-                1024 * 1024,
-                ManifestSnapshotStatus::Complete,
-                Some(5000),
-            ),
-        ];
+        let snapshots = vec![ManifestSnapshot::new(
+            "2024-01-01-120000".to_string(),
+            100,
+            1024 * 1024,
+            ManifestSnapshotStatus::Complete,
+            Some(5000),
+        )];
 
         // Write cache
-        write_snapshot_cache(job_id, snapshots.clone()).await.unwrap();
+        write_snapshot_cache(job_id, snapshots.clone())
+            .await
+            .unwrap();
 
         // Read cache
         let cache = read_snapshot_cache(job_id).await.unwrap().unwrap();
@@ -208,12 +247,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_cache_not_found() {
+        setup_test_data_dir();
+
         let result = read_snapshot_cache("nonexistent-job").await.unwrap();
         assert!(result.is_none());
     }
 
     #[tokio::test]
     async fn test_delete_cache() {
+        setup_test_data_dir();
+
         let job_id = "test-job-delete-001";
 
         let snapshots = vec![];

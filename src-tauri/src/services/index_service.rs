@@ -102,10 +102,22 @@ pub struct LargestFile {
 }
 
 impl IndexService {
-    /// Create or open the index database
+    /// Create or open the index database at the default app data location
     pub fn new(app_data_dir: &Path) -> Result<Self> {
         let db_path = app_data_dir.join("index.db");
+        Self::open_at_path(db_path)
+    }
 
+    /// Open an index database at a destination drive (TIM-127)
+    /// Path: <dest_path>/.amber-meta/index.db
+    pub fn for_destination(dest_path: &str) -> Result<Self> {
+        use crate::services::manifest_service;
+        let db_path = manifest_service::get_index_path(dest_path);
+        Self::open_at_path(db_path)
+    }
+
+    /// Internal: open database at a specific path
+    fn open_at_path(db_path: PathBuf) -> Result<Self> {
         // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {

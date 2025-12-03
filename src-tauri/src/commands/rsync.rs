@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::services::index_service::IndexService;
 use crate::services::manifest_service;
 use crate::services::rsync_service::RsyncService;
 use crate::types::job::{SyncJob, SyncMode};
@@ -77,8 +78,38 @@ fn calculate_snapshot_stats(path: &std::path::Path) -> (u64, u64) {
 
 #[tauri::command]
 pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
+    log::info!(
+        "[run_rsync] Command invoked for job '{}' (id: {})",
+        job.name,
+        job.id
+    );
+    log::info!(
+        "[run_rsync] source: '{}', dest: '{}', mode: {:?}",
+        job.source_path,
+        job.dest_path,
+        job.mode
+    );
+
+    // Emit initial log message so UI shows something immediately
+    let _ = app.emit(
+        "rsync-log",
+        RsyncLogPayload {
+            job_id: job.id.clone(),
+            message: format!("Starting rsync: {} → {}", job.source_path, job.dest_path),
+        },
+    );
+
     let service = get_rsync_service();
     let mut child = service.spawn_rsync(&job)?;
+
+    // Emit the actual command being run
+    let _ = app.emit(
+        "rsync-log",
+        RsyncLogPayload {
+            job_id: job.id.clone(),
+            message: format!("rsync process started with PID: {}", child.id()),
+        },
+    );
 
     // Get backup info before waiting
     let backup_info = service.get_backup_info(&job.id);
@@ -233,6 +264,25 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                     &info.folder_name,
                 ) {
                     log::warn!("Failed to update latest symlink: {}", e);
+                }
+
+                // TIM-127: Index snapshot on destination drive
+                // Store index at <dest>/.amber-meta/index.db for portability
+                let snapshot_path_str = info.snapshot_path.to_string_lossy().to_string();
+                let timestamp = chrono::Utc::now().timestamp_millis();
+
+                log::info!("Indexing snapshot on destination: {}", dest_path);
+                match IndexService::for_destination(&dest_path) {
+                    Ok(index) => {
+                        if let Err(e) = index.index_snapshot(&job.id, timestamp, &snapshot_path_str) {
+                            log::warn!("Failed to index snapshot on destination: {}", e);
+                        } else {
+                            log::info!("Snapshot indexed successfully on destination");
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to open destination index: {}", e);
+                    }
                 }
             }
         }
