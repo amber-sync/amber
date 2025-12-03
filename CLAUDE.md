@@ -38,6 +38,21 @@ npm run test:rust      # Run Rust tests
 npm run lint           # Run ESLint
 npm run format         # Run Prettier
 npm run typecheck      # TypeScript type checking
+npm run bench:rust     # Run Rust benchmarks
+npm run test:coverage  # Run tests with coverage
+```
+
+### Running Single Tests
+
+```bash
+# Frontend (Vitest)
+npm test -- src/__tests__/specific.test.ts   # Run single test file
+npm test -- --watch                          # Watch mode
+npm test -- -t "test name pattern"           # Run tests matching pattern
+
+# Backend (Cargo)
+cd src-tauri && cargo test specific_test     # Run single Rust test
+cd src-tauri && cargo test -- --nocapture    # Show println! output
 ```
 
 ## Architecture
@@ -54,15 +69,34 @@ npm run typecheck      # TypeScript type checking
 - **Commands** (`src-tauri/src/commands/`):
   - `jobs.rs`: Job CRUD operations
   - `rsync.rs`: Rsync execution and control
+  - `rclone.rs`: Cloud backup via rclone
   - `snapshots.rs`: Snapshot listing and restoration
   - `filesystem.rs`: File operations, directory browsing
   - `preferences.rs`: App settings
+  - `manifest.rs`: Backup manifest operations
 - **Services** (`src-tauri/src/services/`):
   - `rsync_service.rs`: Rsync command building and process management
   - `snapshot_service.rs`: Snapshot discovery and metadata
+  - `index_service.rs`: SQLite-based file indexing with FTS5 search
   - `file_service.rs`: File I/O, base64 encoding
   - `store.rs`: JSON-based persistence
 - **Types** (`src-tauri/src/types/`): Shared data structures
+
+### Backend State Management
+
+The backend uses Tauri's managed state for singleton services (`src-tauri/src/state.rs`):
+
+```rust
+pub struct AppState {
+    pub file_service: Arc<FileService>,
+    pub index_service: Arc<IndexService>,    // SQLite snapshot indexes
+    pub snapshot_service: Arc<SnapshotService>,
+    pub store: Arc<Store>,                   // JSON persistence
+    pub data_dir: PathBuf,
+}
+```
+
+Services are initialized once at app startup and shared across all commands via `tauri::State<AppState>`.
 
 ## Key Patterns
 
@@ -71,6 +105,10 @@ npm run typecheck      # TypeScript type checking
 - **ARCHIVE**: Copy only, no deletes
 - **TIME_MACHINE**: Incremental with hard links (`--link-dest`)
 
+### Destination Types
+- **LOCAL**: Local filesystem or mounted volumes (uses rsync)
+- **CLOUD**: Cloud storage via rclone (S3, Google Drive, Dropbox, etc.)
+
 ### IPC Communication
 Frontend uses `@tauri-apps/api/core` to invoke Rust commands:
 ```typescript
@@ -78,9 +116,54 @@ import { invoke } from '@tauri-apps/api/core';
 const jobs = await invoke('get_jobs');
 ```
 
+### Rsync Event System
+Real-time rsync output is streamed via Tauri events:
+```typescript
+import { api } from '../api';
+
+// Subscribe to events
+api.onRsyncLog((data) => console.log(data.message));      // Raw output lines
+api.onRsyncProgress((data) => console.log(data.percentage)); // Progress %
+api.onRsyncComplete((data) => console.log(data.success));    // Completion
+```
+
+Events emitted from Rust: `rsync-log`, `rsync-progress`, `rsync-complete`
+
 ### Type Definitions
 - Frontend types: `src/types.ts`
 - Backend types: `src-tauri/src/types/`
+
+### Centralized File Type Constants
+
+File types (`'dir'` / `'file'`) are defined centrally to avoid mismatches between frontend and backend:
+
+**Rust** (`src-tauri/src/types/snapshot.rs`):
+```rust
+pub mod file_type {
+    pub const DIR: &str = "dir";
+    pub const FILE: &str = "file";
+
+    pub fn is_dir(s: &str) -> bool {
+        s == DIR
+    }
+}
+```
+
+**TypeScript** (`src/types.ts`):
+```typescript
+export const FILE_TYPE = {
+  DIR: 'dir',
+  FILE: 'file',
+} as const;
+
+export function isDirectory(type: string): boolean {
+  return type === FILE_TYPE.DIR;
+}
+```
+
+**Usage**: Always use these constants instead of string literals. To check if a node is a directory:
+- Rust: `file_type::is_dir(&node.node_type)` or `file_type::DIR.to_string()`
+- TypeScript: `isDirectory(item.type)` or `FILE_TYPE.DIR`
 
 ## Code Quality
 
@@ -88,6 +171,25 @@ const jobs = await invoke('get_jobs');
 - **Prettier**: Code formatting
 - **Husky + lint-staged**: Pre-commit hooks
 - **rustfmt**: Rust code formatting
+
+## Data Storage
+
+### Storage Locations
+- **Dev mode**: `mock-data/` in project root (auto-detected when folder exists)
+- **Production**: `~/Library/Application Support/amber/`
+
+### Manifest-Based Architecture
+Backup metadata is stored on the destination drive itself in `.amber-meta/`:
+```
+/Volumes/BackupDrive/MyBackup/
+├── .amber-meta/
+│   ├── manifest.json    # Backup metadata, snapshots list
+│   └── index.db         # SQLite file index (optional)
+├── 2024-01-15_120000/   # Snapshot folders
+└── 2024-01-16_120000/
+```
+
+This allows backups to be self-describing and portable between machines.
 
 ## Testing
 
