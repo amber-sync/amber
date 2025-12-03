@@ -1,10 +1,17 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
 import { SyncJob } from '../../types';
+import { ConnectionStatus, OfflineBadge } from '../ConnectionStatus';
 
 interface JobDetailHeaderProps {
   job: SyncJob;
   isRunning: boolean;
+  /** Whether the destination is mounted/accessible */
+  mounted?: boolean;
+  /** Whether this is an external volume */
+  isExternal?: boolean;
+  /** Volume name if external */
+  volumeName?: string;
   onBack: () => void;
   onRun: (jobId: string) => void;
   onStop: (jobId: string) => void;
@@ -17,6 +24,9 @@ interface JobDetailHeaderProps {
 export const JobDetailHeader: React.FC<JobDetailHeaderProps> = ({
   job,
   isRunning,
+  mounted = true,
+  isExternal = false,
+  volumeName,
   onBack,
   onRun,
   onStop,
@@ -36,7 +46,19 @@ export const JobDetailHeader: React.FC<JobDetailHeaderProps> = ({
         <Icons.ArrowRight className="rotate-180 text-text-secondary" />
       </button>
       <div>
-        <h2 className="text-2xl font-bold">{titleOverride || job.name}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">{titleOverride || job.name}</h2>
+          {!titleOverride && (
+            <ConnectionStatus
+              mounted={mounted}
+              isExternal={isExternal}
+              volumeName={volumeName}
+              isRunning={isRunning}
+              showLabel
+            />
+          )}
+          {!titleOverride && !mounted && <OfflineBadge />}
+        </div>
         {!titleOverride && (
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Icons.Server size={14} /> {job.sourcePath}
@@ -77,7 +99,13 @@ export const JobDetailHeader: React.FC<JobDetailHeaderProps> = ({
       ) : (
         <button
           onClick={() => onRun(job.id)}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 hover:shadow-teal-500/20 flex items-center gap-2 shadow-sm transition-all"
+          disabled={!mounted}
+          className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-all ${
+            mounted
+              ? 'text-white bg-teal-600 hover:bg-teal-700 hover:shadow-teal-500/20'
+              : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+          }`}
+          title={!mounted ? 'Destination is offline' : undefined}
         >
           <Icons.Play size={16} /> Sync Now
         </button>
