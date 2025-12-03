@@ -227,6 +227,31 @@ export function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
+// Manifest types (TIM-114: Repository-centric architecture)
+export type ManifestSnapshotStatus = 'Complete' | 'Partial' | 'Failed';
+
+export interface ManifestSnapshot {
+  id: string;
+  timestamp: number;
+  folderName: string;
+  fileCount: number;
+  totalSize: number;
+  status: ManifestSnapshotStatus;
+  durationMs?: number;
+}
+
+export interface BackupManifest {
+  version: number;
+  machineId: string;
+  machineName?: string;
+  jobId: string;
+  jobName: string;
+  sourcePath: string;
+  createdAt: number;
+  updatedAt: number;
+  snapshots: ManifestSnapshot[];
+}
+
 // Dev tools types (only used in dev mode)
 export interface DevSeedResult {
   jobs_created: number;

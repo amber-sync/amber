@@ -71,6 +71,13 @@ pub fn run() {
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,
         commands::preferences::test_notification,
+        // Manifest commands
+        commands::manifest::get_manifest,
+        commands::manifest::get_or_create_manifest,
+        commands::manifest::manifest_exists,
+        commands::manifest::add_manifest_snapshot,
+        commands::manifest::remove_manifest_snapshot,
+        commands::manifest::get_amber_meta_path,
         // Dev commands (debug only)
         commands::dev::dev_seed_data,
         commands::dev::dev_run_benchmarks,
@@ -120,6 +127,13 @@ pub fn run() {
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,
         commands::preferences::test_notification,
+        // Manifest commands
+        commands::manifest::get_manifest,
+        commands::manifest::get_or_create_manifest,
+        commands::manifest::manifest_exists,
+        commands::manifest::add_manifest_snapshot,
+        commands::manifest::remove_manifest_snapshot,
+        commands::manifest::get_amber_meta_path,
     ]);
 
     builder
