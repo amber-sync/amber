@@ -27,7 +27,9 @@ function AppContent() {
   const { jobs, activeJobId, view, setJobs, setActiveJobId, setView, persistJob, deleteJob } =
     useApp();
 
-  const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } = useRsyncProgress();
+  // TIM-124: Pass activeJobId to filter rsync events to only the current job
+  const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } =
+    useRsyncProgress(activeJobId);
   const destinationStats = useDiskStats(jobs.map(j => j.destPath));
 
   // Restore Wizard State

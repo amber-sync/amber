@@ -6,15 +6,24 @@ const PROGRESS_UPDATE_INTERVAL_MS = 200;
 const LOG_FLUSH_INTERVAL_MS = 200;
 const MAX_LOG_ENTRIES = 500;
 
-export function useRsyncProgress() {
+/**
+ * Hook for subscribing to rsync progress events.
+ * @param jobId - Optional job ID to filter events. If provided, only events
+ *                for this job will be processed. If null/undefined, all events
+ *                are processed (backwards compatible).
+ */
+export function useRsyncProgress(jobId?: string | null) {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [progress, setProgress] = useState<RsyncProgressData | null>(null);
   const logBufferRef = useRef<LogEntry[]>([]);
 
   useEffect(() => {
-    // Log subscription
+    // Log subscription - filter by jobId if provided
     const unsubLog = api.onRsyncLog(data => {
+      // TIM-124: Filter events by jobId to prevent cross-job log pollution
+      if (jobId && data.jobId !== jobId) return;
+
       logBufferRef.current.push({
         message: data.message,
         timestamp: Date.now(),
@@ -37,8 +46,11 @@ export function useRsyncProgress() {
       }
     }, LOG_FLUSH_INTERVAL_MS);
 
-    // Progress subscription
+    // Progress subscription - filter by jobId if provided
     const unsubProgress = api.onRsyncProgress(data => {
+      // TIM-124: Filter events by jobId to prevent cross-job progress pollution
+      if (jobId && data.jobId !== jobId) return;
+
       setProgress({
         percentage: data.percentage,
         speed: data.speed,
@@ -48,8 +60,11 @@ export function useRsyncProgress() {
       });
     });
 
-    // Complete subscription
+    // Complete subscription - filter by jobId if provided
     const unsubComplete = api.onRsyncComplete(data => {
+      // TIM-124: Filter events by jobId to prevent cross-job completion pollution
+      if (jobId && data.jobId !== jobId) return;
+
       setIsRunning(false);
       setProgress(null);
 
@@ -70,7 +85,7 @@ export function useRsyncProgress() {
       unsubComplete();
       clearInterval(logInterval);
     };
-  }, []);
+  }, [jobId]);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
