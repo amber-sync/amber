@@ -8,6 +8,7 @@ import { ActionBar } from '../components/explorer/ActionBar';
 import { StatsSummary } from '../components/explorer/StatsSummary';
 import { DateNavigator } from '../components/explorer/DateNavigator';
 import { SlidePanel } from '../components/explorer/panels/SlidePanel';
+import { EditJobPanel } from '../components/explorer/panels/EditJobPanel';
 import { useJobStats } from '../hooks/useJobStats';
 
 /**
@@ -17,7 +18,8 @@ import { useJobStats } from '../hooks/useJobStats';
  * for exploring backups of a single job.
  */
 export function TimeExplorer() {
-  const { activeJobId, jobs, setView, setActiveJobId, runSync, stopSync } = useApp();
+  const { activeJobId, jobs, setView, setActiveJobId, runSync, stopSync, persistJob, deleteJob } =
+    useApp();
   const job = jobs.find((j: SyncJob) => j.id === activeJobId);
 
   // Handle job switching from the header dropdown
@@ -276,11 +278,18 @@ export function TimeExplorer() {
         title="Edit Job"
         width="lg"
       >
-        <div className="p-4">
-          <p className="text-sm text-stone-500">
-            Edit job panel content will be implemented in TIM-135
-          </p>
-        </div>
+        <EditJobPanel
+          job={job}
+          onSave={async updatedJob => {
+            await persistJob(updatedJob);
+            setActivePanel(null);
+          }}
+          onDelete={async () => {
+            await deleteJob(job.id);
+            setView('DASHBOARD');
+          }}
+          onClose={() => setActivePanel(null)}
+        />
       </SlidePanel>
 
       {/* Restore Panel - TIM-136 */}
