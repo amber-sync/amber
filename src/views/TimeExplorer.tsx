@@ -6,6 +6,7 @@ import { Icons } from '../components/IconComponents';
 import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
 import { ActionBar } from '../components/explorer/ActionBar';
 import { StatsSummary } from '../components/explorer/StatsSummary';
+import { DateNavigator } from '../components/explorer/DateNavigator';
 import { useJobStats } from '../hooks/useJobStats';
 
 /**
@@ -119,64 +120,14 @@ export function TimeExplorer() {
           <StatsSummary stats={stats} loading={statsLoading} />
 
           {/* Date Navigator - TIM-133 */}
-          <div className="border-b border-stone-200 p-4 dark:border-stone-700">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => setSelectedYear(y => y - 1)}
-                className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                <Icons.ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-sm font-medium">{selectedYear}</span>
-              <button
-                onClick={() => setSelectedYear(y => y + 1)}
-                className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                <Icons.ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-1">
-              {[
-                'Jan',
-                'Feb',
-                'Mar',
-                'Apr',
-                'May',
-                'Jun',
-                'Jul',
-                'Aug',
-                'Sep',
-                'Oct',
-                'Nov',
-                'Dec',
-              ].map((month, idx) => {
-                const monthKey = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
-                const monthDensity = density.find(d => d.period === monthKey);
-                const isSelected = selectedMonth === idx + 1;
-
-                return (
-                  <button
-                    key={month}
-                    onClick={() => setSelectedMonth(isSelected ? null : idx + 1)}
-                    className={`rounded px-2 py-1 text-xs ${
-                      isSelected
-                        ? 'bg-amber-500 text-white'
-                        : monthDensity
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                          : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800'
-                    }`}
-                  >
-                    {month}
-                    {monthDensity && !isSelected && (
-                      <span className="ml-1 text-[10px]">
-                        {monthDensity.count > 15 ? '...' : monthDensity.count > 5 ? '..' : '.'}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <DateNavigator
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onYearChange={setSelectedYear}
+            onMonthChange={setSelectedMonth}
+            density={density}
+            loading={statsLoading}
+          />
 
           {/* Snapshot List */}
           <div className="flex-1 overflow-auto">
