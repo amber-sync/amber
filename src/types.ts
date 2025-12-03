@@ -344,3 +344,22 @@ export interface DiscoveredBackup {
   /** Whether there's a matching job in jobs.json */
   hasMatchingJob: boolean;
 }
+
+// TIM-113: Migration types
+export interface JobMigrationResult {
+  jobId: string;
+  jobName: string;
+  snapshotsMigrated: number;
+  manifestWritten: boolean;
+  cacheWritten: boolean;
+  error?: string;
+}
+
+export interface MigrationReport {
+  jobsMigrated: number;
+  jobsSkipped: number;
+  totalSnapshotsMigrated: number;
+  manifestsWritten: number;
+  cachesWritten: number;
+  results: JobMigrationResult[];
+}

@@ -88,6 +88,9 @@ pub fn run() {
         commands::manifest::add_manifest_snapshot,
         commands::manifest::remove_manifest_snapshot,
         commands::manifest::get_amber_meta_path,
+        // Migration commands
+        commands::migration::needs_migration,
+        commands::migration::run_migration,
         // Dev commands (debug only)
         commands::dev::dev_seed_data,
         commands::dev::dev_run_benchmarks,
@@ -154,6 +157,9 @@ pub fn run() {
         commands::manifest::add_manifest_snapshot,
         commands::manifest::remove_manifest_snapshot,
         commands::manifest::get_amber_meta_path,
+        // Migration commands
+        commands::migration::needs_migration,
+        commands::migration::run_migration,
     ]);
 
     builder

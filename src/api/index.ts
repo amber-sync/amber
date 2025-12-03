@@ -27,6 +27,7 @@ import type {
   MountStatus,
   JobWithStatus,
   DiscoveredBackup,
+  MigrationReport,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -525,6 +526,23 @@ class AmberAPI {
    */
   async getAmberMetaPath(destPath: string): Promise<string> {
     return invoke('get_amber_meta_path', { destPath });
+  }
+
+  // ===== Migration (TIM-113) =====
+
+  /**
+   * Check if migration from embedded snapshots is needed
+   */
+  async needsMigration(): Promise<boolean> {
+    return invoke('needs_migration');
+  }
+
+  /**
+   * Run migration from embedded snapshots to manifest-based architecture
+   * Returns a report of what was migrated
+   */
+  async runMigration(): Promise<MigrationReport> {
+    return invoke('run_migration');
   }
 
   // ===== Runtime Info =====
