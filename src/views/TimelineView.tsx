@@ -4,7 +4,7 @@ import { Icons } from '../components/IconComponents';
 import { TimelineStrip } from '../components/timeline/TimelineStrip';
 import { TimeContextPanel } from '../components/timeline/TimeContextPanel';
 import { SnapshotSearch } from '../components/timeline/SnapshotSearch';
-import { BackupCalendar, StorageProjection, BackupHealth } from '../components/analytics';
+import { BackupCalendar, BackupHealth } from '../components/analytics';
 import { useTimeline, TimelineSnapshot } from '../hooks/useTimeline';
 import { formatBytes } from '../utils/formatters';
 
@@ -364,9 +364,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 />
               </div>
               <div className="animate-fade-in-up" style={{ animationDelay: '75ms' }}>
-                <StorageProjection jobs={jobs} diskStats={diskStats} />
-              </div>
-              <div className="animate-fade-in-up" style={{ animationDelay: '150ms' }}>
                 <BackupHealth jobs={jobs} />
               </div>
             </div>

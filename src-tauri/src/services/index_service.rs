@@ -91,6 +91,15 @@ pub struct FileTypeStats {
     pub total_size: i64,
 }
 
+/// Largest file info for analytics
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LargestFile {
+    pub name: String,
+    pub size: i64,
+    pub path: String,
+}
+
 impl IndexService {
     /// Create or open the index database
     pub fn new(app_data_dir: &Path) -> Result<Self> {
@@ -512,7 +521,7 @@ impl IndexService {
                 let file_type: String = row.get(4)?;
 
                 let is_dir = file_type == "dir";
-                let node_type = if is_dir { "FOLDER" } else { "FILE" };
+                let node_type = if is_dir { "dir" } else { "file" };
 
                 Ok(FileNode {
                     id: path.replace('/', "-"),
@@ -661,7 +670,7 @@ impl IndexService {
                 let file_type: String = row.get(4)?;
 
                 let is_dir = file_type == "dir";
-                let node_type = if is_dir { "FOLDER" } else { "FILE" };
+                let node_type = if is_dir { "dir" } else { "file" };
 
                 Ok(FileNode {
                     id: path.replace('/', "-"),
@@ -783,7 +792,7 @@ impl IndexService {
         let rank: f64 = row.get(7)?;
 
         let is_dir = file_type == "dir";
-        let node_type = if is_dir { "FOLDER" } else { "FILE" };
+        let node_type = if is_dir { "dir" } else { "file" };
 
         Ok(GlobalSearchResult {
             file: FileNode {
@@ -878,6 +887,59 @@ impl IndexService {
         Ok(result)
     }
 
+    /// Get largest files in a snapshot (for analytics)
+    pub fn get_largest_files(
+        &self,
+        job_id: &str,
+        timestamp: i64,
+        limit: usize,
+    ) -> Result<Vec<LargestFile>> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Get snapshot ID
+        let snapshot_id: i64 = conn
+            .query_row(
+                "SELECT id FROM snapshots WHERE job_id = ? AND timestamp = ?",
+                params![job_id, timestamp],
+                |row| row.get(0),
+            )
+            .map_err(|_| AmberError::Index("Snapshot not found in index".to_string()))?;
+
+        // Query largest files
+        let mut stmt = conn
+            .prepare(
+                r#"
+                SELECT name, size, path
+                FROM files
+                WHERE snapshot_id = ? AND file_type = 'file'
+                ORDER BY size DESC
+                LIMIT ?
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
+
+        let files = stmt
+            .query_map(params![snapshot_id, limit as i64], |row| {
+                Ok(LargestFile {
+                    name: row.get(0)?,
+                    size: row.get(1)?,
+                    path: row.get(2)?,
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query largest files: {}", e)))?;
+
+        let mut result = Vec::new();
+        for file in files {
+            if let Ok(f) = file {
+                result.push(f);
+            }
+        }
+
+        Ok(result)
+    }
+
     /// Get database path (for debugging)
     pub fn db_path(&self) -> &Path {
         &self.db_path
@@ -892,6 +954,22 @@ impl IndexService {
         conn.execute("VACUUM", [])
             .map_err(|e| AmberError::Index(format!("Failed to vacuum database: {}", e)))?;
 
+        Ok(())
+    }
+
+    /// Reconnect to the database (dev only)
+    /// Used after replacing the database file to get a fresh connection
+    #[cfg(debug_assertions)]
+    pub fn reconnect(&self) -> Result<()> {
+        let new_conn = Connection::open(&self.db_path)
+            .map_err(|e| AmberError::Index(format!("Failed to reconnect to database: {}", e)))?;
+
+        let mut conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        *conn = new_conn;
+        log::info!("Reconnected to database at {:?}", self.db_path);
         Ok(())
     }
 

@@ -259,7 +259,7 @@ export const SnapshotSearch: React.FC<SnapshotSearchProps> = ({ snapshots, onSel
                       selectedIndex === index ? 'bg-accent-primary/20 scale-110' : 'bg-layer-2'
                     }`}
                   >
-                    {result.file.node_type === 'FOLDER' ? (
+                    {result.file.type === 'dir' ? (
                       <Icons.Folder size={16} className="text-amber-500" />
                     ) : (
                       <Icons.File

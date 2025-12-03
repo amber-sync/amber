@@ -141,12 +141,15 @@ impl DevSeeder {
             fs::copy(&source_db, &dest_db)
                 .map_err(|e| AmberError::Index(format!("Failed to copy index.db: {}", e)))?;
             log::info!("Copied index.db to {:?}", dest_db);
+
+            // CRITICAL: Reconnect to the newly copied database
+            // The old connection was to the empty/old database file
+            self.index_service.reconnect()?;
         }
 
         let duration = start.elapsed();
 
         // Get stats from the newly copied database
-        // Need to reconnect to the new database
         self.get_existing_stats().map(|mut result| {
             result.duration_ms = duration.as_millis() as u64;
             result.jobs_created = 2;

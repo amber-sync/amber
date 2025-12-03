@@ -169,7 +169,8 @@ const SnapshotGroup: React.FC<SnapshotGroupProps> = ({
                   )}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  {snap.fileCount} files • {snap.changesCount} changed
+                  {snap.fileCount.toLocaleString()} files
+                  {snap.changesCount > 0 && ` • ${snap.changesCount.toLocaleString()} changed`}
                 </p>
               </div>
             </div>

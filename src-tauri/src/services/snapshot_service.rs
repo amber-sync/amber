@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::types::snapshot::{FileNode, SnapshotMetadata};
+use crate::types::snapshot::{file_type, FileNode, SnapshotMetadata};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -199,9 +199,9 @@ impl SnapshotService {
                 id: format!("{}-{}", root_name, rel_path.replace('/', "-")),
                 name: entry.name.clone(),
                 node_type: if entry.is_dir {
-                    "FOLDER".to_string()
+                    file_type::DIR.to_string()
                 } else {
-                    "FILE".to_string()
+                    file_type::FILE.to_string()
                 },
                 size: entry.size,
                 modified: entry.modified,
@@ -243,7 +243,7 @@ impl SnapshotService {
         let mut count = 0u64;
 
         for node in nodes {
-            if node.node_type == "FOLDER" {
+            if file_type::is_dir(&node.node_type) {
                 if let Some(ref children) = node.children {
                     let (s, c) = self.calculate_stats(children);
                     size += s;
@@ -334,7 +334,7 @@ mod tests {
             FileNode {
                 id: "file1".to_string(),
                 name: "file1.txt".to_string(),
-                node_type: "FILE".to_string(),
+                node_type: file_type::FILE.to_string(),
                 size: 100,
                 modified: 0,
                 children: None,
@@ -343,7 +343,7 @@ mod tests {
             FileNode {
                 id: "file2".to_string(),
                 name: "file2.txt".to_string(),
-                node_type: "FILE".to_string(),
+                node_type: file_type::FILE.to_string(),
                 size: 200,
                 modified: 0,
                 children: None,
@@ -362,7 +362,7 @@ mod tests {
         let nodes = vec![FileNode {
             id: "folder1".to_string(),
             name: "folder1".to_string(),
-            node_type: "FOLDER".to_string(),
+            node_type: file_type::DIR.to_string(),
             size: 0,
             modified: 0,
             path: "/test/folder1".to_string(),
@@ -370,7 +370,7 @@ mod tests {
                 FileNode {
                     id: "file1".to_string(),
                     name: "file1.txt".to_string(),
-                    node_type: "FILE".to_string(),
+                    node_type: file_type::FILE.to_string(),
                     size: 100,
                     modified: 0,
                     children: None,
@@ -379,14 +379,14 @@ mod tests {
                 FileNode {
                     id: "subfolder".to_string(),
                     name: "subfolder".to_string(),
-                    node_type: "FOLDER".to_string(),
+                    node_type: file_type::DIR.to_string(),
                     size: 0,
                     modified: 0,
                     path: "/test/folder1/subfolder".to_string(),
                     children: Some(vec![FileNode {
                         id: "file2".to_string(),
                         name: "file2.txt".to_string(),
-                        node_type: "FILE".to_string(),
+                        node_type: file_type::FILE.to_string(),
                         size: 500,
                         modified: 0,
                         children: None,

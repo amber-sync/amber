@@ -125,13 +125,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       .catch(err => logger.error('Failed to save preferences', err));
   }, [runInBackground, startOnBoot, notificationsEnabled, prefsLoaded]);
 
-  // Load jobs
+  // Load jobs with mount status and snapshots from manifests
   useEffect(() => {
     const loadJobs = async () => {
       logger.debug('Loading jobs...');
 
       try {
-        const stored = await api.getJobs();
+        // Use getJobsWithStatus to get jobs WITH snapshot data from manifests
+        const stored = await api.getJobsWithStatus();
         logger.debug('Stored jobs loaded', { count: Array.isArray(stored) ? stored.length : 0 });
         const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
 
@@ -148,8 +149,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const persistJob = useCallback(async (job: SyncJob) => {
     try {
       await api.saveJob(stripSnapshotsForStore(job));
-      // Re-fetch jobs to stay in sync
-      const stored = await api.getJobs();
+      // Re-fetch jobs to stay in sync (with snapshots from manifests)
+      const stored = await api.getJobsWithStatus();
       const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
       setJobs(normalized);
     } catch (error) {
@@ -160,8 +161,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const deleteJob = useCallback(async (jobId: string) => {
     try {
       await api.deleteJob(jobId);
-      // Re-fetch jobs to stay in sync
-      const stored = await api.getJobs();
+      // Re-fetch jobs to stay in sync (with snapshots from manifests)
+      const stored = await api.getJobsWithStatus();
       const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
       setJobs(normalized);
     } catch (error) {

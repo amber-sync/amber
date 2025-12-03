@@ -31,7 +31,7 @@ import hashlib
 # Output paths
 SCRIPT_DIR = Path(__file__).parent.parent
 MOCK_DATA_DIR = SCRIPT_DIR / "mock-data"
-DB_PATH = MOCK_DATA_DIR / "dev-index.db"
+DB_PATH = MOCK_DATA_DIR / "index.db"  # Must be index.db - what IndexService expects
 JOBS_JSON_PATH = MOCK_DATA_DIR / "jobs.json"
 
 # Configuration - smaller but REAL files
@@ -339,7 +339,7 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
             "name": file_info["filename"],
             "path": relative_path,
             "parent_path": parent_path,
-            "file_type": "FILE",  # Rust uses file_type, not node_type
+            "file_type": "file",  # Must be lowercase to match FileType::File.as_str()
             "size": file_info["size"],
             "mtime": file_info["modified"],  # Rust uses mtime, not modified
         })
@@ -360,7 +360,7 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
 
         conn.execute("""
             INSERT INTO files (snapshot_id, path, name, parent_path, size, mtime, inode, file_type)
-            VALUES (?, ?, ?, ?, 0, ?, NULL, 'FOLDER')
+            VALUES (?, ?, ?, ?, 0, ?, NULL, 'dir')
         """, (snapshot_id, dir_path, dir_name, parent, timestamp_ms))
 
     # Insert files (column names must match Rust schema!)
@@ -389,7 +389,7 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
     GENERATED_SNAPSHOTS[job_id].append({
         "id": str(timestamp_ms),
         "timestamp": timestamp_ms,
-        "sizeBytes": CUMULATIVE_SIZES[job_id],
+        "sizeBytes": total_size,  # Use actual per-snapshot size, not cumulative
         "fileCount": file_count + len(directories_seen),
         "changesCount": len(files_to_change),
         "status": "Complete",
@@ -441,8 +441,68 @@ def populate_fts(conn: sqlite3.Connection):
     conn.commit()
 
 
+def generate_manifest(job: dict):
+    """Generate manifest.json for a job (the new repository-centric format).
+
+    The manifest is stored at: {dest_path}/.amber-meta/manifest.json
+    This is what the frontend reads to display snapshots.
+    """
+    import json
+    import socket
+
+    job_id = job["id"]
+    job_dir = MOCK_DATA_DIR / job_id
+    meta_dir = job_dir / ".amber-meta"
+    meta_dir.mkdir(parents=True, exist_ok=True)
+
+    now_ms = int(datetime.now().timestamp() * 1000)
+    snapshots = GENERATED_SNAPSHOTS.get(job_id, [])
+
+    # Convert snapshots to manifest format (camelCase)
+    manifest_snapshots = []
+    for s in sorted(snapshots, key=lambda x: x["timestamp"]):
+        # Folder name is YYYY-MM-DD-HHMMSS
+        dt = datetime.fromtimestamp(s["timestamp"] / 1000)
+        folder_name = dt.strftime("%Y-%m-%d-%H%M%S")
+
+        manifest_snapshots.append({
+            "id": str(s["timestamp"]),
+            "timestamp": s["timestamp"],
+            "folderName": folder_name,
+            "fileCount": s["fileCount"],
+            "totalSize": s["sizeBytes"],
+            "status": "Complete",
+            "durationMs": random.randint(5000, 30000)  # Fake duration
+        })
+
+    # Build manifest
+    hostname = socket.gethostname()
+    manifest = {
+        "version": 1,
+        "machineId": f"{hostname}-mock",
+        "machineName": hostname,
+        "jobId": job_id,
+        "jobName": job["name"],
+        "sourcePath": job["source_path"],
+        "createdAt": snapshots[0]["timestamp"] if snapshots else now_ms,
+        "updatedAt": snapshots[-1]["timestamp"] if snapshots else now_ms,
+        "snapshots": manifest_snapshots
+    }
+
+    manifest_path = meta_dir / "manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    print(f"  Generated manifest: {manifest_path}")
+    print(f"    Snapshots: {len(manifest_snapshots)}")
+
+
 def generate_jobs_json():
-    """Generate jobs.json for the app."""
+    """Generate jobs.json for the app.
+
+    Note: snapshots field is included for backwards compatibility but
+    the frontend should load snapshots from manifest.json via getJobsWithStatus().
+    """
     import json
 
     jobs_data = []
@@ -480,15 +540,15 @@ def generate_jobs_json():
             "sshConfig": None,
             "cloudConfig": None,
             "lastRun": last_run,
-            "snapshots": snapshots_sorted
+            # Note: snapshots are NOT included here anymore - they come from manifest.json
         })
 
     with open(JOBS_JSON_PATH, "w") as f:
         json.dump(jobs_data, f, indent=2)
 
     print(f"\nGenerated {JOBS_JSON_PATH}")
-    for job in jobs_data:
-        print(f"  {job['id']}: {len(job['snapshots'])} snapshots")
+    for job_data in jobs_data:
+        print(f"  {job_data['id']}")
 
 
 def main():
@@ -521,6 +581,11 @@ def main():
     # Populate FTS
     populate_fts(conn)
 
+    # Generate manifest.json for each job (for frontend to load snapshots)
+    print("\nGenerating manifests...")
+    for job in JOBS:
+        generate_manifest(job)
+
     # Generate jobs.json
     generate_jobs_json()
 
@@ -528,6 +593,14 @@ def main():
     conn.close()
     elapsed = time.time() - start_time
     db_size_mb = DB_PATH.stat().st_size / (1024 * 1024)
+
+    # Copy index.db to app data directory so timestamps match
+    app_data_dir = Path.home() / "Library" / "Application Support" / "amber"
+    app_index_path = app_data_dir / "index.db"
+    if app_data_dir.exists():
+        import shutil
+        shutil.copy2(DB_PATH, app_index_path)
+        print(f"\nCopied index.db to {app_index_path}")
 
     # Count total files on disk
     total_files = sum(

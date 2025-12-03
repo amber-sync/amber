@@ -28,7 +28,7 @@ export const calculateJobStats = (fileNodes: SnapshotRoot): JobAnalyticsData => 
   const traverse = (nodes: SnapshotRoot, currentPath: string) => {
     if (!nodes) return;
     for (const node of nodes) {
-      if (node.type === 'FILE') {
+      if (node.type === 'file') {
         const ext = node.name.includes('.')
           ? node.name.split('.').pop()?.toLowerCase() || 'unknown'
           : 'no-ext';
