@@ -120,6 +120,71 @@ impl IndexService {
         &self.db_path
     }
 
+    /// Validate that the database schema matches what we expect.
+    /// Returns Ok(()) if valid, or an error describing the mismatch.
+    /// This is useful for detecting when mock data was generated with an old schema.
+    pub fn validate_schema(&self) -> Result<()> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Check user_version
+        let version: i32 = conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))
+            .unwrap_or(0);
+
+        if version != DB_VERSION {
+            return Err(AmberError::Index(format!(
+                "Database schema version mismatch: found v{}, expected v{}. \
+                 Please regenerate mock data or clear the database.",
+                version, DB_VERSION
+            )));
+        }
+
+        // Check required columns in snapshots table
+        let required_snapshot_cols = ["id", "job_id", "timestamp", "root_path", "file_count", "total_size"];
+        for col in required_snapshot_cols {
+            let exists: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) > 0 FROM pragma_table_info('snapshots') WHERE name = ?",
+                    [col],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+
+            if !exists {
+                return Err(AmberError::Index(format!(
+                    "Missing column '{}' in snapshots table. Schema mismatch detected. \
+                     Please regenerate mock data with: python3 scripts/generate-mock-data.py",
+                    col
+                )));
+            }
+        }
+
+        // Check required columns in files table
+        let required_file_cols = ["id", "snapshot_id", "path", "name", "parent_path", "size", "mtime", "file_type"];
+        for col in required_file_cols {
+            let exists: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) > 0 FROM pragma_table_info('files') WHERE name = ?",
+                    [col],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+
+            if !exists {
+                return Err(AmberError::Index(format!(
+                    "Missing column '{}' in files table. Schema mismatch detected. \
+                     Please regenerate mock data with: python3 scripts/generate-mock-data.py",
+                    col
+                )));
+            }
+        }
+
+        log::info!("Database schema validation passed (version {})", version);
+        Ok(())
+    }
+
     /// Initialize database schema
     fn initialize_schema(&self) -> Result<()> {
         let conn = self.conn.lock().map_err(|e| {

@@ -102,40 +102,67 @@ CUMULATIVE_SIZES = {}
 
 
 def create_schema(conn: sqlite3.Connection):
-    """Create SQLite schema for file index."""
+    """Create SQLite schema for file index.
+
+    IMPORTANT: This schema MUST match src-tauri/src/services/index_service.rs exactly!
+    The Rust code uses PRAGMA user_version for schema versioning.
+    """
     conn.executescript("""
+        -- Schema v1: Core tables
         CREATE TABLE IF NOT EXISTS snapshots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             job_id TEXT NOT NULL,
             timestamp INTEGER NOT NULL,
+            root_path TEXT NOT NULL,
             file_count INTEGER DEFAULT 0,
             total_size INTEGER DEFAULT 0,
-            indexed_at INTEGER NOT NULL,
+            created_at INTEGER DEFAULT (strftime('%s', 'now')),
             UNIQUE(job_id, timestamp)
         );
 
         CREATE TABLE IF NOT EXISTS files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             snapshot_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
             path TEXT NOT NULL,
+            name TEXT NOT NULL,
             parent_path TEXT NOT NULL,
-            node_type TEXT NOT NULL CHECK(node_type IN ('FILE', 'FOLDER')),
-            size INTEGER DEFAULT 0,
-            modified INTEGER NOT NULL,
-            FOREIGN KEY (snapshot_id) REFERENCES snapshots(id)
+            size INTEGER NOT NULL,
+            mtime INTEGER NOT NULL,
+            inode INTEGER,
+            file_type TEXT NOT NULL,
+            FOREIGN KEY (snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
         );
 
-        CREATE INDEX IF NOT EXISTS idx_files_snapshot ON files(snapshot_id);
-        CREATE INDEX IF NOT EXISTS idx_files_parent ON files(snapshot_id, parent_path);
+        CREATE INDEX IF NOT EXISTS idx_snapshots_job ON snapshots(job_id);
+        CREATE INDEX IF NOT EXISTS idx_files_snapshot_parent ON files(snapshot_id, parent_path);
+        CREATE INDEX IF NOT EXISTS idx_files_path ON files(snapshot_id, path);
         CREATE INDEX IF NOT EXISTS idx_files_name ON files(name);
 
+        -- Schema v2: FTS5 for full-text search
         CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
             name,
             path,
             content=files,
-            content_rowid=id
+            content_rowid=id,
+            tokenize='unicode61 remove_diacritics 1'
         );
+
+        -- Triggers to keep FTS index in sync
+        CREATE TRIGGER IF NOT EXISTS files_ai AFTER INSERT ON files BEGIN
+            INSERT INTO files_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS files_ad AFTER DELETE ON files BEGIN
+            INSERT INTO files_fts(files_fts, rowid, name, path) VALUES('delete', old.id, old.name, old.path);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS files_au AFTER UPDATE ON files BEGIN
+            INSERT INTO files_fts(files_fts, rowid, name, path) VALUES('delete', old.id, old.name, old.path);
+            INSERT INTO files_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+        END;
+
+        -- Set schema version to match Rust code
+        PRAGMA user_version = 2;
     """)
     conn.commit()
 
@@ -307,21 +334,22 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
         total_size += file_info["size"]
         file_count += 1
 
-        # Queue for DB insert
+        # Queue for DB insert (column names must match Rust schema!)
         db_files.append({
             "name": file_info["filename"],
             "path": relative_path,
             "parent_path": parent_path,
-            "node_type": "FILE",
+            "file_type": "FILE",  # Rust uses file_type, not node_type
             "size": file_info["size"],
-            "modified": file_info["modified"],
+            "mtime": file_info["modified"],  # Rust uses mtime, not modified
         })
 
-    # Insert snapshot into DB
+    # Insert snapshot into DB (must include root_path!)
+    root_path = str(snapshot_path)
     cursor = conn.execute("""
-        INSERT INTO snapshots (job_id, timestamp, file_count, total_size, indexed_at)
-        VALUES (?, ?, ?, ?, ?)
-    """, (job_id, timestamp_ms, file_count, total_size, int(time.time() * 1000)))
+        INSERT INTO snapshots (job_id, timestamp, root_path, file_count, total_size, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (job_id, timestamp_ms, root_path, file_count, total_size, int(time.time())))
     snapshot_id = cursor.lastrowid
 
     # Insert directories
@@ -331,16 +359,16 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
         parent = "/".join(parts[:-1]) if len(parts) > 1 else ""
 
         conn.execute("""
-            INSERT INTO files (snapshot_id, name, path, parent_path, node_type, size, modified)
-            VALUES (?, ?, ?, ?, 'FOLDER', 0, ?)
-        """, (snapshot_id, dir_name, dir_path, parent, timestamp_ms))
+            INSERT INTO files (snapshot_id, path, name, parent_path, size, mtime, inode, file_type)
+            VALUES (?, ?, ?, ?, 0, ?, NULL, 'FOLDER')
+        """, (snapshot_id, dir_path, dir_name, parent, timestamp_ms))
 
-    # Insert files
+    # Insert files (column names must match Rust schema!)
     for f in db_files:
         conn.execute("""
-            INSERT INTO files (snapshot_id, name, path, parent_path, node_type, size, modified)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (snapshot_id, f["name"], f["path"], f["parent_path"], f["node_type"], f["size"], f["modified"]))
+            INSERT INTO files (snapshot_id, path, name, parent_path, size, mtime, inode, file_type)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
+        """, (snapshot_id, f["path"], f["name"], f["parent_path"], f["size"], f["mtime"], f["file_type"]))
 
     conn.commit()
 

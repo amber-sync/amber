@@ -36,6 +36,12 @@ pub async fn dev_seed_data(state: State<'_, AppState>) -> Result<SeedResult> {
 
     let result = seeder.seed()?;
 
+    // Validate schema after seeding to catch mismatches early
+    if let Err(e) = state.index_service.validate_schema() {
+        log::error!("Schema validation failed after seeding: {}", e);
+        return Err(e);
+    }
+
     log::info!(
         "Dev seeding complete: {} jobs, {} snapshots, {} files ({} bytes) in {}ms",
         result.jobs_created,
