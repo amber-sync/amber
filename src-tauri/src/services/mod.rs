@@ -1,4 +1,5 @@
 // Service modules - Business logic
+pub mod data_dir;  // Must be first - other services depend on this
 pub mod rsync_service;
 pub mod rclone_service;
 pub mod snapshot_service;
