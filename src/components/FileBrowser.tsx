@@ -25,6 +25,8 @@ interface FileBrowserProps {
   // TIM-46: Optional props for indexed snapshot browsing
   jobId?: string;
   snapshotTimestamp?: number;
+  // TIM-127: Destination path for destination-based index
+  destPath?: string;
 }
 
 export const FileBrowser: React.FC<FileBrowserProps> = ({
@@ -34,6 +36,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   onSelectionChange,
   jobId,
   snapshotTimestamp,
+  destPath,
 }) => {
   const [currentPath, setCurrentPath] = useState(initialPath);
   const [entries, setEntries] = useState<FileEntry[]>([]);
@@ -70,24 +73,27 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Check if snapshot is indexed
+  // Check if snapshot is indexed (TIM-127: use destination-based index)
   useEffect(() => {
-    if (jobId && snapshotTimestamp) {
+    if (destPath && jobId && snapshotTimestamp) {
       api
-        .isSnapshotIndexed(jobId, snapshotTimestamp)
+        .isIndexedOnDestination(destPath, jobId, snapshotTimestamp)
         .then(indexed => {
           setIsIndexed(indexed);
           if (indexed) {
-            logger.debug('Using indexed snapshot queries', { snapshotTimestamp });
+            logger.debug('Using destination-based indexed snapshot queries', {
+              destPath,
+              snapshotTimestamp,
+            });
           }
         })
         .catch(() => setIsIndexed(false));
     } else {
       setIsIndexed(false);
     }
-  }, [jobId, snapshotTimestamp]);
+  }, [destPath, jobId, snapshotTimestamp]);
 
-  // Load directory contents
+  // Load directory contents (TIM-127: use destination-based index)
   const loadDirectory = useCallback(
     async (path: string) => {
       setLoading(true);
@@ -98,16 +104,22 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
       try {
         let formatted: FileEntry[];
 
-        if (isIndexed && jobId && snapshotTimestamp) {
-          // TIM-46: Use fast SQLite query
+        if (isIndexed && destPath && jobId && snapshotTimestamp) {
+          // TIM-127: Use fast SQLite query from destination index
           // Convert current absolute path to relative path for SQLite query
           const relativePath = path === initialPath ? '' : path.replace(initialPath + '/', '');
-          const result = await api.getIndexedDirectory(jobId, snapshotTimestamp, relativePath);
+          const result = await api.getDirectoryFromDestination(
+            destPath,
+            jobId,
+            snapshotTimestamp,
+            relativePath
+          );
 
           formatted = result.map((item: any) => ({
             name: item.name,
-            // SQLite stores ABSOLUTE paths in the 'path' column - use directly
-            path: item.path,
+            // SQLite stores RELATIVE paths (e.g., "Projects/webapp")
+            // Convert to absolute path for navigation by prepending initialPath
+            path: `${initialPath}/${item.path}`,
             // Use centralized isDirectory() from types.ts - matches Rust file_type module
             isDirectory: isDirectory(item.type),
             size: item.size,
@@ -140,7 +152,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         setLoading(false);
       }
     },
-    [isIndexed, jobId, snapshotTimestamp, initialPath]
+    [isIndexed, destPath, jobId, snapshotTimestamp, initialPath]
   );
 
   useEffect(() => {
@@ -155,7 +167,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     setSearchResults(null);
   }, [initialPath]);
 
-  // TIM-46: Search functionality
+  // TIM-127: Search functionality (destination-based)
   const handleSearch = useCallback(
     async (query: string) => {
       setSearchQuery(query);
@@ -165,18 +177,24 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         return;
       }
 
-      if (!isIndexed || !jobId || !snapshotTimestamp) {
+      if (!isIndexed || !destPath || !jobId || !snapshotTimestamp) {
         // Search not available without index
         return;
       }
 
       setIsSearching(true);
       try {
-        const results = await api.searchSnapshotFiles(jobId, snapshotTimestamp, query, 100);
+        const results = await api.searchFilesOnDestination(
+          destPath,
+          jobId,
+          snapshotTimestamp,
+          query,
+          100
+        );
         const formatted: FileEntry[] = results.map((item: any) => ({
           name: item.name,
-          // SQLite stores ABSOLUTE paths in the 'path' column - use directly
-          path: item.path,
+          // SQLite stores RELATIVE paths - convert to absolute for navigation
+          path: `${initialPath}/${item.path}`,
           // Use centralized isDirectory() from types.ts - matches Rust file_type module
           isDirectory: isDirectory(item.type),
           size: item.size,
@@ -190,7 +208,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         setIsSearching(false);
       }
     },
-    [isIndexed, jobId, snapshotTimestamp]
+    [isIndexed, destPath, jobId, snapshotTimestamp, initialPath]
   );
 
   const handleNavigateUp = () => {

@@ -45,14 +45,16 @@ pub fn is_initialized() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
 
     #[test]
     fn test_init_and_get() {
         // Note: This test may fail if run in parallel with others
         // because OnceLock is global. In practice, init is called once at startup.
+        // Use a writable temp directory so other tests that depend on data_dir can work.
         if !is_initialized() {
-            init(PathBuf::from("/test/path"));
+            let temp_dir = std::env::temp_dir().join("amber-test-data");
+            let _ = std::fs::create_dir_all(&temp_dir);
+            init(temp_dir);
         }
         assert!(is_initialized());
     }

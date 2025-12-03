@@ -40,8 +40,11 @@ import hashlib
 # Output paths
 SCRIPT_DIR = Path(__file__).parent.parent
 MOCK_DATA_DIR = SCRIPT_DIR / "mock-data"
-DB_PATH = MOCK_DATA_DIR / "index.db"  # Must be index.db - what IndexService expects
 JOBS_JSON_PATH = MOCK_DATA_DIR / "jobs.json"
+
+def get_dest_db_path(job_id: str) -> Path:
+    """Get the per-destination index.db path (TIM-127 architecture)."""
+    return MOCK_DATA_DIR / job_id / ".amber-meta" / "index.db"
 
 # Configuration - smaller but REAL files
 NUM_SNAPSHOTS_DOCS = 12  # ~3 months of weekly backups
@@ -417,8 +420,11 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
     }
 
 
-def generate_job(job: dict, conn: sqlite3.Connection):
-    """Generate all snapshots for a job."""
+def generate_job(job: dict) -> sqlite3.Connection:
+    """Generate all snapshots for a job with per-destination database.
+
+    Returns the database connection for FTS population.
+    """
     print(f"\nGenerating job: {job['name']}")
     print(f"  Snapshots: {job['num_snapshots']}")
     print(f"  Files per snapshot: ~{FILES_PER_JOB}")
@@ -431,6 +437,13 @@ def generate_job(job: dict, conn: sqlite3.Connection):
         print(f"  Removing old data: {job_dir}")
         shutil.rmtree(job_dir)
     job_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create per-destination .amber-meta directory and database (TIM-127)
+    db_path = get_dest_db_path(job["id"])
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"  Creating database: {db_path}")
+    conn = sqlite3.connect(db_path)
+    create_schema(conn)
 
     # Generate base file list
     base_files = generate_job_files(job, rng)
@@ -445,6 +458,7 @@ def generate_job(job: dict, conn: sqlite3.Connection):
         prev_snapshot_path = result["path"]
 
     print(f"  Total files across snapshots: {len(base_files)}")
+    return conn
 
 
 def populate_fts(conn: sqlite3.Connection):
@@ -485,7 +499,8 @@ def generate_manifest(job: dict):
             "fileCount": s["fileCount"],
             "totalSize": s["sizeBytes"],
             "status": "Complete",
-            "durationMs": random.randint(5000, 30000)  # Fake duration
+            "durationMs": random.randint(5000, 30000),  # Fake duration
+            "changesCount": s.get("changesCount", 0)  # Number of files changed since last backup
         })
 
     # Build manifest
@@ -570,29 +585,25 @@ def main():
     print("=" * 60)
     print(f"Creating REAL files with hard links between snapshots")
     print(f"Output: {MOCK_DATA_DIR}")
+    print(f"Using TIM-127 destination-centric architecture: <dest>/.amber-meta/index.db")
     print()
 
     # Ensure output directory exists
     MOCK_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Clean up old database
-    if DB_PATH.exists():
-        print(f"Removing old database: {DB_PATH}")
-        DB_PATH.unlink()
-
-    # Create database
-    print(f"Creating database: {DB_PATH}")
-    conn = sqlite3.connect(DB_PATH)
-    create_schema(conn)
-
     start_time = time.time()
 
-    # Generate each job
+    # Generate each job with its own per-destination database
+    job_connections = []
     for job in JOBS:
-        generate_job(job, conn)
+        conn = generate_job(job)
+        job_connections.append((job, conn))
 
-    # Populate FTS
-    populate_fts(conn)
+    # Populate FTS for each job's database
+    print("\nPopulating FTS5 indexes...")
+    for job, conn in job_connections:
+        populate_fts(conn)
+        conn.close()
 
     # Generate manifest.json for each job (for frontend to load snapshots)
     print("\nGenerating manifests...")
@@ -603,17 +614,15 @@ def main():
     generate_jobs_json()
 
     # Stats
-    conn.close()
     elapsed = time.time() - start_time
-    db_size_mb = DB_PATH.stat().st_size / (1024 * 1024)
 
-    # Copy index.db to app data directory so timestamps match
-    app_data_dir = Path.home() / "Library" / "Application Support" / "amber"
-    app_index_path = app_data_dir / "index.db"
-    if app_data_dir.exists():
-        import shutil
-        shutil.copy2(DB_PATH, app_index_path)
-        print(f"\nCopied index.db to {app_index_path}")
+    # Calculate total DB size across all destinations
+    total_db_size = sum(
+        get_dest_db_path(job["id"]).stat().st_size
+        for job in JOBS
+        if get_dest_db_path(job["id"]).exists()
+    )
+    db_size_mb = total_db_size / (1024 * 1024)
 
     # Count total files on disk
     total_files = sum(
@@ -627,14 +636,16 @@ def main():
     print("=" * 60)
     print(f"  Total snapshots: {sum(job['num_snapshots'] for job in JOBS)}")
     print(f"  Files on disk: {total_files:,}")
-    print(f"  Database size: {db_size_mb:.1f} MB")
+    print(f"  Total database size: {db_size_mb:.1f} MB")
     print(f"  Time elapsed: {elapsed:.1f} seconds")
     print()
-    print("Output files:")
-    print(f"  {DB_PATH}")
+    print("Output files (destination-centric):")
     print(f"  {JOBS_JSON_PATH}")
     for job in JOBS:
         print(f"  {MOCK_DATA_DIR / job['id']}/")
+        print(f"    └── .amber-meta/")
+        print(f"        ├── manifest.json")
+        print(f"        └── index.db")
     print()
     print("To use: Press Cmd+Shift+D in the app and click 'Seed Mock Data'")
 

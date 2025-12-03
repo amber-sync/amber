@@ -210,6 +210,7 @@ pub async fn restore_snapshot(
 // ===== TIM-112: Destination-based index storage =====
 
 use crate::services::manifest_service;
+use crate::services::index_service::IndexService;
 
 /// Get the path to the index database on a destination drive
 #[tauri::command]
@@ -251,4 +252,91 @@ pub async fn export_index_to_destination(
 
     log::info!("Exported index to {:?}", dest_index);
     Ok(())
+}
+
+// ===== TIM-127: Destination-based index operations =====
+// These commands operate directly on the destination drive's index.db
+
+/// Index a snapshot and store in destination's .amber-meta/index.db
+/// This is the primary indexing method for destination-centric architecture
+#[tauri::command]
+pub async fn index_snapshot_on_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+    snapshot_path: String,
+) -> Result<crate::services::index_service::IndexedSnapshot> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.index_snapshot(&job_id, timestamp, &snapshot_path)
+}
+
+/// Get directory contents from destination's index
+#[tauri::command]
+pub async fn get_directory_from_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+    parent_path: String,
+) -> Result<Vec<FileNode>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.get_directory_contents(&job_id, timestamp, &parent_path)
+}
+
+/// Check if a snapshot is indexed on the destination
+#[tauri::command]
+pub async fn is_indexed_on_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+) -> Result<bool> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.is_indexed(&job_id, timestamp)
+}
+
+/// Search files in destination's index
+#[tauri::command]
+pub async fn search_files_on_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+    pattern: String,
+    limit: Option<usize>,
+) -> Result<Vec<FileNode>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.search_files(&job_id, timestamp, &pattern, limit.unwrap_or(100))
+}
+
+/// Get file type stats from destination's index
+#[tauri::command]
+pub async fn get_file_type_stats_on_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+    limit: Option<usize>,
+) -> Result<Vec<crate::services::index_service::FileTypeStats>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.get_file_type_stats(&job_id, timestamp, limit.unwrap_or(20))
+}
+
+/// Get largest files from destination's index
+#[tauri::command]
+pub async fn get_largest_files_on_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+    limit: Option<usize>,
+) -> Result<Vec<crate::services::index_service::LargestFile>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.get_largest_files(&job_id, timestamp, limit.unwrap_or(10))
+}
+
+/// Delete snapshot from destination's index
+#[tauri::command]
+pub async fn delete_snapshot_from_destination(
+    dest_path: String,
+    job_id: String,
+    timestamp: i64,
+) -> Result<()> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.delete_snapshot(&job_id, timestamp)
 }

@@ -383,6 +383,93 @@ class AmberAPI {
     return invoke('export_index_to_destination', { destPath });
   }
 
+  // ===== TIM-127: Destination-based Index Operations =====
+  // These methods operate directly on the destination drive's index.db
+
+  /**
+   * Index a snapshot and store in destination's .amber-meta/index.db
+   * This is the primary indexing method for destination-centric architecture
+   */
+  async indexSnapshotOnDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number,
+    snapshotPath: string
+  ): Promise<IndexedSnapshot> {
+    return invoke('index_snapshot_on_destination', { destPath, jobId, timestamp, snapshotPath });
+  }
+
+  /**
+   * Get directory contents from destination's index
+   */
+  async getDirectoryFromDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number,
+    parentPath: string
+  ): Promise<FileNode[]> {
+    return invoke('get_directory_from_destination', { destPath, jobId, timestamp, parentPath });
+  }
+
+  /**
+   * Check if a snapshot is indexed on the destination
+   */
+  async isIndexedOnDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number
+  ): Promise<boolean> {
+    return invoke('is_indexed_on_destination', { destPath, jobId, timestamp });
+  }
+
+  /**
+   * Search files in destination's index
+   */
+  async searchFilesOnDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number,
+    pattern: string,
+    limit?: number
+  ): Promise<FileNode[]> {
+    return invoke('search_files_on_destination', { destPath, jobId, timestamp, pattern, limit });
+  }
+
+  /**
+   * Get file type stats from destination's index
+   */
+  async getFileTypeStatsOnDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number,
+    limit?: number
+  ): Promise<FileTypeStats[]> {
+    return invoke('get_file_type_stats_on_destination', { destPath, jobId, timestamp, limit });
+  }
+
+  /**
+   * Get largest files from destination's index
+   */
+  async getLargestFilesOnDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number,
+    limit?: number
+  ): Promise<LargestFile[]> {
+    return invoke('get_largest_files_on_destination', { destPath, jobId, timestamp, limit });
+  }
+
+  /**
+   * Delete snapshot from destination's index
+   */
+  async deleteSnapshotFromDestination(
+    destPath: string,
+    jobId: string,
+    timestamp: number
+  ): Promise<void> {
+    return invoke('delete_snapshot_from_destination', { destPath, jobId, timestamp });
+  }
+
   // ===== Preferences =====
 
   async getPreferences(): Promise<AppPreferences> {

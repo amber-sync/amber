@@ -134,7 +134,17 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
 
 #[tauri::command]
 pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
-    state.store.save_job(job)
+    // Save to local store first
+    state.store.save_job(job.clone())?;
+
+    // TIM-128: Also write job config to destination's .amber-meta/job.json
+    // This enables backup drive portability
+    if let Err(e) = state.store.write_job_to_destination(&job) {
+        log::warn!("Failed to write job config to destination: {}", e);
+        // Don't fail the overall save - destination might not be mounted
+    }
+
+    Ok(())
 }
 
 #[tauri::command]

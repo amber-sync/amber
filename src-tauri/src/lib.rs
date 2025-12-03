@@ -64,6 +64,14 @@ pub fn run() {
         commands::snapshots::get_destination_index_path,
         commands::snapshots::destination_has_index,
         commands::snapshots::export_index_to_destination,
+        // TIM-127: Destination-based index commands
+        commands::snapshots::index_snapshot_on_destination,
+        commands::snapshots::get_directory_from_destination,
+        commands::snapshots::is_indexed_on_destination,
+        commands::snapshots::search_files_on_destination,
+        commands::snapshots::get_file_type_stats_on_destination,
+        commands::snapshots::get_largest_files_on_destination,
+        commands::snapshots::delete_snapshot_from_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
@@ -134,6 +142,14 @@ pub fn run() {
         commands::snapshots::get_destination_index_path,
         commands::snapshots::destination_has_index,
         commands::snapshots::export_index_to_destination,
+        // TIM-127: Destination-based index commands
+        commands::snapshots::index_snapshot_on_destination,
+        commands::snapshots::get_directory_from_destination,
+        commands::snapshots::is_indexed_on_destination,
+        commands::snapshots::search_files_on_destination,
+        commands::snapshots::get_file_type_stats_on_destination,
+        commands::snapshots::get_largest_files_on_destination,
+        commands::snapshots::delete_snapshot_from_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
