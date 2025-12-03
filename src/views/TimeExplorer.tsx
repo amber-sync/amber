@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Snapshot, JobAggregateStats, SnapshotDensity, SyncJob } from '../types';
 import { api } from '../api';
 import { Icons } from '../components/IconComponents';
+import { TimeExplorerHeader } from '../components/explorer/TimeExplorerHeader';
 
 /**
  * TimeExplorer - Unified backup browsing experience (TIM-129)
@@ -11,8 +12,13 @@ import { Icons } from '../components/IconComponents';
  * for exploring backups of a single job.
  */
 export function TimeExplorer() {
-  const { activeJobId, jobs, setView } = useApp();
+  const { activeJobId, jobs, setView, setActiveJobId } = useApp();
   const job = jobs.find((j: SyncJob) => j.id === activeJobId);
+
+  // Handle job switching from the header dropdown
+  const handleJobSwitch = (jobId: string) => {
+    setActiveJobId(jobId);
+  };
 
   // Date filtering state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -94,28 +100,13 @@ export function TimeExplorer() {
   return (
     <div className="flex h-full flex-col">
       {/* Header - TIM-130 */}
-      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-6 py-4 dark:border-stone-700 dark:bg-stone-900">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
-          >
-            <Icons.ChevronLeft className="h-5 w-5" />
-            <span>Jobs</span>
-          </button>
-          <div className="h-6 w-px bg-stone-200 dark:bg-stone-700" />
-          <h1 className="text-xl font-semibold">{job.name}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActivePanel('edit')}
-            className="rounded-lg p-2 text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
-            title="Edit Job"
-          >
-            <Icons.Settings className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
+      <TimeExplorerHeader
+        job={job}
+        jobs={jobs}
+        onJobSwitch={handleJobSwitch}
+        onBack={handleBack}
+        onSettingsClick={() => setActivePanel('edit')}
+      />
 
       {/* Action Bar - TIM-131 */}
       <div className="border-b border-stone-200 bg-stone-50 px-6 py-3 dark:border-stone-700 dark:bg-stone-800/50">
