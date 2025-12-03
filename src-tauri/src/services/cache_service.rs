@@ -2,7 +2,10 @@
 //!
 //! Provides offline access to snapshot data when backup destinations are not mounted.
 //! The cache is disposable and rebuilt automatically when the destination is reconnected.
+//!
+//! Uses the centralized data_dir module to ensure consistent paths in dev and prod.
 
+use crate::services::data_dir;
 use crate::types::manifest::ManifestSnapshot;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -38,11 +41,12 @@ impl SnapshotCache {
 }
 
 /// Get the base cache directory path
+///
+/// Uses the centralized data_dir module to ensure consistent paths.
+/// In dev mode: mock-data/cache/
+/// In prod mode: ~/.local/share/amber/cache/
 fn get_cache_dir() -> PathBuf {
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("amber")
-        .join(CACHE_DIR)
+    data_dir::get().join(CACHE_DIR)
 }
 
 /// Get the snapshots cache directory path
