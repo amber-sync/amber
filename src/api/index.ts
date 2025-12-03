@@ -21,6 +21,9 @@ import type {
   DevSeedResult,
   DevBenchmarkResult,
   DevDbStats,
+  BackupManifest,
+  ManifestSnapshot,
+  ManifestSnapshotStatus,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -369,6 +372,74 @@ class AmberAPI {
 
   async getDesktopPath(): Promise<string> {
     return desktopDir();
+  }
+
+  // ===== Manifest API (TIM-114: Repository-centric architecture) =====
+
+  /**
+   * Get manifest from a backup destination
+   * Returns null if no manifest exists
+   */
+  async getManifest(destPath: string): Promise<BackupManifest | null> {
+    return invoke('get_manifest', { destPath });
+  }
+
+  /**
+   * Get or create a manifest for a job
+   * Creates a new manifest if one doesn't exist
+   */
+  async getOrCreateManifest(
+    destPath: string,
+    jobId: string,
+    jobName: string,
+    sourcePath: string
+  ): Promise<BackupManifest> {
+    return invoke('get_or_create_manifest', { destPath, jobId, jobName, sourcePath });
+  }
+
+  /**
+   * Check if a manifest exists at the destination
+   */
+  async manifestExists(destPath: string): Promise<boolean> {
+    return invoke('manifest_exists', { destPath });
+  }
+
+  /**
+   * Add a snapshot to the manifest
+   */
+  async addManifestSnapshot(
+    destPath: string,
+    folderName: string,
+    fileCount: number,
+    totalSize: number,
+    status: ManifestSnapshotStatus,
+    durationMs?: number
+  ): Promise<BackupManifest> {
+    return invoke('add_manifest_snapshot', {
+      destPath,
+      folderName,
+      fileCount,
+      totalSize,
+      status,
+      durationMs,
+    });
+  }
+
+  /**
+   * Remove a snapshot from the manifest
+   */
+  async removeManifestSnapshot(
+    destPath: string,
+    snapshotId: string
+  ): Promise<ManifestSnapshot | null> {
+    return invoke('remove_manifest_snapshot', { destPath, snapshotId });
+  }
+
+  /**
+   * Get the .amber-meta directory path for a destination
+   */
+  async getAmberMetaPath(destPath: string): Promise<string> {
+    return invoke('get_amber_meta_path', { destPath });
   }
 
   // ===== Runtime Info =====
