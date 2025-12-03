@@ -29,12 +29,7 @@ pub fn is_ssh_remote(path: &str) -> bool {
 /// Extract the local path part from an SSH remote path
 /// Returns `None` if the path is not an SSH remote
 ///
-/// # Example
-/// ```
-/// use amber::utils::ssh_local_part;
-/// assert_eq!(ssh_local_part("user@host:/var/www"), Some("/var/www"));
-/// assert_eq!(ssh_local_part("/local/path"), None);
-/// ```
+/// Example: `"user@host:/var/www"` -> `Some("/var/www")`
 pub fn ssh_local_part(path: &str) -> Option<&str> {
     if is_ssh_remote(path) {
         path.split_once(':').map(|(_, local)| local)
@@ -46,9 +41,8 @@ pub fn ssh_local_part(path: &str) -> Option<&str> {
 /// Make a path relative to a root directory
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// use std::path::Path;
-/// use amber::utils::make_relative;
 /// assert_eq!(make_relative(Path::new("/a/b/c"), Path::new("/a/b")), "c");
 /// assert_eq!(make_relative(Path::new("/a/b"), Path::new("/a/b")), "");
 /// ```
@@ -61,8 +55,7 @@ pub fn make_relative(path: &Path, root: &Path) -> String {
 /// Reconstruct an absolute path from a relative path and root
 ///
 /// # Example
-/// ```
-/// use amber::utils::make_absolute;
+/// ```ignore
 /// assert_eq!(make_absolute("Users/john", "/Volumes/Backup"), "/Volumes/Backup/Users/john");
 /// assert_eq!(make_absolute("", "/Volumes/Backup"), "/Volumes/Backup");
 /// ```

@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import type { FileNode } from '../types';
 import { logger } from '../utils/logger';
+import { joinPaths } from '../utils/paths'; // TIM-123: Use centralized path utility
 
 export interface VolumeInfo {
   name: string;
@@ -129,7 +130,8 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
                   files.map(file => ({
                     file,
                     scope: 'snapshot',
-                    fullPath: effectivePath ? `${effectivePath}/${file.name}` : file.name,
+                    // TIM-123: Use centralized path utility
+                    fullPath: effectivePath ? joinPaths(effectivePath, file.name) : file.name,
                   }))
                 );
               })
@@ -150,7 +152,8 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
                     file,
                     scope: 'volume' as const,
                     volumeName: volume.name,
-                    fullPath: `${volume.path}/${file.name}`,
+                    // TIM-123: Use centralized path utility
+                    fullPath: joinPaths(volume.path, file.name),
                   }))
                 )
                 .catch(() => [] as SearchResult[])

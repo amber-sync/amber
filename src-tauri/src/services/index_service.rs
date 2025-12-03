@@ -5,6 +5,7 @@
 
 use crate::error::{AmberError, Result};
 use crate::types::snapshot::FileNode;
+use crate::utils::make_relative; // TIM-123: Use centralized path utility
 use jwalk::WalkDir;
 use rayon::prelude::*;
 use rusqlite::{params, Connection, Transaction};
@@ -400,7 +401,6 @@ impl IndexService {
     /// Walk directory using jwalk for parallel performance
     fn walk_directory(&self, root_path: &str) -> Result<Vec<IndexedFile>> {
         let root = Path::new(root_path);
-        let root_str = root_path.to_string();
 
         let entries: Vec<IndexedFile> = WalkDir::new(root)
             .skip_hidden(false)
@@ -419,14 +419,10 @@ impl IndexService {
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_default();
 
+                // TIM-123: Use centralized make_relative utility
                 let parent_path = path
                     .parent()
-                    .map(|p| {
-                        p.strip_prefix(&root_str)
-                            .unwrap_or(p)
-                            .to_string_lossy()
-                            .to_string()
-                    })
+                    .map(|p| make_relative(p, &root))
                     .unwrap_or_default();
 
                 let file_type = if metadata.is_dir() {

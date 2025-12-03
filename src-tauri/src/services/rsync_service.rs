@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::types::job::{SyncJob, SyncMode};
+use crate::utils::is_ssh_remote; // TIM-123: Use centralized path utility
 use chrono::Local;
 use regex::Regex;
 use std::collections::HashMap;
@@ -8,13 +9,6 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
 const LATEST_SYMLINK_NAME: &str = "latest";
-
-/// Detect if a path is an SSH remote (user@host:/path format)
-fn is_ssh_remote(path: &str) -> bool {
-    // Must contain @ and : but not start with / (not a local path)
-    // Pattern: user@host:/path or user@host:path
-    !path.starts_with('/') && path.contains('@') && path.contains(':')
-}
 
 /// Info about a running or completed backup
 #[derive(Debug, Clone)]
@@ -118,17 +112,26 @@ impl RsyncService {
 
             // Apply SSH config options if provided
             if let Some(ref ssh) = job.ssh_config {
+                // Only add flags when values are non-empty
                 if let Some(ref port) = ssh.port {
-                    ssh_cmd.push_str(&format!(" -p {}", port));
+                    if !port.trim().is_empty() {
+                        ssh_cmd.push_str(&format!(" -p {}", port));
+                    }
                 }
                 if let Some(ref identity) = ssh.identity_file {
-                    ssh_cmd.push_str(&format!(" -i {}", identity));
+                    if !identity.trim().is_empty() {
+                        ssh_cmd.push_str(&format!(" -i {}", identity));
+                    }
                 }
                 if let Some(ref config) = ssh.config_file {
-                    ssh_cmd.push_str(&format!(" -F {}", config));
+                    if !config.trim().is_empty() {
+                        ssh_cmd.push_str(&format!(" -F {}", config));
+                    }
                 }
                 if let Some(ref proxy) = ssh.proxy_jump {
-                    ssh_cmd.push_str(&format!(" -J {}", proxy));
+                    if !proxy.trim().is_empty() {
+                        ssh_cmd.push_str(&format!(" -J {}", proxy));
+                    }
                 }
                 if ssh.disable_host_key_checking == Some(true) {
                     ssh_cmd.push_str(
@@ -228,13 +231,42 @@ impl RsyncService {
 
     /// Spawn rsync process
     pub fn spawn_rsync(&self, job: &SyncJob) -> Result<Child> {
-        let source_basename = Path::new(&job.source_path)
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("backup");
+        log::info!(
+            "[rsync_service] spawn_rsync called for job '{}' (id: {})",
+            job.name,
+            job.id
+        );
+        log::info!(
+            "[rsync_service] source_path: '{}', dest_path: '{}'",
+            job.source_path,
+            job.dest_path
+        );
+
+        // For SSH remotes like "user@host:/path/to/dir", extract just the directory name
+        let source_basename = if is_ssh_remote(&job.source_path) {
+            // Extract path part after the colon, then get the last component
+            job.source_path
+                .split(':')
+                .nth(1)
+                .and_then(|path| Path::new(path).file_name())
+                .and_then(|n| n.to_str())
+                .unwrap_or("backup")
+        } else {
+            Path::new(&job.source_path)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("backup")
+        };
+
+        log::info!("[rsync_service] source_basename: '{}'", source_basename);
 
         let target_base = Path::new(&job.dest_path).join(source_basename);
+        log::info!(
+            "[rsync_service] target_base: '{}', creating directory...",
+            target_base.display()
+        );
         std::fs::create_dir_all(&target_base)?;
+        log::info!("[rsync_service] Directory created successfully");
 
         let (final_dest, link_dest, folder_name) = if job.mode == SyncMode::TimeMachine {
             let folder_name = self.format_backup_folder_name();
@@ -253,11 +285,22 @@ impl RsyncService {
             link_dest.as_ref().and_then(|p| p.to_str()),
         );
 
+        log::info!(
+            "[rsync_service] Spawning rsync with {} args: {:?}",
+            args.len(),
+            args
+        );
+
         let child = Command::new("rsync")
             .args(&args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
+
+        log::info!(
+            "[rsync_service] rsync spawned with PID: {}",
+            child.id()
+        );
 
         // Track active job
         if let Ok(mut jobs) = self.active_jobs.lock() {
