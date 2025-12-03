@@ -119,6 +119,13 @@ export interface JobAggregateStats {
   lastSnapshotMs: number | null;
 }
 
+// TIM-128: Snapshot density for calendar/timeline visualization
+export interface SnapshotDensity {
+  period: string; // "2024-01" for month, "2024-01-15" for day
+  count: number;
+  totalSize: number;
+}
+
 // TIM-101: Global FTS5 search result
 export interface GlobalSearchResult {
   file: {

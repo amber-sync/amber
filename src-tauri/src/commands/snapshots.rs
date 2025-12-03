@@ -384,3 +384,24 @@ pub async fn get_job_aggregate_stats_on_destination(
     let index = IndexService::for_destination(&dest_path)?;
     index.get_job_aggregate_stats(&job_id)
 }
+
+/// Get snapshot density grouped by period (TIM-128: for calendar/timeline)
+#[tauri::command]
+pub async fn get_snapshot_density(
+    state: State<'_, AppState>,
+    job_id: String,
+    period: String,
+) -> Result<Vec<crate::services::index_service::SnapshotDensity>> {
+    state.index_service.get_snapshot_density(&job_id, &period)
+}
+
+/// Get snapshot density from destination's index
+#[tauri::command]
+pub async fn get_snapshot_density_on_destination(
+    dest_path: String,
+    job_id: String,
+    period: String,
+) -> Result<Vec<crate::services::index_service::SnapshotDensity>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.get_snapshot_density(&job_id, &period)
+}
