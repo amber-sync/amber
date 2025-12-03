@@ -365,3 +365,22 @@ pub async fn list_snapshots_in_range_on_destination(
     let index = IndexService::for_destination(&dest_path)?;
     index.list_snapshots_in_range(&job_id, start_ms, end_ms)
 }
+
+/// Get aggregate statistics for a job (TIM-127: for Time Explorer stats panel)
+#[tauri::command]
+pub async fn get_job_aggregate_stats(
+    state: State<'_, AppState>,
+    job_id: String,
+) -> Result<crate::services::index_service::JobAggregateStats> {
+    state.index_service.get_job_aggregate_stats(&job_id)
+}
+
+/// Get aggregate statistics for a job from destination's index
+#[tauri::command]
+pub async fn get_job_aggregate_stats_on_destination(
+    dest_path: String,
+    job_id: String,
+) -> Result<crate::services::index_service::JobAggregateStats> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.get_job_aggregate_stats(&job_id)
+}

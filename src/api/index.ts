@@ -20,6 +20,7 @@ import type {
   GlobalSearchResult,
   FileTypeStats,
   LargestFile,
+  JobAggregateStats,
   DevSeedResult,
   DevBenchmarkResult,
   DevDbStats,
@@ -252,6 +253,23 @@ class AmberAPI {
       startMs,
       endMs,
     });
+  }
+
+  /**
+   * Get aggregate statistics for a job (TIM-127: for Time Explorer stats panel)
+   */
+  async getJobAggregateStats(jobId: string): Promise<JobAggregateStats> {
+    return invoke('get_job_aggregate_stats', { jobId });
+  }
+
+  /**
+   * Get aggregate statistics for a job from destination's index
+   */
+  async getJobAggregateStatsOnDestination(
+    destPath: string,
+    jobId: string
+  ): Promise<JobAggregateStats> {
+    return invoke('get_job_aggregate_stats_on_destination', { destPath, jobId });
   }
 
   async getSnapshotTree(

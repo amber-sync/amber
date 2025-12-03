@@ -110,6 +110,15 @@ export interface LargestFile {
   path: string;
 }
 
+// TIM-127: Aggregate statistics for a job
+export interface JobAggregateStats {
+  totalSnapshots: number;
+  totalSizeBytes: number;
+  totalFiles: number;
+  firstSnapshotMs: number | null;
+  lastSnapshotMs: number | null;
+}
+
 // TIM-101: Global FTS5 search result
 export interface GlobalSearchResult {
   file: {
