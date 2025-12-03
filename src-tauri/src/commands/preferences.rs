@@ -1,25 +1,19 @@
 use crate::error::Result;
-use crate::services::store::Store;
+use crate::state::AppState;
 use crate::types::preferences::AppPreferences;
-use std::path::PathBuf;
+use tauri::State;
 
-fn get_store() -> Store {
-    let data_dir = dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("amber");
-    Store::new(&data_dir)
+#[tauri::command]
+pub async fn get_preferences(state: State<'_, AppState>) -> Result<AppPreferences> {
+    state.store.load_preferences()
 }
 
 #[tauri::command]
-pub async fn get_preferences() -> Result<AppPreferences> {
-    let store = get_store();
-    store.load_preferences()
-}
-
-#[tauri::command]
-pub async fn set_preferences(preferences: AppPreferences) -> Result<AppPreferences> {
-    let store = get_store();
-    store.save_preferences(&preferences)?;
+pub async fn set_preferences(
+    state: State<'_, AppState>,
+    preferences: AppPreferences,
+) -> Result<AppPreferences> {
+    state.store.save_preferences(&preferences)?;
     Ok(preferences)
 }
 
