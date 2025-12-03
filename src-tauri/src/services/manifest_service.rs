@@ -123,7 +123,7 @@ pub async fn get_or_create_manifest(
             Ok(manifest)
         }
         None => {
-            let machine_id = get_machine_id();
+            let machine_id = crate::utils::get_machine_id();
             let manifest = BackupManifest::new(
                 job_id.to_string(),
                 job_name.to_string(),
@@ -166,38 +166,6 @@ pub async fn remove_snapshot_from_manifest(
     }
 
     Ok(removed)
-}
-
-/// Get a unique machine identifier
-/// Combines hostname with a hardware-based ID when available
-fn get_machine_id() -> String {
-    let hostname = hostname::get()
-        .ok()
-        .and_then(|h| h.into_string().ok())
-        .unwrap_or_else(|| "unknown".to_string());
-
-    // Try to get a hardware UUID on macOS
-    #[cfg(target_os = "macos")]
-    {
-        if let Ok(output) = std::process::Command::new("ioreg")
-            .args(["-rd1", "-c", "IOPlatformExpertDevice"])
-            .output()
-        {
-            if let Ok(stdout) = String::from_utf8(output.stdout) {
-                // Look for IOPlatformUUID
-                for line in stdout.lines() {
-                    if line.contains("IOPlatformUUID") {
-                        if let Some(uuid) = line.split('"').nth(3) {
-                            return format!("{}-{}", hostname, &uuid[..8]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Fallback: just use hostname
-    hostname
 }
 
 /// Errors that can occur when working with manifests

@@ -34,17 +34,22 @@ pub struct MigrationReport {
 
 /// Old snapshot format from jobs.json (for parsing)
 /// This mirrors what used to be stored in jobs
+/// Note: Some fields are only needed for deserialization compatibility
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LegacySnapshot {
     timestamp: i64,
+    /// Path field exists in legacy format but is not used in migration
     #[serde(default)]
+    #[allow(dead_code)]
     path: Option<String>,
     #[serde(default)]
     size_bytes: Option<u64>,
     #[serde(default)]
     file_count: Option<u64>,
+    /// Changes count exists in legacy format but is not tracked in manifest
     #[serde(default)]
+    #[allow(dead_code)]
     changes_count: Option<u64>,
 }
 
@@ -200,7 +205,7 @@ async fn write_manifest_for_job(
         }
     } else {
         // Create new manifest
-        let machine_id = get_machine_id();
+        let machine_id = crate::utils::get_machine_id();
         let mut manifest = BackupManifest::new(
             job.id.clone(),
             job.name.clone(),
@@ -218,34 +223,6 @@ async fn write_manifest_for_job(
     }
 
     Ok(())
-}
-
-/// Get machine identifier (duplicated from manifest_service to avoid circular dependency)
-fn get_machine_id() -> String {
-    let hostname = hostname::get()
-        .ok()
-        .and_then(|h| h.into_string().ok())
-        .unwrap_or_else(|| "unknown".to_string());
-
-    #[cfg(target_os = "macos")]
-    {
-        if let Ok(output) = std::process::Command::new("ioreg")
-            .args(["-rd1", "-c", "IOPlatformExpertDevice"])
-            .output()
-        {
-            if let Ok(stdout) = String::from_utf8(output.stdout) {
-                for line in stdout.lines() {
-                    if line.contains("IOPlatformUUID") {
-                        if let Some(uuid) = line.split('"').nth(3) {
-                            return format!("{}-{}", hostname, &uuid[..8.min(uuid.len())]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    hostname
 }
 
 /// Errors that can occur during migration

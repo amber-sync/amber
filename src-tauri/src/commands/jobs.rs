@@ -87,18 +87,8 @@ pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
         let dest_path = Path::new(&job.dest_path);
         let mounted = dest_path.exists() && dest_path.is_dir();
 
-        // Check if external volume
-        let is_external = job.dest_path.starts_with("/Volumes/")
-            && !job.dest_path.starts_with("/Volumes/Macintosh HD");
-
-        let volume_name = if is_external {
-            job.dest_path
-                .strip_prefix("/Volumes/")
-                .and_then(|rest| rest.split('/').next())
-                .map(String::from)
-        } else {
-            None
-        };
+        // Get volume info using shared helper
+        let vol_info = crate::utils::get_volume_info(&job.dest_path);
 
         // Load snapshots from manifest if mounted, otherwise from cache
         let (snapshots, snapshot_source, cached_at) = if mounted {
@@ -139,8 +129,8 @@ pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
         results.push(JobWithStatus {
             job,
             mounted,
-            is_external,
-            volume_name,
+            is_external: vol_info.is_external,
+            volume_name: vol_info.volume_name,
             snapshots,
             snapshot_source,
             cached_at,
@@ -191,28 +181,32 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
         )));
     }
 
-    // Don't allow deleting system paths
-    let dangerous_prefixes = [
-        "/",
-        "/Users",
-        "/System",
-        "/Library",
-        "/Applications",
-        "/bin",
-        "/usr",
-        "/var",
-        "/private",
-    ];
-
-    // Normalize path for comparison
+    // Only allow deleting paths on external volumes (not system drive)
+    // This is a critical safety check to prevent accidental data loss
     let path_str = dest_path.trim_end_matches('/');
-    for prefix in dangerous_prefixes {
-        if path_str == prefix {
-            return Err(crate::error::AmberError::InvalidPath(format!(
-                "Cannot delete system path: {}",
-                dest_path
-            )));
-        }
+
+    // Must be under /Volumes/ but NOT on Macintosh HD (system drive)
+    if !path_str.starts_with("/Volumes/") {
+        return Err(crate::error::AmberError::InvalidPath(format!(
+            "Can only delete backup data on external volumes: {}",
+            dest_path
+        )));
+    }
+
+    if path_str.starts_with("/Volumes/Macintosh HD") {
+        return Err(crate::error::AmberError::InvalidPath(format!(
+            "Cannot delete data on system volume: {}",
+            dest_path
+        )));
+    }
+
+    // Don't allow deleting the volume root itself
+    let path_after_volumes = path_str.strip_prefix("/Volumes/").unwrap_or("");
+    if !path_after_volumes.contains('/') {
+        return Err(crate::error::AmberError::InvalidPath(format!(
+            "Cannot delete entire volume: {}",
+            dest_path
+        )));
     }
 
     // Remove the directory and all contents
