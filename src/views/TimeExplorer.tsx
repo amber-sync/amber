@@ -9,6 +9,7 @@ import { StatsSummary } from '../components/explorer/StatsSummary';
 import { DateNavigator } from '../components/explorer/DateNavigator';
 import { SlidePanel } from '../components/explorer/panels/SlidePanel';
 import { EditJobPanel } from '../components/explorer/panels/EditJobPanel';
+import { RestorePanel } from '../components/explorer/panels/RestorePanel';
 import { useJobStats } from '../hooks/useJobStats';
 
 /**
@@ -299,11 +300,12 @@ export function TimeExplorer() {
         title="Restore Files"
         width="lg"
       >
-        <div className="p-4">
-          <p className="text-sm text-stone-500">
-            Restore panel content will be implemented in TIM-136
-          </p>
-        </div>
+        <RestorePanel
+          job={job}
+          selectedSnapshot={selectedSnapshot}
+          snapshots={snapshots}
+          onClose={() => setActivePanel(null)}
+        />
       </SlidePanel>
 
       {/* Snapshot Detail Panel */}
