@@ -14,8 +14,17 @@ Usage:
 Output:
     mock-data/dev-documents-backup/YYYY-MM-DD-HHMMSS/  (actual files)
     mock-data/dev-media-archive/YYYY-MM-DD-HHMMSS/    (actual files)
-    mock-data/dev-index.db                            (SQLite index)
+    mock-data/index.db                                (SQLite index)
     mock-data/jobs.json                               (job definitions)
+
+TIMESTAMP CONVENTIONS:
+    - mtime in SQLite: Unix SECONDS (Rust multiplies by 1000 for frontend)
+    - timestamp in snapshots table: Unix MILLISECONDS
+    - manifest.json timestamps: Unix MILLISECONDS
+    - folder names: YYYY-MM-DD-HHMMSS format
+
+This matches the Rust backend's expectations in index_service.rs:531
+where mtime is multiplied by 1000 before sending to frontend.
 """
 
 import sqlite3
@@ -250,7 +259,8 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
     now = datetime.now()
     days_ago = (total_snapshots - snapshot_num) * 7  # Weekly snapshots
     snapshot_time = now - timedelta(days=days_ago, hours=rng.randint(0, 12))
-    timestamp_ms = int(snapshot_time.timestamp() * 1000)
+    timestamp_ms = int(snapshot_time.timestamp() * 1000)  # Milliseconds for manifest/folder names
+    timestamp_sec = int(snapshot_time.timestamp())        # Seconds for mtime (Rust multiplies by 1000)
 
     folder_name = timestamp_to_folder_name(timestamp_ms)
     snapshot_path = job_dir / folder_name
@@ -315,7 +325,8 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
                 file_info["content_seed"]
             )
             create_file_on_disk(file_path, content)
-            file_info["modified"] = timestamp_ms
+            # Store mtime as SECONDS (Rust index_service.rs:531 multiplies by 1000 for frontend)
+            file_info["modified"] = timestamp_sec
         else:
             # Hard link from previous snapshot
             prev_file_path = prev_snapshot_path / file_info["directory"] / file_info["filename"]
@@ -329,7 +340,8 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
                     file_info["content_seed"]
                 )
                 create_file_on_disk(file_path, content)
-                file_info["modified"] = timestamp_ms
+                # Store mtime as SECONDS (Rust index_service.rs:531 multiplies by 1000 for frontend)
+                file_info["modified"] = timestamp_sec
 
         total_size += file_info["size"]
         file_count += 1
@@ -341,7 +353,7 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
             "parent_path": parent_path,
             "file_type": "file",  # Must be lowercase to match FileType::File.as_str()
             "size": file_info["size"],
-            "mtime": file_info["modified"],  # Rust uses mtime, not modified
+            "mtime": file_info["modified"],  # Unix SECONDS (Rust multiplies by 1000 for frontend)
         })
 
     # Insert snapshot into DB (must include root_path!)
@@ -358,10 +370,11 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
         dir_name = parts[-1]
         parent = "/".join(parts[:-1]) if len(parts) > 1 else ""
 
+        # mtime stored as SECONDS (Rust multiplies by 1000 for frontend)
         conn.execute("""
             INSERT INTO files (snapshot_id, path, name, parent_path, size, mtime, inode, file_type)
             VALUES (?, ?, ?, ?, 0, ?, NULL, 'dir')
-        """, (snapshot_id, dir_path, dir_name, parent, timestamp_ms))
+        """, (snapshot_id, dir_path, dir_name, parent, timestamp_sec))
 
     # Insert files (column names must match Rust schema!)
     for f in db_files:
