@@ -42,7 +42,7 @@ export interface CloudConfig {
   remoteName: string; // Rclone remote name, e.g., "myS3:", "gdrive:"
   remotePath?: string; // Optional subpath within remote
   encrypt: boolean; // Whether to use rclone crypt layer
-  encryptPasswordKeychain: string; // Keychain service name for encryption password
+  encryptPasswordKeychain?: string; // TIM-121: Made optional to match Rust backend
   bandwidth?: string; // Bandwidth limit, e.g., "10M" for 10MB/s
   provider?: string; // Provider type for UI (s3, drive, dropbox, etc.)
 }
@@ -246,6 +246,8 @@ export interface AppPreferences {
   runInBackground: boolean;
   startOnBoot: boolean;
   notifications: boolean;
+  theme: string; // TIM-121: Added to match Rust backend
+  accentColor: string; // TIM-121: Added to match Rust backend
 }
 
 /**
@@ -281,6 +283,7 @@ export interface ManifestSnapshot {
   totalSize: number;
   status: ManifestSnapshotStatus;
   durationMs?: number;
+  changesCount?: number; // TIM-121: Added to match Rust backend
 }
 
 export interface BackupManifest {
