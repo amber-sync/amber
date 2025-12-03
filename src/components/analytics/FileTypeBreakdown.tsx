@@ -136,9 +136,10 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
 
       // Get stats for latest snapshot of each job
       for (const job of jobs) {
-        if (job.snapshots.length > 0) {
+        const snapshots = job.snapshots ?? [];
+        if (snapshots.length > 0) {
           // Get the most recent snapshot
-          const latestSnapshot = job.snapshots.reduce((latest, s) =>
+          const latestSnapshot = snapshots.reduce((latest, s) =>
             s.timestamp > latest.timestamp ? s : latest
           );
 

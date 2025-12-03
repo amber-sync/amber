@@ -157,7 +157,7 @@ describe('useRsyncJobs', () => {
     });
 
     expect(result.current.jobs[0].snapshots).toHaveLength(1);
-    expect(result.current.jobs[0].snapshots[0].sizeBytes).toBe(1000);
+    expect(result.current.jobs[0].snapshots![0].sizeBytes).toBe(1000);
     expect(result.current.jobs[0].status).toBe(JobStatus.SUCCESS);
     expect(result.current.jobs[0].lastRun).not.toBeNull();
   });

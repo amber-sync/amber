@@ -19,13 +19,13 @@ export const buildSnapshotFolderName = (timestamp: number): string => {
 /**
  * Calculate job statistics from file tree
  */
-export const calculateJobStats = (
-  fileNodes: SyncJob['snapshots'][number]['root']
-): JobAnalyticsData => {
+type SnapshotRoot = NonNullable<SyncJob['snapshots']>[number]['root'];
+
+export const calculateJobStats = (fileNodes: SnapshotRoot): JobAnalyticsData => {
   const typesMap = new Map<string, number>();
   const allFiles: { name: string; size: number; path: string }[] = [];
 
-  const traverse = (nodes: SyncJob['snapshots'][number]['root'], currentPath: string) => {
+  const traverse = (nodes: SnapshotRoot, currentPath: string) => {
     if (!nodes) return;
     for (const node of nodes) {
       if (node.type === 'FILE') {
@@ -56,12 +56,12 @@ export const calculateJobStats = (
  * Group snapshots by time period
  */
 export const groupSnapshots = (
-  snapshots: SyncJob['snapshots'],
+  snapshots: NonNullable<SyncJob['snapshots']>,
   grouping: 'ALL' | 'DAY' | 'MONTH' | 'YEAR',
   sortBy: 'date' | 'size'
 ) => {
   // Sort first
-  const sortedSnapshots = [...snapshots].sort((a, b) => {
+  const sortedSnapshots = [...(snapshots ?? [])].sort((a, b) => {
     if (sortBy === 'date') {
       return b.timestamp - a.timestamp; // Newest first
     } else {

@@ -47,7 +47,7 @@ export const StatsQuickView: React.FC<StatsQuickViewProps> = ({ job }) => (
         <span className="text-xs text-text-secondary group-hover:text-text-primary transition-colors">
           Total Snapshots
         </span>
-        <span className="text-sm font-bold text-text-primary">{job.snapshots.length}</span>
+        <span className="text-sm font-bold text-text-primary">{(job.snapshots ?? []).length}</span>
       </div>
     </div>
   </Panel>

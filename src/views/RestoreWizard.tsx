@@ -22,14 +22,14 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
 
   // Sort snapshots
   const sortedSnapshots = useMemo(() => {
-    return [...job.snapshots].sort((a, b) => {
+    return [...(job.snapshots ?? [])].sort((a, b) => {
       if (sortBy === 'date') {
         return b.timestamp - a.timestamp; // Newest first
       } else {
         return b.sizeBytes - a.sizeBytes; // Largest first
       }
     });
-  }, [job.snapshots, sortBy]);
+  }, [job.snapshots ?? [], sortBy]);
 
   // Select latest snapshot by default
   useEffect(() => {

@@ -31,7 +31,7 @@ export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick
     const map = new Map<string, DayBackup[]>();
 
     jobs.forEach(job => {
-      job.snapshots.forEach(snapshot => {
+      (job.snapshots ?? []).forEach(snapshot => {
         const date = new Date(snapshot.timestamp);
         const key = format(date, 'yyyy-MM-dd');
 
@@ -118,7 +118,7 @@ export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-text-primary">Backup Activity</h3>
         <span className="text-xs text-text-tertiary">
-          {jobs.reduce((acc, job) => acc + job.snapshots.length, 0)} backups in past year
+          {jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0)} backups in past year
         </span>
       </div>
 

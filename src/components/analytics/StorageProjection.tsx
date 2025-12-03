@@ -62,7 +62,7 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
     const dataPoints: DataPoint[] = [];
 
     jobs.forEach(job => {
-      job.snapshots.forEach(snapshot => {
+      (job.snapshots ?? []).forEach(snapshot => {
         dataPoints.push({
           date: format(new Date(snapshot.timestamp), 'MMM d'),
           timestamp: snapshot.timestamp,

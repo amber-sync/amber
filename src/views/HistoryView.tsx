@@ -10,7 +10,7 @@ interface HistoryViewProps {
 export const HistoryView: React.FC<HistoryViewProps> = ({ jobs }) => {
   // Flatten and sort all snapshots from all jobs
   const history = jobs
-    .flatMap(job => job.snapshots.map(snap => ({ ...snap, jobName: job.name })))
+    .flatMap(job => (job.snapshots ?? []).map(snap => ({ ...snap, jobName: job.name })))
     .sort((a, b) => b.timestamp - a.timestamp);
 
   return (

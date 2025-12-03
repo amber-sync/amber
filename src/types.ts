@@ -126,7 +126,12 @@ export interface SyncJob {
   cloudConfig?: CloudConfig; // Only when destinationType === CLOUD
   lastRun: number | null;
   status: JobStatus;
-  snapshots: Snapshot[];
+  /**
+   * DEPRECATED: Snapshots are now stored in manifest.json on the backup drive.
+   * This field is populated from the manifest when the destination is mounted.
+   * It may be undefined when loading from jobs.json - use `job.snapshots ?? []`.
+   */
+  snapshots?: Snapshot[];
 }
 
 // Additional types for better type safety
@@ -211,6 +216,14 @@ export interface AppPreferences {
   runInBackground: boolean;
   startOnBoot: boolean;
   notifications: boolean;
+}
+
+/**
+ * Helper to safely get snapshots from a job.
+ * Use this when accessing job.snapshots to handle the optional field.
+ */
+export function getJobSnapshots(job: SyncJob): Snapshot[] {
+  return job.snapshots ?? [];
 }
 
 // Error extraction helper
