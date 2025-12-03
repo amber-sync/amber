@@ -454,9 +454,8 @@ function AppContent() {
               diskStats={destinationStats}
               onSelectJob={id => {
                 setActiveJobId(id);
-                const job = jobs.find(j => j.id === id);
-                // Active job tracking is handled by the context
-                setView('DETAIL');
+                // Navigate to Time Explorer for the selected job
+                setView('TIME_EXPLORER');
               }}
               onCreateJob={openNewJob}
             />
