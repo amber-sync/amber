@@ -6,6 +6,7 @@
 use crate::services::file_service::FileService;
 use crate::services::index_service::IndexService;
 use crate::services::snapshot_service::SnapshotService;
+use crate::services::store::Store;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -17,6 +18,8 @@ pub struct AppState {
     pub index_service: Arc<IndexService>,
     /// Snapshot discovery and metadata service
     pub snapshot_service: Arc<SnapshotService>,
+    /// Job/preferences store
+    pub store: Arc<Store>,
     /// Application data directory
     pub data_dir: PathBuf,
 }
@@ -26,7 +29,7 @@ impl AppState {
     pub fn new() -> Result<Self, String> {
         let data_dir = dirs::data_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("amber-backup");
+            .join("amber");
 
         // Ensure data directory exists
         std::fs::create_dir_all(&data_dir)
@@ -42,10 +45,13 @@ impl AppState {
 
         let snapshot_service = Arc::new(SnapshotService::new(&data_dir));
 
+        let store = Arc::new(Store::new(&data_dir));
+
         Ok(Self {
             file_service,
             index_service,
             snapshot_service,
+            store,
             data_dir,
         })
     }

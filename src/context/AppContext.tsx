@@ -9,6 +9,7 @@ interface AppContextType {
   activeJobId: string | null;
   view:
     | 'DASHBOARD'
+    | 'TIMELINE'
     | 'JOB_EDITOR'
     | 'DETAIL'
     | 'HISTORY'
@@ -25,6 +26,7 @@ interface AppContextType {
   setView: (
     view:
       | 'DASHBOARD'
+      | 'TIMELINE'
       | 'JOB_EDITOR'
       | 'DETAIL'
       | 'HISTORY'
@@ -44,21 +46,6 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const SANDBOX_JOB: SyncJob = {
-  id: 'sandbox-auto',
-  name: 'Sandbox Test',
-  sourcePath: '/Users/florianmahner/Desktop/amber-sandbox/source',
-  destPath: '/Users/florianmahner/Desktop/amber-sandbox/dest',
-  mode: SyncMode.TIME_MACHINE,
-  scheduleInterval: null,
-  config: { ...MODE_PRESETS[SyncMode.MIRROR] }, // Mirror mode for sandbox (with delete)
-  sshConfig: { enabled: false },
-  destinationType: DestinationType.LOCAL,
-  lastRun: null,
-  status: JobStatus.IDLE,
-  snapshots: [],
-};
 
 const normalizeJobFromStore = (job: any): SyncJob => ({
   id: job.id,
@@ -95,7 +82,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<
-    'DASHBOARD' | 'JOB_EDITOR' | 'DETAIL' | 'HISTORY' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD'
+    | 'DASHBOARD'
+    | 'TIMELINE'
+    | 'JOB_EDITOR'
+    | 'DETAIL'
+    | 'HISTORY'
+    | 'APP_SETTINGS'
+    | 'HELP'
+    | 'RESTORE_WIZARD'
   >('DASHBOARD');
   const [runInBackground, setRunInBackground] = useState(false);
   const [startOnBoot, setStartOnBoot] = useState(false);
@@ -141,42 +135,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         logger.debug('Stored jobs loaded', { count: Array.isArray(stored) ? stored.length : 0 });
         const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
 
-        const isDev = await api.isDev();
-        logger.debug('Environment check', { isDev });
-
-        if (isDev) {
-          logger.debug('Dev mode detected, checking for sandbox job');
-
-          // Check if we already have a sandbox job
-          const existingSandbox = normalized.find(j => j.id === SANDBOX_JOB.id);
-
-          if (!existingSandbox) {
-            logger.debug('Sandbox job not found, creating it');
-            // If not found, add it and save it
-            await api.saveJob(stripSnapshotsForStore(SANDBOX_JOB));
-
-            // Scan for snapshots immediately
-            logger.debug('Scanning for snapshots');
-            const snapshots = await api.listSnapshots(SANDBOX_JOB.id, SANDBOX_JOB.destPath);
-            logger.debug('Snapshots found', { count: snapshots.length });
-            const jobWithSnapshots = { ...SANDBOX_JOB, snapshots };
-
-            setJobs([jobWithSnapshots]);
-            setActiveJobId(SANDBOX_JOB.id);
-          } else {
-            logger.debug('Sandbox job found, refreshing snapshots');
-            // If found, use stored but refresh snapshots
-            const snapshots = await api.listSnapshots(existingSandbox.id, existingSandbox.destPath);
-            logger.debug('Snapshots found', { count: snapshots.length });
-            const updatedJob = { ...existingSandbox, snapshots };
-
-            setJobs([updatedJob]);
-            setActiveJobId(updatedJob.id);
-          }
-        } else {
-          setJobs(normalized);
-          setActiveJobId(normalized[0]?.id ?? null);
-        }
+        setJobs(normalized);
+        setActiveJobId(normalized[0]?.id ?? null);
       } catch (err) {
         logger.error('Error loading jobs', err);
         setJobs([]);

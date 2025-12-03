@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 /// Database version for migrations
-const DB_VERSION: i32 = 1;
+const DB_VERSION: i32 = 2;
 
 /// Batch size for inserts (performance tuning)
 const BATCH_SIZE: usize = 1000;
@@ -43,7 +43,7 @@ pub enum FileType {
 }
 
 impl FileType {
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             FileType::File => "file",
             FileType::Directory => "dir",
@@ -52,7 +52,7 @@ impl FileType {
     }
 
     #[allow(dead_code)]
-    fn from_str(s: &str) -> Self {
+    pub fn from_str(s: &str) -> Self {
         match s {
             "dir" => FileType::Directory,
             "symlink" => FileType::Symlink,
@@ -69,6 +69,25 @@ pub struct IndexedSnapshot {
     pub timestamp: i64,
     pub root_path: String,
     pub file_count: i64,
+    pub total_size: i64,
+}
+
+/// Global search result with snapshot context
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct GlobalSearchResult {
+    pub file: FileNode,
+    pub job_id: String,
+    pub job_name: Option<String>,
+    pub snapshot_timestamp: i64,
+    pub rank: f64,
+}
+
+/// File type statistics (aggregated by extension)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileTypeStats {
+    pub extension: String,
+    pub count: i64,
     pub total_size: i64,
 }
 
@@ -160,8 +179,59 @@ impl IndexService {
                 PRAGMA user_version = 1;
                 "#,
             )
-            .map_err(|e| AmberError::Index(format!("Migration failed: {}", e)))?;
+            .map_err(|e| AmberError::Index(format!("Migration v1 failed: {}", e)))?;
         }
+
+        if from_version < 2 {
+            // Add FTS5 for instant full-text search (TIM-101)
+            conn.execute_batch(
+                r#"
+                -- FTS5 virtual table for fast full-text search
+                -- Uses external content table (files) to avoid data duplication
+                CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
+                    name,
+                    path,
+                    content=files,
+                    content_rowid=id,
+                    tokenize='unicode61 remove_diacritics 1'
+                );
+
+                -- Triggers to keep FTS index in sync with files table
+                CREATE TRIGGER IF NOT EXISTS files_ai AFTER INSERT ON files BEGIN
+                    INSERT INTO files_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS files_ad AFTER DELETE ON files BEGIN
+                    INSERT INTO files_fts(files_fts, rowid, name, path) VALUES('delete', old.id, old.name, old.path);
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS files_au AFTER UPDATE ON files BEGIN
+                    INSERT INTO files_fts(files_fts, rowid, name, path) VALUES('delete', old.id, old.name, old.path);
+                    INSERT INTO files_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+                END;
+
+                -- Update version
+                PRAGMA user_version = 2;
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Migration v2 (FTS5) failed: {}", e)))?;
+
+            // Rebuild FTS index from existing data
+            self.rebuild_fts_index(conn)?;
+        }
+
+        Ok(())
+    }
+
+    /// Rebuild FTS index from existing files table
+    fn rebuild_fts_index(&self, conn: &Connection) -> Result<()> {
+        // This populates the FTS index from existing data
+        conn.execute_batch(
+            r#"
+            INSERT INTO files_fts(files_fts) VALUES('rebuild');
+            "#,
+        )
+        .map_err(|e| AmberError::Index(format!("Failed to rebuild FTS index: {}", e)))?;
 
         Ok(())
     }
@@ -545,6 +615,123 @@ impl IndexService {
         Ok(result)
     }
 
+    /// Search files globally across all snapshots using FTS5
+    /// Returns results ranked by relevance with snapshot context
+    pub fn search_files_global(
+        &self,
+        pattern: &str,
+        job_id: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<GlobalSearchResult>> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Build the FTS5 query - support prefix matching with *
+        let fts_pattern = if pattern.contains('*') || pattern.contains('"') {
+            // User provided explicit FTS syntax
+            pattern.to_string()
+        } else {
+            // Add prefix matching for better UX (e.g., "read" matches "readme")
+            format!("{}*", pattern)
+        };
+
+        // Query with optional job_id filter
+        let query = if job_id.is_some() {
+            r#"
+            SELECT
+                f.path, f.name, f.size, f.mtime, f.file_type,
+                s.job_id, s.timestamp,
+                bm25(files_fts, 10.0, 1.0) as rank
+            FROM files_fts fts
+            JOIN files f ON fts.rowid = f.id
+            JOIN snapshots s ON f.snapshot_id = s.id
+            WHERE files_fts MATCH ?1
+              AND s.job_id = ?2
+            ORDER BY rank
+            LIMIT ?3
+            "#
+        } else {
+            r#"
+            SELECT
+                f.path, f.name, f.size, f.mtime, f.file_type,
+                s.job_id, s.timestamp,
+                bm25(files_fts, 10.0, 1.0) as rank
+            FROM files_fts fts
+            JOIN files f ON fts.rowid = f.id
+            JOIN snapshots s ON f.snapshot_id = s.id
+            WHERE files_fts MATCH ?1
+            ORDER BY rank
+            LIMIT ?2
+            "#
+        };
+
+        let mut stmt = conn
+            .prepare(query)
+            .map_err(|e| AmberError::Index(format!("Failed to prepare FTS query: {}", e)))?;
+
+        let mut result = Vec::new();
+
+        if let Some(jid) = job_id {
+            let rows = stmt
+                .query_map(params![fts_pattern, jid, limit as i64], |row| {
+                    Self::map_global_search_row(row)
+                })
+                .map_err(|e| AmberError::Index(format!("FTS search failed: {}", e)))?;
+
+            for r in rows {
+                if let Ok(item) = r {
+                    result.push(item);
+                }
+            }
+        } else {
+            let rows = stmt
+                .query_map(params![fts_pattern, limit as i64], |row| {
+                    Self::map_global_search_row(row)
+                })
+                .map_err(|e| AmberError::Index(format!("FTS search failed: {}", e)))?;
+
+            for r in rows {
+                if let Ok(item) = r {
+                    result.push(item);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Helper to map a row to GlobalSearchResult
+    fn map_global_search_row(row: &rusqlite::Row) -> rusqlite::Result<GlobalSearchResult> {
+        let path: String = row.get(0)?;
+        let name: String = row.get(1)?;
+        let size: i64 = row.get(2)?;
+        let mtime: i64 = row.get(3)?;
+        let file_type: String = row.get(4)?;
+        let job_id: String = row.get(5)?;
+        let timestamp: i64 = row.get(6)?;
+        let rank: f64 = row.get(7)?;
+
+        let is_dir = file_type == "dir";
+        let node_type = if is_dir { "FOLDER" } else { "FILE" };
+
+        Ok(GlobalSearchResult {
+            file: FileNode {
+                id: path.replace('/', "-"),
+                name,
+                node_type: node_type.to_string(),
+                size: size as u64,
+                modified: mtime * 1000,
+                children: if is_dir { Some(Vec::new()) } else { None },
+                path,
+            },
+            job_id,
+            job_name: None, // Will be populated by the caller if needed
+            snapshot_timestamp: timestamp,
+            rank: -rank, // bm25 returns negative scores, higher is better
+        })
+    }
+
     /// Get snapshot statistics
     pub fn get_snapshot_stats(&self, job_id: &str, timestamp: i64) -> Result<(i64, i64)> {
         let conn = self.conn.lock().map_err(|e| {
@@ -557,6 +744,68 @@ impl IndexService {
             |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .map_err(|_| AmberError::Index("Snapshot not found".to_string()))
+    }
+
+    /// Get file type statistics for a snapshot (aggregated by extension)
+    pub fn get_file_type_stats(
+        &self,
+        job_id: &str,
+        timestamp: i64,
+        limit: usize,
+    ) -> Result<Vec<FileTypeStats>> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Get snapshot ID
+        let snapshot_id: i64 = conn
+            .query_row(
+                "SELECT id FROM snapshots WHERE job_id = ? AND timestamp = ?",
+                params![job_id, timestamp],
+                |row| row.get(0),
+            )
+            .map_err(|_| AmberError::Index("Snapshot not found in index".to_string()))?;
+
+        // Query file extensions with aggregated stats
+        // Extract extension using SUBSTR and INSTR, group by it
+        let mut stmt = conn
+            .prepare(
+                r#"
+                SELECT
+                    CASE
+                        WHEN INSTR(name, '.') > 0
+                        THEN LOWER(SUBSTR(name, INSTR(name, '.') + 1))
+                        ELSE ''
+                    END as ext,
+                    COUNT(*) as count,
+                    SUM(size) as total_size
+                FROM files
+                WHERE snapshot_id = ? AND file_type = 'file'
+                GROUP BY ext
+                ORDER BY total_size DESC
+                LIMIT ?
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
+
+        let stats = stmt
+            .query_map(params![snapshot_id, limit as i64], |row| {
+                Ok(FileTypeStats {
+                    extension: row.get(0)?,
+                    count: row.get(1)?,
+                    total_size: row.get(2)?,
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query file types: {}", e)))?;
+
+        let mut result = Vec::new();
+        for stat in stats {
+            if let Ok(s) = stat {
+                result.push(s);
+            }
+        }
+
+        Ok(result)
     }
 
     /// Get database path (for debugging)
@@ -574,6 +823,16 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to vacuum database: {}", e)))?;
 
         Ok(())
+    }
+
+    /// Get connection for dev stats (dev only)
+    #[cfg(debug_assertions)]
+    pub fn get_connection_for_stats(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, Connection>> {
+        self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })
     }
 }
 
@@ -714,5 +973,54 @@ mod tests {
 
         assert_eq!(file_count, 2);
         assert_eq!(total_size, 11); // 5 + 6 bytes
+    }
+
+    #[test]
+    fn test_search_files_global_fts5() {
+        let (service, temp_dir) = create_test_service();
+
+        // Create multiple snapshots across multiple jobs
+        let snapshot1_dir = temp_dir.path().join("snapshot1");
+        std::fs::create_dir_all(&snapshot1_dir).unwrap();
+        std::fs::write(snapshot1_dir.join("readme.txt"), "readme content").unwrap();
+        std::fs::write(snapshot1_dir.join("config.json"), "config content").unwrap();
+
+        let snapshot2_dir = temp_dir.path().join("snapshot2");
+        std::fs::create_dir_all(&snapshot2_dir).unwrap();
+        std::fs::write(snapshot2_dir.join("README.md"), "markdown readme").unwrap();
+        std::fs::write(snapshot2_dir.join("app.js"), "javascript").unwrap();
+
+        // Index both snapshots (different jobs)
+        service
+            .index_snapshot("job1", 1700000000000, snapshot1_dir.to_str().unwrap())
+            .unwrap();
+        service
+            .index_snapshot("job2", 1700000001000, snapshot2_dir.to_str().unwrap())
+            .unwrap();
+
+        // Global FTS5 search across ALL snapshots
+        let results = service
+            .search_files_global("readme", None, 100)
+            .unwrap();
+
+        // Should find files from both snapshots
+        assert!(results.len() >= 2, "Expected at least 2 results for 'readme'");
+
+        // Verify results have correct structure
+        for result in &results {
+            assert!(!result.file.name.is_empty());
+            assert!(!result.job_id.is_empty());
+            assert!(result.snapshot_timestamp > 0);
+        }
+
+        // Test with job_id filter
+        let job1_results = service
+            .search_files_global("readme", Some("job1"), 100)
+            .unwrap();
+
+        // Should only find files from job1
+        for result in &job1_results {
+            assert_eq!(result.job_id, "job1");
+        }
     }
 }

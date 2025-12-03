@@ -6,7 +6,7 @@ use std::path::PathBuf;
 fn get_store() -> Store {
     let data_dir = dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("amber-backup");
+        .join("amber");
     Store::new(&data_dir)
 }
 

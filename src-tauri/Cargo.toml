@@ -46,6 +46,8 @@ notify = "7"
 uuid = { version = "1", features = ["v4"] }
 # TIM-46: SQLite metadata index for fast snapshot browsing
 rusqlite = { version = "0.32", features = ["bundled"] }
+# Dev seeding random data generation
+rand = "0.8"
 # Type-safe IPC (commented out until specta v2 stable)
 # specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde_json", "uuid"] }
 # specta-typescript = "0.0.9"

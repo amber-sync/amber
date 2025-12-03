@@ -3,6 +3,7 @@ import { Icons } from './IconComponents';
 
 type View =
   | 'DASHBOARD'
+  | 'TIMELINE'
   | 'JOB_EDITOR'
   | 'DETAIL'
   | 'HISTORY'
@@ -50,6 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
         icon={<Icons.Database size={18} />}
         active={activeView === 'DASHBOARD'}
         onClick={() => onNavigate('DASHBOARD')}
+      />
+      <SidebarButton
+        label="Timeline"
+        icon={<Icons.History size={18} />}
+        active={activeView === 'TIMELINE'}
+        onClick={() => onNavigate('TIMELINE')}
       />
       <SidebarButton
         label="History"

@@ -113,6 +113,7 @@ dependencies = [
  "notify",
  "num_cpus",
  "open",
+ "rand 0.8.5",
  "rayon",
  "regex",
  "rusqlite",

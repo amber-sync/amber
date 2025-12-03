@@ -5,3 +5,7 @@ pub mod rclone;
 pub mod snapshots;
 pub mod filesystem;
 pub mod preferences;
+
+// Dev-only commands
+#[cfg(debug_assertions)]
+pub mod dev;

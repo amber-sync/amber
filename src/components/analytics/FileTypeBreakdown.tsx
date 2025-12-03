@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { SyncJob, FileNode } from '../../types';
+import { SyncJob } from '../../types';
 import { formatBytes } from '../../utils/formatters';
+import api from '../../api';
 
 interface FileTypeBreakdownProps {
   jobs: SyncJob[];
@@ -12,92 +13,107 @@ interface CategoryData {
   value: number;
   count: number;
   color: string;
-  [key: string]: string | number; // Index signature for Recharts compatibility
+  [key: string]: string | number;
+}
+
+interface FileTypeStat {
+  extension: string;
+  count: number;
+  totalSize: number;
 }
 
 // File type categories with their extensions and colors
 const FILE_CATEGORIES: Record<string, { extensions: string[]; color: string }> = {
   Documents: {
     extensions: [
-      '.pdf',
-      '.doc',
-      '.docx',
-      '.txt',
-      '.rtf',
-      '.odt',
-      '.xls',
-      '.xlsx',
-      '.ppt',
-      '.pptx',
-      '.pages',
-      '.numbers',
-      '.key',
+      'pdf',
+      'doc',
+      'docx',
+      'txt',
+      'rtf',
+      'odt',
+      'xls',
+      'xlsx',
+      'ppt',
+      'pptx',
+      'pages',
+      'numbers',
+      'key',
+      'csv',
     ],
     color: '#3B82F6', // blue
   },
   Images: {
     extensions: [
-      '.jpg',
-      '.jpeg',
-      '.png',
-      '.gif',
-      '.bmp',
-      '.svg',
-      '.webp',
-      '.raw',
-      '.heic',
-      '.heif',
-      '.tiff',
-      '.ico',
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'bmp',
+      'svg',
+      'webp',
+      'raw',
+      'heic',
+      'heif',
+      'tiff',
+      'ico',
+      'cr2',
+      'nef',
+      'dng',
     ],
     color: '#10B981', // green
   },
   Videos: {
-    extensions: ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.mpeg', '.mpg'],
+    extensions: ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', 'mpeg', 'mpg'],
     color: '#F59E0B', // amber
   },
   Audio: {
-    extensions: ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.wma', '.m4a', '.aiff'],
+    extensions: ['mp3', 'wav', 'aac', 'flac', 'ogg', 'wma', 'm4a', 'aiff'],
     color: '#8B5CF6', // purple
   },
   Code: {
     extensions: [
-      '.js',
-      '.ts',
-      '.jsx',
-      '.tsx',
-      '.py',
-      '.java',
-      '.cpp',
-      '.c',
-      '.h',
-      '.rs',
-      '.go',
-      '.rb',
-      '.php',
-      '.swift',
-      '.kt',
-      '.cs',
-      '.html',
-      '.css',
-      '.scss',
-      '.json',
-      '.xml',
-      '.yaml',
-      '.yml',
-      '.md',
-      '.sql',
+      'js',
+      'ts',
+      'jsx',
+      'tsx',
+      'py',
+      'java',
+      'cpp',
+      'c',
+      'h',
+      'rs',
+      'go',
+      'rb',
+      'php',
+      'swift',
+      'kt',
+      'cs',
+      'html',
+      'css',
+      'scss',
+      'json',
+      'xml',
+      'yaml',
+      'yml',
+      'md',
+      'sql',
+      'sh',
     ],
     color: '#EC4899', // pink
   },
   Archives: {
-    extensions: ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.dmg', '.iso'],
+    extensions: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'dmg', 'iso'],
     color: '#6366F1', // indigo
+  },
+  Design: {
+    extensions: ['psd', 'ai', 'sketch', 'fig', 'xd'],
+    color: '#14B8A6', // teal
   },
 };
 
-function getFileCategory(filename: string): string {
-  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
+function getCategory(extension: string): string {
+  const ext = extension.toLowerCase().replace('.', '');
 
   for (const [category, { extensions }] of Object.entries(FILE_CATEGORIES)) {
     if (extensions.includes(ext)) {
@@ -108,43 +124,63 @@ function getFileCategory(filename: string): string {
   return 'Other';
 }
 
-function traverseFileTree(
-  nodes: FileNode[],
-  stats: Map<string, { size: number; count: number }>
-): void {
-  for (const node of nodes) {
-    if (node.type === 'FILE') {
-      const category = getFileCategory(node.name);
-      const existing = stats.get(category) || { size: 0, count: 0 };
-      existing.size += node.size;
-      existing.count += 1;
-      stats.set(category, existing);
-    } else if (node.children) {
-      traverseFileTree(node.children, stats);
-    }
-  }
-}
-
 export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) => {
-  const categoryData = useMemo(() => {
-    const stats = new Map<string, { size: number; count: number }>();
+  const [fileStats, setFileStats] = useState<FileTypeStat[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    // Analyze file trees from latest snapshots
-    jobs.forEach(job => {
-      if (job.snapshots.length > 0) {
-        const latestSnapshot = job.snapshots[job.snapshots.length - 1];
-        if (latestSnapshot.root && latestSnapshot.root.length > 0) {
-          traverseFileTree(latestSnapshot.root, stats);
+  // Fetch file type stats from SQLite via API
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const allStats: FileTypeStat[] = [];
+
+      // Get stats for latest snapshot of each job
+      for (const job of jobs) {
+        if (job.snapshots.length > 0) {
+          // Get the most recent snapshot
+          const latestSnapshot = job.snapshots.reduce((latest, s) =>
+            s.timestamp > latest.timestamp ? s : latest
+          );
+
+          try {
+            const stats = await api.getFileTypeStats(job.id, latestSnapshot.timestamp, 50);
+            allStats.push(...stats);
+          } catch (err) {
+            // Snapshot might not be indexed yet, skip
+            console.debug(`No file stats for ${job.id}:`, err);
+          }
         }
       }
-    });
+
+      setFileStats(allStats);
+      setLoading(false);
+    };
+
+    if (jobs.length > 0) {
+      fetchStats();
+    } else {
+      setLoading(false);
+    }
+  }, [jobs]);
+
+  // Aggregate by category
+  const categoryData = useMemo(() => {
+    const categoryStats = new Map<string, { size: number; count: number }>();
+
+    for (const stat of fileStats) {
+      const category = getCategory(stat.extension);
+      const existing = categoryStats.get(category) || { size: 0, count: 0 };
+      existing.size += stat.totalSize;
+      existing.count += stat.count;
+      categoryStats.set(category, existing);
+    }
 
     // Convert to chart data
     const data: CategoryData[] = [];
 
     // Add known categories
     for (const [category, { color }] of Object.entries(FILE_CATEGORIES)) {
-      const stat = stats.get(category);
+      const stat = categoryStats.get(category);
       if (stat && stat.size > 0) {
         data.push({
           name: category,
@@ -156,7 +192,7 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
     }
 
     // Add "Other" category
-    const otherStat = stats.get('Other');
+    const otherStat = categoryStats.get('Other');
     if (otherStat && otherStat.size > 0) {
       data.push({
         name: 'Other',
@@ -168,8 +204,8 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
 
     // Sort by size descending and take top 5
     data.sort((a, b) => b.value - a.value);
-    return data.slice(0, 5);
-  }, [jobs]);
+    return data.slice(0, 6);
+  }, [fileStats]);
 
   const totalSize = categoryData.reduce((acc, cat) => acc + cat.value, 0);
   const hasData = categoryData.length > 0;
@@ -207,7 +243,11 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
         )}
       </div>
 
-      {hasData ? (
+      {loading ? (
+        <div className="h-32 flex items-center justify-center text-text-tertiary text-sm">
+          Loading...
+        </div>
+      ) : hasData ? (
         <div className="flex items-center gap-4">
           {/* Pie Chart */}
           <div className="w-32 h-32 flex-shrink-0">

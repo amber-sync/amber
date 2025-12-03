@@ -69,6 +69,60 @@ pub async fn get_disk_stats(path: String) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Get volume info for any path (returns stats of the containing filesystem)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VolumeStats {
+    pub total_bytes: u64,
+    pub available_bytes: u64,
+}
+
+#[tauri::command]
+pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
+    use std::process::Command;
+
+    // Use df -k to get stats in 1K blocks for any path
+    // This works for any directory, not just mounted volumes
+    let output = Command::new("df")
+        .args(["-k", &path])
+        .output()?;
+
+    if !output.status.success() {
+        return Err(crate::error::AmberError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "df command failed",
+        )));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let lines: Vec<&str> = stdout.lines().collect();
+
+    if lines.len() < 2 {
+        return Err(crate::error::AmberError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Unexpected df output",
+        )));
+    }
+
+    // Parse the second line (first is header)
+    // Format: Filesystem 1K-blocks Used Available Capacity Mounted on
+    let parts: Vec<&str> = lines[1].split_whitespace().collect();
+    if parts.len() < 4 {
+        return Err(crate::error::AmberError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Unexpected df output format",
+        )));
+    }
+
+    let total_kb: u64 = parts[1].parse().unwrap_or(0);
+    let available_kb: u64 = parts[3].parse().unwrap_or(0);
+
+    Ok(VolumeStats {
+        total_bytes: total_kb * 1024,
+        available_bytes: available_kb * 1024,
+    })
+}
+
 // ===== TIM-47: Volume listing and search =====
 
 #[derive(Debug, Serialize, Deserialize)]
