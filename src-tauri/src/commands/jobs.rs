@@ -1,18 +1,12 @@
 use crate::error::Result;
 use crate::services::cache_service;
 use crate::services::manifest_service;
-use crate::services::store::Store;
+use crate::state::AppState;
 use crate::types::job::SyncJob;
 use crate::types::manifest::ManifestSnapshot;
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-
-fn get_store() -> Store {
-    let data_dir = dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("amber");
-    Store::new(&data_dir)
-}
+use std::path::Path;
+use tauri::State;
 
 /// Snapshot data returned from manifest (converted to frontend format)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +29,7 @@ impl From<ManifestSnapshot> for SnapshotInfo {
             timestamp: s.timestamp,
             size_bytes: s.total_size,
             file_count: s.file_count,
-            changes_count: 0, // Not tracked in manifest
+            changes_count: s.changes_count.unwrap_or(0),
             status: match s.status {
                 crate::types::manifest::ManifestSnapshotStatus::Complete => "Complete".to_string(),
                 crate::types::manifest::ManifestSnapshotStatus::Partial => "Partial".to_string(),
@@ -69,17 +63,15 @@ pub struct JobWithStatus {
 }
 
 #[tauri::command]
-pub async fn get_jobs() -> Result<Vec<SyncJob>> {
-    let store = get_store();
-    store.load_jobs()
+pub async fn get_jobs(state: State<'_, AppState>) -> Result<Vec<SyncJob>> {
+    state.store.load_jobs()
 }
 
 /// Get jobs with mount status and snapshots from manifests
 /// This is the preferred endpoint for the UI
 #[tauri::command]
-pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
-    let store = get_store();
-    let jobs = store.load_jobs()?;
+pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobWithStatus>> {
+    let jobs = state.store.load_jobs()?;
 
     let mut results = Vec::with_capacity(jobs.len());
 
@@ -141,21 +133,18 @@ pub async fn get_jobs_with_status() -> Result<Vec<JobWithStatus>> {
 }
 
 #[tauri::command]
-pub async fn save_job(job: SyncJob) -> Result<()> {
-    let store = get_store();
-    store.save_job(job)
+pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
+    state.store.save_job(job)
 }
 
 #[tauri::command]
-pub async fn delete_job(job_id: String) -> Result<()> {
-    let store = get_store();
-
+pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()> {
     // Clear the snapshot cache for this job
     if let Err(e) = cache_service::delete_snapshot_cache(&job_id).await {
         log::warn!("Failed to delete snapshot cache for job {}: {}", job_id, e);
     }
 
-    store.delete_job(&job_id)
+    state.store.delete_job(&job_id)
 }
 
 /// Delete backup data from the destination path
