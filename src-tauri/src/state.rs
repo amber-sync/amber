@@ -3,6 +3,7 @@
 //! TIM-49: Centralized service singletons using Tauri's managed state.
 //! Services are initialized once at app startup and shared across all commands.
 
+use crate::services::data_dir;
 use crate::services::file_service::FileService;
 use crate::services::index_service::IndexService;
 use crate::services::snapshot_service::SnapshotService;
@@ -29,32 +30,40 @@ impl AppState {
     pub fn new() -> Result<Self, String> {
         // In dev mode, use mock-data folder directly from project root
         // In production, use normal user data directory
-        let data_dir = Self::get_data_dir();
+        let data_dir_path = Self::get_data_dir();
 
-        log::info!("Using data directory: {:?}", data_dir);
+        log::info!("Using data directory: {:?}", data_dir_path);
 
-        // Ensure data directory exists
-        std::fs::create_dir_all(&data_dir)
+        // Initialize the global data_dir singleton FIRST
+        // This must happen before any services are created
+        data_dir::init(data_dir_path.clone());
+
+        // Ensure data directory and subdirectories exist
+        std::fs::create_dir_all(&data_dir_path)
             .map_err(|e| format!("Failed to create data directory: {}", e))?;
+
+        // Create cache subdirectories (used by cache_service.rs)
+        std::fs::create_dir_all(data_dir_path.join("cache/snapshots"))
+            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
 
         // Initialize services
         let file_service = Arc::new(FileService::new());
 
         let index_service = Arc::new(
-            IndexService::new(&data_dir)
+            IndexService::new(&data_dir_path)
                 .map_err(|e| format!("Failed to initialize index service: {}", e))?,
         );
 
-        let snapshot_service = Arc::new(SnapshotService::new(&data_dir));
+        let snapshot_service = Arc::new(SnapshotService::new(&data_dir_path));
 
-        let store = Arc::new(Store::new(&data_dir));
+        let store = Arc::new(Store::new(&data_dir_path));
 
         Ok(Self {
             file_service,
             index_service,
             snapshot_service,
             store,
-            data_dir,
+            data_dir: data_dir_path,
         })
     }
 
