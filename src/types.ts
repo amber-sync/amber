@@ -326,3 +326,21 @@ export interface JobWithStatus extends Omit<SyncJob, 'snapshots'> {
   /** When the cache was last updated (unix ms), only set when source is "cache" */
   cachedAt?: number;
 }
+
+// TIM-118: Orphan backup detection
+export interface DiscoveredBackup {
+  /** Path to the backup directory */
+  backupPath: string;
+  /** Job ID from manifest */
+  jobId: string;
+  /** Job name from manifest */
+  jobName: string;
+  /** Source path that was backed up */
+  sourcePath: string;
+  /** Machine ID that created this backup */
+  machineId: string;
+  /** Number of snapshots */
+  snapshotCount: number;
+  /** Whether there's a matching job in jobs.json */
+  hasMatchingJob: boolean;
+}

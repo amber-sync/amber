@@ -364,3 +364,151 @@ pub async fn check_destinations(paths: Vec<String>) -> Result<Vec<MountStatus>> 
 
     Ok(results)
 }
+
+// ===== TIM-118: Orphan backup detection =====
+
+use crate::services::manifest_service;
+
+/// Information about a discovered backup on a volume
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveredBackup {
+    /// Path to the backup directory (parent of .amber-meta)
+    pub backup_path: String,
+    /// Job ID from manifest
+    pub job_id: String,
+    /// Job name from manifest
+    pub job_name: String,
+    /// Source path that was backed up
+    pub source_path: String,
+    /// Machine ID that created this backup
+    pub machine_id: String,
+    /// Number of snapshots
+    pub snapshot_count: usize,
+    /// Whether there's a matching job in jobs.json
+    pub has_matching_job: bool,
+}
+
+/// Scan a volume for Amber backup folders
+/// Returns all backups found, marking which have matching jobs
+#[tauri::command]
+pub async fn scan_for_backups(
+    volume_path: String,
+    known_job_ids: Vec<String>,
+) -> Result<Vec<DiscoveredBackup>> {
+    use std::fs;
+
+    let volume = std::path::Path::new(&volume_path);
+    if !volume.exists() || !volume.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let mut discovered = Vec::new();
+
+    // Scan top-level directories for .amber-meta folders
+    // We don't go deep - backups should be at the top level of their destination
+    if let Ok(entries) = fs::read_dir(volume) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+
+            let meta_dir = path.join(manifest_service::AMBER_META_DIR);
+            if meta_dir.exists() {
+                // Found a backup! Try to read its manifest
+                let backup_path = path.to_string_lossy().to_string();
+                if let Ok(Some(manifest)) = manifest_service::read_manifest(&backup_path).await {
+                    let has_matching_job = known_job_ids.contains(&manifest.job_id);
+                    discovered.push(DiscoveredBackup {
+                        backup_path,
+                        job_id: manifest.job_id,
+                        job_name: manifest.job_name,
+                        source_path: manifest.source_path,
+                        machine_id: manifest.machine_id,
+                        snapshot_count: manifest.snapshots.len(),
+                        has_matching_job,
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(discovered)
+}
+
+/// Scan all mounted volumes for orphan backups
+#[tauri::command]
+pub async fn find_orphan_backups(known_job_ids: Vec<String>) -> Result<Vec<DiscoveredBackup>> {
+    use std::fs;
+
+    let mut all_orphans = Vec::new();
+    let volumes_path = std::path::Path::new("/Volumes");
+
+    // System volumes to skip
+    let skip_volumes = [
+        "Macintosh HD",
+        "Macintosh HD - Data",
+        "Recovery",
+        "Preboot",
+        "VM",
+        "Update",
+    ];
+
+    if volumes_path.exists() {
+        if let Ok(entries) = fs::read_dir(volumes_path) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+
+                // Skip system volumes and hidden
+                if skip_volumes.contains(&name.as_str()) || name.starts_with('.') {
+                    continue;
+                }
+
+                let volume_path = entry.path().to_string_lossy().to_string();
+                if let Ok(backups) = scan_for_backups(volume_path, known_job_ids.clone()).await {
+                    // Only include orphans (no matching job)
+                    for backup in backups {
+                        if !backup.has_matching_job {
+                            all_orphans.push(backup);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(all_orphans)
+}
+
+/// Import an orphan backup by creating a job from its manifest
+#[tauri::command]
+pub async fn import_backup_as_job(backup_path: String) -> Result<crate::types::job::SyncJob> {
+    // Read the manifest
+    let manifest = manifest_service::read_manifest(&backup_path)
+        .await
+        .map_err(|e| crate::error::AmberError::Filesystem(e.to_string()))?
+        .ok_or_else(|| {
+            crate::error::AmberError::NotFound(format!("No manifest found at {}", backup_path))
+        })?;
+
+    // Create a job from the manifest
+    let job = crate::types::job::SyncJob {
+        id: manifest.job_id,
+        name: manifest.job_name,
+        source_path: manifest.source_path,
+        dest_path: backup_path,
+        mode: crate::types::job::SyncMode::TimeMachine,
+        status: crate::types::job::JobStatus::Idle,
+        destination_type: Some(crate::types::job::DestinationType::Local),
+        schedule_interval: None,
+        schedule: None,
+        config: crate::types::job::RsyncConfig::default(),
+        ssh_config: None,
+        cloud_config: None,
+        last_run: None,
+        snapshots: None,
+    };
+
+    Ok(job)
+}

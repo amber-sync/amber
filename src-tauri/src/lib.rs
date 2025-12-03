@@ -71,6 +71,9 @@ pub fn run() {
         commands::filesystem::search_volume,
         commands::filesystem::is_path_mounted,
         commands::filesystem::check_destinations,
+        commands::filesystem::scan_for_backups,
+        commands::filesystem::find_orphan_backups,
+        commands::filesystem::import_backup_as_job,
         // Preferences commands
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,
@@ -131,6 +134,9 @@ pub fn run() {
         commands::filesystem::search_volume,
         commands::filesystem::is_path_mounted,
         commands::filesystem::check_destinations,
+        commands::filesystem::scan_for_backups,
+        commands::filesystem::find_orphan_backups,
+        commands::filesystem::import_backup_as_job,
         // Preferences commands
         commands::preferences::get_preferences,
         commands::preferences::set_preferences,

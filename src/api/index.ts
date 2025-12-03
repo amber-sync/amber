@@ -26,6 +26,7 @@ import type {
   ManifestSnapshotStatus,
   MountStatus,
   JobWithStatus,
+  DiscoveredBackup,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -187,6 +188,31 @@ class AmberAPI {
    */
   async checkDestinations(paths: string[]): Promise<MountStatus[]> {
     return invoke('check_destinations', { paths });
+  }
+
+  // ===== Orphan Backup Detection (TIM-118) =====
+
+  /**
+   * Scan a volume for Amber backup folders
+   * Returns all backups found, marking which have matching jobs
+   */
+  async scanForBackups(volumePath: string, knownJobIds: string[]): Promise<DiscoveredBackup[]> {
+    return invoke('scan_for_backups', { volumePath, knownJobIds });
+  }
+
+  /**
+   * Scan all mounted volumes for orphan backups (backups without matching jobs)
+   */
+  async findOrphanBackups(knownJobIds: string[]): Promise<DiscoveredBackup[]> {
+    return invoke('find_orphan_backups', { knownJobIds });
+  }
+
+  /**
+   * Import an orphan backup by creating a job from its manifest
+   * Returns a SyncJob that can be saved with saveJob()
+   */
+  async importBackupAsJob(backupPath: string): Promise<SyncJob> {
+    return invoke('import_backup_as_job', { backupPath });
   }
 
   // ===== Snapshots =====
