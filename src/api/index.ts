@@ -350,6 +350,29 @@ class AmberAPI {
     return invoke('delete_job_index', { jobId });
   }
 
+  // ===== Destination Index (TIM-112) =====
+
+  /**
+   * Get the path to the index database on a destination drive
+   */
+  async getDestinationIndexPath(destPath: string): Promise<string> {
+    return invoke('get_destination_index_path', { destPath });
+  }
+
+  /**
+   * Check if a destination has an index database
+   */
+  async destinationHasIndex(destPath: string): Promise<boolean> {
+    return invoke('destination_has_index', { destPath });
+  }
+
+  /**
+   * Export the local index database to the destination drive
+   */
+  async exportIndexToDestination(destPath: string): Promise<void> {
+    return invoke('export_index_to_destination', { destPath });
+  }
+
   // ===== Preferences =====
 
   async getPreferences(): Promise<AppPreferences> {

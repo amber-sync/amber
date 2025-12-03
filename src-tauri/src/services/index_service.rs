@@ -115,6 +115,11 @@ impl IndexService {
         Ok(service)
     }
 
+    /// Get the path to the database file
+    pub fn get_db_path(&self) -> &Path {
+        &self.db_path
+    }
+
     /// Initialize database schema
     fn initialize_schema(&self) -> Result<()> {
         let conn = self.conn.lock().map_err(|e| {
