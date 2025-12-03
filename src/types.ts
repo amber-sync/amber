@@ -62,7 +62,8 @@ export interface Snapshot {
   sizeBytes: number;
   fileCount: number;
   changesCount: number;
-  status: 'Complete' | 'Partial';
+  status: 'Complete' | 'Partial' | 'Failed';
+  duration?: number; // Duration of backup in milliseconds
   restored?: boolean;
   restoredDate?: number;
   path?: string; // Path to the snapshot folder
@@ -77,6 +78,23 @@ export interface IndexedSnapshot {
   root_path: string;
   file_count: number;
   total_size: number;
+}
+
+// TIM-101: Global FTS5 search result
+export interface GlobalSearchResult {
+  file: {
+    id: string;
+    name: string;
+    node_type: 'FILE' | 'FOLDER'; // Note: Rust uses node_type
+    size: number;
+    modified: number;
+    path: string;
+    children?: unknown[];
+  };
+  job_id: string;
+  job_name?: string;
+  snapshot_timestamp: number;
+  rank: number;
 }
 
 // TIM-47: Volume info for file search palette
@@ -207,4 +225,30 @@ export function getErrorMessage(error: unknown): string {
     return String((error as { message: unknown }).message);
   }
   return String(error);
+}
+
+// Dev tools types (only used in dev mode)
+export interface DevSeedResult {
+  jobs_created: number;
+  snapshots_created: number;
+  files_created: number;
+  total_size_bytes: number;
+  duration_ms: number;
+}
+
+export interface DevBenchmarkResult {
+  operation: string;
+  iterations: number;
+  avg_ms: number;
+  min_ms: number;
+  max_ms: number;
+  total_ms: number;
+}
+
+export interface DevDbStats {
+  snapshot_count: number;
+  file_count: number;
+  total_size_bytes: number;
+  fts_index_entries: number;
+  db_size_bytes: number;
 }

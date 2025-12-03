@@ -17,6 +17,10 @@ import type {
   RsyncProgressPayload,
   RsyncCompletePayload,
   AppPreferences,
+  GlobalSearchResult,
+  DevSeedResult,
+  DevBenchmarkResult,
+  DevDbStats,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -231,6 +235,18 @@ class AmberAPI {
   }
 
   /**
+   * Search files globally across ALL snapshots using FTS5
+   * This is blazing fast - sub-millisecond even with millions of files
+   */
+  async searchFilesGlobal(
+    pattern: string,
+    jobId?: string,
+    limit?: number
+  ): Promise<GlobalSearchResult[]> {
+    return invoke('search_files_global', { pattern, jobId, limit });
+  }
+
+  /**
    * Get snapshot statistics from index
    */
   async getSnapshotStats(
@@ -242,6 +258,17 @@ class AmberAPI {
       timestamp,
     });
     return { fileCount, totalSize };
+  }
+
+  /**
+   * Get file type statistics for a snapshot (aggregated by extension)
+   */
+  async getFileTypeStats(
+    jobId: string,
+    timestamp: number,
+    limit?: number
+  ): Promise<{ extension: string; count: number; totalSize: number }[]> {
+    return invoke('get_file_type_stats', { jobId, timestamp, limit });
   }
 
   /**
@@ -307,6 +334,37 @@ class AmberAPI {
 
   async isDev(): Promise<boolean> {
     return import.meta.env.DEV;
+  }
+
+  // ===== Dev Tools (only available in dev mode) =====
+
+  /**
+   * Seed the database with realistic mock data for testing
+   * Creates 2 jobs with ~50 snapshots total and millions of file entries
+   */
+  async devSeedData(): Promise<DevSeedResult> {
+    return invoke('dev_seed_data');
+  }
+
+  /**
+   * Run performance benchmarks on the seeded data
+   */
+  async devRunBenchmarks(): Promise<DevBenchmarkResult[]> {
+    return invoke('dev_run_benchmarks');
+  }
+
+  /**
+   * Clear all dev seeded data
+   */
+  async devClearData(): Promise<void> {
+    return invoke('dev_clear_data');
+  }
+
+  /**
+   * Get database statistics
+   */
+  async devDbStats(): Promise<DevDbStats> {
+    return invoke('dev_db_stats');
   }
 
   async getDesktopPath(): Promise<string> {

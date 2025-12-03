@@ -204,8 +204,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     }
   };
 
-  const toggleSelection = (e: React.MouseEvent, path: string) => {
-    e.stopPropagation();
+  const toggleSelection = (e: React.MouseEvent | null, path: string) => {
+    e?.stopPropagation();
     if (onSelectionChange) {
       onSelectionChange(path, !selectedFiles.has(path));
     }
@@ -351,8 +351,9 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
               rowCount={displayEntries.length}
               rowHeight={ROW_HEIGHT}
               overscanCount={5}
-              rowComponent={({ rowIndex, style }: RowComponentProps) => {
-                const entry = displayEntries[rowIndex];
+              rowProps={{}}
+              rowComponent={({ index, style }: RowComponentProps) => {
+                const entry = displayEntries[index];
                 const isSelected = selectedFiles.has(entry.path);
                 const isPreviewSelected = selectedFileForPreview?.path === entry.path;
 
@@ -370,7 +371,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={e => toggleSelection(e as React.MouseEvent, entry.path)}
+                          onChange={() => toggleSelection(null, entry.path)}
                           onClick={e => e.stopPropagation()}
                           className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
                         />

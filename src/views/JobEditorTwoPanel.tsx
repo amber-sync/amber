@@ -64,6 +64,12 @@ const SCHEDULE_OPTIONS = [
 
 const SYNC_MODES = [
   {
+    mode: SyncMode.TIME_MACHINE,
+    label: 'Time Machine',
+    description: 'Incremental',
+    icon: <Icons.Clock size={18} />,
+  },
+  {
     mode: SyncMode.MIRROR,
     label: 'Mirror',
     description: 'Exact replica',
@@ -74,12 +80,6 @@ const SYNC_MODES = [
     label: 'Archive',
     description: 'Copy only',
     icon: <Icons.Archive size={18} />,
-  },
-  {
-    mode: SyncMode.TIME_MACHINE,
-    label: 'Time Machine',
-    description: 'Incremental',
-    icon: <Icons.Clock size={18} />,
   },
 ];
 

@@ -8,3 +8,7 @@ pub mod job_scheduler;
 pub mod volume_watcher;
 pub mod keychain_service;
 pub mod store;
+
+// Dev-only modules
+#[cfg(debug_assertions)]
+pub mod dev_seed;

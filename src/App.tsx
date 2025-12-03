@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
+import { TimelineView } from './views/TimelineView';
 import { RestoreWizard } from './views/RestoreWizard';
 import { HistoryView } from './views/HistoryView';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
@@ -11,6 +12,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { DeleteJobModal } from './components/DeleteJobModal';
 import { CommandPalette } from './components/CommandPalette';
 import { FileSearchPalette } from './components/FileSearchPalette';
+import { DevTools } from './components/DevTools';
 import { AppContextProvider, useApp } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
@@ -64,6 +66,25 @@ function AppContent() {
   // Job Editor Variant (for testing different designs)
   // Options: 'classic' | 'stepper' | 'accordion' | 'twopanel'
   const [jobEditorVariant] = useState<JobEditorVariant>('twopanel');
+
+  // Dev Tools Panel (Cmd+Shift+D to toggle)
+  const [showDevTools, setShowDevTools] = useState(false);
+
+  // Keyboard shortcut for Dev Tools (only in dev mode)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Shift+D (Mac) or Ctrl+Shift+D (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setShowDevTools(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Listen for rsync completion events
   useEffect(() => {
@@ -389,7 +410,7 @@ function AppContent() {
     setRestoreJobId(null);
   };
 
-  const isTopLevel = ['DASHBOARD', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(view);
+  const isTopLevel = ['DASHBOARD', 'TIMELINE', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(view);
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
   return (
@@ -400,6 +421,9 @@ function AppContent() {
 
       <CommandPalette />
       <FileSearchPalette />
+
+      {/* Dev Tools - Cmd+Shift+D to toggle */}
+      {showDevTools && <DevTools onClose={() => setShowDevTools(false)} />}
 
       <DeleteJobModal
         isOpen={showDeleteConfirm}
@@ -428,6 +452,8 @@ function AppContent() {
             />
           </div>
         )}
+
+        {view === 'TIMELINE' && <TimelineView jobs={jobs} diskStats={destinationStats} />}
 
         {view === 'HISTORY' && <HistoryView jobs={jobs} />}
 
