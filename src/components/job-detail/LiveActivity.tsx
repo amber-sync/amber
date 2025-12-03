@@ -28,6 +28,10 @@ export const LiveActivity: React.FC<LiveActivityProps> = ({
     }
   }, [isRunning, showLogs]);
 
+  // Note: Removed auto-expand on log arrival because rsync events are not
+  // filtered by jobId (see TIM-124). This caused logs from other jobs to
+  // trigger expansion, creating confusing UX.
+
   return (
     <div className={`flex flex-col ${isTerminalExpanded ? 'h-full' : ''}`}>
       {/* Minimal Header */}
