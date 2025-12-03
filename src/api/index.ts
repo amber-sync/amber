@@ -21,6 +21,7 @@ import type {
   FileTypeStats,
   LargestFile,
   JobAggregateStats,
+  SnapshotDensity,
   DevSeedResult,
   DevBenchmarkResult,
   DevDbStats,
@@ -270,6 +271,25 @@ class AmberAPI {
     jobId: string
   ): Promise<JobAggregateStats> {
     return invoke('get_job_aggregate_stats_on_destination', { destPath, jobId });
+  }
+
+  /**
+   * Get snapshot density grouped by period (TIM-128: for calendar/timeline)
+   * @param period - "day", "week", "month", or "year"
+   */
+  async getSnapshotDensity(jobId: string, period: string): Promise<SnapshotDensity[]> {
+    return invoke('get_snapshot_density', { jobId, period });
+  }
+
+  /**
+   * Get snapshot density from destination's index
+   */
+  async getSnapshotDensityOnDestination(
+    destPath: string,
+    jobId: string,
+    period: string
+  ): Promise<SnapshotDensity[]> {
+    return invoke('get_snapshot_density_on_destination', { destPath, jobId, period });
   }
 
   async getSnapshotTree(

@@ -117,6 +117,18 @@ pub struct JobAggregateStats {
     pub last_snapshot_ms: Option<i64>,
 }
 
+/// Snapshot density for calendar/timeline visualization (TIM-128)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnapshotDensity {
+    /// Period identifier (e.g., "2024-01" for month, "2024-01-15" for day)
+    pub period: String,
+    /// Number of snapshots in this period
+    pub count: i64,
+    /// Total size of snapshots in this period (bytes)
+    pub total_size: i64,
+}
+
 impl IndexService {
     /// Create or open the index database at the default app data location
     pub fn new(app_data_dir: &Path) -> Result<Self> {
@@ -713,6 +725,59 @@ impl IndexService {
         Ok(result)
     }
 
+    /// Get snapshot density grouped by period (TIM-128: for calendar/timeline visualization)
+    /// Period can be: "day", "week", "month", "year"
+    pub fn get_snapshot_density(&self, job_id: &str, period: &str) -> Result<Vec<SnapshotDensity>> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        // Format string for grouping based on period
+        // timestamp is in milliseconds, so divide by 1000 for strftime
+        let group_format = match period {
+            "day" => "%Y-%m-%d",
+            "week" => "%Y-W%W",
+            "month" => "%Y-%m",
+            "year" => "%Y",
+            _ => "%Y-%m", // Default to month
+        };
+
+        let query = format!(
+            "SELECT
+                strftime('{}', timestamp / 1000, 'unixepoch') as period,
+                COUNT(*) as count,
+                SUM(total_size) as total_size
+             FROM snapshots
+             WHERE job_id = ?
+             GROUP BY period
+             ORDER BY period DESC",
+            group_format
+        );
+
+        let mut stmt = conn
+            .prepare(&query)
+            .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
+
+        let density = stmt
+            .query_map(params![job_id], |row| {
+                Ok(SnapshotDensity {
+                    period: row.get(0)?,
+                    count: row.get(1)?,
+                    total_size: row.get(2)?,
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query density: {}", e)))?;
+
+        let mut result = Vec::new();
+        for d in density {
+            if let Ok(entry) = d {
+                result.push(entry);
+            }
+        }
+
+        Ok(result)
+    }
+
     /// Check if a snapshot is indexed
     pub fn is_indexed(&self, job_id: &str, timestamp: i64) -> Result<bool> {
         let conn = self.conn.lock().map_err(|e| {
@@ -1279,6 +1344,57 @@ mod tests {
         assert_eq!(stats.total_size_bytes, 25); // 5 + 6 + 14 bytes
         assert_eq!(stats.first_snapshot_ms, Some(ts1));
         assert_eq!(stats.last_snapshot_ms, Some(ts2));
+    }
+
+    #[test]
+    fn test_get_snapshot_density() {
+        let (service, temp_dir) = create_test_service();
+
+        let snapshot_dir = temp_dir.path().join("snapshot");
+        std::fs::create_dir_all(&snapshot_dir).unwrap();
+        std::fs::write(snapshot_dir.join("file.txt"), "test").unwrap();
+
+        // Create snapshots across multiple months
+        // Jan 2024: 2 snapshots, Feb 2024: 1 snapshot, Mar 2024: 3 snapshots
+        let timestamps = [
+            1704067200000_i64, // Jan 1, 2024
+            1704153600000_i64, // Jan 2, 2024
+            1706745600000_i64, // Feb 1, 2024
+            1709251200000_i64, // Mar 1, 2024
+            1709337600000_i64, // Mar 2, 2024
+            1709424000000_i64, // Mar 3, 2024
+        ];
+
+        for ts in &timestamps {
+            service
+                .index_snapshot("job1", *ts, snapshot_dir.to_str().unwrap())
+                .unwrap();
+        }
+
+        // Test monthly density
+        let monthly = service.get_snapshot_density("job1", "month").unwrap();
+        assert_eq!(monthly.len(), 3); // Jan, Feb, Mar
+        // Results are ordered DESC, so Mar first
+        assert_eq!(monthly[0].period, "2024-03");
+        assert_eq!(monthly[0].count, 3);
+        assert_eq!(monthly[1].period, "2024-02");
+        assert_eq!(monthly[1].count, 1);
+        assert_eq!(monthly[2].period, "2024-01");
+        assert_eq!(monthly[2].count, 2);
+
+        // Test daily density
+        let daily = service.get_snapshot_density("job1", "day").unwrap();
+        assert_eq!(daily.len(), 6); // 6 unique days
+
+        // Test yearly density
+        let yearly = service.get_snapshot_density("job1", "year").unwrap();
+        assert_eq!(yearly.len(), 1);
+        assert_eq!(yearly[0].period, "2024");
+        assert_eq!(yearly[0].count, 6);
+
+        // Test empty job
+        let empty = service.get_snapshot_density("nonexistent", "month").unwrap();
+        assert!(empty.is_empty());
     }
 
     #[test]

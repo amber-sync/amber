@@ -76,6 +76,8 @@ pub fn run() {
         commands::snapshots::list_snapshots_in_range_on_destination,
         commands::snapshots::get_job_aggregate_stats,
         commands::snapshots::get_job_aggregate_stats_on_destination,
+        commands::snapshots::get_snapshot_density,
+        commands::snapshots::get_snapshot_density_on_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
@@ -158,6 +160,8 @@ pub fn run() {
         commands::snapshots::list_snapshots_in_range_on_destination,
         commands::snapshots::get_job_aggregate_stats,
         commands::snapshots::get_job_aggregate_stats_on_destination,
+        commands::snapshots::get_snapshot_density,
+        commands::snapshots::get_snapshot_density_on_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
