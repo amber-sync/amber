@@ -610,6 +610,50 @@ impl IndexService {
         Ok(result)
     }
 
+    /// List snapshots within a date range (for filtering UI)
+    /// Time range is inclusive: [start_ms, end_ms]
+    pub fn list_snapshots_in_range(
+        &self,
+        job_id: &str,
+        start_ms: i64,
+        end_ms: i64,
+    ) -> Result<Vec<IndexedSnapshot>> {
+        let conn = self.conn.lock().map_err(|e| {
+            AmberError::Index(format!("Failed to acquire database lock: {}", e))
+        })?;
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, job_id, timestamp, root_path, file_count, total_size
+                 FROM snapshots
+                 WHERE job_id = ? AND timestamp >= ? AND timestamp <= ?
+                 ORDER BY timestamp DESC",
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
+
+        let snapshots = stmt
+            .query_map(params![job_id, start_ms, end_ms], |row| {
+                Ok(IndexedSnapshot {
+                    id: row.get(0)?,
+                    job_id: row.get(1)?,
+                    timestamp: row.get(2)?,
+                    root_path: row.get(3)?,
+                    file_count: row.get(4)?,
+                    total_size: row.get(5)?,
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query snapshots: {}", e)))?;
+
+        let mut result = Vec::new();
+        for snapshot in snapshots {
+            if let Ok(s) = snapshot {
+                result.push(s);
+            }
+        }
+
+        Ok(result)
+    }
+
     /// Check if a snapshot is indexed
     pub fn is_indexed(&self, job_id: &str, timestamp: i64) -> Result<bool> {
         let conn = self.conn.lock().map_err(|e| {
@@ -1085,6 +1129,54 @@ mod tests {
         let snapshots = service.list_snapshots("job1").unwrap();
         assert_eq!(snapshots.len(), 2);
         assert!(snapshots[0].timestamp > snapshots[1].timestamp); // Newest first
+    }
+
+    #[test]
+    fn test_list_snapshots_in_range() {
+        let (service, temp_dir) = create_test_service();
+
+        let snapshot_dir = temp_dir.path().join("snapshot");
+        std::fs::create_dir_all(&snapshot_dir).unwrap();
+        std::fs::write(snapshot_dir.join("file.txt"), "test").unwrap();
+
+        // Create 5 snapshots with different timestamps
+        // Jan 1, Jan 15, Feb 1, Feb 15, Mar 1 (all in 2024)
+        let timestamps = [
+            1704067200000_i64, // Jan 1, 2024
+            1705276800000_i64, // Jan 15, 2024
+            1706745600000_i64, // Feb 1, 2024
+            1707955200000_i64, // Feb 15, 2024
+            1709251200000_i64, // Mar 1, 2024
+        ];
+
+        for ts in &timestamps {
+            service
+                .index_snapshot("job1", *ts, snapshot_dir.to_str().unwrap())
+                .unwrap();
+        }
+
+        // Query all snapshots
+        let all = service
+            .list_snapshots_in_range("job1", timestamps[0], timestamps[4])
+            .unwrap();
+        assert_eq!(all.len(), 5);
+
+        // Query February only (Feb 1 to Feb 29)
+        let feb_start = 1706745600000_i64; // Feb 1
+        let feb_end = 1709251199999_i64; // Feb 29, 23:59:59.999
+        let feb_only = service
+            .list_snapshots_in_range("job1", feb_start, feb_end)
+            .unwrap();
+        assert_eq!(feb_only.len(), 2); // Feb 1 and Feb 15
+
+        // Query with no results
+        let future = service
+            .list_snapshots_in_range("job1", 1800000000000, 1900000000000)
+            .unwrap();
+        assert_eq!(future.len(), 0);
+
+        // Verify ordering (newest first)
+        assert!(all[0].timestamp > all[1].timestamp);
     }
 
     #[test]

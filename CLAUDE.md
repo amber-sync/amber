@@ -228,7 +228,62 @@ git checkout -b feature/<TICKET-ID>-<short-description>
 ./scripts/linear.sh list              # List all Todo tickets
 ./scripts/linear.sh view TIM-37       # View ticket details
 ./scripts/linear.sh done TIM-35       # Mark ticket as Done
+./scripts/linear.sh create "Title" "Description"  # Create new ticket
 ```
+
+### CRITICAL: Creating Tickets Before Implementation
+
+**NEVER start implementing large features without creating detailed tickets first.**
+
+When planning a multi-step feature or refactor:
+
+1. **Write detailed ticket specifications** in `docs/` as markdown files
+2. **Each ticket MUST include**:
+   - **Goal**: One sentence describing the outcome
+   - **Files to Modify**: Exact file paths
+   - **Files to Create**: New files needed
+   - **Implementation Steps**: Numbered, specific steps with code snippets
+   - **Testing**: What tests to write, what to manually verify
+   - **Acceptance Criteria**: Checkboxes for completion
+
+3. **Create tickets in Linear** using the script before starting work
+4. **Work on ONE ticket at a time** - complete it fully before moving to the next
+
+### Ticket Specification Template
+
+```markdown
+## TIM-XXX: [Title]
+
+### Goal
+[One sentence describing the outcome]
+
+### Files to Modify
+- `path/to/file.rs` - [What changes]
+
+### Files to Create
+- `path/to/new/file.ts` - [What it does]
+
+### Implementation Steps
+1. **Step title**:
+   ```rust
+   // Code snippet showing what to add
+   ```
+   - Additional notes
+
+### Testing
+- Unit test: [Description]
+- Manual test: [Description]
+
+### Acceptance Criteria
+- [ ] Criteria 1
+- [ ] Criteria 2
+```
+
+This ensures:
+- Work is resumable even after context is lost
+- Clear scope prevents scope creep
+- Other contributors can pick up tickets
+- Progress is trackable
 
 ### Feature Implementation Cycle
 1. **ALWAYS Create Branch First**: `git checkout -b feature/<TICKET-ID>-<short-description>`

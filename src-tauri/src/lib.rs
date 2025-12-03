@@ -48,6 +48,7 @@ pub fn run() {
         commands::rclone::kill_rclone,
         // Snapshot commands
         commands::snapshots::list_snapshots,
+        commands::snapshots::list_snapshots_in_range,
         commands::snapshots::get_snapshot_tree,
         commands::snapshots::get_indexed_directory,
         commands::snapshots::index_snapshot,
@@ -72,6 +73,7 @@ pub fn run() {
         commands::snapshots::get_file_type_stats_on_destination,
         commands::snapshots::get_largest_files_on_destination,
         commands::snapshots::delete_snapshot_from_destination,
+        commands::snapshots::list_snapshots_in_range_on_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,
@@ -126,6 +128,7 @@ pub fn run() {
         commands::rclone::kill_rclone,
         // Snapshot commands
         commands::snapshots::list_snapshots,
+        commands::snapshots::list_snapshots_in_range,
         commands::snapshots::get_snapshot_tree,
         commands::snapshots::get_indexed_directory,
         commands::snapshots::index_snapshot,
@@ -150,6 +153,7 @@ pub fn run() {
         commands::snapshots::get_file_type_stats_on_destination,
         commands::snapshots::get_largest_files_on_destination,
         commands::snapshots::delete_snapshot_from_destination,
+        commands::snapshots::list_snapshots_in_range_on_destination,
         // Filesystem commands
         commands::filesystem::read_dir,
         commands::filesystem::read_file_preview,

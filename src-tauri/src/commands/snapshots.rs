@@ -12,6 +12,19 @@ pub async fn list_snapshots(
     state.snapshot_service.list_snapshots(&job_id, &dest_path)
 }
 
+/// List snapshots within a date range (for Time Explorer filtering)
+#[tauri::command]
+pub async fn list_snapshots_in_range(
+    state: State<'_, AppState>,
+    job_id: String,
+    start_ms: i64,
+    end_ms: i64,
+) -> Result<Vec<crate::services::index_service::IndexedSnapshot>> {
+    state
+        .index_service
+        .list_snapshots_in_range(&job_id, start_ms, end_ms)
+}
+
 /// Get snapshot tree - uses SQLite index if available, falls back to filesystem scan
 #[tauri::command]
 pub async fn get_snapshot_tree(
@@ -339,4 +352,16 @@ pub async fn delete_snapshot_from_destination(
 ) -> Result<()> {
     let index = IndexService::for_destination(&dest_path)?;
     index.delete_snapshot(&job_id, timestamp)
+}
+
+/// List snapshots within a date range from destination's index (for Time Explorer filtering)
+#[tauri::command]
+pub async fn list_snapshots_in_range_on_destination(
+    dest_path: String,
+    job_id: String,
+    start_ms: i64,
+    end_ms: i64,
+) -> Result<Vec<crate::services::index_service::IndexedSnapshot>> {
+    let index = IndexService::for_destination(&dest_path)?;
+    index.list_snapshots_in_range(&job_id, start_ms, end_ms)
 }

@@ -224,6 +224,36 @@ class AmberAPI {
     return invoke('list_snapshots', { jobId, destPath });
   }
 
+  /**
+   * List snapshots within a date range (for Time Explorer filtering)
+   * TIM-126: Queries SQLite index for fast filtering
+   */
+  async listSnapshotsInRange(
+    jobId: string,
+    startMs: number,
+    endMs: number
+  ): Promise<IndexedSnapshot[]> {
+    return invoke('list_snapshots_in_range', { jobId, startMs, endMs });
+  }
+
+  /**
+   * List snapshots within a date range from destination's index
+   * TIM-126: Queries destination-based SQLite index
+   */
+  async listSnapshotsInRangeOnDestination(
+    destPath: string,
+    jobId: string,
+    startMs: number,
+    endMs: number
+  ): Promise<IndexedSnapshot[]> {
+    return invoke('list_snapshots_in_range_on_destination', {
+      destPath,
+      jobId,
+      startMs,
+      endMs,
+    });
+  }
+
   async getSnapshotTree(
     jobId: string,
     timestamp: number,
