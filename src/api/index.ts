@@ -58,6 +58,14 @@ class AmberAPI {
     return invoke('delete_job', { jobId });
   }
 
+  /**
+   * Delete backup data from the destination path
+   * This permanently removes all snapshots from the backup drive
+   */
+  async deleteJobData(destPath: string): Promise<void> {
+    return invoke('delete_job_data', { destPath });
+  }
+
   // ===== Rsync Operations =====
 
   async runRsync(job: SyncJob): Promise<void> {

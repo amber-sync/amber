@@ -167,3 +167,62 @@ pub async fn delete_job(job_id: String) -> Result<()> {
 
     store.delete_job(&job_id)
 }
+
+/// Delete backup data from the destination path
+/// This removes the entire backup directory including all snapshots
+#[tauri::command]
+pub async fn delete_job_data(dest_path: String) -> Result<()> {
+    use tokio::fs;
+
+    let path = Path::new(&dest_path);
+
+    // Safety checks
+    if !path.exists() {
+        return Err(crate::error::AmberError::NotFound(format!(
+            "Backup path does not exist: {}",
+            dest_path
+        )));
+    }
+
+    if !path.is_dir() {
+        return Err(crate::error::AmberError::InvalidPath(format!(
+            "Backup path is not a directory: {}",
+            dest_path
+        )));
+    }
+
+    // Don't allow deleting system paths
+    let dangerous_prefixes = [
+        "/",
+        "/Users",
+        "/System",
+        "/Library",
+        "/Applications",
+        "/bin",
+        "/usr",
+        "/var",
+        "/private",
+    ];
+
+    // Normalize path for comparison
+    let path_str = dest_path.trim_end_matches('/');
+    for prefix in dangerous_prefixes {
+        if path_str == prefix {
+            return Err(crate::error::AmberError::InvalidPath(format!(
+                "Cannot delete system path: {}",
+                dest_path
+            )));
+        }
+    }
+
+    // Remove the directory and all contents
+    fs::remove_dir_all(path).await.map_err(|e| {
+        crate::error::AmberError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to delete backup data: {}", e),
+        ))
+    })?;
+
+    log::info!("Deleted backup data at: {}", dest_path);
+    Ok(())
+}

@@ -36,6 +36,7 @@ pub fn run() {
         commands::jobs::get_jobs_with_status,
         commands::jobs::save_job,
         commands::jobs::delete_job,
+        commands::jobs::delete_job_data,
         // Rsync commands
         commands::rsync::run_rsync,
         commands::rsync::kill_rsync,
@@ -95,6 +96,7 @@ pub fn run() {
         commands::jobs::get_jobs_with_status,
         commands::jobs::save_job,
         commands::jobs::delete_job,
+        commands::jobs::delete_job_data,
         // Rsync commands
         commands::rsync::run_rsync,
         commands::rsync::kill_rsync,
