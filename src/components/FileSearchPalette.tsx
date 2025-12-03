@@ -206,7 +206,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
         }
       } else {
         // Enter: Open file or navigate
-        if (result.file.type === 'FOLDER') {
+        if (result.file.type === 'dir') {
           // For folders in snapshots, navigate to them in the file browser
           if (result.scope === 'snapshot' && activeJob) {
             setActiveJobId(activeJob.id);
@@ -492,7 +492,7 @@ const ResultItem: React.FC<{
   onSelect: () => void;
   onMouseEnter: () => void;
 }> = ({ result, isSelected, onSelect, onMouseEnter }) => {
-  const isFolder = result.file.type === 'FOLDER';
+  const isFolder = result.file.type === 'dir';
 
   return (
     <button

@@ -18,6 +18,8 @@ import type {
   RsyncCompletePayload,
   AppPreferences,
   GlobalSearchResult,
+  FileTypeStats,
+  LargestFile,
   DevSeedResult,
   DevBenchmarkResult,
   DevDbStats,
@@ -333,8 +335,15 @@ class AmberAPI {
     jobId: string,
     timestamp: number,
     limit?: number
-  ): Promise<{ extension: string; count: number; totalSize: number }[]> {
+  ): Promise<FileTypeStats[]> {
     return invoke('get_file_type_stats', { jobId, timestamp, limit });
+  }
+
+  /**
+   * Get largest files in a snapshot (for analytics)
+   */
+  async getLargestFiles(jobId: string, timestamp: number, limit?: number): Promise<LargestFile[]> {
+    return invoke('get_largest_files', { jobId, timestamp, limit });
   }
 
   /**

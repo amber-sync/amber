@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SyncJob, JobStatus, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
 import { formatBytes, formatSchedule, truncateMiddle } from '../utils/formatters';
-import { BackupCalendar, StorageProjection } from '../components/analytics';
+import { BackupCalendar } from '../components/analytics';
 import { ConnectionDot, OfflineBadge } from '../components/ConnectionStatus';
 import { format } from 'date-fns';
 
@@ -145,9 +145,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="pt-6 border-t border-border-base">
           <h2 className="text-lg font-semibold text-text-primary mb-4">Analytics</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5">
             <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />
-            <StorageProjection jobs={jobs} diskStats={diskStats} />
           </div>
 
           {/* Selected Day Details */}

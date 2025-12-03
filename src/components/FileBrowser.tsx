@@ -5,6 +5,7 @@ import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
 import { api } from '../api';
 import { logger } from '../utils/logger';
+import { isDirectory } from '../types';
 
 const ROW_HEIGHT = 40;
 
@@ -105,7 +106,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           formatted = result.map((item: any) => ({
             name: item.name,
             path: item.path,
-            isDirectory: item.node_type === 'FOLDER' || item.nodeType === 'FOLDER',
+            // Use centralized isDirectory() from types.ts - matches Rust file_type module
+            isDirectory: isDirectory(item.type),
             size: item.size,
             modified: new Date(item.modified),
           }));
@@ -172,7 +174,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         const formatted: FileEntry[] = results.map((item: any) => ({
           name: item.name,
           path: item.path,
-          isDirectory: item.node_type === 'FOLDER' || item.nodeType === 'FOLDER',
+          // Use centralized isDirectory() from types.ts - matches Rust file_type module
+          isDirectory: isDirectory(item.type),
           size: item.size,
           modified: new Date(item.modified),
         }));

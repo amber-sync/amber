@@ -1,5 +1,17 @@
 use serde::{Deserialize, Serialize};
 
+/// Centralized file type constants - use these everywhere instead of string literals.
+/// These match the TypeScript FileNode.type: 'file' | 'dir'
+pub mod file_type {
+    pub const DIR: &str = "dir";
+    pub const FILE: &str = "file";
+
+    /// Check if a string represents a directory type
+    pub fn is_dir(s: &str) -> bool {
+        s == DIR
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {

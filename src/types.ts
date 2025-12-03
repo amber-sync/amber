@@ -47,10 +47,26 @@ export interface CloudConfig {
   provider?: string; // Provider type for UI (s3, drive, dropbox, etc.)
 }
 
+/**
+ * Centralized file type constants - use these everywhere instead of string literals.
+ * These match the Rust file_type module in src-tauri/src/types/snapshot.rs
+ */
+export const FILE_TYPE = {
+  DIR: 'dir',
+  FILE: 'file',
+} as const;
+
+export type FileType = (typeof FILE_TYPE)[keyof typeof FILE_TYPE];
+
+/** Check if a type string represents a directory */
+export function isDirectory(type: string): boolean {
+  return type === FILE_TYPE.DIR;
+}
+
 export interface FileNode {
   id: string;
   name: string;
-  type: 'FILE' | 'FOLDER';
+  type: FileType;
   size: number;
   modified: number;
   children?: FileNode[];
@@ -80,12 +96,26 @@ export interface IndexedSnapshot {
   total_size: number;
 }
 
+// TIM-101: File type stats from SQLite index
+export interface FileTypeStats {
+  extension: string;
+  count: number;
+  totalSize: number;
+}
+
+// TIM-101: Largest file info from SQLite index
+export interface LargestFile {
+  name: string;
+  size: number;
+  path: string;
+}
+
 // TIM-101: Global FTS5 search result
 export interface GlobalSearchResult {
   file: {
     id: string;
     name: string;
-    node_type: 'FILE' | 'FOLDER'; // Note: Rust uses node_type
+    type: 'file' | 'dir'; // Matches FileType::as_str() in Rust
     size: number;
     modified: number;
     path: string;

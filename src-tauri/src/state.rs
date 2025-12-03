@@ -27,9 +27,11 @@ pub struct AppState {
 impl AppState {
     /// Create new application state with all services initialized
     pub fn new() -> Result<Self, String> {
-        let data_dir = dirs::data_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join("amber");
+        // In dev mode, use mock-data folder directly from project root
+        // In production, use normal user data directory
+        let data_dir = Self::get_data_dir();
+
+        log::info!("Using data directory: {:?}", data_dir);
 
         // Ensure data directory exists
         std::fs::create_dir_all(&data_dir)
@@ -54,6 +56,33 @@ impl AppState {
             store,
             data_dir,
         })
+    }
+
+    /// Get the data directory path
+    /// - Dev mode: uses mock-data folder from project root (auto-loads test data)
+    /// - Production: uses standard user data directory (clean)
+    fn get_data_dir() -> PathBuf {
+        #[cfg(debug_assertions)]
+        {
+            // In dev mode, check if mock-data exists and use it
+            if let Some(manifest_dir) = option_env!("CARGO_MANIFEST_DIR") {
+                let mock_data_path = PathBuf::from(manifest_dir)
+                    .parent()
+                    .map(|p| p.join("mock-data"));
+
+                if let Some(path) = mock_data_path {
+                    if path.exists() {
+                        log::info!("Dev mode: using mock-data at {:?}", path);
+                        return path;
+                    }
+                }
+            }
+        }
+
+        // Production: use standard user data directory
+        dirs::data_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("amber")
     }
 }
 

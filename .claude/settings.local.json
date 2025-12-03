@@ -48,7 +48,13 @@
       "Bash(git stash:*)",
       "Bash(npm run test:*)",
       "Bash(npm run test:rust:*)",
-      "WebFetch(domain:www.figma.com)"
+      "WebFetch(domain:www.figma.com)",
+      "Bash(sqlite3:*)",
+      "Bash(grep:*)",
+      "Bash(__NEW_LINE__ echo -e \"\\n=== 2. Cache timestamp (app data) ===\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n=== 3. SQLite index timestamp (app data) ===\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n=== 4. SQLite index timestamp (mock-data) ===\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n=== Rust DirEntry (filesystem) ===\")"
     ],
     "deny": [],
     "ask": []

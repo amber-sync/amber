@@ -123,6 +123,19 @@ pub async fn get_file_type_stats(
         .get_file_type_stats(&job_id, timestamp, limit.unwrap_or(20))
 }
 
+/// Get largest files in a snapshot (for analytics)
+#[tauri::command]
+pub async fn get_largest_files(
+    state: State<'_, AppState>,
+    job_id: String,
+    timestamp: i64,
+    limit: Option<usize>,
+) -> Result<Vec<crate::services::index_service::LargestFile>> {
+    state
+        .index_service
+        .get_largest_files(&job_id, timestamp, limit.unwrap_or(10))
+}
+
 /// Delete a snapshot from the index
 #[tauri::command]
 pub async fn delete_snapshot_index(

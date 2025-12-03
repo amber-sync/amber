@@ -9,6 +9,13 @@ use std::sync::{Arc, Mutex};
 
 const LATEST_SYMLINK_NAME: &str = "latest";
 
+/// Detect if a path is an SSH remote (user@host:/path format)
+fn is_ssh_remote(path: &str) -> bool {
+    // Must contain @ and : but not start with / (not a local path)
+    // Pattern: user@host:/path or user@host:path
+    !path.starts_with('/') && path.contains('@') && path.contains(':')
+}
+
 /// Info about a running or completed backup
 #[derive(Debug, Clone)]
 pub struct BackupInfo {
@@ -98,10 +105,19 @@ impl RsyncService {
             args.push("--delete".to_string());
         }
 
-        // SSH config
-        if let Some(ref ssh) = job.ssh_config {
-            if ssh.enabled {
-                let mut ssh_cmd = "ssh".to_string();
+        // SSH config - either explicit or auto-detected from remote path
+        let ssh_enabled = job
+            .ssh_config
+            .as_ref()
+            .map(|s| s.enabled)
+            .unwrap_or(false);
+        let auto_detect_ssh = is_ssh_remote(&job.source_path);
+
+        if ssh_enabled || auto_detect_ssh {
+            let mut ssh_cmd = "ssh".to_string();
+
+            // Apply SSH config options if provided
+            if let Some(ref ssh) = job.ssh_config {
                 if let Some(ref port) = ssh.port {
                     ssh_cmd.push_str(&format!(" -p {}", port));
                 }
@@ -119,9 +135,10 @@ impl RsyncService {
                         " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
                     );
                 }
-                args.push("-e".to_string());
-                args.push(ssh_cmd);
             }
+
+            args.push("-e".to_string());
+            args.push(ssh_cmd);
         }
 
         // Link dest for Time Machine mode
@@ -613,5 +630,48 @@ mod tests {
         assert_eq!(service.ensure_trailing_slash("/path"), "/path/");
         assert_eq!(service.ensure_trailing_slash("/path/"), "/path/");
         assert_eq!(service.ensure_trailing_slash(""), "/");
+    }
+
+    #[test]
+    fn test_is_ssh_remote_detection() {
+        // Valid SSH remotes
+        assert!(super::is_ssh_remote("user@host:/path"));
+        assert!(super::is_ssh_remote("fmahner@iris.cbs.mpg.de:/home/fmahner"));
+        assert!(super::is_ssh_remote("root@192.168.1.1:/var/backup"));
+
+        // Not SSH remotes (local paths)
+        assert!(!super::is_ssh_remote("/Users/demo/Documents"));
+        assert!(!super::is_ssh_remote("/var/log"));
+        assert!(!super::is_ssh_remote("relative/path"));
+    }
+
+    #[test]
+    fn test_ssh_auto_detection_adds_e_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.source_path = "user@remote:/path".to_string();
+        job.ssh_config = None; // No explicit SSH config
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should auto-detect SSH and add -e ssh
+        let e_idx = args.iter().position(|a| a == "-e");
+        assert!(e_idx.is_some(), "Should have -e flag for SSH remote");
+        let ssh_cmd = &args[e_idx.unwrap() + 1];
+        assert!(ssh_cmd.contains("ssh"), "Should use ssh command");
+    }
+
+    #[test]
+    fn test_local_path_no_ssh_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.source_path = "/local/path".to_string();
+        job.ssh_config = None;
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should NOT have -e flag for local path
+        let e_idx = args.iter().position(|a| a == "-e");
+        assert!(e_idx.is_none(), "Should NOT have -e flag for local path");
     }
 }

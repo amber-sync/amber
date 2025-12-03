@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../components/IconComponents';
-import { DiskStats, FileNode, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
+import { DiskStats, LogEntry, RsyncProgressData, SyncJob, SyncMode } from '../types';
 import { FileBrowser } from '../components/FileBrowser';
 import { api } from '../api';
 import { logger } from '../utils/logger';
@@ -16,7 +16,6 @@ import {
   SnapshotGrouping,
   JobAnalyticsData,
   buildSnapshotFolderName,
-  calculateJobStats,
   groupSnapshots,
 } from '../components/job-detail';
 
@@ -82,29 +81,37 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     [job.snapshots ?? []]
   );
 
-  // Latest snapshot and its file tree for analytics
+  // Latest snapshot for analytics
   const snapshots = job.snapshots ?? [];
   const latestSnapshot = snapshots[snapshots.length - 1];
-  const [latestSnapshotTree, setLatestSnapshotTree] = useState<FileNode[] | null>(null);
+  const [analytics, setAnalytics] = useState<JobAnalyticsData | null>(null);
 
+  // Fetch analytics directly from SQLite index (fast!)
   useEffect(() => {
-    if (!latestSnapshot) return;
-    if (latestSnapshot.root) {
-      setLatestSnapshotTree(latestSnapshot.root);
+    if (!latestSnapshot) {
+      setAnalytics(null);
       return;
     }
 
-    api
-      .getSnapshotTree(job.id, latestSnapshot.timestamp, (latestSnapshot as any).path)
-      .then(tree => setLatestSnapshotTree(tree))
-      .catch(err => logger.error('Failed to fetch snapshot tree for analytics', err));
+    // Parallel fetch of file type stats and largest files from SQLite
+    Promise.all([
+      api.getFileTypeStats(job.id, latestSnapshot.timestamp, 5),
+      api.getLargestFiles(job.id, latestSnapshot.timestamp, 5),
+    ])
+      .then(([fileTypeStats, largestFiles]) => {
+        setAnalytics({
+          fileTypes: fileTypeStats.map(ft => ({
+            name: ft.extension || 'No ext',
+            value: ft.count,
+          })),
+          largestFiles: largestFiles,
+        });
+      })
+      .catch(err => {
+        logger.error('Failed to fetch analytics from index', err);
+        setAnalytics(null);
+      });
   }, [latestSnapshot, job.id]);
-
-  // Calculate analytics from latest snapshot
-  const analytics = useMemo<JobAnalyticsData | null>(() => {
-    if (!latestSnapshotTree) return null;
-    return calculateJobStats(latestSnapshotTree);
-  }, [latestSnapshotTree]);
 
   // Group snapshots based on grouping preference
   const groupedSnapshots = useMemo(
@@ -135,7 +142,9 @@ export const JobDetail: React.FC<JobDetailProps> = ({
     const folderName = buildSnapshotFolderName(latestSnapshot.timestamp);
     const basePath =
       job.mode === SyncMode.TIME_MACHINE ? `${job.destPath}/${folderName}` : job.destPath;
-    api.showItemInFolder(`${basePath}${path}`);
+    // Path from index is relative (e.g., "Archive/file.csv"), needs leading slash
+    const fullPath = path.startsWith('/') ? `${basePath}${path}` : `${basePath}/${path}`;
+    api.showItemInFolder(fullPath);
   };
 
   const handleBackFromBrowser = () => {

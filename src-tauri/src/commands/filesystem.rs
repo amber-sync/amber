@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::services::file_service::FileEntry;
 use crate::state::AppState;
+use crate::types::snapshot::file_type;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -250,7 +251,7 @@ pub async fn search_volume(
                     let node = crate::types::snapshot::FileNode {
                         id: path_str.clone(),
                         name,
-                        node_type: if metadata.is_dir() { "FOLDER".to_string() } else { "FILE".to_string() },
+                        node_type: if metadata.is_dir() { file_type::DIR.to_string() } else { file_type::FILE.to_string() },
                         size: metadata.len(),
                         modified,
                         children: None,
