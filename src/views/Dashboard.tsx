@@ -3,11 +3,20 @@ import { SyncJob, JobStatus, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
 import { formatBytes, formatSchedule, truncateMiddle } from '../utils/formatters';
 import { BackupCalendar, StorageProjection } from '../components/analytics';
+import { ConnectionDot, OfflineBadge } from '../components/ConnectionStatus';
 import { format } from 'date-fns';
+
+interface JobMountInfo {
+  mounted: boolean;
+  isExternal: boolean;
+  volumeName?: string;
+}
 
 interface DashboardProps {
   jobs: SyncJob[];
   diskStats: Record<string, DiskStats>;
+  /** Mount status for each job, keyed by job ID */
+  mountStatus?: Record<string, JobMountInfo>;
   onSelectJob: (jobId: string) => void;
   onCreateJob: () => void;
 }
@@ -22,6 +31,7 @@ interface DayBackup {
 export const Dashboard: React.FC<DashboardProps> = ({
   jobs,
   diskStats,
+  mountStatus,
   onSelectJob,
   onCreateJob,
 }) => {
@@ -113,7 +123,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="space-y-3">
           {jobs.map(job => (
-            <JobRow key={job.id} job={job} onSelect={() => onSelectJob(job.id)} />
+            <JobRow
+              key={job.id}
+              job={job}
+              mountInfo={mountStatus?.[job.id]}
+              onSelect={() => onSelectJob(job.id)}
+            />
           ))}
 
           {jobs.length === 0 && (
@@ -176,29 +191,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-const JobRow: React.FC<{ job: SyncJob; onSelect: () => void }> = ({ job, onSelect }) => {
+const JobRow: React.FC<{
+  job: SyncJob;
+  mountInfo?: JobMountInfo;
+  onSelect: () => void;
+}> = ({ job, mountInfo, onSelect }) => {
   const getPathName = (p: string) => p.split('/').pop() || p;
+  const isRunning = job.status === JobStatus.RUNNING;
+  const mounted = mountInfo?.mounted ?? true; // Default to mounted if no info
 
   return (
     <div
       onClick={onSelect}
       className="group bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
     >
-      {/* Status Icon */}
-      <div
-        className={`p-2.5 rounded-lg shrink-0 ${
-          job.status === JobStatus.RUNNING
-            ? 'bg-accent-secondary/20 text-accent-primary animate-pulse'
-            : job.status === JobStatus.SUCCESS
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-              : 'bg-layer-3 text-text-tertiary'
-        }`}
-      >
-        {job.status === JobStatus.RUNNING ? (
-          <Icons.RefreshCw size={20} className="animate-spin" />
-        ) : (
-          <Icons.Database size={20} />
-        )}
+      {/* Status Icon with Connection Dot */}
+      <div className="relative">
+        <div
+          className={`p-2.5 rounded-lg shrink-0 ${
+            isRunning
+              ? 'bg-accent-secondary/20 text-accent-primary animate-pulse'
+              : job.status === JobStatus.SUCCESS
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                : 'bg-layer-3 text-text-tertiary'
+          }`}
+        >
+          {isRunning ? (
+            <Icons.RefreshCw size={20} className="animate-spin" />
+          ) : (
+            <Icons.Database size={20} />
+          )}
+        </div>
+        {/* Connection status dot */}
+        <div className="absolute -top-0.5 -right-0.5">
+          <ConnectionDot mounted={mounted} isRunning={isRunning} />
+        </div>
       </div>
 
       {/* Job Name & Mode */}
@@ -206,6 +233,7 @@ const JobRow: React.FC<{ job: SyncJob; onSelect: () => void }> = ({ job, onSelec
         <div className="flex items-center gap-2 mb-1">
           <h3 className="font-bold text-text-primary truncate">{job.name}</h3>
           <ModePill mode={job.mode} />
+          {!mounted && <OfflineBadge />}
         </div>
         <div className="text-xs text-text-secondary truncate">{job.status}</div>
       </div>
