@@ -87,6 +87,9 @@ impl SnapshotService {
                     size_bytes: s.total_size,
                     file_count: s.file_count,
                     path: full_path,
+                    status: format!("{:?}", s.status),
+                    duration: s.duration_ms,
+                    changes_count: s.changes_count,
                 }
             })
             .collect();
@@ -149,6 +152,9 @@ impl SnapshotService {
                     size_bytes,
                     file_count,
                     path: full_path,
+                    status: "Complete".to_string(), // Assume complete for filesystem fallback
+                    duration: None,
+                    changes_count: None,
                 });
             }
         }
@@ -811,5 +817,81 @@ mod tests {
         assert_eq!(snapshots.len(), 1);
         // Date should be RFC3339 format
         assert!(snapshots[0].date.contains("2024-01-15"));
+    }
+
+    #[test]
+    fn test_list_snapshots_from_manifest_populates_status_duration_changes() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+
+        // Manifest with all optional fields populated
+        let manifest_json = r#"{
+            "version": 1,
+            "machineId": "test-machine",
+            "machineName": "Test",
+            "jobId": "job-123",
+            "jobName": "Test Job",
+            "sourcePath": "/source",
+            "createdAt": 1700000000000,
+            "updatedAt": 1700000000000,
+            "snapshots": [
+                {
+                    "id": "1700000000000",
+                    "timestamp": 1700000000000,
+                    "folderName": "2024-01-15-120000",
+                    "fileCount": 500,
+                    "totalSize": 1048576,
+                    "status": "Complete",
+                    "durationMs": 5000,
+                    "changesCount": 42
+                },
+                {
+                    "id": "1700100000000",
+                    "timestamp": 1700100000000,
+                    "folderName": "2024-01-16-120000",
+                    "fileCount": 750,
+                    "totalSize": 2097152,
+                    "status": "Partial",
+                    "durationMs": 7500,
+                    "changesCount": 15
+                },
+                {
+                    "id": "1700200000000",
+                    "timestamp": 1700200000000,
+                    "folderName": "2024-01-17-120000",
+                    "fileCount": 100,
+                    "totalSize": 512000,
+                    "status": "Failed"
+                }
+            ]
+        }"#;
+
+        std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        // Sorted newest first
+        assert_eq!(snapshots.len(), 3);
+
+        // Third snapshot (newest) - Failed with no duration/changes
+        assert_eq!(snapshots[0].status, "Failed");
+        assert_eq!(snapshots[0].duration, None);
+        assert_eq!(snapshots[0].changes_count, None);
+
+        // Second snapshot - Partial
+        assert_eq!(snapshots[1].status, "Partial");
+        assert_eq!(snapshots[1].duration, Some(7500));
+        assert_eq!(snapshots[1].changes_count, Some(15));
+
+        // First snapshot - Complete
+        assert_eq!(snapshots[2].status, "Complete");
+        assert_eq!(snapshots[2].duration, Some(5000));
+        assert_eq!(snapshots[2].changes_count, Some(42));
     }
 }
