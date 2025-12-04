@@ -118,15 +118,18 @@ export function TimeMachine({
       setLoading(true);
       try {
         const snapshotList = await api.listSnapshots(currentJob.id, currentJob.destPath);
-        const enriched: TimeMachineSnapshot[] = snapshotList.map(s => ({
-          ...s,
-          jobId: currentJob.id,
-          jobName: currentJob.name,
-        }));
+        // Enrich and sort by timestamp (oldest first, so newest is at the end/right)
+        const enriched: TimeMachineSnapshot[] = snapshotList
+          .map(s => ({
+            ...s,
+            jobId: currentJob.id,
+            jobName: currentJob.name,
+          }))
+          .sort((a, b) => a.timestamp - b.timestamp);
         setSnapshots(enriched);
 
-        // Auto-select latest snapshot if none selected
-        if (enriched.length > 0 && !selectedTimestamp) {
+        // Auto-select latest snapshot (rightmost on timeline)
+        if (enriched.length > 0) {
           setSelectedTimestamp(enriched[enriched.length - 1].timestamp);
         }
       } catch (error) {
