@@ -179,14 +179,6 @@ export function TimelineRuler({
     <div className="tm-timeline">
       {/* Timeline track */}
       <div ref={trackRef} className="tm-timeline-track" onClick={handleTrackClick}>
-        {/* Selection beam */}
-        {selectionPosition !== null && (
-          <div
-            className={`tm-selection-beam tm-selection-beam--visible`}
-            style={{ left: `${selectionPosition}%` }}
-          />
-        )}
-
         {/* Month labels */}
         {monthLabels.map((label, i) => (
           <div key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
