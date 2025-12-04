@@ -29,7 +29,15 @@ impl From<FileEntry> for DirEntry {
 
 #[tauri::command]
 pub async fn read_dir(state: State<'_, AppState>, path: String) -> Result<Vec<DirEntry>> {
-    let entries = state.file_service.scan_directory(&path)?;
+    // Validate path before accessing
+    let validator = state
+        .path_validator
+        .read()
+        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+    let validated_path = validator.validate_str(&path)?;
+    drop(validator); // Release lock early
+
+    let entries = state.file_service.scan_directory(&validated_path)?;
     Ok(entries.into_iter().map(DirEntry::from).collect())
 }
 
@@ -39,33 +47,63 @@ pub async fn read_file_preview(
     file_path: String,
     max_lines: Option<usize>,
 ) -> Result<String> {
+    // Validate path before accessing
+    let validator = state
+        .path_validator
+        .read()
+        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+    let validated_path = validator.validate_str(&file_path)?;
+    drop(validator);
+
     state
         .file_service
-        .read_file_preview(&file_path, max_lines.unwrap_or(100))
+        .read_file_preview(&validated_path, max_lines.unwrap_or(100))
 }
 
 #[tauri::command]
 pub async fn read_file_as_base64(state: State<'_, AppState>, file_path: String) -> Result<String> {
-    state.file_service.read_file_base64(&file_path)
+    // Validate path before accessing
+    let validator = state
+        .path_validator
+        .read()
+        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+    let validated_path = validator.validate_str(&file_path)?;
+    drop(validator);
+
+    state.file_service.read_file_base64(&validated_path)
 }
 
 #[tauri::command]
 pub async fn open_path(state: State<'_, AppState>, path: String) -> Result<()> {
-    state.file_service.open_path(&path)
+    // Validate path before accessing
+    let validator = state
+        .path_validator
+        .read()
+        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+    let validated_path = validator.validate_str(&path)?;
+    drop(validator);
+
+    state.file_service.open_path(&validated_path)
 }
 
 #[tauri::command]
 pub async fn show_item_in_folder(state: State<'_, AppState>, path: String) -> Result<()> {
-    state.file_service.show_in_folder(&path)
+    // Validate path before accessing
+    let validator = state
+        .path_validator
+        .read()
+        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+    let validated_path = validator.validate_str(&path)?;
+    drop(validator);
+
+    state.file_service.show_in_folder(&validated_path)
 }
 
 #[tauri::command]
 pub async fn get_disk_stats(path: String) -> Result<String> {
     use std::process::Command;
 
-    let output = Command::new("df")
-        .args(["-h", &path])
-        .output()?;
+    let output = Command::new("df").args(["-h", &path]).output()?;
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -84,9 +122,7 @@ pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
 
     // Use df -k to get stats in 1K blocks for any path
     // This works for any directory, not just mounted volumes
-    let output = Command::new("df")
-        .args(["-k", &path])
-        .output()?;
+    let output = Command::new("df").args(["-k", &path]).output()?;
 
     if !output.status.success() {
         return Err(crate::error::AmberError::Io(std::io::Error::new(
@@ -145,7 +181,14 @@ pub async fn list_volumes() -> Result<Vec<VolumeInfo>> {
     let mut volumes = Vec::new();
 
     // System volumes to exclude
-    let system_volumes = ["Macintosh HD", "Macintosh HD - Data", "Recovery", "Preboot", "VM", "Update"];
+    let system_volumes = [
+        "Macintosh HD",
+        "Macintosh HD - Data",
+        "Recovery",
+        "Preboot",
+        "VM",
+        "Update",
+    ];
 
     if volumes_path.exists() {
         for entry in fs::read_dir(volumes_path)? {
@@ -251,7 +294,11 @@ pub async fn search_volume(
                     let node = crate::types::snapshot::FileNode {
                         id: path_str.clone(),
                         name,
-                        node_type: if metadata.is_dir() { file_type::DIR.to_string() } else { file_type::FILE.to_string() },
+                        node_type: if metadata.is_dir() {
+                            file_type::DIR.to_string()
+                        } else {
+                            file_type::FILE.to_string()
+                        },
                         size: metadata.len(),
                         modified,
                         children: None,

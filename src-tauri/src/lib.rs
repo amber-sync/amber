@@ -1,10 +1,11 @@
 // Module declarations
 pub mod commands;
 pub mod error;
+pub mod security;
 pub mod services;
 pub mod state;
 pub mod types;
-pub mod utils;
+mod utils;
 
 pub use state::AppState;
 use tauri::Manager;
@@ -38,8 +39,9 @@ pub fn run() {
                     // Return error to prevent app from starting
                     Err(Box::new(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        format!("Application initialization failed: {}", e)
-                    )).into())
+                        format!("Application initialization failed: {}", e),
+                    ))
+                    .into())
                 }
             }
         });
@@ -241,12 +243,7 @@ fn show_startup_error(error_message: &str) {
             "Amber failed to start:\n\n{}\n\nPlease check the logs for more information.",
             error_message
         );
-        let _ = Command::new("msg")
-            .args([
-                "*",
-                &message,
-            ])
-            .status();
+        let _ = Command::new("msg").args(["*", &message]).status();
     }
 
     #[cfg(target_os = "linux")]
@@ -268,11 +265,7 @@ fn show_startup_error(error_message: &str) {
         // Fall back to notify-send if zenity not available
         if result.is_err() {
             let _ = Command::new("notify-send")
-                .args([
-                    "-u", "critical",
-                    "Amber Startup Error",
-                    &message,
-                ])
+                .args(["-u", "critical", "Amber Startup Error", &message])
                 .status();
         }
     }

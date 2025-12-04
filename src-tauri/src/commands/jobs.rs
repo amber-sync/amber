@@ -88,7 +88,9 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                 Ok(Some(manifest)) => {
                     // Update the local cache with fresh data
                     let manifest_snapshots = manifest.snapshots.clone();
-                    if let Err(e) = cache_service::write_snapshot_cache(&job.id, manifest_snapshots).await {
+                    if let Err(e) =
+                        cache_service::write_snapshot_cache(&job.id, manifest_snapshots).await
+                    {
                         log::warn!("Failed to update snapshot cache for job {}: {}", job.id, e);
                     }
 
@@ -142,6 +144,12 @@ pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
     if let Err(e) = state.store.write_job_to_destination(&job) {
         log::warn!("Failed to write job config to destination: {}", e);
         // Don't fail the overall save - destination might not be mounted
+    }
+
+    // Update path validator with new job roots for security
+    if let Err(e) = state.update_job_roots() {
+        log::warn!("Failed to update path validator: {}", e);
+        // Don't fail the overall save - path validation will use previous roots
     }
 
     Ok(())

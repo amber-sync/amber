@@ -3,13 +3,14 @@
 //! TIM-49: Centralized service singletons using Tauri's managed state.
 //! Services are initialized once at app startup and shared across all commands.
 
+use crate::security::PathValidator;
 use crate::services::data_dir;
 use crate::services::file_service::FileService;
 use crate::services::index_service::IndexService;
 use crate::services::snapshot_service::SnapshotService;
 use crate::services::store::Store;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 /// Application state containing all singleton services
 pub struct AppState {
@@ -23,6 +24,8 @@ pub struct AppState {
     pub store: Arc<Store>,
     /// Application data directory
     pub data_dir: PathBuf,
+    /// Path validator for security
+    pub path_validator: Arc<RwLock<PathValidator>>,
 }
 
 impl AppState {
@@ -58,13 +61,41 @@ impl AppState {
 
         let store = Arc::new(Store::new(&data_dir_path));
 
+        // Initialize path validator with standard roots
+        let path_validator = PathValidator::with_standard_roots(&data_dir_path)
+            .map_err(|e| format!("Failed to initialize path validator: {}", e))?;
+
         Ok(Self {
             file_service,
             index_service,
             snapshot_service,
             store,
             data_dir: data_dir_path,
+            path_validator: Arc::new(RwLock::new(path_validator)),
         })
+    }
+
+    /// Update path validator with job-specific roots
+    /// This should be called whenever jobs are loaded or modified
+    pub fn update_job_roots(&self) -> Result<(), String> {
+        // Load current jobs from store
+        let jobs = self
+            .store
+            .load_jobs()
+            .map_err(|e| format!("Failed to load jobs: {}", e))?;
+
+        // Create new validator with job roots
+        let new_validator = PathValidator::with_job_roots(&self.data_dir, &jobs)
+            .map_err(|e| format!("Failed to update path validator: {}", e))?;
+
+        // Replace the validator
+        let mut validator = self
+            .path_validator
+            .write()
+            .map_err(|e| format!("Failed to acquire write lock: {}", e))?;
+        *validator = new_validator;
+
+        Ok(())
     }
 
     /// Get the data directory path
