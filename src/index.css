@@ -6,68 +6,78 @@
 
 @layer base {
   :root {
-    /* Light Theme (Default) */
-    --bg-layer-1: #ffffff;
-    --bg-layer-2: #f5f5f7;
-    --bg-layer-3: #e5e5e5;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --text-tertiary: #9ca3af;
-    --text-quaternary: #d1d5db;
-    --border-base: #e5e7eb;
-    --border-highlight: #d1d5db;
-    --accent-primary: #0d9488; /* Teal-600 */
-    --accent-secondary: #ccfbf1; /* Teal-100 */
+    /* Light Theme (Default) - Warm Stone Neutrals */
+    --bg-layer-1: #fafaf9; /* stone-50 */
+    --bg-layer-2: #f5f5f4; /* stone-100 */
+    --bg-layer-3: #e7e5e4; /* stone-200 */
+    --text-primary: #1c1917; /* stone-900 */
+    --text-secondary: #57534e; /* stone-600 */
+    --text-tertiary: #78716c; /* stone-500 */
+    --text-quaternary: #a8a29e; /* stone-400 */
+    --border-base: #d6d3d1; /* stone-300 */
+    --border-highlight: #a8a29e; /* stone-400 */
+
+    /* Amber Accent System */
+    --accent-primary: #d97706; /* amber-600 */
+    --accent-secondary: #fef3c7; /* amber-100 */
+    --accent-hover: #b45309; /* amber-700 */
+    --accent-active: #92400e; /* amber-800 */
     --accent-text: #ffffff;
+    --accent-glow: rgba(217, 119, 6, 0.15);
 
-    /* Glass Effects (Light) */
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-bg-elevated: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.5);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    /* Glass Effects (Light) - Warmer tones */
+    --glass-bg: rgba(250, 250, 249, 0.72);
+    --glass-bg-elevated: rgba(245, 245, 244, 0.85);
+    --glass-border: rgba(214, 211, 209, 0.5);
+    --glass-shadow: 0 8px 32px rgba(28, 25, 23, 0.08);
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #0d9488, #0ea5e9);
-    --gradient-success: linear-gradient(135deg, #10b981, #0d9488);
+    /* Gradients - Amber focused */
+    --gradient-primary: linear-gradient(135deg, #d97706, #f59e0b);
+    --gradient-success: linear-gradient(135deg, #10b981, #d97706);
     --gradient-danger: linear-gradient(135deg, #ef4444, #f97316);
-    --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+    --gradient-surface: linear-gradient(180deg, rgba(250, 250, 249, 0.9), rgba(245, 245, 244, 0.6));
 
-    /* Enhanced Shadows */
-    --shadow-glow: 0 0 40px rgba(13, 148, 136, 0.12);
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
-    --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.12);
-    --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.15);
+    /* Enhanced Shadows - Warm amber glow */
+    --shadow-glow: 0 0 40px rgba(217, 119, 6, 0.12);
+    --shadow-card: 0 4px 24px rgba(28, 25, 23, 0.06);
+    --shadow-elevated: 0 12px 48px rgba(28, 25, 23, 0.12);
+    --shadow-float: 0 20px 60px rgba(28, 25, 23, 0.15);
   }
 
   .dark {
-    /* Dark Theme */
-    --bg-layer-1: #111827; /* Gray-900 */
-    --bg-layer-2: #1f2937; /* Gray-800 */
-    --bg-layer-3: #374151; /* Gray-700 */
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-tertiary: #6b7280;
-    --text-quaternary: #4b5563;
-    --border-base: #374151;
-    --border-highlight: #4b5563;
-    --accent-primary: #2dd4bf; /* Teal-400 */
-    --accent-secondary: #134e4a; /* Teal-900 */
-    --accent-text: #000000;
+    /* Dark Theme - Deep Warm Blacks */
+    --bg-layer-1: #0c0a09; /* stone-950 */
+    --bg-layer-2: #1c1917; /* stone-900 */
+    --bg-layer-3: #292524; /* stone-800 */
+    --text-primary: #fafaf9; /* stone-50 */
+    --text-secondary: #a8a29e; /* stone-400 */
+    --text-tertiary: #78716c; /* stone-500 */
+    --text-quaternary: #57534e; /* stone-600 */
+    --border-base: #44403c; /* stone-700 */
+    --border-highlight: #57534e; /* stone-600 */
 
-    /* Glass Effects (Dark) */
-    --glass-bg: rgba(17, 24, 39, 0.72);
-    --glass-bg-elevated: rgba(31, 41, 55, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    /* Amber Accent System - Brighter for dark mode */
+    --accent-primary: #f59e0b; /* amber-500 */
+    --accent-secondary: #451a03; /* amber-950 */
+    --accent-hover: #fbbf24; /* amber-400 */
+    --accent-active: #d97706; /* amber-600 */
+    --accent-text: #0c0a09;
+    --accent-glow: rgba(245, 158, 11, 0.2);
+
+    /* Glass Effects (Dark) - Warmer tones */
+    --glass-bg: rgba(12, 10, 9, 0.72);
+    --glass-bg-elevated: rgba(28, 25, 23, 0.85);
+    --glass-border: rgba(245, 158, 11, 0.08);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-    /* Gradients (Dark) */
-    --gradient-primary: linear-gradient(135deg, #2dd4bf, #38bdf8);
-    --gradient-success: linear-gradient(135deg, #34d399, #2dd4bf);
+    /* Gradients (Dark) - Amber focused */
+    --gradient-primary: linear-gradient(135deg, #f59e0b, #fbbf24);
+    --gradient-success: linear-gradient(135deg, #34d399, #f59e0b);
     --gradient-danger: linear-gradient(135deg, #f87171, #fb923c);
-    --gradient-surface: linear-gradient(180deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.6));
+    --gradient-surface: linear-gradient(180deg, rgba(28, 25, 23, 0.9), rgba(12, 10, 9, 0.6));
 
-    /* Enhanced Shadows (Dark) */
-    --shadow-glow: 0 0 40px rgba(45, 212, 191, 0.15);
+    /* Enhanced Shadows (Dark) - Warm amber glow */
+    --shadow-glow: 0 0 40px rgba(245, 158, 11, 0.2);
     --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
     --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.4);
     --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -100,4 +110,27 @@
 
 .no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* Toast Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(calc(100% + 1rem));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + 1rem));
+    opacity: 0;
+  }
 }

@@ -30,10 +30,12 @@
    * TYPOGRAPHY
    * ======================================== */
 
-  /* Font Families - SF Pro for native macOS feel */
+  /* Font Families - Distinctive typography for warm industrial aesthetic */
+  --font-display: 'Plus Jakarta Sans', sans-serif; /* Bold, characterful display font */
+  --font-body: 'DM Sans', sans-serif; /* Clean, legible body font */
   --font-sans:
-    'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
+    'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace; /* Technical, for paths */
 
   /* Font Sizes */
   --text-2xs: 10px;
@@ -93,18 +95,18 @@
   --radius-full: 9999px;
 
   /* ========================================
-   * SHADOWS
+   * SHADOWS (with warm amber tint)
    * ======================================== */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-xs: 0 1px 2px rgba(28, 25, 23, 0.05);
+  --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.1), 0 1px 2px rgba(217, 119, 6, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.1), 0 2px 4px -1px rgba(217, 119, 6, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(28, 25, 23, 0.1), 0 4px 6px -2px rgba(217, 119, 6, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(28, 25, 23, 0.1), 0 10px 10px -5px rgba(217, 119, 6, 0.06);
+  --shadow-2xl: 0 25px 50px -12px rgba(28, 25, 23, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(28, 25, 23, 0.06);
 
   /* Glow effects (for focus states, accents) */
-  --glow-accent: 0 0 0 3px var(--accent-secondary);
+  --glow-accent: 0 0 0 3px var(--accent-glow);
   --glow-error: 0 0 0 3px var(--color-error-subtle);
   --glow-success: 0 0 0 3px var(--color-success-subtle);
 
@@ -182,13 +184,13 @@
   --modal-width-lg: 720px;
 }
 
-/* Dark mode shadow adjustments */
+/* Dark mode shadow adjustments (with warm amber glow) */
 .dark {
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(245, 158, 11, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(245, 158, 11, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(245, 158, 11, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(245, 158, 11, 0.1);
 }
 
 /* ========================================
