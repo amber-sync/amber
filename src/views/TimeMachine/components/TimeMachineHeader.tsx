@@ -18,6 +18,7 @@ interface TimeMachineHeaderProps {
   onRunBackup: () => void;
   onStopBackup: () => void;
   onEditJob: () => void;
+  onNewJob?: () => void;
 }
 
 export function TimeMachineHeader({
@@ -30,6 +31,7 @@ export function TimeMachineHeader({
   onRunBackup,
   onStopBackup,
   onEditJob,
+  onNewJob,
 }: TimeMachineHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,18 @@ export function TimeMachineHeader({
               <span className="text-xs text-[var(--tm-text-dim)]">ETA {progress.eta}</span>
             )}
           </div>
+        )}
+
+        {/* New Job button */}
+        {onNewJob && (
+          <button
+            onClick={onNewJob}
+            className="tm-control-btn tm-control-btn--secondary"
+            title="Create new backup job"
+          >
+            <Icons.Plus size={14} />
+            <span>New Job</span>
+          </button>
         )}
 
         {/* Run/Stop Backup button */}
