@@ -23,6 +23,8 @@ import { RestoreOverlay } from './components/RestoreOverlay';
 import { AnalyticsOverlay } from './components/AnalyticsOverlay';
 import { TerminalOverlay } from './components/TerminalOverlay';
 import { EmptyState } from './components/EmptyState';
+import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
+import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
 
 // Styles
 import './timemachine.css';
@@ -49,7 +51,8 @@ export function TimeMachine({
   progress = null,
   logs = [],
 }: TimeMachineProps) {
-  const { jobs, activeJobId, setActiveJobId, setView, runSync, stopSync } = useApp();
+  const { jobs, activeJobId, setActiveJobId, setView, runSync, stopSync, persistJob, deleteJob } =
+    useApp();
 
   // Current job
   const [currentJobId, setCurrentJobId] = useState<string | null>(
@@ -74,6 +77,7 @@ export function TimeMachine({
   // Overlay state
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>(null);
   const [fileBrowserPath, setFileBrowserPath] = useState<string | null>(null);
+  const [showEditPanel, setShowEditPanel] = useState(false);
 
   // Load snapshots when job changes
   useEffect(() => {
@@ -169,10 +173,38 @@ export function TimeMachine({
 
   const handleEditJob = useCallback(() => {
     if (currentJobId) {
-      setActiveJobId(currentJobId);
-      setView('JOB_EDITOR');
+      setShowEditPanel(true);
     }
-  }, [currentJobId, setActiveJobId, setView]);
+  }, [currentJobId]);
+
+  const handleNewJob = useCallback(() => {
+    setActiveJobId(null);
+    setView('JOB_EDITOR');
+  }, [setActiveJobId, setView]);
+
+  const handleSaveJobEdit = useCallback(
+    async (updatedJob: SyncJob) => {
+      try {
+        await persistJob(updatedJob);
+        setShowEditPanel(false);
+      } catch (error) {
+        console.error('Failed to save job:', error);
+      }
+    },
+    [persistJob]
+  );
+
+  const handleDeleteJob = useCallback(async () => {
+    if (!currentJobId) return;
+    try {
+      await deleteJob(currentJobId);
+      setShowEditPanel(false);
+      // Navigate back to dashboard after deleting current job
+      setView('DASHBOARD');
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+    }
+  }, [currentJobId, deleteJob, setView]);
 
   // Calculate time range from snapshots
   const timeRange = useMemo(() => {
@@ -201,6 +233,7 @@ export function TimeMachine({
           onRunBackup={handleRunBackup}
           onStopBackup={handleStopBackup}
           onEditJob={handleEditJob}
+          onNewJob={handleNewJob}
         />
         <EmptyState type="no-job" onAction={handleBack} actionLabel="Go to Dashboard" />
       </div>
@@ -221,6 +254,7 @@ export function TimeMachine({
           onRunBackup={handleRunBackup}
           onStopBackup={handleStopBackup}
           onEditJob={handleEditJob}
+          onNewJob={handleNewJob}
         />
         <EmptyState type="no-snapshots" onAction={handleRunBackup} actionLabel="Run First Backup" />
         <LiveActivityBar
@@ -246,6 +280,7 @@ export function TimeMachine({
         onRunBackup={handleRunBackup}
         onStopBackup={handleStopBackup}
         onEditJob={handleEditJob}
+        onNewJob={handleNewJob}
       />
 
       {/* Timeline - THE primary navigation */}
@@ -309,6 +344,23 @@ export function TimeMachine({
         onClose={handleCloseOverlay}
         onStop={handleStopBackup}
       />
+
+      {/* Edit Job Panel */}
+      <SlidePanel
+        isOpen={showEditPanel}
+        onClose={() => setShowEditPanel(false)}
+        title="Edit Job Settings"
+        width="lg"
+      >
+        {currentJob && (
+          <EditJobPanel
+            job={currentJob}
+            onSave={handleSaveJobEdit}
+            onDelete={handleDeleteJob}
+            onClose={() => setShowEditPanel(false)}
+          />
+        )}
+      </SlidePanel>
     </div>
   );
 }
