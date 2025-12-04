@@ -12,19 +12,19 @@ interface GlassPanelProps {
 
 const variantStyles: Record<GlassPanelVariant, string> = {
   default:
-    'bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl ' +
-    'border border-stone-200/50 dark:border-stone-700/30 ' +
-    'shadow-lg shadow-stone-300/20 dark:shadow-stone-950/40',
+    'bg-[var(--glass-bg)] backdrop-blur-xl ' +
+    'border border-[var(--glass-border)] ' +
+    'shadow-[var(--shadow-elevated)]',
   elevated:
-    'bg-white/90 dark:bg-stone-800/90 backdrop-blur-2xl ' +
-    'border border-stone-200/60 dark:border-stone-700/40 ' +
-    'shadow-xl shadow-stone-400/25 dark:shadow-stone-950/50 ' +
-    'hover:shadow-2xl hover:shadow-stone-400/30 dark:hover:shadow-stone-900/60 ' +
+    'bg-[var(--glass-bg-elevated)] backdrop-blur-2xl ' +
+    'border border-[var(--glass-border)] ' +
+    'shadow-[var(--shadow-float)] ' +
+    'hover:shadow-[var(--shadow-float)] ' +
     'transition-shadow duration-200',
   subtle:
-    'bg-white/60 dark:bg-stone-900/60 backdrop-blur-md ' +
-    'border border-stone-200/30 dark:border-stone-700/20 ' +
-    'shadow-md shadow-stone-300/15 dark:shadow-stone-950/30',
+    'bg-[var(--glass-bg)] backdrop-blur-md ' +
+    'border border-[var(--glass-border)] ' +
+    'shadow-[var(--shadow-card)]',
 };
 
 const paddingStyles: Record<string, string> = {
@@ -43,7 +43,7 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({
 }) => {
   const baseStyles = variantStyles[variant];
   const paddingStyle = paddingStyles[padding];
-  const glowStyle = glow ? 'shadow-glow' : 'shadow-glass';
+  const glowStyle = glow ? 'shadow-[var(--shadow-glow)]' : '';
 
   return (
     <div

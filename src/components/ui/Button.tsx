@@ -18,23 +18,26 @@ const baseStyles =
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 ' +
-    'hover:bg-zinc-800 dark:hover:bg-zinc-200 ' +
-    'active:bg-zinc-950 dark:active:bg-zinc-100 ' +
-    'focus:ring-zinc-500/30',
+    'bg-accent-primary text-accent-text ' +
+    'hover:bg-[var(--accent-hover)] ' +
+    'active:bg-[var(--accent-active)] ' +
+    'focus:ring-accent-primary/30',
   secondary:
-    'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 ' +
-    'border border-zinc-200 dark:border-zinc-700 ' +
-    'hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 ' +
-    'active:bg-zinc-300 dark:active:bg-zinc-600 ' +
-    'focus:ring-zinc-400/30',
+    'bg-layer-3 text-text-secondary ' +
+    'border border-border-base ' +
+    'hover:bg-layer-2 hover:border-border-highlight hover:text-text-primary ' +
+    'active:bg-layer-3 ' +
+    'focus:ring-accent-primary/30',
   ghost:
-    'bg-transparent text-zinc-600 dark:text-zinc-400 ' +
-    'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 ' +
-    'active:bg-zinc-200 dark:active:bg-zinc-700 ' +
-    'focus:ring-zinc-400/30',
+    'bg-transparent text-text-secondary ' +
+    'hover:bg-layer-3 hover:text-text-primary ' +
+    'active:bg-layer-2 ' +
+    'focus:ring-accent-primary/30',
   danger:
-    'bg-red-600 text-white ' + 'hover:bg-red-500 ' + 'active:bg-red-700 ' + 'focus:ring-red-500/30',
+    'bg-[var(--color-error)] text-white ' +
+    'hover:bg-red-500 ' +
+    'active:bg-red-700 ' +
+    'focus:ring-[var(--color-error)]/30',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

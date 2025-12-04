@@ -11,32 +11,32 @@ const baseStyles = 'rounded-[var(--card-radius)] transition-all';
 
 const variantStyles: Record<CardVariant, string> = {
   default:
-    'bg-gradient-to-b from-white to-stone-50 dark:from-stone-900 dark:to-stone-950 ' +
-    'border border-stone-200 dark:border-stone-800 ' +
-    'shadow-sm shadow-stone-200/50 dark:shadow-stone-950/50 ' +
-    'hover:shadow-md hover:shadow-stone-300/50 dark:hover:shadow-stone-900/50 ' +
+    'bg-layer-1 ' +
+    'border border-border-base ' +
+    'shadow-[var(--shadow-card)] ' +
+    'hover:shadow-[var(--shadow-elevated)] ' +
     'hover:-translate-y-0.5 transition-all duration-200',
   elevated:
-    'bg-gradient-to-b from-white to-stone-50 dark:from-stone-800 dark:to-stone-900 ' +
-    'border border-stone-200/50 dark:border-stone-700/50 ' +
-    'shadow-lg shadow-stone-300/30 dark:shadow-stone-950/50 ' +
-    'hover:shadow-xl hover:shadow-stone-400/30 dark:hover:shadow-stone-900/60 ' +
+    'bg-layer-1 ' +
+    'border border-border-base/50 ' +
+    'shadow-[var(--shadow-elevated)] ' +
+    'hover:shadow-[var(--shadow-float)] ' +
     'hover:-translate-y-1 transition-all duration-200',
   outlined:
-    'bg-transparent border border-stone-300 dark:border-stone-700 ' +
-    'hover:border-stone-400 dark:hover:border-stone-600 ' +
-    'hover:bg-stone-50/50 dark:hover:bg-stone-900/50 ' +
+    'bg-transparent border border-border-highlight ' +
+    'hover:border-border-base ' +
+    'hover:bg-layer-2/50 ' +
     'transition-all duration-200',
   interactive:
-    'bg-gradient-to-b from-white to-stone-50 dark:from-stone-900 dark:to-stone-950 ' +
-    'border border-stone-200 dark:border-stone-800 ' +
-    'shadow-sm shadow-stone-200/50 dark:shadow-stone-950/50 ' +
+    'bg-layer-1 ' +
+    'border border-border-base ' +
+    'shadow-[var(--shadow-card)] ' +
     'cursor-pointer ' +
-    'hover:border-amber-600/30 dark:hover:border-amber-500/30 ' +
-    'hover:shadow-lg hover:shadow-amber-100/20 dark:hover:shadow-amber-900/20 ' +
-    'hover:bg-gradient-to-b hover:from-stone-50 hover:to-white dark:hover:from-stone-850 dark:hover:to-stone-900 ' +
+    'hover:border-border-highlight ' +
+    'hover:shadow-[var(--shadow-elevated)] ' +
+    'hover:bg-layer-2 ' +
     'hover:-translate-y-0.5 ' +
-    'active:translate-y-0 active:shadow-md ' +
+    'active:translate-y-0 active:shadow-[var(--shadow-card)] ' +
     'transition-all duration-200',
 };
 
