@@ -108,23 +108,31 @@
 }
 
 /* ============================================
- * Timeline Ruler - Spacious top bar
+ * Timeline Ruler - 3-zone layout
+ * Zone 1 (top): Hover tooltips
+ * Zone 2 (middle): Track with markers
+ * Zone 3 (bottom): Fixed month labels
  * ============================================ */
 .tm-timeline {
   position: relative;
-  height: 80px;
-  padding: 20px 48px;
+  height: 120px;
+  padding: 0 48px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   background: var(--tm-space);
   border-bottom: 1px solid var(--tm-dust);
 }
 
+/* Top zone for hover tooltips */
+.tm-timeline-tooltip-zone {
+  height: 40px;
+  position: relative;
+}
+
+/* Middle zone - the actual track */
 .tm-timeline-track {
   position: relative;
-  flex: 1;
-  height: 32px;
+  height: 40px;
   cursor: crosshair;
   display: flex;
   align-items: center;
@@ -141,6 +149,15 @@
   background: var(--tm-dust);
   border-radius: 1px;
   transform: translateY(-50%);
+}
+
+/* Bottom zone for month labels */
+.tm-timeline-labels {
+  height: 40px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
 }
 
 /* Snapshot markers */
@@ -229,17 +246,73 @@
   }
 }
 
-/* Month labels - subtle text below the line */
+/* Month labels - positioned in the labels zone */
 .tm-timeline-label {
   position: absolute;
-  top: calc(50% + 10px);
+  top: 0;
   transform: translateX(-50%);
   font-family: 'JetBrains Mono', var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--tm-text-muted);
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+/* Tick marks connecting labels to the track */
+.tm-timeline-label::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 1px;
+  height: 8px;
+  background: var(--tm-dust);
+  margin-bottom: 4px;
+}
+
+/* Hover tooltip styling (positioned above track) */
+.tm-timeline-tooltip {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.tm-timeline-tooltip-content {
+  background: var(--tm-nebula);
+  border: 1px solid var(--tm-dust);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+
+/* Arrow pointing down */
+.tm-timeline-tooltip-arrow {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--tm-dust);
+}
+
+.tm-timeline-tooltip-arrow::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -7px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--tm-nebula);
 }
 
 /* ============================================
@@ -911,8 +984,20 @@
   }
 
   .tm-timeline {
-    height: 72px;
-    padding: 16px 24px;
+    height: 100px;
+    padding: 0 24px;
+  }
+
+  .tm-timeline-tooltip-zone {
+    height: 32px;
+  }
+
+  .tm-timeline-track {
+    height: 36px;
+  }
+
+  .tm-timeline-labels {
+    height: 32px;
   }
 
   .tm-actions {
