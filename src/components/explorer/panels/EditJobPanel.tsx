@@ -193,9 +193,10 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
                     variant="secondary"
                     size="md"
                     onClick={handleAddPattern}
-                    icon={<Icons.Plus className="h-4 w-4" />}
-                    aria-label="Add pattern"
-                  />
+                    label="Add pattern"
+                  >
+                    <Icons.Plus className="h-4 w-4" />
+                  </IconButton>
                 </div>
                 {excludePatterns.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">

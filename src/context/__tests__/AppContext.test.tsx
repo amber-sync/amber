@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { AppContextProvider, useApp } from '../AppContext';
 import { api } from '../../api';
-import { JobStatus, SyncJob, SyncMode, DestinationType } from '../../types';
+import { JobStatus, SyncMode, DestinationType, JobWithStatus } from '../../types';
 import React from 'react';
 
 // Default preferences for all tests
@@ -38,7 +38,7 @@ vi.mock('../../utils/logger', () => ({
 }));
 
 describe('AppContext', () => {
-  const mockJob: SyncJob = {
+  const mockJob: JobWithStatus = {
     id: 'test-job-1',
     name: 'Test Job',
     sourcePath: '/source',
@@ -58,6 +58,9 @@ describe('AppContext', () => {
     lastRun: null,
     status: JobStatus.IDLE,
     snapshots: [],
+    mounted: true,
+    isExternal: false,
+    snapshotSource: 'none',
   };
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (

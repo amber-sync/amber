@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-export type IconButtonVariant = 'default' | 'ghost' | 'danger';
+export type IconButtonVariant = 'default' | 'ghost' | 'danger' | 'secondary';
 export type IconButtonSize = 'sm' | 'md' | 'lg';
 
 interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,6 +28,10 @@ const variantStyles: Record<IconButtonVariant, string> = {
     'bg-transparent text-text-tertiary ' +
     'hover:bg-[var(--color-error-subtle)] hover:text-[var(--color-error)] ' +
     'active:bg-[var(--color-error-subtle)] active:text-[var(--color-error)]',
+  secondary:
+    'bg-layer-2 text-text-secondary border border-border-base ' +
+    'hover:bg-layer-3 hover:text-text-primary ' +
+    'active:bg-layer-2',
 };
 
 const sizeStyles: Record<IconButtonSize, string> = {

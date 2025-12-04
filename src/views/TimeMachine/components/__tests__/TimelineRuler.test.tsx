@@ -30,14 +30,18 @@ vi.mock('date-fns', async () => {
 // Helper to create mock snapshots
 const createMockSnapshot = (
   timestamp: number,
-  status: 'Success' | 'Failed' | 'Partial' = 'Success'
+  status: 'Complete' | 'Failed' | 'Partial' = 'Complete'
 ): TimeMachineSnapshot => ({
+  id: `snap-${timestamp}`,
   timestamp,
   path: `/backup/${timestamp}`,
   status,
-  totalSize: 1024000,
-  filesChanged: 10,
+  sizeBytes: 1024000,
+  fileCount: 100,
+  changesCount: 10,
   duration: 1000,
+  jobId: 'test-job',
+  jobName: 'Test Job',
 });
 
 describe('TimelineRuler', () => {
@@ -617,7 +621,7 @@ describe('TimelineRuler', () => {
     it('handles mixed status snapshots in cluster', () => {
       const baseTimestamp = new Date('2024-06-15T10:00:00').getTime();
       const snapshots = [
-        createMockSnapshot(baseTimestamp, 'Success'),
+        createMockSnapshot(baseTimestamp, 'Complete'),
         createMockSnapshot(baseTimestamp + 30000, 'Failed'),
         createMockSnapshot(baseTimestamp + 60000, 'Partial'),
       ];
