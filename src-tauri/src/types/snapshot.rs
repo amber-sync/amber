@@ -41,6 +41,19 @@ pub struct SnapshotMetadata {
     pub size_bytes: u64,
     pub file_count: u64,
     pub path: String,
+    /// Status of the snapshot (Complete, Partial, Failed)
+    #[serde(default = "default_status")]
+    pub status: String,
+    /// Duration of backup in milliseconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<u64>,
+    /// Number of files changed since previous snapshot
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub changes_count: Option<u64>,
+}
+
+fn default_status() -> String {
+    "Complete".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
