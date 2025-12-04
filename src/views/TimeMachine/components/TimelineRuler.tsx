@@ -161,105 +161,100 @@ export function TimelineRuler({
     [snapshots, getPosition, onSelectSnapshot]
   );
 
-  // Selection position
-  const selectionPosition = selectedTimestamp !== null ? getPosition(selectedTimestamp) : null;
+  // Find the hovered/selected marker for tooltip positioning
+  const activeMarker =
+    hoveredMarker ||
+    clusteredMarkers.find(m => m.snapshots.some(s => s.timestamp === selectedTimestamp));
 
   // Loading state
   if (loading) {
     return (
       <div className="tm-timeline">
+        <div className="tm-timeline-tooltip-zone" />
         <div className="tm-timeline-track animate-pulse">
-          <div className="absolute inset-x-0 top-1/2 h-1 bg-[var(--tm-dust)] rounded-full -translate-y-1/2" />
+          <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[var(--tm-dust)] rounded-full -translate-y-1/2" />
         </div>
+        <div className="tm-timeline-labels" />
       </div>
     );
   }
 
   return (
     <div className="tm-timeline">
-      {/* Timeline track */}
-      <div ref={trackRef} className="tm-timeline-track" onClick={handleTrackClick}>
-        {/* Month labels */}
-        {monthLabels.map((label, i) => (
-          <span key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
-            {label.label}
-          </span>
-        ))}
+      {/* Zone 1: Tooltip area (above track) */}
+      <div className="tm-timeline-tooltip-zone">
+        {activeMarker && (
+          <div
+            className="tm-timeline-tooltip tm-animate-fade-in"
+            style={{ left: `${activeMarker.position}%` }}
+          >
+            <div className="tm-timeline-tooltip-content">
+              {activeMarker.isCluster ? (
+                <>
+                  <div className="text-sm font-semibold text-[var(--tm-text-bright)]">
+                    {activeMarker.snapshots.length} snapshots
+                  </div>
+                  <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                    {format(new Date(activeMarker.snapshots[0].timestamp), 'MMM d')} –{' '}
+                    {format(
+                      new Date(activeMarker.snapshots[activeMarker.snapshots.length - 1].timestamp),
+                      'MMM d, yyyy'
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-[var(--tm-text-bright)]">
+                    {format(new Date(activeMarker.snapshots[0].timestamp), 'MMM d, yyyy')}
+                  </div>
+                  <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                    {format(new Date(activeMarker.snapshots[0].timestamp), 'h:mm a')}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="tm-timeline-tooltip-arrow" />
+          </div>
+        )}
+      </div>
 
+      {/* Zone 2: Timeline track with markers */}
+      <div ref={trackRef} className="tm-timeline-track" onClick={handleTrackClick}>
         {/* Snapshot markers */}
         {clusteredMarkers.map((marker, i) => {
           const primary = marker.snapshots[0];
           const isSelected = marker.snapshots.some(s => s.timestamp === selectedTimestamp);
-          const isHovered = hoveredMarker === marker;
           const hasFailed = marker.snapshots.some(s => s.status === 'Failed');
           const hasPartial = marker.snapshots.some(s => s.status === 'Partial');
 
           return (
-            <div
+            <button
               key={`${primary.timestamp}-${i}`}
-              className="absolute"
-              style={{ left: `${marker.position}%`, top: '50%' }}
+              onClick={e => {
+                e.stopPropagation();
+                onSelectSnapshot(primary.timestamp);
+              }}
+              onMouseEnter={() => setHoveredMarker(marker)}
+              onMouseLeave={() => setHoveredMarker(null)}
+              className={`
+                tm-marker
+                ${isSelected ? 'tm-marker--selected' : ''}
+                ${hasFailed ? 'tm-marker--failed' : ''}
+                ${hasPartial && !hasFailed ? 'tm-marker--partial' : ''}
+              `}
+              style={{
+                left: `${marker.position}%`,
+                width: marker.isCluster ? 16 : 12,
+                height: marker.isCluster ? 16 : 12,
+              }}
             >
-              {/* Marker */}
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  onSelectSnapshot(primary.timestamp);
-                }}
-                onMouseEnter={() => setHoveredMarker(marker)}
-                onMouseLeave={() => setHoveredMarker(null)}
-                className={`
-                  tm-marker
-                  ${isSelected ? 'tm-marker--selected' : ''}
-                  ${hasFailed ? 'tm-marker--failed' : ''}
-                  ${hasPartial && !hasFailed ? 'tm-marker--partial' : ''}
-                `}
-                style={{
-                  width: marker.isCluster ? 16 : 12,
-                  height: marker.isCluster ? 16 : 12,
-                }}
-              >
-                {/* Cluster count badge */}
-                {marker.isCluster && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-full text-[8px] font-bold text-[var(--tm-text-bright)] flex items-center justify-center">
-                    {marker.snapshots.length > 9 ? '9+' : marker.snapshots.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Date label - shows below marker when selected or hovered */}
-              {(isSelected || isHovered) && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-20 pointer-events-none tm-animate-fade-in">
-                  {/* Arrow pointing up */}
-                  <div className="w-2 h-2 bg-[var(--tm-nebula)] border-t border-l border-[var(--tm-dust)] rotate-45 absolute left-1/2 -translate-x-1/2 -top-1" />
-                  <div className="bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg shadow-xl px-3 py-2 whitespace-nowrap">
-                    {marker.isCluster ? (
-                      <>
-                        <div className="text-xs font-medium text-[var(--tm-text-bright)]">
-                          {marker.snapshots.length} snapshots
-                        </div>
-                        <div className="text-[10px] text-[var(--tm-text-dim)]">
-                          {format(new Date(marker.snapshots[0].timestamp), 'MMM d')} –{' '}
-                          {format(
-                            new Date(marker.snapshots[marker.snapshots.length - 1].timestamp),
-                            'MMM d, yyyy'
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-xs font-medium text-[var(--tm-text-bright)]">
-                          {format(new Date(primary.timestamp), 'MMM d, yyyy')}
-                        </div>
-                        <div className="text-[10px] text-[var(--tm-text-dim)]">
-                          {format(new Date(primary.timestamp), 'h:mm a')}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+              {/* Cluster count badge */}
+              {marker.isCluster && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-full text-[8px] font-bold text-[var(--tm-text-bright)] flex items-center justify-center">
+                  {marker.snapshots.length > 9 ? '9+' : marker.snapshots.length}
+                </span>
               )}
-            </div>
+            </button>
           );
         })}
 
@@ -268,6 +263,15 @@ export function TimelineRuler({
           <div className="tm-now-dot" />
           <span className="tm-now-label">Now</span>
         </div>
+      </div>
+
+      {/* Zone 3: Month labels (below track) */}
+      <div className="tm-timeline-labels">
+        {monthLabels.map((label, i) => (
+          <span key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
+            {label.label}
+          </span>
+        ))}
       </div>
     </div>
   );
