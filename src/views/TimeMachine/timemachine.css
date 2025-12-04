@@ -6,9 +6,43 @@
  */
 
 /* ============================================
- * Observatory Color Palette
+ * Observatory Color Palette (TIM-142: Theme-aware)
  * ============================================ */
+
+/* Light Mode (default) */
 .tm-container {
+  /* Light backgrounds */
+  --tm-void: #f5f5f7;
+  --tm-space: #ffffff;
+  --tm-nebula: #fafafa;
+  --tm-dust: #e5e5e5;
+  --tm-mist: #d4d4d4;
+
+  /* Amber signal system */
+  --tm-amber: #d97706;
+  --tm-amber-bright: #f59e0b;
+  --tm-amber-dim: #92400e;
+  --tm-amber-glow: rgba(217, 119, 6, 0.15);
+  --tm-amber-wash: rgba(217, 119, 6, 0.08);
+
+  /* Text hierarchy - light mode */
+  --tm-text-bright: #18181b;
+  --tm-text-soft: #3f3f46;
+  --tm-text-dim: #71717a;
+  --tm-text-muted: #a1a1aa;
+
+  /* Semantic colors */
+  --tm-success: #16a34a;
+  --tm-warning: #ca8a04;
+  --tm-error: #dc2626;
+
+  /* Glass effects - light mode */
+  --tm-glass: rgba(255, 255, 255, 0.85);
+  --tm-glass-border: rgba(0, 0, 0, 0.06);
+}
+
+/* Dark Mode */
+.dark .tm-container {
   /* Deep space backgrounds */
   --tm-void: #08080a;
   --tm-space: #0e0e11;
@@ -16,25 +50,25 @@
   --tm-dust: #222228;
   --tm-mist: #2e2e36;
 
-  /* Amber signal system */
+  /* Amber signal system - dark mode */
   --tm-amber: #f59e0b;
   --tm-amber-bright: #fbbf24;
   --tm-amber-dim: #b45309;
   --tm-amber-glow: rgba(245, 158, 11, 0.15);
   --tm-amber-wash: rgba(245, 158, 11, 0.06);
 
-  /* Text hierarchy */
+  /* Text hierarchy - dark mode */
   --tm-text-bright: #fafafa;
   --tm-text-soft: #a1a1aa;
   --tm-text-dim: #71717a;
   --tm-text-muted: #52525b;
 
-  /* Semantic colors */
+  /* Semantic colors - dark mode */
   --tm-success: #22c55e;
   --tm-warning: #eab308;
   --tm-error: #ef4444;
 
-  /* Glass effects */
+  /* Glass effects - dark mode */
   --tm-glass: rgba(14, 14, 17, 0.85);
   --tm-glass-border: rgba(255, 255, 255, 0.06);
 }
@@ -43,18 +77,23 @@
  * Base Container
  * ============================================ */
 .tm-container {
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.02) 0%, transparent 40%),
-    linear-gradient(180deg, var(--tm-void) 0%, var(--tm-space) 100%);
+  background: linear-gradient(180deg, var(--tm-void) 0%, var(--tm-space) 100%);
   color: var(--tm-text-bright);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
 
-/* Subtle noise texture overlay */
-.tm-container::before {
+/* Add subtle amber glow in dark mode only */
+.dark .tm-container {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.02) 0%, transparent 40%),
+    linear-gradient(180deg, var(--tm-void) 0%, var(--tm-space) 100%);
+}
+
+/* Subtle noise texture overlay - only in dark mode */
+.dark .tm-container::before {
   content: '';
   position: absolute;
   inset: 0;
