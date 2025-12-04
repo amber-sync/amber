@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { SyncJob, JobStatus, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
-import { formatBytes, formatSchedule, truncateMiddle } from '../utils/formatters';
+import { formatBytes, formatSchedule, truncateMiddle, formatRelativeTime } from '../utils';
 import { BackupCalendar } from '../components/analytics';
 import { ConnectionDot, OfflineBadge } from '../components/ConnectionStatus';
 import { format } from 'date-fns';
+import { Button, Card, Badge, StatusDot, IconButton, ProgressRing } from '../components/ui';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -104,12 +105,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onCreateJob}
-          className="flex items-center gap-2 bg-accent-primary text-accent-text px-5 py-2.5 rounded-full font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95 no-drag"
-        >
-          <Icons.Plus size={18} /> New Job
-        </button>
+        <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />} className="no-drag">
+          New Job
+        </Button>
       </div>
 
       {/* Jobs List - Primary Content */}
@@ -151,17 +149,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Selected Day Details */}
           {selectedDay && (
-            <div className="mt-4 bg-layer-1 rounded-xl border border-border-base p-4">
+            <Card className="mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-text-primary">
                   Backups on {format(selectedDay.date, 'MMMM d, yyyy')}
                 </h3>
-                <button
+                <IconButton
+                  label="Close"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setSelectedDay(null)}
-                  className="p-1 hover:bg-layer-2 rounded-lg text-text-tertiary"
                 >
                   <Icons.X size={16} />
-                </button>
+                </IconButton>
               </div>
               <div className="space-y-2">
                 {selectedDay.backups.map((backup, index) => (
@@ -171,9 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="flex items-center justify-between p-2 hover:bg-layer-2 rounded-lg cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`w-2 h-2 rounded-full ${backup.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
-                      />
+                      <StatusDot status={backup.status === 'success' ? 'success' : 'error'} />
                       <span className="text-sm text-text-primary">{backup.jobName}</span>
                     </div>
                     <span className="text-xs text-text-tertiary">
@@ -182,7 +180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
         </div>
       )}
@@ -204,23 +202,24 @@ const JobRow: React.FC<{
       onClick={onSelect}
       className="group bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
     >
-      {/* Status Icon with Connection Dot */}
+      {/* Status Icon with Connection Dot and Progress */}
       <div className="relative">
-        <div
-          className={`p-2.5 rounded-lg shrink-0 ${
-            isRunning
-              ? 'bg-accent-secondary/20 text-accent-primary animate-pulse'
-              : job.status === JobStatus.SUCCESS
+        {isRunning ? (
+          // Show progress ring when running
+          <ProgressRing progress={0} size={48} strokeWidth={3} showLabel={false} variant="default">
+            <Icons.RefreshCw size={20} className="animate-spin text-accent-primary" />
+          </ProgressRing>
+        ) : (
+          <div
+            className={`p-2.5 rounded-lg shrink-0 ${
+              job.status === JobStatus.SUCCESS
                 ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                 : 'bg-layer-3 text-text-tertiary'
-          }`}
-        >
-          {isRunning ? (
-            <Icons.RefreshCw size={20} className="animate-spin" />
-          ) : (
+            }`}
+          >
             <Icons.Database size={20} />
-          )}
-        </div>
+          </div>
+        )}
         {/* Connection status dot */}
         <div className="absolute -top-0.5 -right-0.5">
           <ConnectionDot mounted={mounted} isRunning={isRunning} />
@@ -234,7 +233,14 @@ const JobRow: React.FC<{
           <ModePill mode={job.mode} />
           {!mounted && <OfflineBadge />}
         </div>
-        <div className="text-xs text-text-secondary truncate">{job.status}</div>
+        <div className="flex items-center gap-2">
+          {isRunning && (
+            <span className="text-xs font-medium text-accent-primary animate-pulse">
+              Syncing...
+            </span>
+          )}
+          {!isRunning && <span className="text-xs text-text-secondary truncate">{job.status}</span>}
+        </div>
       </div>
 
       {/* Paths */}
@@ -287,29 +293,15 @@ const JobRow: React.FC<{
 };
 
 const ModePill: React.FC<{ mode: SyncJob['mode'] }> = ({ mode }) => {
-  const map: Record<string, { bg: string; text: string; label: string }> = {
-    MIRROR: {
-      bg: 'bg-teal-100 dark:bg-teal-900/40',
-      text: 'text-teal-700 dark:text-teal-300',
-      label: 'Mirror',
-    },
-    ARCHIVE: {
-      bg: 'bg-amber-100 dark:bg-amber-900/40',
-      text: 'text-amber-800 dark:text-amber-200',
-      label: 'Archive',
-    },
-    TIME_MACHINE: {
-      bg: 'bg-indigo-100 dark:bg-indigo-900/40',
-      text: 'text-indigo-800 dark:text-indigo-200',
-      label: 'TM',
-    },
+  const map: Record<string, { status: 'info' | 'warning' | 'success'; label: string }> = {
+    MIRROR: { status: 'info', label: 'Mirror' },
+    ARCHIVE: { status: 'warning', label: 'Archive' },
+    TIME_MACHINE: { status: 'success', label: 'TM' },
   };
-  const style = map[mode] || map.MIRROR;
+  const config = map[mode] || map.MIRROR;
   return (
-    <span
-      className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${style.bg} ${style.text}`}
-    >
-      {style.label}
-    </span>
+    <Badge status={config.status} size="sm" variant="subtle">
+      {config.label}
+    </Badge>
   );
 };
