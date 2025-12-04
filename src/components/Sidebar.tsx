@@ -28,8 +28,8 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onCl
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-150 ${
       active
-        ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-l-2 border-amber-500'
-        : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'
+        ? 'bg-accent-secondary text-text-primary border-l-2 border-accent-primary'
+        : 'text-text-secondary hover:bg-layer-3 hover:text-text-primary'
     }`}
     style={{ fontFamily: 'DM Sans, sans-serif' }}
   >
@@ -38,13 +38,13 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onCl
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
-  <aside className="w-64 bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-950 dark:to-stone-900 backdrop-blur-md border-r border-stone-200 dark:border-stone-800 hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
+  <aside className="w-64 bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
     <div className="p-6 flex items-center gap-3">
-      <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-500/30">
+      <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-accent-text shadow-[var(--shadow-card)]">
         <Icons.Activity size={20} />
       </div>
       <span
-        className="font-bold text-xl tracking-tight text-stone-900 dark:text-stone-100"
+        className="font-bold text-xl tracking-tight text-text-primary"
         style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
       >
         Amber
@@ -84,9 +84,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
       />
     </nav>
 
-    <div className="p-4 border-t border-stone-200 dark:border-stone-800">
+    <div className="p-4 border-t border-border-base">
       <div
-        className="text-xs text-stone-500 dark:text-stone-500 text-center"
+        className="text-xs text-text-tertiary text-center"
         style={{ fontFamily: 'JetBrains Mono, monospace' }}
       >
         v0.0.1-beta
