@@ -63,15 +63,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Header & Compact Stats */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="no-drag">
-          <h1
-            className="text-3xl font-bold text-text-primary tracking-tight"
-            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-          >
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight font-display">
             Amber
           </h1>
-          <p className="text-text-tertiary mt-1" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            Rsync and Time Machine
-          </p>
+          <p className="text-text-tertiary mt-1 font-body">Rsync and Time Machine</p>
         </div>
 
         <div className="flex items-center gap-6 bg-layer-2 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base">
@@ -123,10 +118,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Jobs List - Primary Content */}
       <div className="space-y-3">
-        <div
-          className="flex items-center justify-between px-4 text-xs font-semibold text-text-tertiary uppercase tracking-wider"
-          style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-        >
+        <div className="flex items-center justify-between px-4 text-xs font-semibold text-text-tertiary uppercase tracking-wider font-display">
           <div className="w-1/3">Job Name</div>
           <div className="w-1/3">Source & Destination</div>
           <div className="w-1/6 text-right">Schedule</div>
@@ -157,12 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Analytics Section */}
       {jobs.length > 0 && (
         <div className="pt-6 border-t border-border-base">
-          <h2
-            className="text-lg font-semibold text-text-primary mb-4"
-            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-          >
-            Analytics
-          </h2>
+          <h2 className="text-lg font-semibold text-text-primary mb-4 font-display">Analytics</h2>
 
           <div className="grid grid-cols-1 gap-5">
             <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />

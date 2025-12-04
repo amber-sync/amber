@@ -40,12 +40,14 @@ export const FormField: React.FC<FormFieldProps> = ({
           className="text-sm font-medium text-text-primary flex items-center gap-1"
         >
           {label}
-          {required && <span className="text-error">*</span>}
+          {required && <span className="text-[var(--color-error)]">*</span>}
         </label>
       )}
       {children}
       {(error || hint) && (
-        <p className={`text-xs ${error ? 'text-error' : 'text-text-tertiary'}`}>{error || hint}</p>
+        <p className={`text-xs ${error ? 'text-[var(--color-error)]' : 'text-text-tertiary'}`}>
+          {error || hint}
+        </p>
       )}
     </div>
   );
