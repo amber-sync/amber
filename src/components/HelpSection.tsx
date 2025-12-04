@@ -13,11 +13,6 @@ export const HelpSection: React.FC = () => {
 
   return (
     <div className="page-content page-content--narrow page-animate-in">
-      <header className="page-header">
-        <h1 className="page-title font-display">Help & Resources</h1>
-        <p className="page-subtitle font-body">Documentation, guides, and system information.</p>
-      </header>
-
       <div className="grid md:grid-cols-2 gap-4">
         {/* Online Docs Card */}
         <button

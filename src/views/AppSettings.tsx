@@ -31,11 +31,6 @@ export const AppSettings: React.FC = () => {
 
   return (
     <div className="page-content page-scroll page-animate-in">
-      <header className="page-header">
-        <h1 className="page-title font-display">Settings</h1>
-        <p className="page-subtitle font-body">Application preferences and configuration.</p>
-      </header>
-
       <div className="page-grid page-grid--2col">
         <div className="space-y-8">
           <div className="page-card space-y-6">

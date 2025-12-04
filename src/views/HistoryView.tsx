@@ -15,11 +15,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ jobs }) => {
 
   return (
     <div className="page-content page-animate-in">
-      <header className="page-header">
-        <h1 className="page-title font-display">Global History</h1>
-        <p className="page-subtitle font-body">Timeline of all synchronization events.</p>
-      </header>
-
       <div className="page-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-text-secondary">

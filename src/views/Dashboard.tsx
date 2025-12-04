@@ -60,13 +60,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="page-content page-animate-in">
-      {/* Header & Compact Stats */}
-      <div className="page-header--with-actions">
-        <header className="page-header no-drag">
-          <h1 className="page-title font-display">Amber</h1>
-          <p className="page-subtitle font-body">Rsync and Time Machine</p>
-        </header>
-
+      {/* Stats Bar & New Job Button */}
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4 no-drag">
           <div className="page-stats">
             <div className="page-stat">
@@ -99,11 +94,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
           </div>
-
-          <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />}>
-            New Job
-          </Button>
         </div>
+
+        <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />} className="no-drag">
+          New Job
+        </Button>
       </div>
 
       {/* Jobs List - Primary Content */}
