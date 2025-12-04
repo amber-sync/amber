@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
+import { Button, IconButton } from '../../../components/ui';
 import { DateFilter } from '../TimeMachine';
 
 interface TimeMachineHeaderProps {
@@ -72,9 +73,9 @@ export function TimeMachineHeader({
     <header className="tm-header">
       <div className="tm-header-left">
         {/* Back button */}
-        <button onClick={onBack} className="tm-back-btn" title="Back to Dashboard">
+        <IconButton onClick={onBack} label="Back to Dashboard" variant="ghost" size="md">
           <Icons.ArrowLeft size={18} />
-        </button>
+        </IconButton>
 
         {/* Job selector dropdown */}
         <div className="relative" ref={dropdownRef}>
@@ -197,35 +198,35 @@ export function TimeMachineHeader({
         {/* Run/Stop Backup button */}
         {job &&
           (isRunning ? (
-            <button
+            <Button
+              variant="danger"
               onClick={onStopBackup}
-              className="tm-control-btn tm-control-btn--danger"
+              icon={<Icons.Square size={16} />}
               title="Stop Backup"
             >
-              <Icons.Square size={14} />
-              <span>Stop</span>
-            </button>
+              Stop
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
               onClick={onRunBackup}
-              className="tm-control-btn tm-control-btn--primary"
+              icon={<Icons.Play size={16} />}
               title="Run Backup"
             >
-              <Icons.Play size={14} />
-              <span>Run Backup</span>
-            </button>
+              Run Backup
+            </Button>
           ))}
 
         {/* Edit Job button */}
         {job && (
-          <button
+          <Button
+            variant="secondary"
             onClick={onEditJob}
-            className="tm-control-btn tm-control-btn--secondary"
+            icon={<Icons.Pencil size={16} />}
             title="Edit Job Settings"
           >
-            <Icons.Pencil size={14} />
-            <span>Edit</span>
-          </button>
+            Edit
+          </Button>
         )}
       </div>
     </header>
