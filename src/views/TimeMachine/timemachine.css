@@ -108,15 +108,15 @@
 }
 
 /* ============================================
- * Timeline Ruler - 3-zone layout
+ * Timeline Ruler - 3-zone layout with breathing room
  * Zone 1 (top): Hover tooltips
  * Zone 2 (middle): Track with markers
  * Zone 3 (bottom): Fixed month labels
  * ============================================ */
 .tm-timeline {
   position: relative;
-  height: 120px;
-  padding: 0 48px;
+  height: 160px;
+  padding: 24px 48px 16px;
   display: flex;
   flex-direction: column;
   background: var(--tm-space);
@@ -125,113 +125,158 @@
 
 /* Top zone for hover tooltips */
 .tm-timeline-tooltip-zone {
-  height: 40px;
+  height: 48px;
   position: relative;
+  flex-shrink: 0;
 }
 
 /* Middle zone - the actual track */
 .tm-timeline-track {
   position: relative;
-  height: 40px;
+  height: 48px;
   cursor: crosshair;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
-/* The main horizontal line */
+/* The main horizontal line - subtle and elegant */
 .tm-timeline-track::before {
   content: '';
   position: absolute;
   left: 0;
-  right: 0;
+  right: 48px; /* Leave room for NOW indicator */
   top: 50%;
-  height: 2px;
-  background: var(--tm-dust);
-  border-radius: 1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--tm-dust) 0%, var(--tm-mist) 100%);
   transform: translateY(-50%);
 }
 
 /* Bottom zone for month labels */
 .tm-timeline-labels {
-  height: 40px;
+  height: 32px;
   position: relative;
   display: flex;
   align-items: flex-start;
-  padding-top: 8px;
+  padding-top: 12px;
+  flex-shrink: 0;
 }
 
-/* Snapshot markers */
+/* Snapshot markers - elegant minimal design */
 .tm-marker {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--tm-success);
+  background: var(--tm-space);
+  border: 2px solid var(--tm-mist);
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
 }
 
 .tm-marker:hover {
-  transform: translate(-50%, -50%) scale(1.4);
-  box-shadow: 0 0 20px var(--tm-success);
+  transform: translate(-50%, -50%) scale(1.3);
+  border-color: var(--tm-accent);
+  background: var(--tm-accent-wash);
 }
 
 .tm-marker--selected {
   background: var(--tm-accent);
-  transform: translate(-50%, -50%) scale(1.6);
-  box-shadow:
-    0 0 0 4px var(--tm-accent-glow),
-    0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--tm-accent);
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 0 4px var(--tm-accent-glow);
 }
 
 .tm-marker--selected::after {
   content: '';
   position: absolute;
-  inset: -8px;
+  inset: -6px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--tm-accent-glow) 0%, transparent 70%);
-  opacity: 0.5;
-  z-index: -1;
+  border: 1px solid var(--tm-accent);
+  opacity: 0.3;
 }
 
 .tm-marker--failed {
+  border-color: var(--tm-error);
+  background: var(--tm-space);
+}
+
+.tm-marker--failed:hover,
+.tm-marker--failed.tm-marker--selected {
   background: var(--tm-error);
+  border-color: var(--tm-error);
 }
 
 .tm-marker--partial {
-  background: var(--tm-warning);
+  border-color: var(--tm-warning);
+  background: var(--tm-space);
 }
 
-/* NOW indicator */
+.tm-marker--partial:hover,
+.tm-marker--partial.tm-marker--selected {
+  background: var(--tm-warning);
+  border-color: var(--tm-warning);
+}
+
+/* Cluster markers - slightly larger */
+.tm-marker--cluster {
+  width: 12px;
+  height: 12px;
+}
+
+/* Cluster badge */
+.tm-marker-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  background: var(--tm-accent);
+  color: var(--tm-space);
+  border-radius: 7px;
+  font-size: 8px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* NOW indicator - elegant end cap */
 .tm-now-indicator {
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding-left: 16px;
+  gap: 4px;
+  padding-left: 12px;
 }
 
 .tm-now-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--tm-text-dim);
+  background: var(--tm-accent);
+  box-shadow: 0 0 0 3px var(--tm-accent-glow);
   animation: tm-pulse 2s ease-in-out infinite;
 }
 
 .tm-now-label {
-  font-family: 'Plus Jakarta Sans', var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
+  font-family: 'JetBrains Mono', var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--tm-text-dim);
+  letter-spacing: 0.08em;
+  color: var(--tm-text-muted);
+  margin-top: 2px;
 }
 
 @keyframes tm-pulse {
@@ -274,7 +319,7 @@
 /* Hover tooltip styling (positioned above track) */
 .tm-timeline-tooltip {
   position: absolute;
-  bottom: 0;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -284,10 +329,20 @@
 .tm-timeline-tooltip-content {
   background: var(--tm-nebula);
   border: 1px solid var(--tm-dust);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 8px 12px;
   white-space: nowrap;
+  text-align: center;
+}
+
+/* Dark mode shadow adjustment */
+.dark .tm-timeline-tooltip-content {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Arrow pointing down */
@@ -298,21 +353,21 @@
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid var(--tm-dust);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--tm-dust);
 }
 
 .tm-timeline-tooltip-arrow::after {
   content: '';
   position: absolute;
-  left: -5px;
-  top: -7px;
+  left: -4px;
+  top: -6px;
   width: 0;
   height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid var(--tm-nebula);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--tm-nebula);
 }
 
 /* ============================================
@@ -984,20 +1039,20 @@
   }
 
   .tm-timeline {
-    height: 100px;
-    padding: 0 24px;
+    height: 140px;
+    padding: 20px 24px 12px;
   }
 
   .tm-timeline-tooltip-zone {
-    height: 32px;
+    height: 40px;
   }
 
   .tm-timeline-track {
-    height: 36px;
+    height: 40px;
   }
 
   .tm-timeline-labels {
-    height: 32px;
+    height: 28px;
   }
 
   .tm-actions {

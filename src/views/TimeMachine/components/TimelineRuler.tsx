@@ -241,16 +241,13 @@ export function TimelineRuler({
                 ${isSelected ? 'tm-marker--selected' : ''}
                 ${hasFailed ? 'tm-marker--failed' : ''}
                 ${hasPartial && !hasFailed ? 'tm-marker--partial' : ''}
+                ${marker.isCluster ? 'tm-marker--cluster' : ''}
               `}
-              style={{
-                left: `${marker.position}%`,
-                width: marker.isCluster ? 16 : 12,
-                height: marker.isCluster ? 16 : 12,
-              }}
+              style={{ left: `${marker.position}%` }}
             >
               {/* Cluster count badge */}
               {marker.isCluster && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-full text-[8px] font-bold text-[var(--tm-text-bright)] flex items-center justify-center">
+                <span className="tm-marker-badge">
                   {marker.snapshots.length > 9 ? '9+' : marker.snapshots.length}
                 </span>
               )}
