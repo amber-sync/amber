@@ -20,6 +20,8 @@ interface DashboardProps {
   mountStatus?: Record<string, JobMountInfo>;
   onSelectJob: (jobId: string) => void;
   onCreateJob: () => void;
+  onRunBackup?: (jobId: string) => void;
+  onEditSettings?: (jobId: string) => void;
 }
 
 interface DayBackup {
@@ -35,6 +37,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   mountStatus,
   onSelectJob,
   onCreateJob,
+  onRunBackup,
+  onEditSettings,
 }) => {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; backups: DayBackup[] } | null>(null);
 
@@ -126,6 +130,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               job={job}
               mountInfo={mountStatus?.[job.id]}
               onSelect={() => onSelectJob(job.id)}
+              onRunBackup={onRunBackup}
+              onEditSettings={onEditSettings}
             />
           ))}
 
@@ -192,7 +198,9 @@ const JobRow: React.FC<{
   job: SyncJob;
   mountInfo?: JobMountInfo;
   onSelect: () => void;
-}> = ({ job, mountInfo, onSelect }) => {
+  onRunBackup?: (jobId: string) => void;
+  onEditSettings?: (jobId: string) => void;
+}> = ({ job, mountInfo, onSelect, onRunBackup, onEditSettings }) => {
   const getPathName = (p: string) => p.split('/').pop() || p;
   const isRunning = job.status === JobStatus.RUNNING;
   const mounted = mountInfo?.mounted ?? true; // Default to mounted if no info
@@ -200,7 +208,7 @@ const JobRow: React.FC<{
   return (
     <div
       onClick={onSelect}
-      className="group bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
+      className="group relative bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
     >
       {/* Status Icon with Connection Dot and Progress */}
       <div className="relative">
@@ -285,8 +293,45 @@ const JobRow: React.FC<{
         </div>
       </div>
 
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary">
-        <Icons.ArrowRight size={18} />
+      {/* Quick Actions - Hover Revealed */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+        {onRunBackup && (
+          <IconButton
+            label="Run backup now"
+            variant="ghost"
+            size="sm"
+            onClick={e => {
+              e.stopPropagation();
+              onRunBackup(job.id);
+            }}
+          >
+            <Icons.Play className="w-4 h-4" />
+          </IconButton>
+        )}
+        <IconButton
+          label="View backup history"
+          variant="ghost"
+          size="sm"
+          onClick={e => {
+            e.stopPropagation();
+            onSelect();
+          }}
+        >
+          <Icons.Clock className="w-4 h-4" />
+        </IconButton>
+        {onEditSettings && (
+          <IconButton
+            label="Edit job settings"
+            variant="ghost"
+            size="sm"
+            onClick={e => {
+              e.stopPropagation();
+              onEditSettings(job.id);
+            }}
+          >
+            <Icons.Settings className="w-4 h-4" />
+          </IconButton>
+        )}
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ interface SnapshotFocusProps {
   onRestore: () => void;
   onViewAnalytics: () => void;
   onRunBackup: () => void;
+  onCompare: () => void;
   isRunning: boolean;
 }
 
@@ -35,6 +36,7 @@ export function SnapshotFocus({
   onRestore,
   onViewAnalytics,
   onRunBackup,
+  onCompare,
   isRunning,
 }: SnapshotFocusProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -142,6 +144,10 @@ export function SnapshotFocus({
         <button onClick={onRestore} className="tm-action-btn tm-action-btn--secondary">
           <Icons.RotateCcw size={18} />
           <span>Restore</span>
+        </button>
+        <button onClick={onCompare} className="tm-action-btn tm-action-btn--secondary">
+          <Icons.GitCompare size={18} />
+          <span>Compare</span>
         </button>
         <button
           onClick={() => snapshot.path && api.openPath(snapshot.path)}
