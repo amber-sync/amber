@@ -64,22 +64,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="no-drag">
           <h1
-            className="text-3xl font-bold text-stone-900 dark:text-stone-100 tracking-tight"
+            className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight"
             style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
           >
             Amber
           </h1>
           <p
-            className="text-stone-500 dark:text-stone-400 mt-1"
+            className="text-zinc-500 dark:text-zinc-400 mt-1"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             Rsync and Time Machine
           </p>
         </div>
 
-        <div className="flex items-center gap-6 bg-gradient-to-r from-stone-50 to-stone-100/50 dark:from-stone-900/50 dark:to-stone-800/30 backdrop-blur-md px-6 py-3 rounded-2xl border border-stone-200/50 dark:border-stone-700/50 shadow-sm">
+        <div className="flex items-center gap-6 bg-zinc-50 dark:bg-zinc-900/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
               <Icons.Database size={18} />
             </div>
             <div>
@@ -93,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-lg">
+            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
               <Icons.Activity size={18} />
             </div>
             <div>
@@ -105,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
+            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
               <Icons.Archive size={18} />
             </div>
             <div>
@@ -127,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Jobs List - Primary Content */}
       <div className="space-y-3">
         <div
-          className="flex items-center justify-between px-4 text-xs font-semibold text-stone-500 dark:text-stone-500 uppercase tracking-wider"
+          className="flex items-center justify-between px-4 text-xs font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider"
           style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
         >
           <div className="w-1/3">Job Name</div>
@@ -149,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-16 text-center text-stone-500 dark:text-stone-500 bg-gradient-to-b from-stone-50 to-stone-100/50 dark:from-stone-900/30 dark:to-stone-800/20 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
+            <div className="py-16 text-center text-zinc-500 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700">
               <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
               <p>No sync jobs configured yet.</p>
             </div>
@@ -161,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {jobs.length > 0 && (
         <div className="pt-6 border-t border-border-base">
           <h2
-            className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4"
+            className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4"
             style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
           >
             Analytics
