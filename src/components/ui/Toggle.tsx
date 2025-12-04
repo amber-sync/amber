@@ -44,15 +44,15 @@ export const Toggle: React.FC<ToggleProps> = ({
         onClick={() => !disabled && onChange(!checked)}
         className={`
           relative inline-flex shrink-0 ${styles.track}
-          items-center rounded-full transition-colors duration-fast
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-layer-1
-          ${checked ? 'bg-gradient-primary' : 'bg-layer-3'}
+          items-center rounded-full transition-all duration-200
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:ring-offset-2
+          ${checked ? 'bg-amber-500 hover:bg-amber-600' : 'bg-stone-300 dark:bg-stone-700 hover:bg-stone-400 dark:hover:bg-stone-600'}
         `}
       >
         <span
           className={`
             ${styles.thumb} rounded-full bg-white shadow-md
-            transform transition-transform duration-fast ease-out
+            transform transition-all duration-200 ease-out
             ${checked ? styles.translate : 'translate-x-0.5'}
           `}
         />

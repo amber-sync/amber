@@ -25,15 +25,18 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 }
 
 const baseStyles =
-  'w-full border bg-layer-2 text-text-primary ' +
-  'focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary ' +
-  'transition-colors disabled:opacity-50 disabled:cursor-not-allowed ' +
-  'appearance-none cursor-pointer';
+  'w-full border bg-stone-50 dark:bg-stone-900 ' +
+  'text-stone-900 dark:text-stone-100 ' +
+  'focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 ' +
+  'transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ' +
+  'appearance-none cursor-pointer ' +
+  'hover:border-stone-400 dark:hover:border-stone-600';
 
 const variantStyles: Record<SelectVariant, string> = {
-  default: 'border-border-base',
-  outlined: 'border-border-highlight bg-transparent',
-  ghost: 'border-transparent bg-layer-3 hover:bg-layer-2',
+  default: 'border-stone-300 dark:border-stone-700',
+  outlined: 'border-stone-400 dark:border-stone-600 bg-transparent',
+  ghost:
+    'border-transparent bg-stone-100 dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-900',
 };
 
 const sizeStyles: Record<SelectSize, string> = {
@@ -63,13 +66,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ref
   ) => {
     const selectStyles = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${
-      error ? 'border-error focus:ring-error' : ''
+      error ? 'border-red-500 dark:border-red-400 focus:ring-red-500/30 focus:border-red-500' : ''
     } ${icon ? 'pl-10' : ''} ${className}`.trim();
 
     return (
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-stone-400 pointer-events-none">
             {icon}
           </div>
         )}
@@ -85,9 +88,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {/* Chevron icon */}
+        {/* Chevron icon in amber */}
         <div
-          className={`absolute top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none ${iconSizeStyles[size]}`}
+          className={`absolute top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-500 pointer-events-none ${iconSizeStyles[size]}`}
         >
           <svg
             fill="none"

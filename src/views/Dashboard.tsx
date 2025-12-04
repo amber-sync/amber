@@ -63,13 +63,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Header & Compact Stats */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="no-drag">
-          <h1 className="text-3xl font-bold text-text-primary tracking-tight">Amber</h1>
-          <p className="text-text-secondary mt-1">Rsync and Time Machine</p>
+          <h1
+            className="text-3xl font-bold text-stone-900 dark:text-stone-100 tracking-tight"
+            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+          >
+            Amber
+          </h1>
+          <p
+            className="text-stone-500 dark:text-stone-400 mt-1"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            Rsync and Time Machine
+          </p>
         </div>
 
-        <div className="flex items-center gap-6 bg-layer-1/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base shadow-sm">
+        <div className="flex items-center gap-6 bg-gradient-to-r from-stone-50 to-stone-100/50 dark:from-stone-900/50 dark:to-stone-800/30 backdrop-blur-md px-6 py-3 rounded-2xl border border-stone-200/50 dark:border-stone-700/50 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg">
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
               <Icons.Database size={18} />
             </div>
             <div>
@@ -83,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+            <div className="p-2 bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-lg">
               <Icons.Activity size={18} />
             </div>
             <div>
@@ -95,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
               <Icons.Archive size={18} />
             </div>
             <div>
@@ -116,7 +126,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Jobs List - Primary Content */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+        <div
+          className="flex items-center justify-between px-4 text-xs font-semibold text-stone-500 dark:text-stone-500 uppercase tracking-wider"
+          style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+        >
           <div className="w-1/3">Job Name</div>
           <div className="w-1/3">Source & Destination</div>
           <div className="w-1/6 text-right">Schedule</div>
@@ -136,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-16 text-center text-text-tertiary bg-layer-1/50 rounded-2xl border border-dashed border-border-base">
+            <div className="py-16 text-center text-stone-500 dark:text-stone-500 bg-gradient-to-b from-stone-50 to-stone-100/50 dark:from-stone-900/30 dark:to-stone-800/20 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
               <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
               <p>No sync jobs configured yet.</p>
             </div>
@@ -147,7 +160,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Analytics Section */}
       {jobs.length > 0 && (
         <div className="pt-6 border-t border-border-base">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">Analytics</h2>
+          <h2
+            className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4"
+            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+          >
+            Analytics
+          </h2>
 
           <div className="grid grid-cols-1 gap-5">
             <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />
@@ -208,7 +226,7 @@ const JobRow: React.FC<{
   return (
     <div
       onClick={onSelect}
-      className="group relative bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
+      className="group relative bg-gradient-to-r from-white to-stone-50/50 dark:from-stone-900 dark:to-stone-800/50 hover:from-stone-50 hover:to-stone-100 dark:hover:from-stone-800 dark:hover:to-stone-700/50 rounded-xl p-4 border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center gap-4"
     >
       {/* Status Icon with Connection Dot and Progress */}
       <div className="relative">
