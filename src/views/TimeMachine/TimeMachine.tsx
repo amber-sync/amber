@@ -167,6 +167,13 @@ export function TimeMachine({
     }
   }, [currentJobId, stopSync]);
 
+  const handleEditJob = useCallback(() => {
+    if (currentJobId) {
+      setActiveJobId(currentJobId);
+      setView('JOB_EDITOR');
+    }
+  }, [currentJobId, setActiveJobId, setView]);
+
   // Calculate time range from snapshots
   const timeRange = useMemo(() => {
     if (snapshots.length === 0) {
@@ -188,9 +195,12 @@ export function TimeMachine({
           job={null}
           jobs={jobs}
           isRunning={false}
+          progress={null}
           onJobSwitch={handleJobSwitch}
           onBack={handleBack}
-          onSettings={() => {}}
+          onRunBackup={handleRunBackup}
+          onStopBackup={handleStopBackup}
+          onEditJob={handleEditJob}
         />
         <EmptyState type="no-job" onAction={handleBack} actionLabel="Go to Dashboard" />
       </div>
@@ -205,9 +215,12 @@ export function TimeMachine({
           job={currentJob}
           jobs={jobs}
           isRunning={isRunning}
+          progress={progress}
           onJobSwitch={handleJobSwitch}
           onBack={handleBack}
-          onSettings={() => {}}
+          onRunBackup={handleRunBackup}
+          onStopBackup={handleStopBackup}
+          onEditJob={handleEditJob}
         />
         <EmptyState type="no-snapshots" onAction={handleRunBackup} actionLabel="Run First Backup" />
         <LiveActivityBar
@@ -222,14 +235,17 @@ export function TimeMachine({
 
   return (
     <div className="tm-container flex flex-col h-screen">
-      {/* Header with job switcher */}
+      {/* Header with job switcher and controls (TIM-138) */}
       <TimeMachineHeader
         job={currentJob}
         jobs={jobs}
         isRunning={isRunning}
+        progress={progress}
         onJobSwitch={handleJobSwitch}
         onBack={handleBack}
-        onSettings={() => {}}
+        onRunBackup={handleRunBackup}
+        onStopBackup={handleStopBackup}
+        onEditJob={handleEditJob}
       />
 
       {/* Timeline - THE primary navigation */}

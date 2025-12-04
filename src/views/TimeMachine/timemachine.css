@@ -541,6 +541,55 @@
   animation: tm-pulse 2s ease-in-out infinite;
 }
 
+/* Control buttons in header (TIM-138) */
+.tm-control-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid transparent;
+}
+
+.tm-control-btn--primary {
+  background: var(--tm-amber);
+  color: var(--tm-void);
+  border-color: var(--tm-amber);
+}
+
+.tm-control-btn--primary:hover {
+  background: var(--tm-amber-bright);
+  border-color: var(--tm-amber-bright);
+  box-shadow: 0 0 20px var(--tm-amber-glow);
+}
+
+.tm-control-btn--secondary {
+  background: var(--tm-nebula);
+  color: var(--tm-text-soft);
+  border-color: var(--tm-dust);
+}
+
+.tm-control-btn--secondary:hover {
+  background: var(--tm-dust);
+  color: var(--tm-text-bright);
+  border-color: var(--tm-mist);
+}
+
+.tm-control-btn--danger {
+  background: var(--tm-error);
+  color: white;
+  border-color: var(--tm-error);
+}
+
+.tm-control-btn--danger:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
 /* ============================================
  * Empty State
  * ============================================ */
