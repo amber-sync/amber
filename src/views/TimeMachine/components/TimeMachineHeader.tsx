@@ -20,7 +20,6 @@ interface TimeMachineHeaderProps {
   onRunBackup: () => void;
   onStopBackup: () => void;
   onEditJob: () => void;
-  onNewJob?: () => void;
   dateFilter?: DateFilter;
   onDateFilterChange?: (filter: DateFilter) => void;
   snapshotCount?: number;
@@ -37,7 +36,6 @@ export function TimeMachineHeader({
   onRunBackup,
   onStopBackup,
   onEditJob,
-  onNewJob,
   dateFilter = 'all',
   onDateFilterChange,
   snapshotCount,
@@ -158,18 +156,6 @@ export function TimeMachineHeader({
               <span className="text-xs text-[var(--tm-text-dim)]">ETA {progress.eta}</span>
             )}
           </div>
-        )}
-
-        {/* New Job button */}
-        {onNewJob && (
-          <button
-            onClick={onNewJob}
-            className="tm-control-btn tm-control-btn--secondary"
-            title="Create new backup job"
-          >
-            <Icons.Plus size={14} />
-            <span>New Job</span>
-          </button>
         )}
 
         {/* Run/Stop Backup button */}

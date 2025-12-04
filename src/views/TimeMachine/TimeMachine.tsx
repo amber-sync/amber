@@ -147,6 +147,14 @@ export function TimeMachine({
     }
   }, [currentJobId, activeJobId, setActiveJobId]);
 
+  // Handler needs to be declared before keyboard useEffect that uses it
+  const handleBrowseFiles = useCallback(() => {
+    if (selectedSnapshot?.path) {
+      setFileBrowserPath(selectedSnapshot.path);
+      setActiveOverlay('files');
+    }
+  }, [selectedSnapshot]);
+
   // Keyboard navigation (TIM-149)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -228,13 +236,6 @@ export function TimeMachine({
   const handleSelectSnapshot = useCallback((timestamp: number) => {
     setSelectedTimestamp(timestamp);
   }, []);
-
-  const handleBrowseFiles = useCallback(() => {
-    if (selectedSnapshot?.path) {
-      setFileBrowserPath(selectedSnapshot.path);
-      setActiveOverlay('files');
-    }
-  }, [selectedSnapshot]);
 
   const handleRestore = useCallback(() => {
     setActiveOverlay('restore');
@@ -336,7 +337,6 @@ export function TimeMachine({
           onRunBackup={handleRunBackup}
           onStopBackup={handleStopBackup}
           onEditJob={handleEditJob}
-          onNewJob={handleNewJob}
         />
         <EmptyState type="no-job" onAction={handleBack} actionLabel="Go to Dashboard" />
       </div>
@@ -357,7 +357,6 @@ export function TimeMachine({
           onRunBackup={handleRunBackup}
           onStopBackup={handleStopBackup}
           onEditJob={handleEditJob}
-          onNewJob={handleNewJob}
         />
         <EmptyState type="no-snapshots" onAction={handleRunBackup} actionLabel="Run First Backup" />
         <LiveActivityBar
@@ -383,7 +382,6 @@ export function TimeMachine({
         onRunBackup={handleRunBackup}
         onStopBackup={handleStopBackup}
         onEditJob={handleEditJob}
-        onNewJob={handleNewJob}
         dateFilter={dateFilter}
         onDateFilterChange={setDateFilter}
         snapshotCount={filteredSnapshots.length}
