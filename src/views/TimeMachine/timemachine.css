@@ -65,20 +65,20 @@
 }
 
 /* ============================================
- * Typography
+ * Typography (TIM-140: Use app's standard fonts)
  * ============================================ */
 .tm-font-display {
-  font-family: 'Instrument Serif', Georgia, serif;
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .tm-font-body {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .tm-font-mono {
-  font-family: 'IBM Plex Mono', 'SF Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.875em;
 }
 
