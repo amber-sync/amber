@@ -36,6 +36,7 @@ open = "5"
 shell-words = "1"
 regex = "1"
 dirs = "5"
+urlencoding = "2.1"
 # TIM-113: Job scheduler
 tokio-cron-scheduler = "0.13"
 # TIM-114: Keychain access
