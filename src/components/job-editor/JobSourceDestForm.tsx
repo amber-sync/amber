@@ -45,13 +45,13 @@ export const JobSourceDestForm: React.FC<JobSourceDestFormProps> = ({
         </div>
 
         <div className="flex-1 w-full space-y-3">
-          <label className="block text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
+          <label className="block text-xs font-bold text-accent-primary uppercase tracking-wider flex items-center gap-2">
             <Icons.HardDrive size={14} /> Destination
           </label>
           <div className="flex gap-3">
             <input
               type="text"
-              className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-900 outline-none transition-all font-mono text-sm"
+              className="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20 outline-none transition-all font-mono text-sm"
               placeholder="/Volumes/Backup"
               value={jobDest}
               onChange={e => setJobDest(e.target.value)}

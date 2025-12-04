@@ -28,9 +28,9 @@ export const JobStrategyForm: React.FC<JobStrategyFormProps> = ({
         };
       case SyncMode.ARCHIVE:
         return {
-          border: 'border-amber-500',
-          bg: 'bg-amber-50 dark:bg-amber-900/10',
-          ring: 'ring-1 ring-amber-500',
+          border: 'border-accent-primary',
+          bg: 'bg-accent-secondary',
+          ring: 'ring-1 ring-accent-primary',
         };
       case SyncMode.TIME_MACHINE:
         return {

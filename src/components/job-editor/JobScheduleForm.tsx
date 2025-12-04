@@ -30,7 +30,7 @@ export const JobScheduleForm: React.FC<JobScheduleFormProps> = ({
               onClick={() => setJobSchedule(opt.val)}
               className={`w-full py-3 px-1 rounded-xl border transition-all flex flex-col items-center justify-center gap-1 ${
                 jobSchedule === opt.val
-                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-400'
+                  ? 'border-accent-primary bg-accent-secondary text-accent-primary ring-1 ring-accent-primary'
                   : 'border-border-base text-text-tertiary hover:bg-layer-2'
               }`}
             >
