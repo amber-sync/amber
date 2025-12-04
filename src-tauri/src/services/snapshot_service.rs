@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::services::manifest_service;
 use crate::types::snapshot::{file_type, FileNode, SnapshotMetadata};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -35,7 +36,71 @@ impl SnapshotService {
     }
 
     /// List all snapshots for a job
+    ///
+    /// Priority order for stats:
+    /// 1. Manifest.json (authoritative, created during backup)
+    /// 2. Legacy JSON cache (for backwards compatibility)
+    /// 3. Default to (0, 0) with warning log
     pub fn list_snapshots(&self, job_id: &str, dest_path: &str) -> Result<Vec<SnapshotMetadata>> {
+        // Try to read from manifest first (authoritative source)
+        if let Some(snapshots) = self.list_snapshots_from_manifest(dest_path) {
+            log::debug!(
+                "[snapshot_service] Loaded {} snapshots from manifest for job {}",
+                snapshots.len(),
+                job_id
+            );
+            return Ok(snapshots);
+        }
+
+        // Fall back to filesystem scan with cache lookup
+        log::debug!(
+            "[snapshot_service] No manifest found, falling back to filesystem scan for job {}",
+            job_id
+        );
+        self.list_snapshots_from_filesystem(job_id, dest_path)
+    }
+
+    /// Read snapshots from manifest.json (preferred method)
+    fn list_snapshots_from_manifest(&self, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
+        // Use blocking read since this is a sync function
+        let manifest_path = manifest_service::get_manifest_path(dest_path);
+
+        let data = std::fs::read_to_string(&manifest_path).ok()?;
+        let manifest: crate::types::manifest::BackupManifest =
+            serde_json::from_str(&data).ok()?;
+
+        let mut snapshots: Vec<SnapshotMetadata> = manifest
+            .snapshots
+            .iter()
+            .map(|s| {
+                let full_path = Path::new(dest_path)
+                    .join(&s.folder_name)
+                    .to_string_lossy()
+                    .to_string();
+
+                SnapshotMetadata {
+                    id: s.id.clone(),
+                    timestamp: s.timestamp,
+                    date: chrono::DateTime::from_timestamp(s.timestamp / 1000, 0)
+                        .map(|d| d.to_rfc3339())
+                        .unwrap_or_default(),
+                    size_bytes: s.total_size,
+                    file_count: s.file_count,
+                    path: full_path,
+                }
+            })
+            .collect();
+
+        snapshots.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        Some(snapshots)
+    }
+
+    /// Fall back to filesystem scan with cache lookup (legacy method)
+    fn list_snapshots_from_filesystem(
+        &self,
+        job_id: &str,
+        dest_path: &str,
+    ) -> Result<Vec<SnapshotMetadata>> {
         let backup_pattern = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$")
             .map_err(|e| crate::error::AmberError::Snapshot(e.to_string()))?;
 
@@ -61,8 +126,19 @@ impl SnapshotService {
                 let timestamp = self.parse_backup_timestamp(&caps);
                 let full_path = path.to_string_lossy().to_string();
 
-                let (size_bytes, file_count) =
-                    self.load_cached_stats(job_id, timestamp).unwrap_or((0, 0));
+                // Try cache first, log warning if missing
+                let (size_bytes, file_count) = match self.load_cached_stats(job_id, timestamp) {
+                    Some(stats) => stats,
+                    None => {
+                        log::warn!(
+                            "[snapshot_service] No cached stats for snapshot {} (job {}), returning zeros. \
+                             Consider running index_snapshot() to populate stats.",
+                            timestamp,
+                            job_id
+                        );
+                        (0, 0)
+                    }
+                };
 
                 snapshots.push(SnapshotMetadata {
                     id: timestamp.to_string(),
@@ -478,5 +554,262 @@ mod tests {
         assert_eq!(entries.len(), 4); // file1, file2, subdir, nested
         assert!(entries.iter().any(|e| e.name == "file1.txt" && !e.is_dir));
         assert!(entries.iter().any(|e| e.name == "subdir" && e.is_dir));
+    }
+
+    // =========================================================================
+    // Integration tests for manifest-based snapshot loading (TIM-SIM-001)
+    // =========================================================================
+
+    #[test]
+    fn test_list_snapshots_from_manifest_returns_correct_stats() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create .amber-meta directory and manifest.json
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+
+        // Create manifest with known stats
+        let manifest_json = r#"{
+            "version": 1,
+            "machineId": "test-machine",
+            "machineName": "Test",
+            "jobId": "job-123",
+            "jobName": "Test Job",
+            "sourcePath": "/source",
+            "createdAt": 1700000000000,
+            "updatedAt": 1700000000000,
+            "snapshots": [
+                {
+                    "id": "1700000000000",
+                    "timestamp": 1700000000000,
+                    "folderName": "2024-01-15-120000",
+                    "fileCount": 500,
+                    "totalSize": 1048576,
+                    "status": "Complete",
+                    "durationMs": 5000
+                },
+                {
+                    "id": "1700100000000",
+                    "timestamp": 1700100000000,
+                    "folderName": "2024-01-16-120000",
+                    "fileCount": 750,
+                    "totalSize": 2097152,
+                    "status": "Complete",
+                    "durationMs": 7000
+                }
+            ]
+        }"#;
+
+        std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
+
+        // List snapshots
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        // Verify stats are loaded from manifest (not zeros!)
+        assert_eq!(snapshots.len(), 2);
+
+        // Newest first (sorted by timestamp descending)
+        assert_eq!(snapshots[0].file_count, 750);
+        assert_eq!(snapshots[0].size_bytes, 2097152);
+
+        assert_eq!(snapshots[1].file_count, 500);
+        assert_eq!(snapshots[1].size_bytes, 1048576);
+    }
+
+    #[test]
+    fn test_list_snapshots_manifest_takes_priority_over_cache() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create snapshot directory
+        std::fs::create_dir_all(dest_dir.join("2024-01-15-120000")).unwrap();
+
+        // Create a cache file with WRONG stats
+        let cache_path = service.get_cache_path("job-123", 1705320000000);
+        let wrong_cache = r#"{
+            "timestamp": 1705320000000,
+            "stats": {"size_bytes": 999, "file_count": 1},
+            "tree": []
+        }"#;
+        std::fs::write(&cache_path, wrong_cache).unwrap();
+
+        // Create manifest with CORRECT stats
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+
+        let manifest_json = r#"{
+            "version": 1,
+            "machineId": "test-machine",
+            "machineName": "Test",
+            "jobId": "job-123",
+            "jobName": "Test Job",
+            "sourcePath": "/source",
+            "createdAt": 1700000000000,
+            "updatedAt": 1700000000000,
+            "snapshots": [
+                {
+                    "id": "1705320000000",
+                    "timestamp": 1705320000000,
+                    "folderName": "2024-01-15-120000",
+                    "fileCount": 1000,
+                    "totalSize": 5000000,
+                    "status": "Complete",
+                    "durationMs": 5000
+                }
+            ]
+        }"#;
+
+        std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
+
+        // List snapshots - should use manifest, not cache
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 1);
+        // Should have manifest values, NOT cache values
+        assert_eq!(snapshots[0].file_count, 1000);
+        assert_eq!(snapshots[0].size_bytes, 5000000);
+    }
+
+    #[test]
+    fn test_list_snapshots_falls_back_to_filesystem_without_manifest() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create snapshot directories (no manifest)
+        std::fs::create_dir_all(dest_dir.join("2024-01-15-120000")).unwrap();
+        std::fs::create_dir_all(dest_dir.join("2024-01-16-090000")).unwrap();
+
+        // No manifest, no cache - should return zeros but still find snapshots
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 2);
+        // Without manifest or cache, stats are (0, 0)
+        assert_eq!(snapshots[0].file_count, 0);
+        assert_eq!(snapshots[0].size_bytes, 0);
+    }
+
+    #[test]
+    fn test_list_snapshots_from_manifest_constructs_correct_paths() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create manifest
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+
+        let manifest_json = r#"{
+            "version": 1,
+            "machineId": "test-machine",
+            "machineName": "Test",
+            "jobId": "job-123",
+            "jobName": "Test Job",
+            "sourcePath": "/source",
+            "createdAt": 1700000000000,
+            "updatedAt": 1700000000000,
+            "snapshots": [
+                {
+                    "id": "1700000000000",
+                    "timestamp": 1700000000000,
+                    "folderName": "2024-01-15-120000",
+                    "fileCount": 100,
+                    "totalSize": 1000,
+                    "status": "Complete",
+                    "durationMs": 1000
+                }
+            ]
+        }"#;
+
+        std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 1);
+        // Path should be constructed from dest_path + folder_name
+        let expected_path = dest_dir.join("2024-01-15-120000").to_string_lossy().to_string();
+        assert_eq!(snapshots[0].path, expected_path);
+    }
+
+    #[test]
+    fn test_list_snapshots_handles_malformed_manifest_gracefully() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        // Create malformed manifest
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+        std::fs::write(meta_dir.join("manifest.json"), "{ invalid json }").unwrap();
+
+        // Create snapshot directory for fallback
+        std::fs::create_dir_all(dest_dir.join("2024-01-15-120000")).unwrap();
+
+        // Should fall back to filesystem scan
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        // Should find snapshot via filesystem fallback
+        assert_eq!(snapshots.len(), 1);
+    }
+
+    #[test]
+    fn test_list_snapshots_manifest_generates_correct_date_format() {
+        let (service, temp) = create_test_service();
+        let dest_dir = temp.path().join("dest");
+        std::fs::create_dir_all(&dest_dir).unwrap();
+
+        let meta_dir = dest_dir.join(".amber-meta");
+        std::fs::create_dir_all(&meta_dir).unwrap();
+
+        // Timestamp for 2024-01-15 12:00:00 UTC
+        let timestamp: i64 = 1705320000000;
+
+        let manifest_json = format!(
+            r#"{{
+            "version": 1,
+            "machineId": "test-machine",
+            "machineName": "Test",
+            "jobId": "job-123",
+            "jobName": "Test Job",
+            "sourcePath": "/source",
+            "createdAt": {},
+            "updatedAt": {},
+            "snapshots": [
+                {{
+                    "id": "{}",
+                    "timestamp": {},
+                    "folderName": "2024-01-15-120000",
+                    "fileCount": 100,
+                    "totalSize": 1000,
+                    "status": "Complete",
+                    "durationMs": 1000
+                }}
+            ]
+        }}"#,
+            timestamp, timestamp, timestamp, timestamp
+        );
+
+        std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
+
+        let snapshots = service
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .unwrap();
+
+        assert_eq!(snapshots.len(), 1);
+        // Date should be RFC3339 format
+        assert!(snapshots[0].date.contains("2024-01-15"));
     }
 }
