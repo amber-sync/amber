@@ -35,8 +35,8 @@ const variantStyles: Record<ButtonVariant, string> = {
     'focus:ring-accent-primary/30',
   danger:
     'bg-[var(--color-error)] text-white ' +
-    'hover:bg-red-500 ' +
-    'active:bg-red-700 ' +
+    'hover:bg-[var(--color-error)]/90 ' +
+    'active:bg-[var(--color-error)]/80 ' +
     'focus:ring-[var(--color-error)]/30',
 };
 

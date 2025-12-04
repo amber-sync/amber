@@ -134,3 +134,14 @@
     opacity: 0;
   }
 }
+
+/* Typography Utilities */
+@layer utilities {
+  .font-display {
+    font-family: 'Plus Jakarta Sans', var(--font-sans);
+  }
+
+  .font-body {
+    font-family: 'DM Sans', var(--font-sans);
+  }
+}
