@@ -727,4 +727,223 @@ mod tests {
         let e_idx = args.iter().position(|a| a == "-e");
         assert!(e_idx.is_none(), "Should NOT have -e flag for local path");
     }
+
+    // ========== Duplicate Spawn Protection Tests ==========
+
+    #[test]
+    fn test_is_job_running_returns_false_for_new_job() {
+        let service = RsyncService::new();
+        let job_id = "test-job-1";
+
+        // New job should not be marked as running
+        assert!(!service.is_job_running(job_id), "New job should not be running");
+    }
+
+    #[test]
+    fn test_is_job_running_returns_true_after_adding_to_active_jobs() {
+        let service = RsyncService::new();
+        let job_id = "test-job-2";
+        let mock_pid = 12345u32;
+
+        // Manually add job to active_jobs to simulate spawn
+        {
+            let mut jobs = service.active_jobs.lock().unwrap();
+            jobs.insert(job_id.to_string(), mock_pid);
+        }
+
+        // Job should now be marked as running
+        assert!(service.is_job_running(job_id), "Job should be running after adding to active_jobs");
+    }
+
+    #[test]
+    fn test_spawn_rsync_returns_error_if_job_already_running() {
+        let service = RsyncService::new();
+        let job = create_test_job(SyncMode::Mirror);
+        let mock_pid = 99999u32;
+
+        // Simulate job already running by adding to active_jobs
+        {
+            let mut jobs = service.active_jobs.lock().unwrap();
+            jobs.insert(job.id.clone(), mock_pid);
+        }
+
+        // Attempt to spawn should return JobAlreadyRunning error
+        let result = service.spawn_rsync(&job);
+
+        assert!(result.is_err(), "spawn_rsync should return error for duplicate job");
+
+        match result.unwrap_err() {
+            crate::error::AmberError::JobAlreadyRunning(id) => {
+                assert_eq!(id, job.id, "Error should contain correct job ID");
+            }
+            other => panic!("Expected JobAlreadyRunning error, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_mark_completed_removes_job_from_active_jobs() {
+        let service = RsyncService::new();
+        let job_id = "test-job-3";
+        let mock_pid = 54321u32;
+
+        // Add job to active_jobs
+        {
+            let mut jobs = service.active_jobs.lock().unwrap();
+            jobs.insert(job_id.to_string(), mock_pid);
+        }
+
+        // Verify job is running
+        assert!(service.is_job_running(job_id), "Job should be running before mark_completed");
+
+        // Mark as completed
+        service.mark_completed(job_id);
+
+        // Verify job is no longer running
+        assert!(!service.is_job_running(job_id), "Job should not be running after mark_completed");
+
+        // Verify job was removed from HashMap
+        {
+            let jobs = service.active_jobs.lock().unwrap();
+            assert!(!jobs.contains_key(job_id), "Job should be removed from active_jobs HashMap");
+        }
+    }
+
+    #[test]
+    fn test_kill_job_removes_job_from_active_jobs() {
+        let service = RsyncService::new();
+        let job_id = "test-job-4";
+        let mock_pid = 11111u32;
+
+        // Add job to active_jobs
+        {
+            let mut jobs = service.active_jobs.lock().unwrap();
+            jobs.insert(job_id.to_string(), mock_pid);
+        }
+
+        // Verify job is running
+        assert!(service.is_job_running(job_id), "Job should be running before kill_job");
+
+        // Kill job (will fail to kill actual process, but should still remove from HashMap)
+        let result = service.kill_job(job_id);
+        assert!(result.is_ok(), "kill_job should succeed");
+
+        // Verify job is no longer running
+        assert!(!service.is_job_running(job_id), "Job should not be running after kill_job");
+
+        // Verify job was removed from HashMap
+        {
+            let jobs = service.active_jobs.lock().unwrap();
+            assert!(!jobs.contains_key(job_id), "Job should be removed from active_jobs HashMap");
+        }
+    }
+
+    #[test]
+    fn test_multiple_different_jobs_can_run_concurrently() {
+        let service = RsyncService::new();
+        let job_id_1 = "test-job-5";
+        let job_id_2 = "test-job-6";
+        let mock_pid_1 = 22222u32;
+        let mock_pid_2 = 33333u32;
+
+        // Add two different jobs to active_jobs
+        {
+            let mut jobs = service.active_jobs.lock().unwrap();
+            jobs.insert(job_id_1.to_string(), mock_pid_1);
+            jobs.insert(job_id_2.to_string(), mock_pid_2);
+        }
+
+        // Both jobs should be running
+        assert!(service.is_job_running(job_id_1), "Job 1 should be running");
+        assert!(service.is_job_running(job_id_2), "Job 2 should be running");
+
+        // Complete first job
+        service.mark_completed(job_id_1);
+
+        // First job should be stopped, second still running
+        assert!(!service.is_job_running(job_id_1), "Job 1 should be stopped");
+        assert!(service.is_job_running(job_id_2), "Job 2 should still be running");
+    }
+
+    #[test]
+    fn test_mark_completed_on_non_running_job_is_safe() {
+        let service = RsyncService::new();
+        let job_id = "non-existent-job";
+
+        // Should not panic or error
+        service.mark_completed(job_id);
+
+        // Verify job is not running
+        assert!(!service.is_job_running(job_id), "Non-existent job should not be running");
+    }
+
+    #[test]
+    fn test_kill_job_on_non_running_job_is_safe() {
+        let service = RsyncService::new();
+        let job_id = "non-existent-job";
+
+        // Should not panic or error
+        let result = service.kill_job(job_id);
+        assert!(result.is_ok(), "kill_job on non-existent job should succeed gracefully");
+
+        // Verify job is not running
+        assert!(!service.is_job_running(job_id), "Non-existent job should not be running");
+    }
+
+    #[test]
+    fn test_backup_info_stored_and_retrieved() {
+        let service = RsyncService::new();
+        let job_id = "test-job-7";
+
+        let backup_info = BackupInfo {
+            job_id: job_id.to_string(),
+            folder_name: "2024-03-15-120000".to_string(),
+            snapshot_path: PathBuf::from("/dest/backup/2024-03-15-120000"),
+            target_base: PathBuf::from("/dest/backup"),
+            start_time: 1710504000000,
+        };
+
+        // Store backup info
+        {
+            let mut info = service.backup_info.lock().unwrap();
+            info.insert(job_id.to_string(), backup_info.clone());
+        }
+
+        // Retrieve backup info
+        let retrieved = service.get_backup_info(job_id);
+        assert!(retrieved.is_some(), "Backup info should be retrievable");
+
+        let retrieved = retrieved.unwrap();
+        assert_eq!(retrieved.job_id, job_id);
+        assert_eq!(retrieved.folder_name, "2024-03-15-120000");
+        assert_eq!(retrieved.snapshot_path, PathBuf::from("/dest/backup/2024-03-15-120000"));
+    }
+
+    #[test]
+    fn test_clear_backup_info_removes_entry() {
+        let service = RsyncService::new();
+        let job_id = "test-job-8";
+
+        let backup_info = BackupInfo {
+            job_id: job_id.to_string(),
+            folder_name: "2024-03-15-120000".to_string(),
+            snapshot_path: PathBuf::from("/dest/backup/2024-03-15-120000"),
+            target_base: PathBuf::from("/dest/backup"),
+            start_time: 1710504000000,
+        };
+
+        // Store backup info
+        {
+            let mut info = service.backup_info.lock().unwrap();
+            info.insert(job_id.to_string(), backup_info);
+        }
+
+        // Verify it exists
+        assert!(service.get_backup_info(job_id).is_some(), "Backup info should exist before clear");
+
+        // Clear backup info
+        service.clear_backup_info(job_id);
+
+        // Verify it's removed
+        assert!(service.get_backup_info(job_id).is_none(), "Backup info should be removed after clear");
+    }
 }
