@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBytes, formatSchedule, formatDate, truncateMiddle } from '../formatters';
+import { formatBytes, formatSchedule, formatSnapshotDate, truncateMiddle } from '../formatters';
 
 describe('formatBytes', () => {
   it('returns "0 B" for zero bytes', () => {
@@ -61,24 +61,24 @@ describe('formatSchedule', () => {
   });
 });
 
-describe('formatDate', () => {
+describe('formatSnapshotDate', () => {
   it('formats date with zero-padded values', () => {
     const date = new Date(2024, 0, 5, 3, 5, 9); // Jan 5, 2024, 03:05:09
-    const result = formatDate(date);
+    const result = formatSnapshotDate(date);
 
     expect(result).toBe('2024-01-05-030509');
   });
 
   it('formats date with double-digit values', () => {
     const date = new Date(2024, 11, 25, 14, 30, 22); // Dec 25, 2024, 14:30:22
-    const result = formatDate(date);
+    const result = formatSnapshotDate(date);
 
     expect(result).toBe('2024-12-25-143022');
   });
 
   it('handles midnight correctly', () => {
     const date = new Date(2024, 0, 1, 0, 0, 0);
-    const result = formatDate(date);
+    const result = formatSnapshotDate(date);
 
     expect(result).toBe('2024-01-01-000000');
   });

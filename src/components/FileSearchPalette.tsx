@@ -3,7 +3,8 @@ import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import type { FileNode } from '../types';
 import { logger } from '../utils/logger';
-import { joinPaths } from '../utils/paths'; // TIM-123: Use centralized path utility
+import { joinPaths } from '../utils/paths';
+import { formatBytes, formatRelativeTime } from '../utils';
 
 export interface VolumeInfo {
   name: string;
@@ -20,31 +21,9 @@ interface SearchResult {
   fullPath: string;
 }
 
-// Format bytes to human readable
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
-
-// Format timestamp to relative time
-function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp * 1000; // Convert to ms
-
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 60) return `${minutes}m ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+// Helper to format mtime (which is in seconds, needs conversion to ms)
+function formatMtime(mtimeSeconds: number): string {
+  return formatRelativeTime(mtimeSeconds * 1000);
 }
 
 interface FileSearchPaletteProps {
@@ -521,7 +500,7 @@ const ResultItem: React.FC<{
         <div className="text-xs text-text-tertiary">{formatBytes(result.file.size)}</div>
         {result.file.modified > 0 && (
           <div className="text-[10px] text-text-quaternary">
-            {formatRelativeTime(result.file.modified)}
+            {formatMtime(result.file.modified)}
           </div>
         )}
       </div>
