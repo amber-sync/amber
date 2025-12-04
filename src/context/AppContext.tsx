@@ -178,7 +178,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return;
       }
 
-      // Update job status to RUNNING
+      // Prevent duplicate runs - check if already running
+      if (job.status === JobStatus.RUNNING) {
+        logger.warn('runSync: Job already running, ignoring duplicate request', { jobId });
+        return;
+      }
+
+      // Update job status to RUNNING immediately to prevent double-clicks
       setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.RUNNING } : j)));
 
       // Start the rsync process

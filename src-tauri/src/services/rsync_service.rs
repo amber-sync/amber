@@ -236,6 +236,16 @@ impl RsyncService {
             job.name,
             job.id
         );
+
+        // Check if job is already running to prevent duplicate spawns
+        if self.is_job_running(&job.id) {
+            log::warn!(
+                "[rsync_service] Job '{}' is already running, ignoring duplicate request",
+                job.name
+            );
+            return Err(crate::error::AmberError::JobAlreadyRunning(job.id.clone()));
+        }
+
         log::info!(
             "[rsync_service] source_path: '{}', dest_path: '{}'",
             job.source_path,
