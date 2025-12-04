@@ -180,9 +180,9 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
           <div
             className={`
               flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
-              ${isCritical ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' : ''}
-              ${isWarning && !isCritical ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' : ''}
-              ${!isWarning ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' : ''}
+              ${isCritical ? 'bg-[var(--color-error)]/10 text-[var(--color-error)]' : ''}
+              ${isWarning && !isCritical ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : ''}
+              ${!isWarning ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' : ''}
             `}
           >
             {isCritical && <Icons.AlertTriangle size={12} />}
@@ -246,7 +246,7 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
               {totalCapacity > 0 && (
                 <ReferenceLine
                   y={totalCapacity}
-                  stroke="var(--color-red-500)"
+                  stroke="var(--color-error)"
                   strokeDasharray="3 3"
                   label={{
                     value: 'Capacity',
@@ -286,7 +286,7 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
         <div
           className={`
             mt-3 p-3 rounded-lg text-xs
-            ${isCritical ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}
+            ${isCritical ? 'bg-[var(--color-error)]/10 text-[var(--color-error)]' : 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'}
           `}
         >
           <div className="flex items-center gap-2">

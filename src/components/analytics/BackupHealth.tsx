@@ -71,25 +71,25 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
     if (stats.successRate7Days >= 95)
       return {
         label: 'Excellent',
-        color: 'text-green-600 dark:text-green-400',
-        bg: 'bg-green-100 dark:bg-green-900/30',
+        color: 'text-[var(--color-success)]',
+        bg: 'bg-[var(--color-success-subtle)]',
       };
     if (stats.successRate7Days >= 80)
       return {
         label: 'Good',
-        color: 'text-blue-600 dark:text-blue-400',
-        bg: 'bg-blue-100 dark:bg-blue-900/30',
+        color: 'text-[var(--color-info)]',
+        bg: 'bg-[var(--color-info-subtle)]',
       };
     if (stats.successRate7Days >= 50)
       return {
         label: 'Fair',
-        color: 'text-amber-600 dark:text-amber-400',
-        bg: 'bg-amber-100 dark:bg-amber-900/30',
+        color: 'text-[var(--color-warning)]',
+        bg: 'bg-[var(--color-warning-subtle)]',
       };
     return {
       label: 'Poor',
-      color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-100 dark:bg-red-900/30',
+      color: 'text-[var(--color-error)]',
+      bg: 'bg-[var(--color-error-subtle)]',
     };
   };
 
@@ -118,7 +118,7 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 bg-layer-2 rounded-xl">
             <div className="flex items-center gap-1.5 mb-1">
-              <Icons.CheckCircle size={12} className="text-green-500" />
+              <Icons.CheckCircle size={12} className="text-[var(--color-success)]" />
               <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider">
                 7-Day Success
               </span>
@@ -131,7 +131,7 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
 
           <div className="p-3 bg-layer-2 rounded-xl">
             <div className="flex items-center gap-1.5 mb-1">
-              <Icons.Calendar size={12} className="text-blue-500" />
+              <Icons.Calendar size={12} className="text-[var(--color-info)]" />
               <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider">
                 30-Day Success
               </span>
@@ -145,7 +145,7 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
         {stats.avgDuration !== null && (
           <div className="flex items-center justify-between p-3 bg-layer-2 rounded-xl">
             <div className="flex items-center gap-2">
-              <Icons.Clock size={14} className="text-purple-500" />
+              <Icons.Clock size={14} className="text-accent-primary" />
               <span className="text-sm text-text-secondary">Avg Duration</span>
             </div>
             <span className="text-sm font-medium text-text-primary">
@@ -173,17 +173,15 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
 
         {/* Last Failure (if any) */}
         {stats.lastFailure && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+          <div className="p-3 bg-[var(--color-error-subtle)] rounded-xl border border-[var(--color-error)]">
             <div className="flex items-center gap-2 mb-1">
-              <Icons.AlertCircle size={14} className="text-red-500" />
-              <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                Last Failure
-              </span>
+              <Icons.AlertCircle size={14} className="text-[var(--color-error)]" />
+              <span className="text-xs font-medium text-[var(--color-error)]">Last Failure</span>
             </div>
-            <div className="text-sm text-red-700 dark:text-red-300">
+            <div className="text-sm text-[var(--color-error)]">
               {(stats.lastFailure as any).jobName}
             </div>
-            <div className="text-xs text-red-600/70 dark:text-red-400/70">
+            <div className="text-xs text-[var(--color-error)] opacity-70">
               {stats.lastFailure.timestamp
                 ? formatDistanceToNow(new Date(stats.lastFailure.timestamp), { addSuffix: true })
                 : '--'}
@@ -193,10 +191,10 @@ export const BackupHealth: React.FC<BackupHealthProps> = ({ jobs, className = ''
 
         {/* No failures */}
         {!stats.lastFailure && stats.totalBackups > 0 && (
-          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+          <div className="p-3 bg-[var(--color-success-subtle)] rounded-xl border border-[var(--color-success)]">
             <div className="flex items-center gap-2">
-              <Icons.CheckCircle size={14} className="text-green-500" />
-              <span className="text-sm text-green-700 dark:text-green-300">No recent failures</span>
+              <Icons.CheckCircle size={14} className="text-[var(--color-success)]" />
+              <span className="text-sm text-[var(--color-success)]">No recent failures</span>
             </div>
           </div>
         )}

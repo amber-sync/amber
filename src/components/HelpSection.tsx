@@ -14,29 +14,27 @@ export const HelpSection: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-          <Icons.BookOpen size={20} className="text-indigo-600 dark:text-indigo-400" />
+        <div className="p-2 bg-accent-primary/10 rounded-lg">
+          <Icons.BookOpen size={20} className="text-accent-primary" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-          Documentation & Resources
-        </h1>
+        <h1 className="text-xl font-bold text-text-primary">Documentation & Resources</h1>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* Online Docs Card */}
         <button
           onClick={openDocs}
-          className="flex items-start gap-4 p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:shadow-md transition-all text-left group"
+          className="flex items-start gap-4 p-5 rounded-xl bg-layer-2 border border-border-subtle hover:border-accent-primary hover:shadow-md transition-all text-left group"
         >
-          <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
+          <div className="p-3 bg-accent-primary/10 rounded-lg text-accent-primary group-hover:bg-accent-primary/20 transition-colors">
             <Icons.Globe size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+            <h3 className="font-semibold text-text-primary mb-1 flex items-center gap-2">
               Online Documentation
               <Icons.ExternalLink size={12} className="opacity-50" />
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            <p className="text-sm text-text-secondary leading-relaxed">
               Comprehensive guides on Time Machine mode, backup strategies, and troubleshooting.
             </p>
           </div>
@@ -45,24 +43,24 @@ export const HelpSection: React.FC = () => {
         {/* Rsync Manual Card */}
         <button
           onClick={openRsyncDocs}
-          className="flex items-start gap-4 p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md transition-all text-left group"
+          className="flex items-start gap-4 p-5 rounded-xl bg-layer-2 border border-border-subtle hover:border-border-medium hover:shadow-md transition-all text-left group"
         >
-          <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+          <div className="p-3 bg-layer-3 rounded-lg text-text-secondary group-hover:bg-layer-3/80 transition-colors">
             <Icons.Terminal size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+            <h3 className="font-semibold text-text-primary mb-1 flex items-center gap-2">
               Rsync Manual
               <Icons.ExternalLink size={12} className="opacity-50" />
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            <p className="text-sm text-text-secondary leading-relaxed">
               Official technical documentation for rsync flags and advanced configuration options.
             </p>
           </div>
         </button>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-xs text-gray-400">
+      <div className="mt-8 pt-6 border-t border-border-subtle flex justify-between items-center text-xs text-text-tertiary">
         <span>Version 1.0.0</span>
         <span>Built with ❤️ for macOS</span>
       </div>
