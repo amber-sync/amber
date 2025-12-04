@@ -14,13 +14,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ jobs }) => {
     .sort((a, b) => b.timestamp - a.timestamp);
 
   return (
-    <div className="p-8 space-y-6 animate-fade-in relative z-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Global History</h1>
-        <p className="text-text-secondary mt-1">Timeline of all synchronization events.</p>
+    <div className="page-content page-animate-in">
+      <header className="page-header">
+        <h1 className="page-title font-display">Global History</h1>
+        <p className="page-subtitle font-body">Timeline of all synchronization events.</p>
       </header>
 
-      <div className="bg-layer-1/90 backdrop-blur-sm rounded-2xl border border-border-base overflow-hidden">
+      <div className="page-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-text-secondary">
             <thead className="bg-layer-2/50 text-xs uppercase text-text-tertiary">
