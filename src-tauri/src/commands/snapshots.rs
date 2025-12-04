@@ -204,6 +204,7 @@ pub async fn restore_snapshot(
     _job_id: String,
     snapshot_path: String,
     target_path: String,
+    mirror: Option<bool>,
 ) -> Result<()> {
     use std::process::Command;
 
@@ -213,8 +214,18 @@ pub async fn restore_snapshot(
         format!("{}/", snapshot_path)
     };
 
+    let mut args = vec!["-av", "--progress"];
+
+    // Add --delete flag for mirror mode (exact copy)
+    if mirror.unwrap_or(false) {
+        args.push("--delete");
+        log::info!("[restore] Mirror mode enabled - will delete extraneous files");
+    }
+
     Command::new("rsync")
-        .args(["-av", "--progress", &src, &target_path])
+        .args(&args)
+        .arg(&src)
+        .arg(&target_path)
         .status()?;
 
     Ok(())
