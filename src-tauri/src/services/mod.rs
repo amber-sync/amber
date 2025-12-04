@@ -1,17 +1,17 @@
 // Service modules - Business logic
-pub mod data_dir;  // Must be first - other services depend on this
-pub mod rsync_service;
-pub mod rclone_service;
-pub mod snapshot_service;
-pub mod index_service;
-pub mod file_service;
-pub mod job_scheduler;
-pub mod volume_watcher;
-pub mod keychain_service;
-pub mod store;
-pub mod manifest_service;
 pub mod cache_service;
+pub mod data_dir; // Must be first - other services depend on this
+pub mod file_service;
+pub mod index_service;
+pub mod job_scheduler;
+pub mod keychain_service;
+pub mod manifest_service;
 pub mod migration_service;
+pub mod rclone_service;
+pub mod rsync_service;
+pub mod snapshot_service;
+pub mod store;
+pub mod volume_watcher;
 
 // Dev-only modules
 #[cfg(debug_assertions)]

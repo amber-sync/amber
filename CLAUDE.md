@@ -1,309 +1,352 @@
-# CLAUDE.md
+# Claude Code Configuration - SPARC Development Environment
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
+
+**ABSOLUTE RULES**:
+1. ALL operations MUST be concurrent/parallel in a single message
+2. **NEVER save working files, text/mds and tests to the root folder**
+3. ALWAYS organize files in appropriate subdirectories
+4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
+
+### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
+
+**MANDATORY PATTERNS:**
+- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
+- **Task tool (Claude Code)**: ALWAYS spawn ALL agents in ONE message with full instructions
+- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
+- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
+- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
+
+### 🎯 CRITICAL: Claude Code Task Tool for Agent Execution
+
+**Claude Code's Task tool is the PRIMARY way to spawn agents:**
+```javascript
+// ✅ CORRECT: Use Claude Code's Task tool for parallel agent execution
+[Single Message]:
+  Task("Research agent", "Analyze requirements and patterns...", "researcher")
+  Task("Coder agent", "Implement core features...", "coder")
+  Task("Tester agent", "Create comprehensive tests...", "tester")
+  Task("Reviewer agent", "Review code quality...", "reviewer")
+  Task("Architect agent", "Design system architecture...", "system-architect")
+```
+
+**MCP tools are ONLY for coordination setup:**
+- `mcp__claude-flow__swarm_init` - Initialize coordination topology
+- `mcp__claude-flow__agent_spawn` - Define agent types for coordination
+- `mcp__claude-flow__task_orchestrate` - Orchestrate high-level workflows
+
+### 📁 File Organization Rules
+
+**NEVER save to root folder. Use these directories:**
+- `/src` - Source code files
+- `/tests` - Test files
+- `/docs` - Documentation and markdown files
+- `/config` - Configuration files
+- `/scripts` - Utility scripts
+- `/examples` - Example code
 
 ## Project Overview
 
-Amber Backup is a macOS desktop application for Time Machine-style incremental backups using rsync. Built with **Tauri v2 + React 19 + TypeScript**, with a Rust backend for native performance.
+This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
 
-## Project Structure
+## SPARC Commands
 
-```
-amber/
-├── src/               # React frontend (TypeScript, Vite, Tailwind)
-│   ├── api/
-│   ├── components/
-│   ├── context/
-│   ├── views/
-│   └── __tests__/     # Frontend tests
-├── src-tauri/         # Rust/Tauri backend
-│   ├── src/
-│   └── tests/         # Rust integration tests
-├── tests/
-│   └── fixtures/      # Shared rsync test fixtures
-├── scripts/           # Build and utility scripts
-├── docs/              # Documentation
-└── public/            # Static assets
-```
+### Core Commands
+- `npx claude-flow sparc modes` - List available modes
+- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
+- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
+- `npx claude-flow sparc info <mode>` - Get mode details
 
-## Development Commands
+### Batchtools Commands
+- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
+- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
+- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
 
-```bash
-npm run dev            # Run app in dev mode (Tauri + Vite)
-npm run dev:frontend   # Run frontend only (Vite dev server)
-npm run build          # Build production app
-npm run build:frontend # Build frontend only
-npm run test           # Run Vitest test suite
-npm run test:rust      # Run Rust tests
-npm run lint           # Run ESLint
-npm run format         # Run Prettier
-npm run typecheck      # TypeScript type checking
-npm run bench:rust     # Run Rust benchmarks
-npm run test:coverage  # Run tests with coverage
-```
+### Build Commands
+- `npm run build` - Build project
+- `npm run test` - Run tests
+- `npm run lint` - Linting
+- `npm run typecheck` - Type checking
 
-### Running Single Tests
+## SPARC Workflow Phases
 
-```bash
-# Frontend (Vitest)
-npm test -- src/__tests__/specific.test.ts   # Run single test file
-npm test -- --watch                          # Watch mode
-npm test -- -t "test name pattern"           # Run tests matching pattern
+1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
+2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
+3. **Architecture** - System design (`sparc run architect`)
+4. **Refinement** - TDD implementation (`sparc tdd`)
+5. **Completion** - Integration (`sparc run integration`)
 
-# Backend (Cargo)
-cd src-tauri && cargo test specific_test     # Run single Rust test
-cd src-tauri && cargo test -- --nocapture    # Show println! output
-```
+## Code Style & Best Practices
 
-## Architecture
+- **Modular Design**: Files under 500 lines
+- **Environment Safety**: Never hardcode secrets
+- **Test-First**: Write tests before implementation
+- **Clean Architecture**: Separate concerns
+- **Documentation**: Keep updated
 
-### Frontend (src/)
-- **React 19** with TypeScript, Vite, Tailwind CSS
-- **Context API** for state: `AppContext` (jobs, navigation), `ThemeContext` (light/dark/accent)
-- **Views**: Dashboard, JobDetail, JobEditor, AppSettings, RestoreWizard
-- **Components**: FileBrowser (tree nav), FilePreview (split-view), Terminal (rsync output)
-- **API Layer**: `src/api/index.ts` - Tauri IPC bindings
+## 🚀 Available Agents (54 Total)
 
-### Backend (src-tauri/)
-- **Tauri v2** with Rust
-- **Commands** (`src-tauri/src/commands/`):
-  - `jobs.rs`: Job CRUD operations
-  - `rsync.rs`: Rsync execution and control
-  - `rclone.rs`: Cloud backup via rclone
-  - `snapshots.rs`: Snapshot listing and restoration
-  - `filesystem.rs`: File operations, directory browsing
-  - `preferences.rs`: App settings
-  - `manifest.rs`: Backup manifest operations
-- **Services** (`src-tauri/src/services/`):
-  - `rsync_service.rs`: Rsync command building and process management
-  - `snapshot_service.rs`: Snapshot discovery and metadata
-  - `index_service.rs`: SQLite-based file indexing with FTS5 search
-  - `file_service.rs`: File I/O, base64 encoding
-  - `store.rs`: JSON-based persistence
-- **Types** (`src-tauri/src/types/`): Shared data structures
+### Core Development
+`coder`, `reviewer`, `tester`, `planner`, `researcher`
 
-### Backend State Management
+### Swarm Coordination
+`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
 
-The backend uses Tauri's managed state for singleton services (`src-tauri/src/state.rs`):
+### Consensus & Distributed
+`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
 
-```rust
-pub struct AppState {
-    pub file_service: Arc<FileService>,
-    pub index_service: Arc<IndexService>,    // SQLite snapshot indexes
-    pub snapshot_service: Arc<SnapshotService>,
-    pub store: Arc<Store>,                   // JSON persistence
-    pub data_dir: PathBuf,
-}
-```
+### Performance & Optimization
+`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
 
-Services are initialized once at app startup and shared across all commands via `tauri::State<AppState>`.
+### GitHub & Repository
+`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
 
-## Key Patterns
+### SPARC Methodology
+`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
 
-### Sync Modes
-- **MIRROR**: Exact replica with deletions
-- **ARCHIVE**: Copy only, no deletes
-- **TIME_MACHINE**: Incremental with hard links (`--link-dest`)
+### Specialized Development
+`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
 
-### Destination Types
-- **LOCAL**: Local filesystem or mounted volumes (uses rsync)
-- **CLOUD**: Cloud storage via rclone (S3, Google Drive, Dropbox, etc.)
+### Testing & Validation
+`tdd-london-swarm`, `production-validator`
 
-### IPC Communication
-Frontend uses `@tauri-apps/api/core` to invoke Rust commands:
-```typescript
-import { invoke } from '@tauri-apps/api/core';
-const jobs = await invoke('get_jobs');
-```
+### Migration & Planning
+`migration-planner`, `swarm-init`
 
-### Rsync Event System
-Real-time rsync output is streamed via Tauri events:
-```typescript
-import { api } from '../api';
+## 🎯 Claude Code vs MCP Tools
 
-// Subscribe to events
-api.onRsyncLog((data) => console.log(data.message));      // Raw output lines
-api.onRsyncProgress((data) => console.log(data.percentage)); // Progress %
-api.onRsyncComplete((data) => console.log(data.success));    // Completion
-```
+### Claude Code Handles ALL EXECUTION:
+- **Task tool**: Spawn and run agents concurrently for actual work
+- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
+- Code generation and programming
+- Bash commands and system operations
+- Implementation work
+- Project navigation and analysis
+- TodoWrite and task management
+- Git operations
+- Package management
+- Testing and debugging
 
-Events emitted from Rust: `rsync-log`, `rsync-progress`, `rsync-complete`
+### MCP Tools ONLY COORDINATE:
+- Swarm initialization (topology setup)
+- Agent type definitions (coordination patterns)
+- Task orchestration (high-level planning)
+- Memory management
+- Neural features
+- Performance tracking
+- GitHub integration
 
-### Type Definitions
-- Frontend types: `src/types.ts`
-- Backend types: `src-tauri/src/types/`
+**KEY**: MCP coordinates the strategy, Claude Code's Task tool executes with real agents.
 
-### Centralized File Type Constants
-
-File types (`'dir'` / `'file'`) are defined centrally to avoid mismatches between frontend and backend:
-
-**Rust** (`src-tauri/src/types/snapshot.rs`):
-```rust
-pub mod file_type {
-    pub const DIR: &str = "dir";
-    pub const FILE: &str = "file";
-
-    pub fn is_dir(s: &str) -> bool {
-        s == DIR
-    }
-}
-```
-
-**TypeScript** (`src/types.ts`):
-```typescript
-export const FILE_TYPE = {
-  DIR: 'dir',
-  FILE: 'file',
-} as const;
-
-export function isDirectory(type: string): boolean {
-  return type === FILE_TYPE.DIR;
-}
-```
-
-**Usage**: Always use these constants instead of string literals. To check if a node is a directory:
-- Rust: `file_type::is_dir(&node.node_type)` or `file_type::DIR.to_string()`
-- TypeScript: `isDirectory(item.type)` or `FILE_TYPE.DIR`
-
-## Code Quality
-
-- **ESLint**: Flat config with TypeScript and React support
-- **Prettier**: Code formatting
-- **Husky + lint-staged**: Pre-commit hooks
-- **rustfmt**: Rust code formatting
-
-## Data Storage
-
-### Storage Locations
-- **Dev mode**: `mock-data/` in project root (auto-detected when folder exists)
-- **Production**: `~/Library/Application Support/amber/`
-
-### Manifest-Based Architecture
-Backup metadata is stored on the destination drive itself in `.amber-meta/`:
-```
-/Volumes/BackupDrive/MyBackup/
-├── .amber-meta/
-│   ├── manifest.json    # Backup metadata, snapshots list
-│   └── index.db         # SQLite file index (optional)
-├── 2024-01-15_120000/   # Snapshot folders
-└── 2024-01-16_120000/
-```
-
-This allows backups to be self-describing and portable between machines.
-
-## Testing
+## 🚀 Quick Setup
 
 ```bash
-npm test              # Vitest (frontend)
-npm run test:rust     # Cargo test (backend)
+# Add MCP servers (Claude Flow required, others optional)
+claude mcp add claude-flow npx claude-flow@alpha mcp start
+claude mcp add ruv-swarm npx ruv-swarm mcp start  # Optional: Enhanced coordination
+claude mcp add flow-nexus npx flow-nexus@latest mcp start  # Optional: Cloud features
 ```
 
-## Agent Workflow Protocol
+## MCP Tool Categories
 
-### CRITICAL: Branch Workflow Rules
+### Coordination
+`swarm_init`, `agent_spawn`, `task_orchestrate`
 
-**NEVER commit directly to main. ALWAYS use feature branches.**
+### Monitoring
+`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
 
-Before starting ANY ticket work:
-1. **Check current branch**: `git branch --show-current`
-2. **If on main**: Create a new feature branch FIRST
-3. **If on wrong feature branch**: Stash, switch to main, create correct branch
+### Memory & Neural
+`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
 
+### GitHub Integration
+`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
+
+### System
+`benchmark_run`, `features_detect`, `swarm_monitor`
+
+### Flow-Nexus MCP Tools (Optional Advanced Features)
+Flow-Nexus extends MCP capabilities with 70+ cloud-based orchestration tools:
+
+**Key MCP Tool Categories:**
+- **Swarm & Agents**: `swarm_init`, `swarm_scale`, `agent_spawn`, `task_orchestrate`
+- **Sandboxes**: `sandbox_create`, `sandbox_execute`, `sandbox_upload` (cloud execution)
+- **Templates**: `template_list`, `template_deploy` (pre-built project templates)
+- **Neural AI**: `neural_train`, `neural_patterns`, `seraphina_chat` (AI assistant)
+- **GitHub**: `github_repo_analyze`, `github_pr_manage` (repository management)
+- **Real-time**: `execution_stream_subscribe`, `realtime_subscribe` (live monitoring)
+- **Storage**: `storage_upload`, `storage_list` (cloud file management)
+
+**Authentication Required:**
+- Register: `mcp__flow-nexus__user_register` or `npx flow-nexus@latest register`
+- Login: `mcp__flow-nexus__user_login` or `npx flow-nexus@latest login`
+- Access 70+ specialized MCP tools for advanced orchestration
+
+## 🚀 Agent Execution Flow with Claude Code
+
+### The Correct Pattern:
+
+1. **Optional**: Use MCP tools to set up coordination topology
+2. **REQUIRED**: Use Claude Code's Task tool to spawn agents that do actual work
+3. **REQUIRED**: Each agent runs hooks for coordination
+4. **REQUIRED**: Batch all operations in single messages
+
+### Example Full-Stack Development:
+
+```javascript
+// Single message with all agent spawning via Claude Code's Task tool
+[Parallel Agent Execution]:
+  Task("Backend Developer", "Build REST API with Express. Use hooks for coordination.", "backend-dev")
+  Task("Frontend Developer", "Create React UI. Coordinate with backend via memory.", "coder")
+  Task("Database Architect", "Design PostgreSQL schema. Store schema in memory.", "code-analyzer")
+  Task("Test Engineer", "Write Jest tests. Check memory for API contracts.", "tester")
+  Task("DevOps Engineer", "Setup Docker and CI/CD. Document in memory.", "cicd-engineer")
+  Task("Security Auditor", "Review authentication. Report findings via hooks.", "reviewer")
+  
+  // All todos batched together
+  TodoWrite { todos: [...8-10 todos...] }
+  
+  // All file operations together
+  Write "backend/server.js"
+  Write "frontend/App.jsx"
+  Write "database/schema.sql"
+```
+
+## 📋 Agent Coordination Protocol
+
+### Every Agent Spawned via Task Tool MUST:
+
+**1️⃣ BEFORE Work:**
 ```bash
-# MANDATORY before ANY code changes for a ticket:
-git checkout main
-git pull origin main
-git checkout -b feature/<TICKET-ID>-<short-description>
+npx claude-flow@alpha hooks pre-task --description "[task]"
+npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
 ```
 
-**One branch per ticket.** Do NOT mix multiple tickets on one branch unless explicitly grouped.
-
-### Ticket Management (Linear)
-- **Team Key**: `TIM` (tickets like TIM-16, TIM-37)
-- **API Key**: Stored in `.env.local` as `LINEAR_API_KEY`
-- **Principle**: Keep tickets small, atomic, and with clear goals.
-
-### Linear Helper Script
+**2️⃣ DURING Work:**
 ```bash
-./scripts/linear.sh list              # List all Todo tickets
-./scripts/linear.sh view TIM-37       # View ticket details
-./scripts/linear.sh done TIM-35       # Mark ticket as Done
-./scripts/linear.sh create "Title" "Description"  # Create new ticket
+npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
+npx claude-flow@alpha hooks notify --message "[what was done]"
 ```
 
-### CRITICAL: Creating Tickets Before Implementation
-
-**NEVER start implementing large features without creating detailed tickets first.**
-
-When planning a multi-step feature or refactor:
-
-1. **Write detailed ticket specifications** in `docs/` as markdown files
-2. **Each ticket MUST include**:
-   - **Goal**: One sentence describing the outcome
-   - **Files to Modify**: Exact file paths
-   - **Files to Create**: New files needed
-   - **Implementation Steps**: Numbered, specific steps with code snippets
-   - **Testing**: What tests to write, what to manually verify
-   - **Acceptance Criteria**: Checkboxes for completion
-
-3. **Create tickets in Linear** using the script before starting work
-4. **Work on ONE ticket at a time** - complete it fully before moving to the next
-
-### Ticket Specification Template
-
-```markdown
-## TIM-XXX: [Title]
-
-### Goal
-[One sentence describing the outcome]
-
-### Files to Modify
-- `path/to/file.rs` - [What changes]
-
-### Files to Create
-- `path/to/new/file.ts` - [What it does]
-
-### Implementation Steps
-1. **Step title**:
-   ```rust
-   // Code snippet showing what to add
-   ```
-   - Additional notes
-
-### Testing
-- Unit test: [Description]
-- Manual test: [Description]
-
-### Acceptance Criteria
-- [ ] Criteria 1
-- [ ] Criteria 2
-```
-
-This ensures:
-- Work is resumable even after context is lost
-- Clear scope prevents scope creep
-- Other contributors can pick up tickets
-- Progress is trackable
-
-### Feature Implementation Cycle
-1. **ALWAYS Create Branch First**: `git checkout -b feature/<TICKET-ID>-<short-description>`
-2. **Verify branch before committing**: `git branch --show-current`
-3. **Implement & Verify**: Write code, run tests frequently
-4. **Push**: `git push -u origin feature/<TICKET-ID>-<short-description>`
-
-### Completion & Cleanup
+**3️⃣ AFTER Work:**
 ```bash
-git checkout main
-git pull origin main
-git merge feature/<TICKET-ID>-<short-description>
-git push origin main
-git branch -d feature/<TICKET-ID>-<short-description>
-git push origin --delete feature/<TICKET-ID>-<short-description>
+npx claude-flow@alpha hooks post-task --task-id "[task]"
+npx claude-flow@alpha hooks session-end --export-metrics true
 ```
 
-### Pre-Commit Checklist
-Before EVERY commit, verify:
-- [ ] On correct feature branch (not main)
-- [ ] Branch name matches ticket being worked on
-- [ ] Tests pass (`npm test && npm run test:rust`)
-- [ ] Lint passes (`npm run lint`)
+## 🎯 Concurrent Execution Examples
+
+### ✅ CORRECT WORKFLOW: MCP Coordinates, Claude Code Executes
+
+```javascript
+// Step 1: MCP tools set up coordination (optional, for complex tasks)
+[Single Message - Coordination Setup]:
+  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
+  mcp__claude-flow__agent_spawn { type: "researcher" }
+  mcp__claude-flow__agent_spawn { type: "coder" }
+  mcp__claude-flow__agent_spawn { type: "tester" }
+
+// Step 2: Claude Code Task tool spawns ACTUAL agents that do the work
+[Single Message - Parallel Agent Execution]:
+  // Claude Code's Task tool spawns real agents concurrently
+  Task("Research agent", "Analyze API requirements and best practices. Check memory for prior decisions.", "researcher")
+  Task("Coder agent", "Implement REST endpoints with authentication. Coordinate via hooks.", "coder")
+  Task("Database agent", "Design and implement database schema. Store decisions in memory.", "code-analyzer")
+  Task("Tester agent", "Create comprehensive test suite with 90% coverage.", "tester")
+  Task("Reviewer agent", "Review code quality and security. Document findings.", "reviewer")
+  
+  // Batch ALL todos in ONE call
+  TodoWrite { todos: [
+    {id: "1", content: "Research API patterns", status: "in_progress", priority: "high"},
+    {id: "2", content: "Design database schema", status: "in_progress", priority: "high"},
+    {id: "3", content: "Implement authentication", status: "pending", priority: "high"},
+    {id: "4", content: "Build REST endpoints", status: "pending", priority: "high"},
+    {id: "5", content: "Write unit tests", status: "pending", priority: "medium"},
+    {id: "6", content: "Integration tests", status: "pending", priority: "medium"},
+    {id: "7", content: "API documentation", status: "pending", priority: "low"},
+    {id: "8", content: "Performance optimization", status: "pending", priority: "low"}
+  ]}
+  
+  // Parallel file operations
+  Bash "mkdir -p app/{src,tests,docs,config}"
+  Write "app/package.json"
+  Write "app/src/server.js"
+  Write "app/tests/server.test.js"
+  Write "app/docs/API.md"
+```
+
+### ❌ WRONG (Multiple Messages):
+```javascript
+Message 1: mcp__claude-flow__swarm_init
+Message 2: Task("agent 1")
+Message 3: TodoWrite { todos: [single todo] }
+Message 4: Write "file.js"
+// This breaks parallel coordination!
+```
+
+## Performance Benefits
+
+- **84.8% SWE-Bench solve rate**
+- **32.3% token reduction**
+- **2.8-4.4x speed improvement**
+- **27+ neural models**
+
+## Hooks Integration
+
+### Pre-Operation
+- Auto-assign agents by file type
+- Validate commands for safety
+- Prepare resources automatically
+- Optimize topology by complexity
+- Cache searches
+
+### Post-Operation
+- Auto-format code
+- Train neural patterns
+- Update memory
+- Analyze performance
+- Track token usage
+
+### Session Management
+- Generate summaries
+- Persist state
+- Track metrics
+- Restore context
+- Export workflows
+
+## Advanced Features (v2.0.0)
+
+- 🚀 Automatic Topology Selection
+- ⚡ Parallel Execution (2.8-4.4x speed)
+- 🧠 Neural Training
+- 📊 Bottleneck Analysis
+- 🤖 Smart Auto-Spawning
+- 🛡️ Self-Healing Workflows
+- 💾 Cross-Session Memory
+- 🔗 GitHub Integration
+
+## Integration Tips
+
+1. Start with basic swarm init
+2. Scale agents gradually
+3. Use memory for context
+4. Monitor progress regularly
+5. Train patterns from success
+6. Enable hooks automation
+7. Use GitHub tools first
+
+## Support
+
+- Documentation: https://github.com/ruvnet/claude-flow
+- Issues: https://github.com/ruvnet/claude-flow/issues
+- Flow-Nexus Platform: https://flow-nexus.ruv.io (registration required for cloud features)
+
+---
+
+Remember: **Claude Flow coordinates, Claude Code creates!**
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+Never save working files, text/mds and tests to the root folder.

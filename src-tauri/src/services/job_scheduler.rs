@@ -27,10 +27,13 @@ impl JobScheduler {
 
     /// Initialize the scheduler
     pub async fn init(&self) -> Result<()> {
-        let scheduler = TokioScheduler::new().await
+        let scheduler = TokioScheduler::new()
+            .await
             .map_err(|e| AmberError::Scheduler(format!("Failed to create scheduler: {}", e)))?;
 
-        scheduler.start().await
+        scheduler
+            .start()
+            .await
             .map_err(|e| AmberError::Scheduler(format!("Failed to start scheduler: {}", e)))?;
 
         let mut sched = self.scheduler.write().await;
@@ -92,18 +95,23 @@ impl JobScheduler {
 
     /// Schedule a single job
     pub async fn schedule_job(&self, job: &SyncJob) -> Result<()> {
-        let schedule = job.schedule.as_ref()
+        let schedule = job
+            .schedule
+            .as_ref()
             .ok_or_else(|| AmberError::Scheduler("Job has no schedule".into()))?;
 
         if !schedule.enabled {
             return Ok(());
         }
 
-        let cron_expr = schedule.cron.as_ref()
+        let cron_expr = schedule
+            .cron
+            .as_ref()
             .ok_or_else(|| AmberError::Scheduler("Job has no cron expression".into()))?;
 
         let sched_guard = self.scheduler.read().await;
-        let scheduler = sched_guard.as_ref()
+        let scheduler = sched_guard
+            .as_ref()
             .ok_or_else(|| AmberError::Scheduler("Scheduler not initialized".into()))?;
 
         let job_id = job.id.clone();
@@ -118,9 +126,14 @@ impl JobScheduler {
                 // The actual backup execution will be triggered via Tauri events
                 // This allows the frontend to handle progress updates
             })
-        }).map_err(|e| AmberError::Scheduler(format!("Invalid cron expression '{}': {}", cron_expr, e)))?;
+        })
+        .map_err(|e| {
+            AmberError::Scheduler(format!("Invalid cron expression '{}': {}", cron_expr, e))
+        })?;
 
-        let uuid = scheduler.add(cron_job).await
+        let uuid = scheduler
+            .add(cron_job)
+            .await
             .map_err(|e| AmberError::Scheduler(format!("Failed to add job to scheduler: {}", e)))?;
 
         // Store the mapping
@@ -143,7 +156,9 @@ impl JobScheduler {
         if let Some(uuid) = uuid {
             let sched_guard = self.scheduler.read().await;
             if let Some(scheduler) = sched_guard.as_ref() {
-                scheduler.remove(&uuid).await
+                scheduler
+                    .remove(&uuid)
+                    .await
                     .map_err(|e| AmberError::Scheduler(format!("Failed to remove job: {}", e)))?;
                 log::info!("Cancelled schedule for job {}", job_id);
             }
@@ -191,8 +206,11 @@ impl JobScheduler {
                         jobs_to_run.push(job.clone());
                     }
                 } else {
-                    log::info!("Job '{}' matched mount path but destination not accessible: {}",
-                        job.name, job.dest_path);
+                    log::info!(
+                        "Job '{}' matched mount path but destination not accessible: {}",
+                        job.name,
+                        job.dest_path
+                    );
                 }
             }
         }
@@ -230,8 +248,9 @@ impl JobScheduler {
 
         let mut sched_guard = self.scheduler.write().await;
         if let Some(mut scheduler) = sched_guard.take() {
-            scheduler.shutdown().await
-                .map_err(|e| AmberError::Scheduler(format!("Failed to shutdown scheduler: {}", e)))?;
+            scheduler.shutdown().await.map_err(|e| {
+                AmberError::Scheduler(format!("Failed to shutdown scheduler: {}", e))
+            })?;
         }
 
         log::info!("JobScheduler shutdown complete");

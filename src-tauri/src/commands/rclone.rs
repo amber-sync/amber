@@ -26,9 +26,10 @@ pub async fn list_rclone_remotes() -> Result<Vec<RcloneRemote>> {
 /// Run an rclone sync job for cloud backup
 #[tauri::command]
 pub async fn run_rclone(job: SyncJob) -> Result<()> {
-    let cloud_config = job.cloud_config.as_ref().ok_or_else(|| {
-        AmberError::Rclone("Job has no cloud configuration".to_string())
-    })?;
+    let cloud_config = job
+        .cloud_config
+        .as_ref()
+        .ok_or_else(|| AmberError::Rclone("Job has no cloud configuration".to_string()))?;
 
     let service = get_rclone_service();
     let mut child = service.spawn_sync(

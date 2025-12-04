@@ -19,7 +19,8 @@ impl KeychainService {
         let entry = Entry::new(SERVICE_NAME, &account)
             .map_err(|e| AmberError::Keychain(format!("Failed to create keychain entry: {}", e)))?;
 
-        entry.set_password(password)
+        entry
+            .set_password(password)
             .map_err(|e| AmberError::Keychain(format!("Failed to store password: {}", e)))?;
 
         log::info!("[Keychain] Stored password for job {}", job_id);
@@ -43,7 +44,10 @@ impl KeychainService {
             }
             Err(e) => {
                 log::error!("[Keychain] Failed to retrieve password: {}", e);
-                Err(AmberError::Keychain(format!("Failed to retrieve password: {}", e)))
+                Err(AmberError::Keychain(format!(
+                    "Failed to retrieve password: {}",
+                    e
+                )))
             }
         }
     }
@@ -65,7 +69,10 @@ impl KeychainService {
             }
             Err(e) => {
                 log::error!("[Keychain] Failed to delete password: {}", e);
-                Err(AmberError::Keychain(format!("Failed to delete password: {}", e)))
+                Err(AmberError::Keychain(format!(
+                    "Failed to delete password: {}",
+                    e
+                )))
             }
         }
     }
@@ -86,7 +93,8 @@ impl KeychainService {
         let entry = Entry::new(SERVICE_NAME, &account)
             .map_err(|e| AmberError::Keychain(format!("Failed to create keychain entry: {}", e)))?;
 
-        entry.set_password(passphrase)
+        entry
+            .set_password(passphrase)
             .map_err(|e| AmberError::Keychain(format!("Failed to store SSH passphrase: {}", e)))?;
 
         log::info!("[Keychain] Stored SSH passphrase for key {}", key_path);
@@ -104,12 +112,13 @@ impl KeychainService {
                 log::info!("[Keychain] Retrieved SSH passphrase for key {}", key_path);
                 Ok(Some(password))
             }
-            Err(keyring::Error::NoEntry) => {
-                Ok(None)
-            }
+            Err(keyring::Error::NoEntry) => Ok(None),
             Err(e) => {
                 log::error!("[Keychain] Failed to retrieve SSH passphrase: {}", e);
-                Err(AmberError::Keychain(format!("Failed to retrieve SSH passphrase: {}", e)))
+                Err(AmberError::Keychain(format!(
+                    "Failed to retrieve SSH passphrase: {}",
+                    e
+                )))
             }
         }
     }
@@ -120,7 +129,8 @@ impl KeychainService {
         let entry = Entry::new(&full_service, account)
             .map_err(|e| AmberError::Keychain(format!("Failed to create keychain entry: {}", e)))?;
 
-        entry.set_password(secret)
+        entry
+            .set_password(secret)
             .map_err(|e| AmberError::Keychain(format!("Failed to store credential: {}", e)))?;
 
         log::info!("[Keychain] Stored credential for {}/{}", service, account);
@@ -136,7 +146,10 @@ impl KeychainService {
         match entry.get_password() {
             Ok(secret) => Ok(Some(secret)),
             Err(keyring::Error::NoEntry) => Ok(None),
-            Err(e) => Err(AmberError::Keychain(format!("Failed to retrieve credential: {}", e)))
+            Err(e) => Err(AmberError::Keychain(format!(
+                "Failed to retrieve credential: {}",
+                e
+            ))),
         }
     }
 
@@ -149,7 +162,10 @@ impl KeychainService {
         match entry.delete_credential() {
             Ok(()) => Ok(true),
             Err(keyring::Error::NoEntry) => Ok(false),
-            Err(e) => Err(AmberError::Keychain(format!("Failed to delete credential: {}", e)))
+            Err(e) => Err(AmberError::Keychain(format!(
+                "Failed to delete credential: {}",
+                e
+            ))),
         }
     }
 }

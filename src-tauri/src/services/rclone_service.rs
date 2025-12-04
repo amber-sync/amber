@@ -4,9 +4,9 @@
 
 use crate::error::{AmberError, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
-use std::collections::HashMap;
 
 /// Information about an rclone remote
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,9 +51,7 @@ impl RcloneService {
 
     /// Check if rclone is installed and get its version
     pub fn check_installation(&self) -> Result<RcloneStatus> {
-        let output = Command::new("rclone")
-            .arg("version")
-            .output();
+        let output = Command::new("rclone").arg("version").output();
 
         match output {
             Ok(output) if output.status.success() => {
@@ -98,7 +96,7 @@ impl RcloneService {
 
         if !output.status.success() {
             return Err(AmberError::Rclone(
-                String::from_utf8_lossy(&output.stderr).to_string()
+                String::from_utf8_lossy(&output.stderr).to_string(),
             ));
         }
 
@@ -178,13 +176,8 @@ impl RcloneService {
         bandwidth: Option<&str>,
         encrypt: bool,
     ) -> Result<Child> {
-        let mut cmd = self.build_sync_command(
-            source_path,
-            remote_name,
-            remote_path,
-            bandwidth,
-            encrypt,
-        );
+        let mut cmd =
+            self.build_sync_command(source_path, remote_name, remote_path, bandwidth, encrypt);
 
         let child = cmd.spawn()?;
 
@@ -202,9 +195,7 @@ impl RcloneService {
             if let Some(pid) = jobs.remove(job_id) {
                 #[cfg(unix)]
                 {
-                    let _ = Command::new("kill")
-                        .args(["-9", &pid.to_string()])
-                        .status();
+                    let _ = Command::new("kill").args(["-9", &pid.to_string()]).status();
                 }
 
                 #[cfg(windows)]

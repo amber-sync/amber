@@ -36,8 +36,7 @@ impl Store {
 
         match std::fs::read_to_string(&path) {
             Ok(data) => {
-                let jobs: Vec<SyncJob> = serde_json::from_str(&data)
-                    .unwrap_or_else(|_| Vec::new());
+                let jobs: Vec<SyncJob> = serde_json::from_str(&data).unwrap_or_else(|_| Vec::new());
                 Ok(jobs)
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
@@ -83,8 +82,7 @@ impl Store {
 
         match std::fs::read_to_string(&path) {
             Ok(data) => {
-                let prefs: AppPreferences = serde_json::from_str(&data)
-                    .unwrap_or_default();
+                let prefs: AppPreferences = serde_json::from_str(&data).unwrap_or_default();
                 Ok(prefs)
             }
             Err(_) => Ok(AppPreferences::default()),

@@ -15,6 +15,8 @@
 //! - SQLite `snapshots.timestamp`: Unix MILLISECONDS
 //! - Manifest timestamps: Unix MILLISECONDS
 
+pub mod validation;
+
 use std::path::Path;
 
 // ============================================================================
@@ -126,8 +128,7 @@ pub struct VolumeInfo {
 /// Get volume information for a path
 /// Returns whether it's external and the volume name if applicable
 pub fn get_volume_info(path: &str) -> VolumeInfo {
-    let is_external =
-        path.starts_with("/Volumes/") && !path.starts_with("/Volumes/Macintosh HD");
+    let is_external = path.starts_with("/Volumes/") && !path.starts_with("/Volumes/Macintosh HD");
 
     let volume_name = if is_external {
         path.strip_prefix("/Volumes/")
@@ -168,14 +169,8 @@ mod tests {
 
     #[test]
     fn test_make_relative() {
-        assert_eq!(
-            make_relative(Path::new("/a/b/c"), Path::new("/a/b")),
-            "c"
-        );
-        assert_eq!(
-            make_relative(Path::new("/a/b"), Path::new("/a/b")),
-            ""
-        );
+        assert_eq!(make_relative(Path::new("/a/b/c"), Path::new("/a/b")), "c");
+        assert_eq!(make_relative(Path::new("/a/b"), Path::new("/a/b")), "");
         assert_eq!(
             make_relative(Path::new("/a/b/c/d"), Path::new("/a/b")),
             "c/d"
@@ -195,10 +190,7 @@ mod tests {
         );
         assert_eq!(make_absolute("", "/Volumes/Backup"), "/Volumes/Backup");
         // Handles trailing slash
-        assert_eq!(
-            make_absolute("foo", "/root/"),
-            "/root/foo"
-        );
+        assert_eq!(make_absolute("foo", "/root/"), "/root/foo");
     }
 
     #[test]

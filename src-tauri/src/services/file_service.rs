@@ -121,7 +121,10 @@ impl FileService {
     /// Open path with default application
     pub fn open_path(&self, path: &str) -> Result<()> {
         open::that(path).map_err(|e| {
-            AmberError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+            AmberError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ))
         })
     }
 

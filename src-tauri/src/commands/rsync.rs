@@ -138,8 +138,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                     }
 
                     // Try to parse as progress line
-                    if let Some((transferred, percentage, speed, eta)) =
-                        parse_rsync_progress(&line)
+                    if let Some((transferred, percentage, speed, eta)) = parse_rsync_progress(&line)
                     {
                         let _ = app.emit(
                             "rsync-progress",
@@ -274,7 +273,8 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                 log::info!("Indexing snapshot on destination: {}", dest_path);
                 match IndexService::for_destination(&dest_path) {
                     Ok(index) => {
-                        if let Err(e) = index.index_snapshot(&job.id, timestamp, &snapshot_path_str) {
+                        if let Err(e) = index.index_snapshot(&job.id, timestamp, &snapshot_path_str)
+                        {
                             log::warn!("Failed to index snapshot on destination: {}", e);
                         } else {
                             log::info!("Snapshot indexed successfully on destination");

@@ -74,9 +74,9 @@ impl LegacySnapshot {
 /// Check if migration is needed (any jobs have embedded snapshots)
 pub fn needs_migration(store: &Store) -> bool {
     match store.load_jobs() {
-        Ok(jobs) => jobs.iter().any(|job| {
-            job.snapshots.as_ref().map_or(false, |s| !s.is_empty())
-        }),
+        Ok(jobs) => jobs
+            .iter()
+            .any(|job| job.snapshots.as_ref().map_or(false, |s| !s.is_empty())),
         Err(_) => false,
     }
 }
@@ -84,9 +84,9 @@ pub fn needs_migration(store: &Store) -> bool {
 /// Run the migration
 /// Converts embedded snapshots to manifest + cache format
 pub async fn run_migration(store: &Store) -> Result<MigrationReport, MigrationError> {
-    let jobs = store.load_jobs().map_err(|e| {
-        MigrationError::LoadError(format!("Failed to load jobs: {}", e))
-    })?;
+    let jobs = store
+        .load_jobs()
+        .map_err(|e| MigrationError::LoadError(format!("Failed to load jobs: {}", e)))?;
 
     let mut report = MigrationReport {
         jobs_migrated: 0,
@@ -139,11 +139,7 @@ pub async fn run_migration(store: &Store) -> Result<MigrationReport, MigrationEr
                     report.manifests_written += 1;
                 }
                 Err(e) => {
-                    log::warn!(
-                        "Failed to write manifest for job {}: {}",
-                        job.id,
-                        e
-                    );
+                    log::warn!("Failed to write manifest for job {}: {}", job.id, e);
                     result.error = Some(format!("Manifest write failed: {}", e));
                 }
             }
@@ -169,9 +165,9 @@ pub async fn run_migration(store: &Store) -> Result<MigrationReport, MigrationEr
     }
 
     // Re-save all jobs (which will strip the snapshots due to skip_serializing)
-    store.save_jobs(&jobs).map_err(|e| {
-        MigrationError::SaveError(format!("Failed to save migrated jobs: {}", e))
-    })?;
+    store
+        .save_jobs(&jobs)
+        .map_err(|e| MigrationError::SaveError(format!("Failed to save migrated jobs: {}", e)))?;
 
     log::info!(
         "Migration complete: {} jobs migrated, {} snapshots, {} manifests, {} caches",

@@ -32,7 +32,8 @@ impl SnapshotService {
     }
 
     fn get_cache_path(&self, job_id: &str, timestamp: i64) -> PathBuf {
-        self.cache_dir.join(format!("{}-{}.json", job_id, timestamp))
+        self.cache_dir
+            .join(format!("{}-{}.json", job_id, timestamp))
     }
 
     /// List all snapshots for a job
@@ -66,8 +67,7 @@ impl SnapshotService {
         let manifest_path = manifest_service::get_manifest_path(dest_path);
 
         let data = std::fs::read_to_string(&manifest_path).ok()?;
-        let manifest: crate::types::manifest::BackupManifest =
-            serde_json::from_str(&data).ok()?;
+        let manifest: crate::types::manifest::BackupManifest = serde_json::from_str(&data).ok()?;
 
         let mut snapshots: Vec<SnapshotMetadata> = manifest
             .snapshots
@@ -540,7 +540,9 @@ mod tests {
         let (service, _temp) = create_test_service();
         let path = service.get_cache_path("job-123", 1700000000000);
 
-        assert!(path.to_string_lossy().contains("job-123-1700000000000.json"));
+        assert!(path
+            .to_string_lossy()
+            .contains("job-123-1700000000000.json"));
     }
 
     #[test]
@@ -744,7 +746,10 @@ mod tests {
 
         assert_eq!(snapshots.len(), 1);
         // Path should be constructed from dest_path + folder_name
-        let expected_path = dest_dir.join("2024-01-15-120000").to_string_lossy().to_string();
+        let expected_path = dest_dir
+            .join("2024-01-15-120000")
+            .to_string_lossy()
+            .to_string();
         assert_eq!(snapshots[0].path, expected_path);
     }
 

@@ -121,5 +121,10 @@ fn bench_search(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_index_snapshot, bench_query_directory, bench_search);
+criterion_group!(
+    benches,
+    bench_index_snapshot,
+    bench_query_directory,
+    bench_search
+);
 criterion_main!(benches);
