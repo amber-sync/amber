@@ -76,20 +76,20 @@ export function SlidePanel({ isOpen, onClose, title, children, width = 'md' }: S
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`absolute bottom-0 right-0 top-0 ${WIDTH_CLASSES[width]} flex flex-col bg-white shadow-xl transition-transform duration-250 ease-out dark:bg-stone-900`}
+        className={`absolute bottom-0 right-0 top-0 ${WIDTH_CLASSES[width]} flex flex-col bg-layer-1 shadow-xl transition-transform duration-250 ease-out`}
         style={{
           animation: 'slideIn 250ms ease-out',
         }}
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 px-4 py-4 dark:border-stone-700">
+        <div className="flex items-center justify-between border-b border-border-base px-4 py-4">
           <h2 id="panel-title" className="text-lg font-semibold">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-300"
+            className="rounded p-1 text-text-tertiary hover:bg-layer-2 hover:text-text-primary"
             aria-label="Close panel"
           >
             <Icons.X className="h-5 w-5" />

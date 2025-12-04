@@ -27,22 +27,22 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   const getStatusConfig = () => {
     if (isRunning) {
       return {
-        dotColor: 'bg-orange-500',
-        pulseColor: 'bg-orange-400',
+        dotColor: 'bg-accent-primary',
+        pulseColor: 'bg-accent-primary/70',
         label: 'Syncing',
         icon: <Icons.RefreshCw size={12} className="animate-spin" />,
       };
     }
     if (mounted) {
       return {
-        dotColor: 'bg-green-500',
-        pulseColor: 'bg-green-400',
+        dotColor: 'bg-[var(--color-success)]',
+        pulseColor: 'bg-[var(--color-success)]/70',
         label: isExternal ? volumeName || 'Connected' : 'Local',
         icon: null,
       };
     }
     return {
-      dotColor: 'bg-gray-400 dark:bg-gray-600',
+      dotColor: 'bg-text-tertiary',
       pulseColor: '',
       label: 'Offline',
       icon: null,
@@ -77,9 +77,9 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
  */
 export const OfflineBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span
-    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 ${className}`}
+    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-surface-elevated text-text-secondary ${className}`}
   >
-    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+    <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary" />
     Offline
   </span>
 );
@@ -95,8 +95,16 @@ export const ConnectionDot: React.FC<{
   const sizeClass = size === 'sm' ? 'w-1.5 h-1.5' : 'w-2 h-2';
   const pulseSize = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
 
-  const dotColor = isRunning ? 'bg-orange-500' : mounted ? 'bg-green-500' : 'bg-gray-400';
-  const pulseColor = isRunning ? 'bg-orange-400' : mounted ? 'bg-green-400' : '';
+  const dotColor = isRunning
+    ? 'bg-accent-primary'
+    : mounted
+      ? 'bg-[var(--color-success)]'
+      : 'bg-text-tertiary';
+  const pulseColor = isRunning
+    ? 'bg-accent-primary/70'
+    : mounted
+      ? 'bg-[var(--color-success)]/70'
+      : '';
 
   return (
     <span className="relative inline-flex items-center justify-center">
