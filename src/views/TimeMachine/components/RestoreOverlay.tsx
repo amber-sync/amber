@@ -4,12 +4,15 @@
  * Wraps the RestorePanel component with Observatory styling.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SyncJob, Snapshot } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../../components/IconComponents';
 import { formatBytes } from '../../../utils';
 import { TimeMachineSnapshot } from '../TimeMachine';
+import { Select } from '../../../components/ui/Select';
+import { Button } from '../../../components/ui/Button';
+import { IconButton } from '../../../components/ui/IconButton';
 
 type RestoreMode = 'merge' | 'mirror';
 type RestoreStep = 'configure' | 'confirm';
@@ -120,71 +123,69 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
         <div className="tm-overlay-content">
           {success ? (
             <div className="flex flex-col items-center justify-center text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-[var(--tm-success)]/20 flex items-center justify-center mb-4">
-                <Icons.Check size={32} className="text-[var(--tm-success)]" />
+              <div className="w-16 h-16 rounded-full bg-success-subtle flex items-center justify-center mb-4">
+                <Icons.Check size={32} className="text-[var(--color-success)]" />
               </div>
-              <h3 className="text-lg font-semibold text-[var(--tm-text-bright)] mb-2">
-                Restore Complete
-              </h3>
-              <p className="text-sm text-[var(--tm-text-dim)] mb-4">Files have been restored to:</p>
-              <code className="px-3 py-1.5 bg-[var(--tm-dust)] rounded-lg text-sm text-[var(--tm-text-soft)] tm-font-mono mb-6">
+              <h3 className="text-lg font-semibold text-text-primary mb-2">Restore Complete</h3>
+              <p className="text-sm text-text-tertiary mb-4">Files have been restored to:</p>
+              <code className="px-3 py-1.5 bg-layer-3 rounded-lg text-sm text-text-secondary font-mono mb-6">
                 {targetPath}
               </code>
-              <button onClick={handleOpenTarget} className="tm-action-btn tm-action-btn--primary">
-                <Icons.FolderOpen size={18} />
-                <span>Open in Finder</span>
-              </button>
+              <Button
+                variant="primary"
+                onClick={handleOpenTarget}
+                icon={<Icons.FolderOpen size={16} />}
+              >
+                Open in Finder
+              </Button>
             </div>
           ) : step === 'configure' ? (
             <div className="space-y-6">
               {/* Snapshot Selection */}
               <div>
-                <label className="block text-sm font-medium text-[var(--tm-text-soft)] mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Snapshot to Restore
                 </label>
-                <select
+                <Select
                   value={selectedSnapshot?.id || ''}
                   onChange={e => {
                     const snap = snapshots.find(s => s.id === e.target.value);
                     setSelectedSnapshot(snap || null);
                   }}
-                  className="w-full px-3 py-2.5 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg text-sm text-[var(--tm-text-bright)] focus:outline-none focus:ring-2 focus:ring-[var(--tm-accent)]/30 focus:border-[var(--tm-accent)] cursor-pointer"
+                  options={snapshots.map(s => ({
+                    value: s.id,
+                    label: `${new Date(s.timestamp).toLocaleString()} (${s.fileCount} files)`,
+                  }))}
+                  placeholder="Select a snapshot..."
                   disabled={restoring}
-                >
-                  <option value="">Select a snapshot...</option>
-                  {snapshots.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {new Date(s.timestamp).toLocaleString()} ({s.fileCount} files)
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Snapshot Info */}
               {selectedSnapshot && (
-                <div className="p-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg">
+                <div className="p-4 bg-layer-2 border border-border-base rounded-lg">
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-[var(--tm-text-dim)]">Date:</span>
-                      <span className="ml-2 text-[var(--tm-text-bright)]">
+                      <span className="text-text-tertiary">Date:</span>
+                      <span className="ml-2 text-text-primary">
                         {new Date(selectedSnapshot.timestamp).toLocaleDateString()}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[var(--tm-text-dim)]">Time:</span>
-                      <span className="ml-2 text-[var(--tm-text-bright)]">
+                      <span className="text-text-tertiary">Time:</span>
+                      <span className="ml-2 text-text-primary">
                         {new Date(selectedSnapshot.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[var(--tm-text-dim)]">Files:</span>
-                      <span className="ml-2 text-[var(--tm-text-bright)]">
+                      <span className="text-text-tertiary">Files:</span>
+                      <span className="ml-2 text-text-primary">
                         {selectedSnapshot.fileCount?.toLocaleString()}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[var(--tm-text-dim)]">Size:</span>
-                      <span className="ml-2 text-[var(--tm-text-bright)]">
+                      <span className="text-text-tertiary">Size:</span>
+                      <span className="ml-2 text-text-primary">
                         {formatBytes(selectedSnapshot.sizeBytes ?? 0)}
                       </span>
                     </div>
@@ -194,7 +195,7 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
 
               {/* Target Path */}
               <div>
-                <label className="block text-sm font-medium text-[var(--tm-text-soft)] mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Restore To
                 </label>
                 <div className="flex gap-2">
@@ -202,23 +203,23 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
                     type="text"
                     value={targetPath}
                     onChange={e => setTargetPath(e.target.value)}
-                    className="flex-1 px-3 py-2.5 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg text-sm text-[var(--tm-text-bright)] tm-font-mono focus:outline-none focus:ring-2 focus:ring-[var(--tm-accent)]/30 focus:border-[var(--tm-accent)]"
+                    className="flex-1 px-4 py-2.5 bg-layer-2 border border-border-base rounded-lg text-sm text-text-primary font-mono focus:outline-none focus:ring-2 focus:ring-accent-primary/30 focus:border-border-highlight transition-all"
                     placeholder="/Users/you/Desktop"
                     disabled={restoring}
                   />
-                  <button
+                  <IconButton
                     onClick={handleSelectTarget}
-                    className="px-3 py-2.5 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg text-[var(--tm-text-dim)] hover:text-[var(--tm-text-bright)] hover:border-[var(--tm-mist)] transition-colors"
                     disabled={restoring}
+                    label="Browse folder"
                   >
                     <Icons.FolderOpen size={18} />
-                  </button>
+                  </IconButton>
                 </div>
               </div>
 
               {/* Restore Mode */}
               <div>
-                <label className="block text-sm font-medium text-[var(--tm-text-soft)] mb-3">
+                <label className="block text-sm font-medium text-text-secondary mb-3">
                   Restore Mode
                 </label>
                 <div className="space-y-3">
@@ -226,8 +227,8 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
                   <label
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                       restoreMode === 'merge'
-                        ? 'bg-[var(--tm-accent-wash)] border-[var(--tm-accent)]'
-                        : 'bg-[var(--tm-nebula)] border-[var(--tm-dust)] hover:border-[var(--tm-mist)]'
+                        ? 'bg-accent-secondary/50 border-accent-primary'
+                        : 'bg-layer-2 border-border-base hover:border-border-highlight'
                     }`}
                   >
                     <input
@@ -236,13 +237,11 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
                       value="merge"
                       checked={restoreMode === 'merge'}
                       onChange={() => setRestoreMode('merge')}
-                      className="mt-0.5 accent-[var(--tm-accent)]"
+                      className="mt-0.5 accent-accent-primary"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-[var(--tm-text-bright)]">
-                        Merge (Safe)
-                      </div>
-                      <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                      <div className="font-medium text-sm text-text-primary">Merge (Safe)</div>
+                      <div className="text-xs text-text-tertiary mt-0.5">
                         Copy files from snapshot. Updates existing files but keeps any extra files
                         in the destination.
                       </div>
@@ -253,8 +252,8 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
                   <label
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                       restoreMode === 'mirror'
-                        ? 'bg-[var(--tm-error)]/10 border-[var(--tm-error)]'
-                        : 'bg-[var(--tm-nebula)] border-[var(--tm-dust)] hover:border-[var(--tm-mist)]'
+                        ? 'bg-error-subtle border-[var(--color-error)]'
+                        : 'bg-layer-2 border-border-base hover:border-border-highlight'
                     }`}
                   >
                     <input
@@ -263,18 +262,18 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
                       value="mirror"
                       checked={restoreMode === 'mirror'}
                       onChange={() => setRestoreMode('mirror')}
-                      className="mt-0.5 accent-[var(--tm-error)]"
+                      className="mt-0.5 accent-[var(--color-error)]"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-[var(--tm-text-bright)] flex items-center gap-2">
+                      <div className="font-medium text-sm text-text-primary flex items-center gap-2">
                         Mirror (Exact)
-                        <span className="text-[10px] px-1.5 py-0.5 bg-[var(--tm-error)]/20 text-[var(--tm-error)] rounded font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-error-subtle text-[var(--color-error)] rounded font-semibold">
                           DESTRUCTIVE
                         </span>
                       </div>
-                      <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                      <div className="text-xs text-text-tertiary mt-0.5">
                         Make destination an exact copy. Files not in the snapshot will be{' '}
-                        <strong className="text-[var(--tm-error)]">deleted</strong>.
+                        <strong className="text-[var(--color-error)]">deleted</strong>.
                       </div>
                     </div>
                   </label>
@@ -283,26 +282,24 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
 
               {/* Error */}
               {error && (
-                <div className="px-3 py-2 bg-[var(--tm-error)]/10 border border-[var(--tm-error)]/30 rounded-lg text-sm text-[var(--tm-error)]">
+                <div className="px-3 py-2 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg text-sm text-[var(--color-error)]">
                   {error}
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-[var(--tm-dust)]">
-                <button onClick={onClose} className="tm-control-btn tm-control-btn--secondary">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border-base">
+                <Button variant="secondary" onClick={onClose}>
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={() => setStep('confirm')}
                   disabled={!selectedSnapshot || !targetPath}
-                  className={`tm-control-btn tm-control-btn--primary ${
-                    !selectedSnapshot || !targetPath ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  icon={<Icons.ChevronRight size={16} />}
                 >
-                  <span>Continue</span>
-                  <Icons.ChevronRight size={18} />
-                </button>
+                  Continue
+                </Button>
               </div>
             </div>
           ) : (
@@ -310,16 +307,16 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
             <div className="space-y-6">
               {/* Warning for Mirror mode */}
               {restoreMode === 'mirror' && (
-                <div className="flex items-start gap-3 p-4 bg-[var(--tm-error)]/10 border border-[var(--tm-error)]/30 rounded-lg">
+                <div className="flex items-start gap-3 p-4 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg">
                   <Icons.AlertTriangle
                     size={20}
-                    className="text-[var(--tm-error)] flex-shrink-0 mt-0.5"
+                    className="text-[var(--color-error)] flex-shrink-0 mt-0.5"
                   />
                   <div>
-                    <div className="font-semibold text-sm text-[var(--tm-error)]">
+                    <div className="font-semibold text-sm text-[var(--color-error)]">
                       Warning: Mirror Mode
                     </div>
-                    <div className="text-xs text-[var(--tm-text-dim)] mt-1">
+                    <div className="text-xs text-text-tertiary mt-1">
                       This will delete any files in the destination that are not in the snapshot.
                       This action cannot be undone.
                     </div>
@@ -328,44 +325,42 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
               )}
 
               {/* Summary */}
-              <div className="p-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg space-y-3">
-                <h4 className="text-sm font-semibold text-[var(--tm-text-bright)]">
-                  Restore Summary
-                </h4>
+              <div className="p-4 bg-layer-2 border border-border-base rounded-lg space-y-3">
+                <h4 className="text-sm font-semibold text-text-primary">Restore Summary</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-[var(--tm-text-dim)]">Snapshot:</span>
-                    <span className="text-[var(--tm-text-bright)]">
+                    <span className="text-text-tertiary">Snapshot:</span>
+                    <span className="text-text-primary">
                       {selectedSnapshot && new Date(selectedSnapshot.timestamp).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[var(--tm-text-dim)]">Files:</span>
-                    <span className="text-[var(--tm-text-bright)]">
+                    <span className="text-text-tertiary">Files:</span>
+                    <span className="text-text-primary">
                       {selectedSnapshot?.fileCount?.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[var(--tm-text-dim)]">Size:</span>
-                    <span className="text-[var(--tm-text-bright)]">
+                    <span className="text-text-tertiary">Size:</span>
+                    <span className="text-text-primary">
                       {formatBytes(selectedSnapshot?.sizeBytes ?? 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[var(--tm-text-dim)]">Mode:</span>
+                    <span className="text-text-tertiary">Mode:</span>
                     <span
                       className={
                         restoreMode === 'mirror'
-                          ? 'text-[var(--tm-error)] font-medium'
-                          : 'text-[var(--tm-text-bright)]'
+                          ? 'text-[var(--color-error)] font-medium'
+                          : 'text-text-primary'
                       }
                     >
                       {restoreMode === 'merge' ? 'Merge (Safe)' : 'Mirror (Exact)'}
                     </span>
                   </div>
-                  <div className="pt-2 border-t border-[var(--tm-dust)]">
-                    <span className="text-[var(--tm-text-dim)]">Destination:</span>
-                    <code className="block mt-1 px-2 py-1 bg-[var(--tm-dust)] rounded text-xs text-[var(--tm-text-soft)] tm-font-mono break-all">
+                  <div className="pt-2 border-t border-border-base">
+                    <span className="text-text-tertiary">Destination:</span>
+                    <code className="block mt-1 px-2 py-1 bg-layer-3 rounded text-xs text-text-secondary font-mono break-all">
                       {targetPath}
                     </code>
                   </div>
@@ -374,7 +369,7 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
 
               {/* Progress */}
               {progress && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-[var(--tm-accent-wash)] rounded-lg text-sm text-[var(--tm-accent)]">
+                <div className="flex items-center gap-2 px-3 py-2 bg-accent-secondary rounded-lg text-sm text-accent-primary">
                   <Icons.RefreshCw size={16} className="animate-spin" />
                   {progress}
                 </div>
@@ -382,35 +377,30 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
 
               {/* Error */}
               {error && (
-                <div className="px-3 py-2 bg-[var(--tm-error)]/10 border border-[var(--tm-error)]/30 rounded-lg text-sm text-[var(--tm-error)]">
+                <div className="px-3 py-2 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg text-sm text-[var(--color-error)]">
                   {error}
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex justify-between gap-3 pt-4 border-t border-[var(--tm-dust)]">
-                <button
+              <div className="flex justify-between gap-3 pt-4 border-t border-border-base">
+                <Button
+                  variant="secondary"
                   onClick={() => setStep('configure')}
                   disabled={restoring}
-                  className="tm-control-btn tm-control-btn--secondary"
+                  icon={<Icons.ChevronLeft size={16} />}
                 >
-                  <Icons.ChevronLeft size={18} />
-                  <span>Back</span>
-                </button>
-                <button
+                  Back
+                </Button>
+                <Button
+                  variant={restoreMode === 'mirror' ? 'danger' : 'primary'}
                   onClick={handleRestore}
                   disabled={restoring}
-                  className={`tm-control-btn ${
-                    restoreMode === 'mirror' ? 'tm-control-btn--danger' : 'tm-control-btn--primary'
-                  } ${restoring ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  loading={restoring}
+                  icon={!restoring ? <Icons.RotateCcw size={16} /> : undefined}
                 >
-                  {restoring ? (
-                    <Icons.RefreshCw size={18} className="animate-spin" />
-                  ) : (
-                    <Icons.RotateCcw size={18} />
-                  )}
-                  <span>{restoreMode === 'mirror' ? 'Mirror Restore' : 'Restore Files'}</span>
-                </button>
+                  {restoreMode === 'mirror' ? 'Mirror Restore' : 'Restore Files'}
+                </Button>
               </div>
             </div>
           )}
