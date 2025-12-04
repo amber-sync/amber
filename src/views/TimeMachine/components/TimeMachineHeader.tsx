@@ -26,6 +26,14 @@ interface TimeMachineHeaderProps {
   totalSnapshotCount?: number;
 }
 
+const dateFilterLabels: Record<DateFilter, string> = {
+  all: 'All Time',
+  '7days': '7 Days',
+  '30days': '30 Days',
+  '90days': '90 Days',
+  year: '1 Year',
+};
+
 export function TimeMachineHeader({
   job,
   jobs,
@@ -42,13 +50,18 @@ export function TimeMachineHeader({
   totalSnapshotCount,
 }: TimeMachineHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target as Node)) {
+        setDateDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -121,25 +134,48 @@ export function TimeMachineHeader({
       </div>
 
       <div className="tm-header-right">
-        {/* Date filter (TIM-151) */}
+        {/* Date filter (TIM-151, UI-011: Minimal editorial dropdown) */}
         {onDateFilterChange && job && (
-          <div className="flex items-center gap-2">
-            <select
-              value={dateFilter}
-              onChange={e => onDateFilterChange(e.target.value as DateFilter)}
-              className="tm-control-btn tm-control-btn--secondary text-sm px-3 py-2"
-            >
-              <option value="all">All Time</option>
-              <option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option>
-              <option value="90days">Last 90 Days</option>
-              <option value="year">Last Year</option>
-            </select>
+          <div className="flex items-center gap-3" ref={dateDropdownRef}>
+            <div className="relative">
+              <button
+                onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <span className="font-medium">{dateFilterLabels[dateFilter]}</span>
+                <Icons.ChevronDown
+                  size={12}
+                  className={`opacity-50 transition-transform ${dateDropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {dateDropdownOpen && (
+                <div className="absolute top-full right-0 mt-1.5 py-1 min-w-[120px] bg-layer-1 border border-border-base rounded-lg shadow-lg z-50">
+                  {(Object.keys(dateFilterLabels) as DateFilter[]).map(key => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        onDateFilterChange(key);
+                        setDateDropdownOpen(false);
+                      }}
+                      className={`w-full px-3 py-1.5 text-left text-sm transition-colors ${
+                        key === dateFilter
+                          ? 'text-text-primary font-medium bg-layer-2'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-layer-2'
+                      }`}
+                    >
+                      {dateFilterLabels[key]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {dateFilter !== 'all' &&
               snapshotCount !== undefined &&
               totalSnapshotCount !== undefined && (
-                <span className="text-xs text-[var(--tm-text-dim)]">
-                  {snapshotCount} of {totalSnapshotCount} snapshots
+                <span className="text-xs text-text-tertiary tabular-nums">
+                  {snapshotCount}/{totalSnapshotCount}
                 </span>
               )}
           </div>
