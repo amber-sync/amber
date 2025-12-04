@@ -145,10 +145,10 @@
   content: '';
   position: absolute;
   left: 0;
-  right: 48px; /* Leave room for NOW indicator */
+  right: 0;
   top: 50%;
   height: 1px;
-  background: linear-gradient(90deg, var(--tm-dust) 0%, var(--tm-mist) 100%);
+  background: var(--tm-dust);
   transform: translateY(-50%);
 }
 
@@ -247,36 +247,18 @@
   line-height: 1;
 }
 
-/* NOW indicator - elegant end cap */
-.tm-now-indicator {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding-left: 12px;
-}
-
-.tm-now-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tm-accent);
-  box-shadow: 0 0 0 3px var(--tm-accent-glow);
-  animation: tm-pulse 2s ease-in-out infinite;
-}
-
-.tm-now-label {
-  font-family: 'JetBrains Mono', var(--font-mono);
-  font-size: 9px;
-  font-weight: 500;
+/* "Now" label - styled like month labels but at the end */
+.tm-timeline-label--now {
+  transform: translateX(-100%); /* Align right edge to 100% */
+  font-weight: 600;
+  color: var(--tm-text-soft);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--tm-text-muted);
-  margin-top: 2px;
+  letter-spacing: 0.05em;
+}
+
+/* No tick mark for Now - it's at the edge */
+.tm-timeline-label--now::before {
+  display: none;
 }
 
 @keyframes tm-pulse {
