@@ -89,6 +89,18 @@ export const CommandPalette: React.FC = () => {
     });
 
     cmds.push({
+      id: 'nav-time-machine',
+      title: 'Open TimeMachine',
+      description: 'Browse snapshots and restore files',
+      category: 'navigation',
+      icon: <ClockIcon />,
+      action: () => {
+        setView('TIME_MACHINE');
+        setIsOpen(false);
+      },
+    });
+
+    cmds.push({
       id: 'create-job',
       title: 'Create New Job',
       description: 'Set up a new backup job',
@@ -483,6 +495,16 @@ const MoonIcon: React.FC = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+    />
+  </svg>
+);
+
+const ClockIcon: React.FC = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
     />
   </svg>
 );
