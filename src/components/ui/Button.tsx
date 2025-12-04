@@ -18,28 +18,23 @@ const baseStyles =
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-b from-amber-500 to-amber-600 text-white ' +
-    'hover:from-amber-400 hover:to-amber-500 ' +
-    'active:from-amber-600 active:to-amber-700 ' +
-    'shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 ' +
-    'focus:ring-amber-500/50 border border-amber-400/20',
+    'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 ' +
+    'hover:bg-zinc-800 dark:hover:bg-zinc-200 ' +
+    'active:bg-zinc-950 dark:active:bg-zinc-100 ' +
+    'focus:ring-zinc-500/30',
   secondary:
-    'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 ' +
-    'border border-stone-300 dark:border-stone-600 ' +
-    'hover:bg-stone-200 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500 ' +
-    'active:bg-stone-300 dark:active:bg-stone-600 ' +
-    'focus:ring-stone-400/50',
+    'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 ' +
+    'border border-zinc-200 dark:border-zinc-700 ' +
+    'hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 ' +
+    'active:bg-zinc-300 dark:active:bg-zinc-600 ' +
+    'focus:ring-zinc-400/30',
   ghost:
-    'bg-transparent text-stone-600 dark:text-stone-400 ' +
-    'hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 ' +
-    'active:bg-stone-200 dark:active:bg-stone-700 ' +
-    'focus:ring-stone-400/50',
+    'bg-transparent text-zinc-600 dark:text-zinc-400 ' +
+    'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 ' +
+    'active:bg-zinc-200 dark:active:bg-zinc-700 ' +
+    'focus:ring-zinc-400/30',
   danger:
-    'bg-gradient-to-b from-rose-500 to-rose-600 text-white ' +
-    'hover:from-rose-400 hover:to-rose-500 ' +
-    'active:from-rose-600 active:to-rose-700 ' +
-    'shadow-md shadow-rose-500/20 hover:shadow-lg hover:shadow-rose-500/30 ' +
-    'focus:ring-rose-500/50 border border-rose-400/20',
+    'bg-red-600 text-white ' + 'hover:bg-red-500 ' + 'active:bg-red-700 ' + 'focus:ring-red-500/30',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

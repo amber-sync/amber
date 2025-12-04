@@ -1,67 +1,67 @@
 /**
- * Time Machine - Observatory Theme
+ * Time Machine - Editorial Theme
  *
- * A distinctive, immersive aesthetic for navigating backup history.
- * Dark, spacious, with amber accents representing "live" activity.
+ * A clean, minimal aesthetic for navigating backup history.
+ * Typography-focused with near-monochrome palette.
  */
 
 /* ============================================
- * Observatory Color Palette (TIM-142: Theme-aware)
+ * Editorial Color Palette (UI-012: Minimal, near-monochrome)
  * ============================================ */
 
 /* Light Mode (default) */
 .tm-container {
-  /* Light backgrounds */
-  --tm-void: #f5f5f7;
+  /* Clean white backgrounds */
+  --tm-void: #fafafa;
   --tm-space: #ffffff;
-  --tm-nebula: #fafafa;
-  --tm-dust: #e5e5e5;
-  --tm-mist: #d4d4d4;
+  --tm-nebula: #ffffff;
+  --tm-dust: #e4e4e7; /* zinc-200 */
+  --tm-mist: #d4d4d8; /* zinc-300 */
 
-  /* Amber signal system */
-  --tm-amber: #d97706;
-  --tm-amber-bright: #f59e0b;
-  --tm-amber-dim: #92400e;
-  --tm-amber-glow: rgba(217, 119, 6, 0.15);
-  --tm-amber-wash: rgba(217, 119, 6, 0.08);
+  /* Editorial accent - near-black */
+  --tm-accent: #27272a; /* zinc-800 */
+  --tm-accent-bright: #18181b; /* zinc-900 */
+  --tm-accent-dim: #3f3f46; /* zinc-700 */
+  --tm-accent-glow: rgba(39, 39, 42, 0.06);
+  --tm-accent-wash: rgba(39, 39, 42, 0.04);
 
   /* Text hierarchy - light mode */
-  --tm-text-bright: #18181b;
-  --tm-text-soft: #3f3f46;
-  --tm-text-dim: #71717a;
-  --tm-text-muted: #a1a1aa;
+  --tm-text-bright: #18181b; /* zinc-900 */
+  --tm-text-soft: #3f3f46; /* zinc-700 */
+  --tm-text-dim: #71717a; /* zinc-500 */
+  --tm-text-muted: #a1a1aa; /* zinc-400 */
 
-  /* Semantic colors */
+  /* Semantic colors - subtle */
   --tm-success: #16a34a;
   --tm-warning: #ca8a04;
   --tm-error: #dc2626;
 
   /* Glass effects - light mode */
-  --tm-glass: rgba(255, 255, 255, 0.85);
+  --tm-glass: rgba(255, 255, 255, 0.92);
   --tm-glass-border: rgba(0, 0, 0, 0.06);
 }
 
 /* Dark Mode */
 .dark .tm-container {
-  /* Deep space backgrounds */
-  --tm-void: #08080a;
-  --tm-space: #0e0e11;
-  --tm-nebula: #161619;
-  --tm-dust: #222228;
-  --tm-mist: #2e2e36;
+  /* Deep charcoal backgrounds */
+  --tm-void: #09090b; /* zinc-950 */
+  --tm-space: #18181b; /* zinc-900 */
+  --tm-nebula: #18181b;
+  --tm-dust: #27272a; /* zinc-800 */
+  --tm-mist: #3f3f46; /* zinc-700 */
 
-  /* Amber signal system - dark mode */
-  --tm-amber: #f59e0b;
-  --tm-amber-bright: #fbbf24;
-  --tm-amber-dim: #b45309;
-  --tm-amber-glow: rgba(245, 158, 11, 0.15);
-  --tm-amber-wash: rgba(245, 158, 11, 0.06);
+  /* Editorial accent - light for dark mode */
+  --tm-accent: #fafafa; /* zinc-50 */
+  --tm-accent-bright: #ffffff;
+  --tm-accent-dim: #d4d4d8; /* zinc-300 */
+  --tm-accent-glow: rgba(250, 250, 250, 0.08);
+  --tm-accent-wash: rgba(250, 250, 250, 0.04);
 
   /* Text hierarchy - dark mode */
-  --tm-text-bright: #fafafa;
-  --tm-text-soft: #a1a1aa;
-  --tm-text-dim: #71717a;
-  --tm-text-muted: #52525b;
+  --tm-text-bright: #fafafa; /* zinc-50 */
+  --tm-text-soft: #a1a1aa; /* zinc-400 */
+  --tm-text-dim: #71717a; /* zinc-500 */
+  --tm-text-muted: #52525b; /* zinc-600 */
 
   /* Semantic colors - dark mode */
   --tm-success: #22c55e;
@@ -69,7 +69,7 @@
   --tm-error: #ef4444;
 
   /* Glass effects - dark mode */
-  --tm-glass: rgba(14, 14, 17, 0.85);
+  --tm-glass: rgba(24, 24, 27, 0.92);
   --tm-glass-border: rgba(255, 255, 255, 0.06);
 }
 
@@ -77,30 +77,16 @@
  * Base Container
  * ============================================ */
 .tm-container {
-  background: linear-gradient(180deg, var(--tm-void) 0%, var(--tm-space) 100%);
+  background: var(--tm-space);
   color: var(--tm-text-bright);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
 
-/* Add subtle amber glow in dark mode only */
+/* Clean background for dark mode */
 .dark .tm-container {
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.02) 0%, transparent 40%),
-    linear-gradient(180deg, var(--tm-void) 0%, var(--tm-space) 100%);
-}
-
-/* Subtle noise texture overlay - only in dark mode */
-.dark .tm-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.015;
-  pointer-events: none;
-  mix-blend-mode: overlay;
+  background: var(--tm-void);
 }
 
 /* ============================================
@@ -148,13 +134,8 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--tm-dust) 0%,
-    var(--tm-mist) 50%,
-    var(--tm-amber-dim) 100%
-  );
+  height: 1px;
+  background: var(--tm-dust);
   transform: translateY(-50%);
 }
 
@@ -178,11 +159,9 @@
 }
 
 .tm-marker--selected {
-  background: var(--tm-amber);
+  background: var(--tm-accent);
   transform: translate(-50%, -50%) scale(1.5);
-  box-shadow:
-    0 0 0 4px var(--tm-amber-glow),
-    0 0 30px var(--tm-amber);
+  box-shadow: 0 0 0 3px var(--tm-accent-glow);
 }
 
 .tm-marker--failed {
@@ -198,14 +177,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    var(--tm-amber) 30%,
-    var(--tm-amber) 70%,
-    transparent 100%
-  );
+  width: 1px;
+  background: var(--tm-accent);
   transform: translateX(-50%);
   pointer-events: none;
   opacity: 0;
@@ -229,20 +202,20 @@
 }
 
 .tm-now-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--tm-amber);
+  background: var(--tm-text-dim);
   animation: tm-pulse 2s ease-in-out infinite;
 }
 
 .tm-now-label {
   font-family: 'Plus Jakarta Sans', var(--font-sans);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--tm-amber);
+  letter-spacing: 0.1em;
+  color: var(--tm-text-dim);
 }
 
 @keyframes tm-pulse {
@@ -363,8 +336,8 @@
   letter-spacing: -0.02em;
 }
 
-.tm-stat-value--amber {
-  color: var(--tm-amber);
+.tm-stat-value--accent {
+  color: var(--tm-accent);
 }
 
 /* Quick actions */
@@ -389,15 +362,14 @@
 }
 
 .tm-action-btn--primary {
-  background: var(--tm-amber);
-  color: #000;
+  background: var(--tm-accent);
+  color: var(--tm-space);
   border: none;
 }
 
 .tm-action-btn--primary:hover {
-  background: var(--tm-amber-bright);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px var(--tm-amber-glow);
+  background: var(--tm-accent-bright);
+  transform: translateY(-1px);
 }
 
 .tm-action-btn--secondary {
@@ -442,8 +414,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--tm-amber-dim), var(--tm-amber), var(--tm-amber-bright));
+  height: 2px;
+  background: var(--tm-accent);
   transition: width 300ms ease-out;
 }
 
@@ -451,11 +423,11 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: var(--tm-amber-glow);
+  background: var(--tm-accent-wash);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--tm-amber);
+  color: var(--tm-accent);
   flex-shrink: 0;
 }
 
@@ -600,10 +572,10 @@
 
 /* Live status indicator in header */
 .tm-live-status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--tm-amber);
+  background: var(--tm-success);
   animation: tm-pulse 2s ease-in-out infinite;
 }
 
@@ -629,15 +601,13 @@
 }
 
 .tm-control-btn--primary {
-  background: linear-gradient(to bottom, #f59e0b, #d97706);
-  color: white;
-  border-color: rgba(251, 191, 36, 0.2);
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+  background: var(--tm-accent);
+  color: var(--tm-space);
+  border-color: transparent;
 }
 
 .tm-control-btn--primary:hover {
-  background: linear-gradient(to bottom, #fbbf24, #f59e0b);
-  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.3);
+  background: var(--tm-accent-bright);
 }
 
 .tm-control-btn--secondary {
@@ -653,15 +623,13 @@
 }
 
 .tm-control-btn--danger {
-  background: linear-gradient(to bottom, #f43f5e, #e11d48);
+  background: var(--tm-error);
   color: white;
-  border-color: rgba(251, 113, 133, 0.2);
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+  border-color: transparent;
 }
 
 .tm-control-btn--danger:hover {
-  background: linear-gradient(to bottom, #fb7185, #f43f5e);
-  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.3);
+  background: #ef4444;
 }
 
 /* ============================================
@@ -833,13 +801,13 @@
 
 .tm-analytics-expand {
   font-size: 12px;
-  color: var(--tm-amber);
+  color: var(--tm-text-dim);
   cursor: pointer;
   transition: color 150ms ease;
 }
 
 .tm-analytics-expand:hover {
-  color: var(--tm-amber-bright);
+  color: var(--tm-text-bright);
 }
 
 .tm-file-types {
