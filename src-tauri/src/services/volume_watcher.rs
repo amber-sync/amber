@@ -1,6 +1,6 @@
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::Arc;
-use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::{mpsc, RwLock};
 
 use crate::error::{AmberError, Result};
@@ -43,37 +43,41 @@ impl VolumeWatcher {
 
         // Create the watcher with a callback
         let tx_clone = tx.clone();
-        let watcher = notify::recommended_watcher(move |res: std::result::Result<Event, notify::Error>| {
-            match res {
-                Ok(event) => {
-                    // We only care about create/delete events in /Volumes
-                    match event.kind {
-                        EventKind::Create(_) => {
-                            for path in event.paths {
-                                if path.file_name().is_some() {
-                                    let vol_path = path.to_string_lossy().to_string();
-                                    log::info!("Volume mounted: {}", vol_path);
-                                    let _ = tx_clone.blocking_send(VolumeEvent::Mounted(vol_path));
+        let watcher =
+            notify::recommended_watcher(move |res: std::result::Result<Event, notify::Error>| {
+                match res {
+                    Ok(event) => {
+                        // We only care about create/delete events in /Volumes
+                        match event.kind {
+                            EventKind::Create(_) => {
+                                for path in event.paths {
+                                    if path.file_name().is_some() {
+                                        let vol_path = path.to_string_lossy().to_string();
+                                        log::info!("Volume mounted: {}", vol_path);
+                                        let _ =
+                                            tx_clone.blocking_send(VolumeEvent::Mounted(vol_path));
+                                    }
                                 }
                             }
-                        }
-                        EventKind::Remove(_) => {
-                            for path in event.paths {
-                                if path.file_name().is_some() {
-                                    let vol_path = path.to_string_lossy().to_string();
-                                    log::info!("Volume unmounted: {}", vol_path);
-                                    let _ = tx_clone.blocking_send(VolumeEvent::Unmounted(vol_path));
+                            EventKind::Remove(_) => {
+                                for path in event.paths {
+                                    if path.file_name().is_some() {
+                                        let vol_path = path.to_string_lossy().to_string();
+                                        log::info!("Volume unmounted: {}", vol_path);
+                                        let _ = tx_clone
+                                            .blocking_send(VolumeEvent::Unmounted(vol_path));
+                                    }
                                 }
                             }
+                            _ => {}
                         }
-                        _ => {}
+                    }
+                    Err(e) => {
+                        log::error!("VolumeWatcher error: {}", e);
                     }
                 }
-                Err(e) => {
-                    log::error!("VolumeWatcher error: {}", e);
-                }
-            }
-        }).map_err(|e| AmberError::Volume(format!("Failed to create watcher: {}", e)))?;
+            })
+            .map_err(|e| AmberError::Volume(format!("Failed to create watcher: {}", e)))?;
 
         // Store the watcher
         {
@@ -85,7 +89,8 @@ impl VolumeWatcher {
         {
             let mut w = self.watcher.write().await;
             if let Some(ref mut watcher) = *w {
-                watcher.watch(&self.volumes_path, RecursiveMode::NonRecursive)
+                watcher
+                    .watch(&self.volumes_path, RecursiveMode::NonRecursive)
                     .map_err(|e| AmberError::Volume(format!("Failed to watch /Volumes: {}", e)))?;
             }
         }
@@ -98,7 +103,8 @@ impl VolumeWatcher {
     pub async fn stop(&self) -> Result<()> {
         let mut w = self.watcher.write().await;
         if let Some(ref mut watcher) = w.take() {
-            watcher.unwatch(&self.volumes_path)
+            watcher
+                .unwatch(&self.volumes_path)
                 .map_err(|e| AmberError::Volume(format!("Failed to unwatch: {}", e)))?;
         }
 

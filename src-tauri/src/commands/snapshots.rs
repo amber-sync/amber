@@ -106,11 +106,9 @@ pub async fn search_files_global(
     job_id: Option<String>,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::GlobalSearchResult>> {
-    state.index_service.search_files_global(
-        &pattern,
-        job_id.as_deref(),
-        limit.unwrap_or(50),
-    )
+    state
+        .index_service
+        .search_files_global(&pattern, job_id.as_deref(), limit.unwrap_or(50))
 }
 
 /// Get snapshot statistics from index
@@ -233,8 +231,8 @@ pub async fn restore_snapshot(
 
 // ===== TIM-112: Destination-based index storage =====
 
-use crate::services::manifest_service;
 use crate::services::index_service::IndexService;
+use crate::services::manifest_service;
 
 /// Get the path to the index database on a destination drive
 #[tauri::command]

@@ -29,6 +29,20 @@ pub struct RsyncConfig {
     pub link_dest: Option<String>,
     pub custom_flags: String,
     pub custom_command: Option<String>,
+    /// Timeout in seconds (default: 3600 = 1 hour)
+    #[serde(default = "default_timeout")]
+    pub timeout_seconds: u64,
+    /// Stall timeout - kill if no progress for this many seconds (default: 300 = 5 min)
+    #[serde(default = "default_stall_timeout")]
+    pub stall_timeout_seconds: u64,
+}
+
+fn default_timeout() -> u64 {
+    3600 // 1 hour
+}
+
+fn default_stall_timeout() -> u64 {
+    300 // 5 minutes
 }
 
 impl Default for RsyncConfig {
@@ -43,6 +57,8 @@ impl Default for RsyncConfig {
             link_dest: None,
             custom_flags: String::new(),
             custom_command: None,
+            timeout_seconds: default_timeout(),
+            stall_timeout_seconds: default_stall_timeout(),
         }
     }
 }

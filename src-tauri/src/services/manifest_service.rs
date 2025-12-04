@@ -40,17 +40,19 @@ pub async fn read_manifest(dest_path: &str) -> Result<Option<BackupManifest>, Ma
     }
 
     let mut file = fs::File::open(&manifest_path).await.map_err(|e| {
-        ManifestError::IoError(format!("Failed to open manifest at {:?}: {}", manifest_path, e))
+        ManifestError::IoError(format!(
+            "Failed to open manifest at {:?}: {}",
+            manifest_path, e
+        ))
     })?;
 
     let mut contents = String::new();
-    file.read_to_string(&mut contents).await.map_err(|e| {
-        ManifestError::IoError(format!("Failed to read manifest: {}", e))
-    })?;
+    file.read_to_string(&mut contents)
+        .await
+        .map_err(|e| ManifestError::IoError(format!("Failed to read manifest: {}", e)))?;
 
-    let manifest: BackupManifest = serde_json::from_str(&contents).map_err(|e| {
-        ManifestError::ParseError(format!("Failed to parse manifest: {}", e))
-    })?;
+    let manifest: BackupManifest = serde_json::from_str(&contents)
+        .map_err(|e| ManifestError::ParseError(format!("Failed to parse manifest: {}", e)))?;
 
     // Check version compatibility
     if manifest.version > crate::types::manifest::MANIFEST_VERSION {
@@ -65,14 +67,20 @@ pub async fn read_manifest(dest_path: &str) -> Result<Option<BackupManifest>, Ma
 
 /// Write manifest to the backup destination
 /// Creates the .amber-meta directory if it doesn't exist
-pub async fn write_manifest(dest_path: &str, manifest: &BackupManifest) -> Result<(), ManifestError> {
+pub async fn write_manifest(
+    dest_path: &str,
+    manifest: &BackupManifest,
+) -> Result<(), ManifestError> {
     let meta_dir = get_meta_dir(dest_path);
     let manifest_path = get_manifest_path(dest_path);
 
     // Create .amber-meta directory if needed
     if !meta_dir.exists() {
         fs::create_dir_all(&meta_dir).await.map_err(|e| {
-            ManifestError::IoError(format!("Failed to create meta directory {:?}: {}", meta_dir, e))
+            ManifestError::IoError(format!(
+                "Failed to create meta directory {:?}: {}",
+                meta_dir, e
+            ))
         })?;
     }
 
@@ -88,18 +96,18 @@ pub async fn write_manifest(dest_path: &str, manifest: &BackupManifest) -> Resul
         ManifestError::IoError(format!("Failed to create temp manifest file: {}", e))
     })?;
 
-    file.write_all(contents.as_bytes()).await.map_err(|e| {
-        ManifestError::IoError(format!("Failed to write manifest: {}", e))
-    })?;
+    file.write_all(contents.as_bytes())
+        .await
+        .map_err(|e| ManifestError::IoError(format!("Failed to write manifest: {}", e)))?;
 
-    file.sync_all().await.map_err(|e| {
-        ManifestError::IoError(format!("Failed to sync manifest: {}", e))
-    })?;
+    file.sync_all()
+        .await
+        .map_err(|e| ManifestError::IoError(format!("Failed to sync manifest: {}", e)))?;
 
     // Rename temp file to final location (atomic on most filesystems)
-    fs::rename(&temp_path, &manifest_path).await.map_err(|e| {
-        ManifestError::IoError(format!("Failed to rename manifest: {}", e))
-    })?;
+    fs::rename(&temp_path, &manifest_path)
+        .await
+        .map_err(|e| ManifestError::IoError(format!("Failed to rename manifest: {}", e)))?;
 
     Ok(())
 }
@@ -273,26 +281,16 @@ mod tests {
         let dest_path = temp.path().to_str().unwrap();
 
         // First call creates
-        let manifest = get_or_create_manifest(
-            dest_path,
-            "job-456",
-            "My Backup",
-            "/Users/me/docs",
-        )
-        .await
-        .unwrap();
+        let manifest = get_or_create_manifest(dest_path, "job-456", "My Backup", "/Users/me/docs")
+            .await
+            .unwrap();
 
         assert_eq!(manifest.job_id, "job-456");
 
         // Second call returns existing
-        let manifest2 = get_or_create_manifest(
-            dest_path,
-            "job-456",
-            "My Backup",
-            "/Users/me/docs",
-        )
-        .await
-        .unwrap();
+        let manifest2 = get_or_create_manifest(dest_path, "job-456", "My Backup", "/Users/me/docs")
+            .await
+            .unwrap();
 
         assert_eq!(manifest.created_at, manifest2.created_at);
     }

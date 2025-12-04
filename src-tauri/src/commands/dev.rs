@@ -111,7 +111,11 @@ pub async fn dev_db_stats(state: State<'_, AppState>) -> Result<DevDbStats> {
         .unwrap_or(0);
 
     let total_size: i64 = conn
-        .query_row("SELECT COALESCE(SUM(total_size), 0) FROM snapshots", [], |row| row.get(0))
+        .query_row(
+            "SELECT COALESCE(SUM(total_size), 0) FROM snapshots",
+            [],
+            |row| row.get(0),
+        )
         .unwrap_or(0);
 
     let fts_count: i64 = conn

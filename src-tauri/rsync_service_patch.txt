@@ -1,0 +1,74 @@
+--- a/src-tauri/src/services/rsync_service.rs
++++ b/src-tauri/src/services/rsync_service.rs
+@@ -1,6 +1,7 @@
+ use crate::error::Result;
+ use crate::types::job::{SyncJob, SyncMode};
+ use crate::utils::is_ssh_remote; // TIM-123: Use centralized path utility
++use crate::utils::validation::{validate_file_path, validate_proxy_jump, validate_ssh_port};
+ use chrono::Local;
+ use regex::Regex;
+ use std::collections::{HashMap, HashSet};
+@@ -158,24 +159,54 @@
+             // Apply SSH config options if provided
+             if let Some(ref ssh) = job.ssh_config {
+-                // Only add flags when values are non-empty
++                // Validate and add port (must be numeric and in range 1-65535)
+                 if let Some(ref port) = ssh.port {
+                     if !port.trim().is_empty() {
+-                        ssh_cmd.push_str(&format!(" -p {}", port));
++                        match validate_ssh_port(port) {
++                            Ok(validated_port) => {
++                                ssh_cmd.push_str(&format!(" -p {}", validated_port));
++                            }
++                            Err(e) => {
++                                log::error!("[rsync_service] Invalid SSH port '{}': {}", port, e);
++                            }
++                        }
+                     }
+                 }
++
++                // Validate and add identity file (no shell metacharacters)
+                 if let Some(ref identity) = ssh.identity_file {
+                     if !identity.trim().is_empty() {
+-                        ssh_cmd.push_str(&format!(" -i {}", identity));
++                        match validate_file_path(identity) {
++                            Ok(validated_path) => {
++                                ssh_cmd.push_str(&format!(" -i {}", validated_path));
++                            }
++                            Err(e) => {
++                                log::error!("[rsync_service] Invalid identity file '{}': {}", identity, e);
++                            }
++                        }
+                     }
+                 }
++
++                // Validate and add config file (no shell metacharacters)
+                 if let Some(ref config) = ssh.config_file {
+                     if !config.trim().is_empty() {
+-                        ssh_cmd.push_str(&format!(" -F {}", config));
++                        match validate_file_path(config) {
++                            Ok(validated_path) => {
++                                ssh_cmd.push_str(&format!(" -F {}", validated_path));
++                            }
++                            Err(e) => {
++                                log::error!("[rsync_service] Invalid config file '{}': {}", config, e);
++                            }
++                        }
+                     }
+                 }
++
++                // Validate and add proxy jump (format: user@host or user@host:port)
+                 if let Some(ref proxy) = ssh.proxy_jump {
+                     if !proxy.trim().is_empty() {
+-                        ssh_cmd.push_str(&format!(" -J {}", proxy));
++                        match validate_proxy_jump(proxy) {
++                            Ok(validated_proxy) => {
++                                ssh_cmd.push_str(&format!(" -J {}", validated_proxy));
++                            }
++                            Err(e) => {
++                                log::error!("[rsync_service] Invalid proxy jump '{}': {}", proxy, e);
++                            }
++                        }
+                     }
+                 }
+                 if ssh.disable_host_key_checking == Some(true) {

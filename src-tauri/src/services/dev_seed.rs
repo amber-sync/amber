@@ -76,9 +76,7 @@ impl DevSeeder {
 
     /// Check if pre-generated mock data exists
     fn has_source_data(&self) -> bool {
-        self.source_db_path()
-            .map(|p| p.exists())
-            .unwrap_or(false)
+        self.source_db_path().map(|p| p.exists()).unwrap_or(false)
     }
 
     /// Check if dev data already exists in the app
@@ -107,7 +105,8 @@ impl DevSeeder {
         // Check if we have pre-generated data
         if !self.has_source_data() {
             return Err(AmberError::Index(
-                "No pre-generated mock data found. Run: python3 scripts/generate-mock-data.py".to_string()
+                "No pre-generated mock data found. Run: python3 scripts/generate-mock-data.py"
+                    .to_string(),
             ));
         }
 
@@ -268,7 +267,13 @@ impl DevSeeder {
     fn benchmark_fts_search_rare(&self) -> Result<BenchmarkResult> {
         let iterations = 100;
         let mut times = Vec::with_capacity(iterations);
-        let search_terms = ["kubernetes", "terraform", "whitepaper", "composition", "prototype"];
+        let search_terms = [
+            "kubernetes",
+            "terraform",
+            "whitepaper",
+            "composition",
+            "prototype",
+        ];
 
         for i in 0..iterations {
             let term = search_terms[i % search_terms.len()];

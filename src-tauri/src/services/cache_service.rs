@@ -74,17 +74,16 @@ pub async fn write_snapshot_cache(
     );
 
     // Always try to create cache directory (create_dir_all is idempotent)
-    fs::create_dir_all(&cache_dir).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to create cache directory: {}", e))
-    })?;
+    fs::create_dir_all(&cache_dir)
+        .await
+        .map_err(|e| CacheError::IoError(format!("Failed to create cache directory: {}", e)))?;
 
     let cache = SnapshotCache::new(job_id.to_string(), snapshots);
     let cache_path = get_job_cache_path(job_id);
 
     // Serialize cache
-    let contents = serde_json::to_string_pretty(&cache).map_err(|e| {
-        CacheError::SerializeError(format!("Failed to serialize cache: {}", e))
-    })?;
+    let contents = serde_json::to_string_pretty(&cache)
+        .map_err(|e| CacheError::SerializeError(format!("Failed to serialize cache: {}", e)))?;
 
     // Write atomically using a unique temp file name to avoid race conditions
     // when multiple concurrent writes happen for the same job
@@ -105,13 +104,13 @@ pub async fn write_snapshot_cache(
         ))
     })?;
 
-    file.write_all(contents.as_bytes()).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to write cache: {}", e))
-    })?;
+    file.write_all(contents.as_bytes())
+        .await
+        .map_err(|e| CacheError::IoError(format!("Failed to write cache: {}", e)))?;
 
-    file.sync_all().await.map_err(|e| {
-        CacheError::IoError(format!("Failed to sync cache: {}", e))
-    })?;
+    file.sync_all()
+        .await
+        .map_err(|e| CacheError::IoError(format!("Failed to sync cache: {}", e)))?;
 
     log::debug!(
         "write_snapshot_cache: renaming {:?} to {:?}",
@@ -137,18 +136,17 @@ pub async fn read_snapshot_cache(job_id: &str) -> Result<Option<SnapshotCache>, 
         return Ok(None);
     }
 
-    let mut file = fs::File::open(&cache_path).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to open cache file: {}", e))
-    })?;
+    let mut file = fs::File::open(&cache_path)
+        .await
+        .map_err(|e| CacheError::IoError(format!("Failed to open cache file: {}", e)))?;
 
     let mut contents = String::new();
-    file.read_to_string(&mut contents).await.map_err(|e| {
-        CacheError::IoError(format!("Failed to read cache: {}", e))
-    })?;
+    file.read_to_string(&mut contents)
+        .await
+        .map_err(|e| CacheError::IoError(format!("Failed to read cache: {}", e)))?;
 
-    let cache: SnapshotCache = serde_json::from_str(&contents).map_err(|e| {
-        CacheError::ParseError(format!("Failed to parse cache: {}", e))
-    })?;
+    let cache: SnapshotCache = serde_json::from_str(&contents)
+        .map_err(|e| CacheError::ParseError(format!("Failed to parse cache: {}", e)))?;
 
     Ok(Some(cache))
 }
@@ -158,9 +156,9 @@ pub async fn delete_snapshot_cache(job_id: &str) -> Result<(), CacheError> {
     let cache_path = get_job_cache_path(job_id);
 
     if cache_path.exists() {
-        fs::remove_file(&cache_path).await.map_err(|e| {
-            CacheError::IoError(format!("Failed to delete cache: {}", e))
-        })?;
+        fs::remove_file(&cache_path)
+            .await
+            .map_err(|e| CacheError::IoError(format!("Failed to delete cache: {}", e)))?;
     }
 
     Ok(())
@@ -173,9 +171,9 @@ pub async fn clear_all_caches() -> Result<(), CacheError> {
     let cache_dir = get_snapshots_cache_dir();
 
     if cache_dir.exists() {
-        fs::remove_dir_all(&cache_dir).await.map_err(|e| {
-            CacheError::IoError(format!("Failed to clear cache directory: {}", e))
-        })?;
+        fs::remove_dir_all(&cache_dir)
+            .await
+            .map_err(|e| CacheError::IoError(format!("Failed to clear cache directory: {}", e)))?;
     }
 
     Ok(())

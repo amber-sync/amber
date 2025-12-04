@@ -175,9 +175,10 @@ impl IndexService {
     /// Returns Ok(()) if valid, or an error describing the mismatch.
     /// This is useful for detecting when mock data was generated with an old schema.
     pub fn validate_schema(&self) -> Result<()> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Check user_version
         let version: i32 = conn
@@ -193,7 +194,14 @@ impl IndexService {
         }
 
         // Check required columns in snapshots table
-        let required_snapshot_cols = ["id", "job_id", "timestamp", "root_path", "file_count", "total_size"];
+        let required_snapshot_cols = [
+            "id",
+            "job_id",
+            "timestamp",
+            "root_path",
+            "file_count",
+            "total_size",
+        ];
         for col in required_snapshot_cols {
             let exists: bool = conn
                 .query_row(
@@ -213,7 +221,16 @@ impl IndexService {
         }
 
         // Check required columns in files table
-        let required_file_cols = ["id", "snapshot_id", "path", "name", "parent_path", "size", "mtime", "file_type"];
+        let required_file_cols = [
+            "id",
+            "snapshot_id",
+            "path",
+            "name",
+            "parent_path",
+            "size",
+            "mtime",
+            "file_type",
+        ];
         for col in required_file_cols {
             let exists: bool = conn
                 .query_row(
@@ -238,9 +255,10 @@ impl IndexService {
 
     /// Initialize database schema
     fn initialize_schema(&self) -> Result<()> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Enable WAL mode for better concurrent read performance
         conn.execute_batch("PRAGMA journal_mode=WAL;")
@@ -395,13 +413,17 @@ impl IndexService {
         let files: Vec<IndexedFile> = self.walk_directory(snapshot_path)?;
 
         // Calculate stats
-        let file_count = files.iter().filter(|f| f.file_type == FileType::File).count() as i64;
+        let file_count = files
+            .iter()
+            .filter(|f| f.file_type == FileType::File)
+            .count() as i64;
         let total_size: i64 = files.iter().map(|f| f.size).sum();
 
         // Insert into database
-        let mut conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let mut conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         let tx = conn
             .transaction()
@@ -545,9 +567,10 @@ impl IndexService {
         timestamp: i64,
         parent_path: &str,
     ) -> Result<Vec<FileNode>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Get snapshot ID
         let snapshot_id: i64 = conn
@@ -603,9 +626,10 @@ impl IndexService {
 
     /// List all indexed snapshots for a job
     pub fn list_snapshots(&self, job_id: &str) -> Result<Vec<IndexedSnapshot>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         let mut stmt = conn
             .prepare(
@@ -647,9 +671,10 @@ impl IndexService {
         start_ms: i64,
         end_ms: i64,
     ) -> Result<Vec<IndexedSnapshot>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         let mut stmt = conn
             .prepare(
@@ -685,9 +710,10 @@ impl IndexService {
 
     /// Get aggregate statistics for all snapshots of a job (TIM-127)
     pub fn get_job_aggregate_stats(&self, job_id: &str) -> Result<JobAggregateStats> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Get aggregate stats from snapshots table in a single query
         let result = conn
@@ -729,9 +755,10 @@ impl IndexService {
     /// Get snapshot density grouped by period (TIM-128: for calendar/timeline visualization)
     /// Period can be: "day", "week", "month", "year"
     pub fn get_snapshot_density(&self, job_id: &str, period: &str) -> Result<Vec<SnapshotDensity>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Format string for grouping based on period
         // timestamp is in milliseconds, so divide by 1000 for strftime
@@ -781,9 +808,10 @@ impl IndexService {
 
     /// Check if a snapshot is indexed
     pub fn is_indexed(&self, job_id: &str, timestamp: i64) -> Result<bool> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         let count: i64 = conn
             .query_row(
@@ -798,9 +826,10 @@ impl IndexService {
 
     /// Delete a snapshot from the index
     pub fn delete_snapshot(&self, job_id: &str, timestamp: i64) -> Result<()> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         conn.execute(
             "DELETE FROM snapshots WHERE job_id = ? AND timestamp = ?",
@@ -813,9 +842,10 @@ impl IndexService {
 
     /// Delete all snapshots for a job
     pub fn delete_job_snapshots(&self, job_id: &str) -> Result<()> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         conn.execute("DELETE FROM snapshots WHERE job_id = ?", params![job_id])
             .map_err(|e| AmberError::Index(format!("Failed to delete job snapshots: {}", e)))?;
@@ -831,9 +861,10 @@ impl IndexService {
         pattern: &str,
         limit: usize,
     ) -> Result<Vec<FileNode>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Get snapshot ID
         let snapshot_id: i64 = conn
@@ -898,9 +929,10 @@ impl IndexService {
         job_id: Option<&str>,
         limit: usize,
     ) -> Result<Vec<GlobalSearchResult>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Build the FTS5 query - support prefix matching with *
         let fts_pattern = if pattern.contains('*') || pattern.contains('"') {
@@ -1009,9 +1041,10 @@ impl IndexService {
 
     /// Get snapshot statistics
     pub fn get_snapshot_stats(&self, job_id: &str, timestamp: i64) -> Result<(i64, i64)> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         conn.query_row(
             "SELECT file_count, total_size FROM snapshots WHERE job_id = ? AND timestamp = ?",
@@ -1028,9 +1061,10 @@ impl IndexService {
         timestamp: i64,
         limit: usize,
     ) -> Result<Vec<FileTypeStats>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Get snapshot ID
         let snapshot_id: i64 = conn
@@ -1090,9 +1124,10 @@ impl IndexService {
         timestamp: i64,
         limit: usize,
     ) -> Result<Vec<LargestFile>> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Get snapshot ID
         let snapshot_id: i64 = conn
@@ -1143,9 +1178,10 @@ impl IndexService {
 
     /// Compact the database (run VACUUM)
     pub fn compact(&self) -> Result<()> {
-        let conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         conn.execute("VACUUM", [])
             .map_err(|e| AmberError::Index(format!("Failed to vacuum database: {}", e)))?;
@@ -1160,9 +1196,10 @@ impl IndexService {
         let new_conn = Connection::open(&self.db_path)
             .map_err(|e| AmberError::Index(format!("Failed to reconnect to database: {}", e)))?;
 
-        let mut conn = self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })?;
+        let mut conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         *conn = new_conn;
         log::info!("Reconnected to database at {:?}", self.db_path);
@@ -1171,12 +1208,10 @@ impl IndexService {
 
     /// Get connection for dev stats (dev only)
     #[cfg(debug_assertions)]
-    pub fn get_connection_for_stats(
-        &self,
-    ) -> Result<std::sync::MutexGuard<'_, Connection>> {
-        self.conn.lock().map_err(|e| {
-            AmberError::Index(format!("Failed to acquire database lock: {}", e))
-        })
+    pub fn get_connection_for_stats(&self) -> Result<std::sync::MutexGuard<'_, Connection>> {
+        self.conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))
     }
 }
 
@@ -1375,7 +1410,7 @@ mod tests {
         // Test monthly density
         let monthly = service.get_snapshot_density("job1", "month").unwrap();
         assert_eq!(monthly.len(), 3); // Jan, Feb, Mar
-        // Results are ordered DESC, so Mar first
+                                      // Results are ordered DESC, so Mar first
         assert_eq!(monthly[0].period, "2024-03");
         assert_eq!(monthly[0].count, 3);
         assert_eq!(monthly[1].period, "2024-02");
@@ -1394,7 +1429,9 @@ mod tests {
         assert_eq!(yearly[0].count, 6);
 
         // Test empty job
-        let empty = service.get_snapshot_density("nonexistent", "month").unwrap();
+        let empty = service
+            .get_snapshot_density("nonexistent", "month")
+            .unwrap();
         assert!(empty.is_empty());
     }
 
@@ -1453,9 +1490,7 @@ mod tests {
             .index_snapshot("job1", 1700000000000, snapshot_dir.to_str().unwrap())
             .unwrap();
 
-        let (file_count, total_size) = service
-            .get_snapshot_stats("job1", 1700000000000)
-            .unwrap();
+        let (file_count, total_size) = service.get_snapshot_stats("job1", 1700000000000).unwrap();
 
         assert_eq!(file_count, 2);
         assert_eq!(total_size, 11); // 5 + 6 bytes
@@ -1485,12 +1520,13 @@ mod tests {
             .unwrap();
 
         // Global FTS5 search across ALL snapshots
-        let results = service
-            .search_files_global("readme", None, 100)
-            .unwrap();
+        let results = service.search_files_global("readme", None, 100).unwrap();
 
         // Should find files from both snapshots
-        assert!(results.len() >= 2, "Expected at least 2 results for 'readme'");
+        assert!(
+            results.len() >= 2,
+            "Expected at least 2 results for 'readme'"
+        );
 
         // Verify results have correct structure
         for result in &results {
