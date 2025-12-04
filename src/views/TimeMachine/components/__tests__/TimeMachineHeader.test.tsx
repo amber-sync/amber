@@ -409,7 +409,7 @@ describe('TimeMachineHeader', () => {
       render(<TimeMachineHeader {...defaultProps} isRunning={false} />);
 
       const runButton = screen.getByTitle('Run Backup');
-      expect(runButton).toHaveClass('tm-control-btn--primary');
+      expect(runButton).toHaveClass('bg-accent-primary');
     });
   });
 
@@ -437,7 +437,7 @@ describe('TimeMachineHeader', () => {
       render(<TimeMachineHeader {...defaultProps} isRunning={true} />);
 
       const stopButton = screen.getByTitle('Stop Backup');
-      expect(stopButton).toHaveClass('tm-control-btn--danger');
+      expect(stopButton).toHaveClass('bg-[var(--color-error)]');
     });
   });
 
@@ -470,7 +470,7 @@ describe('TimeMachineHeader', () => {
       render(<TimeMachineHeader {...defaultProps} />);
 
       const editButton = screen.getByTitle('Edit Job Settings');
-      expect(editButton).toHaveClass('tm-control-btn--secondary');
+      expect(editButton).toHaveClass('bg-layer-3');
     });
   });
 
