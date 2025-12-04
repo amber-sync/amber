@@ -140,11 +140,11 @@ export function TimeMachineHeader({
             <div className="relative">
               <button
                 onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
-                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-layer-2 rounded-lg transition-colors"
               >
                 <span className="font-medium">{dateFilterLabels[dateFilter]}</span>
                 <Icons.ChevronDown
-                  size={12}
+                  size={14}
                   className={`opacity-50 transition-transform ${dateDropdownOpen ? 'rotate-180' : ''}`}
                 />
               </button>

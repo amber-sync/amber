@@ -501,14 +501,14 @@
 .tm-header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   -webkit-app-region: no-drag;
 }
 
 .tm-back-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: transparent;
   border: none;
   color: var(--tm-text-dim);
@@ -528,11 +528,12 @@
   font-family: 'DM Sans', var(--font-sans);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 10px;
+  padding: 10px 16px;
+  min-height: 40px;
   background: var(--tm-nebula);
   border: 1px solid var(--tm-dust);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--tm-text-bright);
   font-size: 14px;
   font-weight: 600;
@@ -575,15 +576,14 @@
 }
 
 /* Control buttons in header (TIM-138) */
-
-/* Control buttons in header (TIM-138) */
 .tm-control-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 10px 18px;
+  min-height: 40px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 150ms ease;
