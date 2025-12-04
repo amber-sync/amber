@@ -166,7 +166,7 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
         </FormField>
 
         {/* Advanced Section */}
-        <div className="border-t border-stone-200 pt-4 dark:border-stone-700">
+        <div className="border-t border-border-base pt-4">
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="flex w-full items-center justify-between text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
@@ -202,12 +202,12 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
                     {excludePatterns.map(pattern => (
                       <span
                         key={pattern}
-                        className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-1 text-xs dark:bg-stone-700"
+                        className="inline-flex items-center gap-1 rounded-full bg-layer-3 px-2 py-1 text-xs"
                       >
                         {pattern}
                         <button
                           onClick={() => handleRemovePattern(pattern)}
-                          className="text-stone-500 hover:text-stone-700"
+                          className="text-text-tertiary hover:text-text-secondary"
                         >
                           <Icons.X className="h-3 w-3" />
                         </button>
@@ -222,7 +222,7 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
       </div>
 
       {/* Footer with actions */}
-      <div className="border-t border-stone-200 p-4 dark:border-stone-700">
+      <div className="border-t border-border-base p-4">
         <div className="flex items-center justify-between">
           <Button variant={confirmDelete ? 'danger' : 'ghost'} size="md" onClick={handleDelete}>
             {confirmDelete ? 'Confirm Delete' : 'Delete Job'}
@@ -243,7 +243,7 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
           </div>
         </div>
         {confirmDelete && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+          <p className="mt-2 text-xs text-[var(--color-error)]">
             Click &quot;Confirm Delete&quot; again to permanently delete this job.
           </p>
         )}
