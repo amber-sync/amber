@@ -9,13 +9,13 @@ interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const baseStyles =
-  'w-full border bg-stone-50 dark:bg-stone-900 ' +
-  'border-stone-300 dark:border-stone-700 ' +
-  'text-stone-900 dark:text-stone-100 ' +
-  'placeholder-stone-400 dark:placeholder-stone-600 ' +
-  'focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 ' +
+  'w-full border bg-layer-2 ' +
+  'border-border-base ' +
+  'text-text-primary ' +
+  'placeholder-text-tertiary ' +
+  'focus:outline-none focus:ring-2 focus:ring-accent-primary/30 focus:border-border-highlight ' +
   'transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ' +
-  'hover:border-stone-400 dark:hover:border-stone-600';
+  'hover:border-border-highlight';
 
 const variantStyles: Record<TextInputVariant, string> = {
   default: 'px-4 py-2.5 text-sm rounded-lg',
@@ -26,15 +26,15 @@ const variantStyles: Record<TextInputVariant, string> = {
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
   ({ variant = 'default', icon, error, className = '', ...props }, ref) => {
     const inputStyles = `${baseStyles} ${variantStyles[variant]} ${
-      error ? 'border-red-500 dark:border-red-400 focus:ring-red-500/30 focus:border-red-500' : ''
+      error
+        ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]/30 focus:border-[var(--color-error)]'
+        : ''
     } ${icon ? 'pl-10' : ''} ${className}`.trim();
 
     if (icon) {
       return (
         <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-stone-400">
-            {icon}
-          </div>
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">{icon}</div>
           <input ref={ref} className={inputStyles} {...props} />
         </div>
       );

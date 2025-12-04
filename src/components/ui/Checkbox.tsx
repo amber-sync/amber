@@ -47,12 +47,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             disabled={disabled}
             className={`
               ${styles.checkbox} rounded border-2 transition-all duration-150
-              ${error ? 'border-red-500 dark:border-red-400' : 'border-stone-300 dark:border-stone-600'}
-              bg-stone-50 dark:bg-stone-900
-              checked:bg-amber-500 checked:border-amber-500
-              checked:hover:bg-amber-600 checked:hover:border-amber-600
-              focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:ring-offset-2
-              hover:border-stone-400 dark:hover:border-stone-500
+              ${error ? 'border-[var(--color-error)]' : 'border-border-highlight'}
+              bg-layer-2
+              checked:bg-accent-primary checked:border-accent-primary
+              checked:hover:bg-[var(--accent-hover)] checked:hover:border-[var(--accent-hover)]
+              focus:outline-none focus:ring-2 focus:ring-accent-primary/30 focus:ring-offset-2
+              hover:border-border-base
               cursor-pointer disabled:cursor-not-allowed
             `}
             {...props}
