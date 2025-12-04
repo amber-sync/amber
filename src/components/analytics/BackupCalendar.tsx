@@ -97,10 +97,10 @@ export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick
 
   const getIntensityClass = (count: number): string => {
     if (count === 0) return 'bg-layer-2';
-    if (count === 1) return 'bg-green-200 dark:bg-green-900/50';
-    if (count === 2) return 'bg-green-300 dark:bg-green-800/60';
-    if (count <= 4) return 'bg-green-400 dark:bg-green-700/70';
-    return 'bg-green-500 dark:bg-green-600/80';
+    if (count === 1) return 'bg-zinc-200 dark:bg-zinc-700';
+    if (count === 2) return 'bg-zinc-400 dark:bg-zinc-500';
+    if (count <= 4) return 'bg-zinc-600 dark:bg-zinc-400';
+    return 'bg-accent-primary';
   };
 
   const handleDayClick = (date: Date) => {
@@ -201,10 +201,10 @@ export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick
         <span className="text-[9px] text-text-tertiary">Less</span>
         <div className="flex gap-[2px]">
           <div className="w-[10px] h-[10px] rounded-[2px] bg-layer-2" />
-          <div className="w-[10px] h-[10px] rounded-[2px] bg-green-200 dark:bg-green-900/50" />
-          <div className="w-[10px] h-[10px] rounded-[2px] bg-green-300 dark:bg-green-800/60" />
-          <div className="w-[10px] h-[10px] rounded-[2px] bg-green-400 dark:bg-green-700/70" />
-          <div className="w-[10px] h-[10px] rounded-[2px] bg-green-500 dark:bg-green-600/80" />
+          <div className="w-[10px] h-[10px] rounded-[2px] bg-zinc-200 dark:bg-zinc-700" />
+          <div className="w-[10px] h-[10px] rounded-[2px] bg-zinc-400 dark:bg-zinc-500" />
+          <div className="w-[10px] h-[10px] rounded-[2px] bg-zinc-600 dark:bg-zinc-400" />
+          <div className="w-[10px] h-[10px] rounded-[2px] bg-accent-primary" />
         </div>
         <span className="text-[9px] text-text-tertiary">More</span>
       </div>

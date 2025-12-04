@@ -38,23 +38,23 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
       }
 
       const token = match[0];
-      let className = 'text-gray-800 dark:text-gray-200';
+      let className = 'text-primary';
 
       if (token.startsWith('--')) {
         // Flags
-        className = 'text-indigo-600 dark:text-indigo-400 font-semibold';
+        className = 'text-[var(--color-info)] font-semibold';
       } else if (token.startsWith('"') || token.startsWith("'")) {
         // Strings
-        className = 'text-teal-600 dark:text-teal-400';
+        className = 'text-[var(--color-success)]';
       } else if (token.startsWith('{') && token.endsWith('}')) {
         // Placeholders
-        className = 'text-orange-600 dark:text-orange-400 font-semibold';
+        className = 'text-[var(--color-warning)] font-semibold';
       } else if (token === 'rsync' || token === 'ssh') {
         // Commands
-        className = 'text-purple-600 dark:text-purple-400 font-bold';
+        className = 'text-accent-primary font-bold';
       } else if (token.startsWith('-') && !token.startsWith('--')) {
         // Short flags
-        className = 'text-indigo-600 dark:text-indigo-400 font-semibold';
+        className = 'text-[var(--color-info)] font-semibold';
       }
 
       parts.push(
@@ -75,16 +75,16 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   };
 
   return (
-    <div className="bg-gray-900 dark:bg-black border border-gray-700 dark:border-gray-800 rounded-xl overflow-hidden shadow-lg">
+    <div className="bg-layer-2 border border-default rounded-xl overflow-hidden shadow-lg">
       {title && (
-        <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 border-b border-gray-700 dark:border-gray-800 flex items-center justify-between">
+        <div className="bg-layer-1 px-4 py-2 border-b border-default flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Icons.Terminal size={14} className="text-gray-400" />
-            <span className="text-xs font-semibold text-gray-300">{title}</span>
+            <Icons.Terminal size={14} className="text-tertiary" />
+            <span className="text-xs font-semibold text-secondary">{title}</span>
           </div>
           <button
             onClick={handleCopy}
-            className="text-xs text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1.5 px-2 py-1 rounded hover:bg-gray-700"
+            className="text-xs text-tertiary hover:text-primary transition-colors flex items-center gap-1.5 px-2 py-1 rounded hover:bg-layer-2"
           >
             {copied ? (
               <>
@@ -104,8 +104,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         <code className="block whitespace-pre-wrap break-all">{highlightCode(code)}</code>
       </div>
       {explanation && (
-        <div className="bg-gray-800 dark:bg-gray-900 px-4 py-3 border-t border-gray-700 dark:border-gray-800">
-          <p className="text-xs text-gray-400 leading-relaxed">{explanation}</p>
+        <div className="bg-layer-1 px-4 py-3 border-t border-default">
+          <p className="text-xs text-tertiary leading-relaxed">{explanation}</p>
         </div>
       )}
     </div>

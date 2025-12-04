@@ -55,10 +55,8 @@ export const HardLinkVisualizer: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          How Hard Links Work
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+        <h3 className="text-2xl font-bold text-primary mb-2">How Hard Links Work</h3>
+        <p className="text-secondary max-w-3xl mx-auto">
           Each backup appears as a complete copy, but unchanged files share the same disk space
           through hard links. Only modified files consume additional storage.
         </p>
@@ -69,14 +67,14 @@ export const HardLinkVisualizer: React.FC = () => {
         <button
           onClick={startAnimation}
           disabled={animationPhase !== 'idle'}
-          className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-medium shadow-lg shadow-teal-500/30 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-2.5 bg-accent-primary hover:bg-accent-primary-hover disabled:bg-layer-3 disabled:opacity-50 text-white rounded-lg font-medium shadow-lg transition-all duration-200 flex items-center gap-2"
         >
           <Icons.Play size={16} />
           {animationPhase === 'idle' ? 'Animate Backup Process' : 'Running...'}
         </button>
         <button
           onClick={() => setShowLinks(!showLinks)}
-          className="px-6 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-400 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-2.5 bg-layer-1 border-2 border-layer-3 hover:border-[var(--color-info)] text-primary rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
         >
           <Icons.Link size={16} />
           {showLinks ? 'Hide Links' : 'Show Links'}
@@ -85,12 +83,12 @@ export const HardLinkVisualizer: React.FC = () => {
 
       {/* Status Indicator */}
       {animationPhase !== 'idle' && (
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center gap-3">
+        <div className="bg-layer-2 border border-layer-3 rounded-xl p-4 flex items-center gap-3">
           <div className="animate-spin">
-            <Icons.Loader2 size={20} className="text-indigo-600 dark:text-indigo-400" />
+            <Icons.Loader2 size={20} className="text-[var(--color-info)]" />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="font-semibold text-primary">
               {animationPhase === 'scanning' &&
                 'Scanning files and comparing with previous backup...'}
               {animationPhase === 'linking' && 'Creating hard links for unchanged files...'}
@@ -101,9 +99,9 @@ export const HardLinkVisualizer: React.FC = () => {
       )}
 
       {/* Visual Tree */}
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 relative overflow-hidden">
+      <div className="bg-layer-1 border border-layer-3 rounded-2xl p-8 relative overflow-hidden">
         {/* Background pattern */}
-        <div className="absolute inset-0 opacity-5 dark:opacity-10">
+        <div className="absolute inset-0 opacity-5">
           <div
             className="absolute inset-0"
             style={{
@@ -122,21 +120,19 @@ export const HardLinkVisualizer: React.FC = () => {
               <div key={snapshotIdx} className="space-y-4">
                 {/* Snapshot Header */}
                 <div
-                  className={`bg-white dark:bg-gray-800 border-2 ${
+                  className={`bg-layer-2 border-2 ${
                     activeSnapshot === snapshotIdx
-                      ? 'border-indigo-500 shadow-lg shadow-indigo-500/20'
-                      : 'border-gray-300 dark:border-gray-600'
+                      ? 'border-[var(--color-info)] shadow-lg'
+                      : 'border-layer-3'
                   } rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-md`}
                   onClick={() => setActiveSnapshot(snapshotIdx)}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Icons.FolderClock size={18} className="text-indigo-600 dark:text-indigo-400" />
-                    <p className="font-bold text-gray-900 dark:text-white">{snapshot.label}</p>
+                    <Icons.FolderClock size={18} className="text-[var(--color-info)]" />
+                    <p className="font-bold text-primary">{snapshot.label}</p>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                    {snapshot.folder}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{snapshot.date}</p>
+                  <p className="text-xs text-tertiary font-mono">{snapshot.folder}</p>
+                  <p className="text-xs text-secondary mt-1">{snapshot.date}</p>
                 </div>
 
                 {/* Files */}
@@ -150,31 +146,27 @@ export const HardLinkVisualizer: React.FC = () => {
                       <div key={fileIdx} className="relative">
                         <div
                           id={uniqueId}
-                          className={`bg-white dark:bg-gray-800 border-2 rounded-lg p-3 transition-all duration-300 ${
+                          className={`bg-layer-2 border-2 rounded-lg p-3 transition-all duration-300 ${
                             changedInThisBackup
-                              ? 'border-orange-500 shadow-md shadow-orange-500/20'
-                              : 'border-gray-200 dark:border-gray-700'
+                              ? 'border-accent-primary shadow-md'
+                              : 'border-layer-3'
                           } ${isScanning ? 'animate-pulse' : ''}`}
                         >
                           <div className="flex items-center gap-2">
                             <Icons.FileText
                               size={14}
                               className={
-                                changedInThisBackup
-                                  ? 'text-orange-600 dark:text-orange-400'
-                                  : 'text-gray-400 dark:text-gray-500'
+                                changedInThisBackup ? 'text-accent-primary' : 'text-tertiary'
                               }
                             />
-                            <p className="text-xs font-mono text-gray-700 dark:text-gray-300 flex-1">
-                              {file.name}
-                            </p>
+                            <p className="text-xs font-mono text-secondary flex-1">{file.name}</p>
                             {changedInThisBackup && (
-                              <span className="text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded font-semibold">
+                              <span className="text-[10px] bg-accent-secondary text-accent-primary px-1.5 py-0.5 rounded font-semibold">
                                 MODIFIED
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="text-[10px] text-tertiary mt-1">
                             {file.size} KB {!changedInThisBackup && !isFirst && '(linked)'}
                           </p>
                         </div>
@@ -193,14 +185,14 @@ export const HardLinkVisualizer: React.FC = () => {
                               stroke="currentColor"
                               strokeWidth="2"
                               strokeDasharray="4 4"
-                              className="text-teal-500 dark:text-teal-400"
+                              className="text-[var(--color-success)]"
                             />
                             <circle
                               cx="16"
                               cy="0"
                               r="3"
                               fill="currentColor"
-                              className="text-teal-500 dark:text-teal-400"
+                              className="text-[var(--color-success)]"
                             />
                           </svg>
                         )}
@@ -210,18 +202,16 @@ export const HardLinkVisualizer: React.FC = () => {
                 </div>
 
                 {/* Storage Indicator */}
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div className="bg-layer-2 border border-layer-3 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      Storage Used
-                    </p>
-                    <Icons.HardDrive size={14} className="text-gray-500" />
+                    <p className="text-xs font-semibold text-secondary">Storage Used</p>
+                    <Icons.HardDrive size={14} className="text-tertiary" />
                   </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  <p className="text-lg font-bold text-primary">
                     {isFirst ? '219.1 KB' : snapshotIdx === 1 ? '57.5 KB' : '65.8 KB'}
                   </p>
                   {!isFirst && (
-                    <p className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold mt-1">
+                    <p className="text-[10px] text-[var(--color-success)] font-semibold mt-1">
                       {snapshotIdx === 1 ? '↓ 73.8% saved' : '↓ 70.0% saved'}
                     </p>
                   )}
@@ -234,12 +224,12 @@ export const HardLinkVisualizer: React.FC = () => {
         {/* Legend */}
         <div className="mt-8 flex items-center justify-center gap-6 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-orange-500 rounded" />
-            <span className="text-gray-700 dark:text-gray-300">Modified file (new copy)</span>
+            <div className="w-4 h-4 border-2 border-accent-primary rounded" />
+            <span className="text-secondary">Modified file (new copy)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 rounded" />
-            <span className="text-gray-700 dark:text-gray-300">Unchanged file (hard link)</span>
+            <div className="w-4 h-4 border-2 border-layer-3 rounded" />
+            <span className="text-secondary">Unchanged file (hard link)</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-6 h-0.5">
@@ -251,29 +241,27 @@ export const HardLinkVisualizer: React.FC = () => {
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeDasharray="4 4"
-                className="text-teal-500 dark:text-teal-400"
+                className="text-[var(--color-success)]"
               />
             </svg>
-            <span className="text-gray-700 dark:text-gray-300">Hard link connection</span>
+            <span className="text-secondary">Hard link connection</span>
           </div>
         </div>
       </div>
 
       {/* Key Takeaway */}
-      <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-200 dark:border-teal-800 rounded-xl p-6">
+      <div className="bg-layer-2 border-2 border-[var(--color-success)] rounded-xl p-6">
         <div className="flex gap-4">
           <div className="flex-shrink-0">
-            <div className="w-12 h-12 bg-teal-500 dark:bg-teal-600 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-[var(--color-success)] rounded-full flex items-center justify-center">
               <Icons.Lightbulb size={24} className="text-white" />
             </div>
           </div>
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-2">
-              The Magic of Hard Links
-            </h4>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            <h4 className="font-bold text-primary mb-2">The Magic of Hard Links</h4>
+            <p className="text-sm text-secondary leading-relaxed">
               When rsync runs with{' '}
-              <code className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded font-mono text-xs">
+              <code className="px-1.5 py-0.5 bg-layer-3 rounded font-mono text-xs">
                 --link-dest
               </code>
               , it compares each file to the previous backup. If a file hasn't changed, instead of
