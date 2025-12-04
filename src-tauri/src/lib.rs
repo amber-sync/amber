@@ -15,18 +15,33 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Initialize application state with all services
-            let app_state = AppState::new()
-                .expect("Failed to initialize application state");
-            app.manage(app_state);
+            match AppState::new() {
+                Ok(app_state) => {
+                    app.manage(app_state);
 
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
+                    if cfg!(debug_assertions) {
+                        app.handle().plugin(
+                            tauri_plugin_log::Builder::default()
+                                .level(log::LevelFilter::Info)
+                                .build(),
+                        )?;
+                    }
+                    Ok(())
+                }
+                Err(e) => {
+                    // Log the error for debugging
+                    eprintln!("Failed to initialize application: {}", e);
+
+                    // Show native error dialog to user
+                    show_startup_error(&e);
+
+                    // Return error to prevent app from starting
+                    Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Application initialization failed: {}", e)
+                    )).into())
+                }
             }
-            Ok(())
         });
 
     // Register handlers - dev commands only in debug builds
@@ -193,7 +208,72 @@ pub fn run() {
         commands::migration::run_migration,
     ]);
 
-    builder
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    if let Err(e) = builder.run(tauri::generate_context!()) {
+        eprintln!("Application error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+/// Show a native error dialog to the user
+fn show_startup_error(error_message: &str) {
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let message = format!(
+            "Amber failed to start:\\n\\n{}\\n\\nPlease check the logs for more information.",
+            error_message
+        );
+        let _ = Command::new("osascript")
+            .args([
+                "-e",
+                &format!(
+                    "display dialog \"{}\" buttons {{\"OK\"}} with icon stop with title \"Amber Startup Error\"",
+                    message.replace('"', "\\\"")
+                ),
+            ])
+            .status();
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let message = format!(
+            "Amber failed to start:\n\n{}\n\nPlease check the logs for more information.",
+            error_message
+        );
+        let _ = Command::new("msg")
+            .args([
+                "*",
+                &message,
+            ])
+            .status();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let message = format!(
+            "Amber failed to start:\n\n{}\n\nPlease check the logs for more information.",
+            error_message
+        );
+        // Try zenity first (more common)
+        let result = Command::new("zenity")
+            .args([
+                "--error",
+                "--title=Amber Startup Error",
+                &format!("--text={}", message),
+            ])
+            .status();
+
+        // Fall back to notify-send if zenity not available
+        if result.is_err() {
+            let _ = Command::new("notify-send")
+                .args([
+                    "-u", "critical",
+                    "Amber Startup Error",
+                    &message,
+                ])
+                .status();
+        }
+    }
 }
