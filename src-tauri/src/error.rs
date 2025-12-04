@@ -83,6 +83,9 @@ pub enum AmberError {
 
     #[error("Migration error: {0}")]
     Migration(String),
+
+    #[error("Validation error: {0}")]
+    ValidationError(String),
 }
 
 impl serde::Serialize for AmberError {
