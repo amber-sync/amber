@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { SyncJob, Snapshot } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../IconComponents';
+import { Button, IconButton, Select } from '../../ui';
+import { formatBytes } from '../../../utils';
 
 interface RestorePanelProps {
   job: SyncJob;
@@ -82,78 +84,76 @@ export function RestorePanel({ job, selectedSnapshot, snapshots, onClose }: Rest
     }
   };
 
+  // Convert snapshots to Select options
+  const snapshotOptions = snapshots.map(s => ({
+    value: s.id,
+    label: `${new Date(s.timestamp).toLocaleString()} (${s.fileCount} files)`,
+  }));
+
   return (
     <div className="flex h-full flex-col">
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {success ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="mb-4 rounded-full bg-green-100 p-4 dark:bg-green-900/30">
-              <Icons.Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="mb-4 rounded-full bg-[var(--color-success-subtle)] p-4">
+              <Icons.Check className="h-8 w-8 text-[var(--color-success)]" />
             </div>
-            <h3 className="mb-2 text-lg font-semibold">Restore Complete</h3>
-            <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
-              Files have been restored to:
-            </p>
-            <code className="mb-4 rounded bg-stone-100 px-3 py-1 text-sm dark:bg-stone-800">
+            <h3 className="mb-2 text-lg font-semibold text-text-primary">Restore Complete</h3>
+            <p className="mb-4 text-sm text-text-secondary">Files have been restored to:</p>
+            <code className="mb-4 rounded bg-layer-3 px-3 py-1 text-sm text-text-primary">
               {targetPath}
             </code>
-            <button
-              onClick={handleOpenTarget}
-              className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
-            >
-              <Icons.FolderOpen className="h-4 w-4" />
+            <Button onClick={handleOpenTarget} icon={<Icons.FolderOpen className="h-4 w-4" />}>
               Open in Finder
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             {/* Snapshot Selection */}
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
+              <label className="mb-1 block text-sm font-medium text-text-primary">
                 Snapshot to Restore
               </label>
-              <select
+              <Select
                 value={snapshot?.id || ''}
                 onChange={e => {
                   const selected = snapshots.find(s => s.id === e.target.value);
                   setSnapshot(selected || null);
                 }}
-                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
+                options={snapshotOptions}
+                placeholder="Select a snapshot..."
                 disabled={restoring}
-              >
-                <option value="">Select a snapshot...</option>
-                {snapshots.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {new Date(s.timestamp).toLocaleString()} ({s.fileCount} files)
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Snapshot Info */}
             {snapshot && (
-              <div className="mb-4 rounded-lg border border-stone-200 p-3 dark:border-stone-700">
+              <div className="mb-4 rounded-lg border border-border-base bg-layer-2 p-3">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">Date:</span>
-                    <span className="ml-2 font-medium">
+                    <span className="text-text-tertiary">Date:</span>
+                    <span className="ml-2 font-medium text-text-primary">
                       {new Date(snapshot.timestamp).toLocaleDateString()}
                     </span>
                   </div>
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">Time:</span>
-                    <span className="ml-2 font-medium">
+                    <span className="text-text-tertiary">Time:</span>
+                    <span className="ml-2 font-medium text-text-primary">
                       {new Date(snapshot.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">Files:</span>
-                    <span className="ml-2 font-medium">{snapshot.fileCount?.toLocaleString()}</span>
+                    <span className="text-text-tertiary">Files:</span>
+                    <span className="ml-2 font-medium text-text-primary">
+                      {snapshot.fileCount?.toLocaleString()}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">Size:</span>
-                    <span className="ml-2 font-medium">{formatBytes(snapshot.sizeBytes)}</span>
+                    <span className="text-text-tertiary">Size:</span>
+                    <span className="ml-2 font-medium text-text-primary">
+                      {formatBytes(snapshot.sizeBytes)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -161,31 +161,31 @@ export function RestorePanel({ job, selectedSnapshot, snapshots, onClose }: Rest
 
             {/* Target Path */}
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-                Restore To
-              </label>
+              <label className="mb-1 block text-sm font-medium text-text-primary">Restore To</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={targetPath}
                   onChange={e => setTargetPath(e.target.value)}
-                  className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
+                  className="flex-1 rounded-lg border border-border-base bg-layer-2 px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:border-border-highlight focus:outline-none focus:ring-2 focus:ring-accent-primary/30"
                   placeholder="/Users/you/Desktop"
                   disabled={restoring}
                 />
-                <button
+                <IconButton
+                  label="Browse"
+                  variant="default"
+                  size="md"
                   onClick={handleSelectTarget}
                   disabled={restoring}
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:hover:bg-stone-700"
                 >
                   <Icons.FolderOpen className="h-4 w-4" />
-                </button>
+                </IconButton>
               </div>
             </div>
 
             {/* Progress */}
             {progress && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-[var(--color-info-subtle)] px-3 py-2 text-sm text-[var(--color-info)]">
                 <Icons.RefreshCw className="h-4 w-4 animate-spin" />
                 {progress}
               </div>
@@ -193,13 +193,13 @@ export function RestorePanel({ job, selectedSnapshot, snapshots, onClose }: Rest
 
             {/* Error */}
             {error && (
-              <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
+              <div className="mb-4 rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
                 {error}
               </div>
             )}
 
             {/* Info */}
-            <div className="rounded-lg bg-stone-50 p-3 text-sm text-stone-600 dark:bg-stone-800/50 dark:text-stone-400">
+            <div className="rounded-lg bg-layer-2 p-3 text-sm text-text-secondary">
               <p className="flex items-start gap-2">
                 <Icons.Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <span>
@@ -213,36 +213,24 @@ export function RestorePanel({ job, selectedSnapshot, snapshots, onClose }: Rest
       </div>
 
       {/* Footer */}
-      <div className="border-t border-stone-200 p-4 dark:border-stone-700">
+      <div className="border-t border-border-base p-4">
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
+          <Button variant="secondary" onClick={onClose}>
             {success ? 'Close' : 'Cancel'}
-          </button>
+          </Button>
           {!success && (
-            <button
+            <Button
               onClick={handleRestore}
               disabled={restoring || !snapshot || !targetPath}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+              loading={restoring}
             >
-              {restoring ? 'Restoring...' : 'Restore Snapshot'}
-            </button>
+              Restore Snapshot
+            </Button>
           )}
         </div>
       </div>
     </div>
   );
-}
-
-// Helper function to format bytes
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
 export default RestorePanel;

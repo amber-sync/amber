@@ -1,6 +1,8 @@
 import { SyncJob, JobStatus, RsyncProgressData } from '../../types';
 import { Icons } from '../IconComponents';
 import { api } from '../../api';
+import { Button, Badge, StatusDot, ProgressBar } from '../ui';
+import { formatRelativeTime, formatSchedule } from '../../utils';
 
 interface ActionBarProps {
   job: SyncJob;
@@ -27,63 +29,44 @@ export function ActionBar({
   onRestore,
   onEdit,
 }: ActionBarProps) {
-  // Format last run time
-  const formatLastRun = (timestamp: number | null): string => {
-    if (!timestamp) return 'Never';
-
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return new Date(timestamp).toLocaleDateString();
-  };
-
-  // Get status display
-  const getStatusDisplay = (): { text: string; color: string } => {
+  // Get status info for display
+  const getStatusInfo = (): {
+    text: string;
+    status: 'success' | 'warning' | 'error' | 'info' | 'neutral';
+  } => {
     if (isRunning) {
-      return { text: 'Running', color: 'text-amber-600 dark:text-amber-400' };
+      return { text: 'Running', status: 'info' };
     }
 
     switch (job.status) {
       case JobStatus.SUCCESS:
-        return { text: 'Completed', color: 'text-green-600 dark:text-green-400' };
+        return { text: 'Completed', status: 'success' };
       case JobStatus.FAILED:
-        return { text: 'Failed', color: 'text-red-600 dark:text-red-400' };
+        return { text: 'Failed', status: 'error' };
       case JobStatus.RUNNING:
-        return { text: 'Running', color: 'text-amber-600 dark:text-amber-400' };
+        return { text: 'Running', status: 'info' };
       default:
-        return { text: 'Idle', color: 'text-stone-700 dark:text-stone-300' };
+        return { text: 'Idle', status: 'neutral' };
     }
   };
 
-  const status = getStatusDisplay();
+  const statusInfo = getStatusInfo();
 
   return (
-    <div className="border-b border-stone-200 bg-stone-50 px-6 py-3 dark:border-stone-700 dark:bg-stone-800/50">
+    <div className="border-b border-border-base bg-layer-2 px-6 py-3">
       {/* Progress bar when running */}
       {isRunning && progress && (
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-stone-600 dark:text-stone-400">
+            <span className="text-text-secondary">
               {progress.currentFile
                 ? `Syncing: ${progress.currentFile}`
                 : `${progress.transferred} transferred`}
             </span>
-            <span className="font-medium text-amber-600">{progress.percentage}%</span>
+            <span className="font-medium text-text-primary">{progress.percentage}%</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-            <div
-              className="h-full rounded-full bg-amber-500 transition-all duration-300"
-              style={{ width: `${progress.percentage}%` }}
-            />
-          </div>
-          <div className="mt-1 flex items-center justify-between text-xs text-stone-500">
+          <ProgressBar progress={progress.percentage} size="sm" />
+          <div className="mt-1 flex items-center justify-between text-xs text-text-tertiary">
             <span>{progress.speed}</span>
             {progress.eta && <span>ETA: {progress.eta}</span>}
           </div>
@@ -95,71 +78,69 @@ export function ActionBar({
         <div className="flex items-center gap-3">
           {/* Run/Stop button */}
           {isRunning ? (
-            <button
+            <Button
+              variant="danger"
               onClick={onStopBackup}
-              className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+              icon={<Icons.Square className="h-4 w-4" />}
             >
-              <Icons.Square className="h-4 w-4" />
               Stop
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
               onClick={onRunBackup}
-              className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+              icon={<Icons.Play className="h-4 w-4" />}
             >
-              <Icons.Play className="h-4 w-4" />
               Run Backup
-            </button>
+            </Button>
           )}
 
           {/* Open Destination */}
-          <button
+          <Button
+            variant="secondary"
             onClick={() => api.openPath(job.destPath)}
-            className="flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+            icon={<Icons.FolderOpen className="h-4 w-4" />}
           >
-            <Icons.FolderOpen className="h-4 w-4" />
             Open Destination
-          </button>
+          </Button>
 
           {/* Restore */}
-          <button
+          <Button
+            variant="secondary"
             onClick={onRestore}
-            className="flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+            icon={<Icons.RotateCcw className="h-4 w-4" />}
           >
-            <Icons.RotateCcw className="h-4 w-4" />
             Restore
-          </button>
+          </Button>
 
           {/* Edit */}
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
-            <Icons.Pencil className="h-4 w-4" />
+          <Button variant="secondary" onClick={onEdit} icon={<Icons.Pencil className="h-4 w-4" />}>
             Edit
-          </button>
+          </Button>
         </div>
 
         {/* Status line */}
-        <div className="flex items-center gap-4 text-sm text-stone-500 dark:text-stone-400">
+        <div className="flex items-center gap-4 text-sm text-text-secondary">
           <div className="flex items-center gap-2">
-            <span>Status:</span>
-            <span className={`font-medium ${status.color}`}>{status.text}</span>
+            <StatusDot status={statusInfo.status} pulse={isRunning} />
+            <Badge status={statusInfo.status} size="sm">
+              {statusInfo.text}
+            </Badge>
           </div>
-          <div className="h-4 w-px bg-stone-300 dark:bg-stone-600" />
+          <div className="h-4 w-px bg-border-base" />
           <div>
             Last run:{' '}
-            <span className="font-medium text-stone-700 dark:text-stone-300">
-              {formatLastRun(job.lastRun)}
+            <span className="font-medium text-text-primary">
+              {job.lastRun ? formatRelativeTime(job.lastRun) : 'Never'}
             </span>
           </div>
           {job.scheduleInterval && job.scheduleInterval > 0 && (
             <>
-              <div className="h-4 w-px bg-stone-300 dark:bg-stone-600" />
+              <div className="h-4 w-px bg-border-base" />
               <div>
-                Interval:{' '}
-                <span className="font-medium text-stone-700 dark:text-stone-300">
-                  {formatInterval(job.scheduleInterval)}
+                Schedule:{' '}
+                <span className="font-medium text-text-primary">
+                  {formatSchedule(job.scheduleInterval)}
                 </span>
               </div>
             </>
@@ -168,14 +149,6 @@ export function ActionBar({
       </div>
     </div>
   );
-}
-
-// Helper to format schedule interval
-function formatInterval(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  if (minutes < 1440) return `${Math.floor(minutes / 60)}h`;
-  if (minutes < 10080) return `${Math.floor(minutes / 1440)}d`;
-  return `${Math.floor(minutes / 10080)}w`;
 }
 
 export default ActionBar;
