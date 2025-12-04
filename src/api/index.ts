@@ -317,10 +317,11 @@ class AmberAPI {
   async restoreSnapshot(
     job: SyncJob,
     snapshotPath: string,
-    targetPath: string
+    targetPath: string,
+    mirror: boolean = false
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      await invoke('restore_snapshot', { jobId: job.id, snapshotPath, targetPath });
+      await invoke('restore_snapshot', { jobId: job.id, snapshotPath, targetPath, mirror });
       return { success: true };
     } catch (e: unknown) {
       return { success: false, error: getErrorMessage(e) };
