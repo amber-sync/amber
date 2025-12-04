@@ -89,11 +89,11 @@ export interface Snapshot {
 // TIM-46: SQLite indexed snapshot metadata
 export interface IndexedSnapshot {
   id: number;
-  job_id: string;
+  jobId: string;
   timestamp: number;
-  root_path: string;
-  file_count: number;
-  total_size: number;
+  rootPath: string;
+  fileCount: number;
+  totalSize: number;
 }
 
 // TIM-101: File type stats from SQLite index

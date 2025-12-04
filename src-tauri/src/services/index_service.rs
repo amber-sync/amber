@@ -64,6 +64,7 @@ impl FileType {
 
 /// Snapshot metadata stored in the index
 #[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IndexedSnapshot {
     pub id: i64,
     pub job_id: String,
