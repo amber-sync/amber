@@ -556,9 +556,9 @@ export function TimeMachine({
                     <span
                       className={`font-mono ${
                         (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-[var(--color-success)]'
                           : (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) < 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-[var(--color-error)]'
                             : 'text-text-tertiary'
                       }`}
                     >
@@ -576,9 +576,9 @@ export function TimeMachine({
                     <span
                       className={`font-mono ${
                         (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-[var(--color-success)]'
                           : (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) < 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-[var(--color-error)]'
                             : 'text-text-tertiary'
                       }`}
                     >

@@ -110,6 +110,12 @@
   --glow-error: 0 0 0 2px var(--color-error-subtle);
   --glow-success: 0 0 0 2px var(--color-success-subtle);
 
+  /* Focus ring tokens */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--accent-glow);
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
   /* ========================================
    * ANIMATIONS & TRANSITIONS
    * ======================================== */

@@ -167,14 +167,14 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                   <div className="bg-layer-2 p-0.5 rounded-lg flex text-2xs font-medium">
                     <button
                       onClick={() => setDestinationType(DestinationType.LOCAL)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-layer-1 text-teal-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.LOCAL ? 'bg-layer-1 text-[var(--color-success)] shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.HardDrive size={12} />
                       Local
                     </button>
                     <button
                       onClick={() => setDestinationType(DestinationType.CLOUD)}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-layer-1 text-blue-600 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition-all ${destinationType === DestinationType.CLOUD ? 'bg-layer-1 text-[var(--color-info)] shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     >
                       <Icons.Cloud size={12} />
                       Cloud
@@ -254,7 +254,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                             excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i),
                           }));
                         }}
-                        className="hover:text-red-500 text-text-tertiary"
+                        className="hover:text-[var(--color-error)] text-text-tertiary"
                       >
                         <Icons.XCircle size={14} />
                       </button>
@@ -270,7 +270,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
               <Panel
                 variant="form"
-                className={`col-span-12 md:col-span-6 h-full flex flex-col transition-all ${sshEnabled ? '!border-teal-500 ring-1 ring-teal-500' : ''}`}
+                className={`col-span-12 md:col-span-6 h-full flex flex-col transition-all ${sshEnabled ? '!border-accent-primary ring-1 ring-accent-primary' : ''}`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <SectionHeader variant="form-label" className="mb-0">
@@ -283,7 +283,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                       onChange={e => setSshEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-layer-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border-base after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-layer-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border-base after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-primary"></div>
                   </label>
                 </div>
 
@@ -333,7 +333,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             {isEditing && onDelete && (
               <button
                 onClick={onDelete}
-                className="px-4 py-2.5 rounded-xl font-medium text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl font-medium text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] transition-colors flex items-center gap-2"
               >
                 <Icons.Trash2 size={18} />
                 <span className="hidden sm:inline">Delete Job</span>
