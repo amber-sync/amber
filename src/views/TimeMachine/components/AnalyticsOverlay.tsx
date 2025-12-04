@@ -93,7 +93,10 @@ export function AnalyticsOverlay({ isOpen, job, snapshot, onClose }: AnalyticsOv
         <div className="tm-overlay-content">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <Icons.RefreshCw size={32} className="text-[var(--tm-amber)] animate-spin mb-4" />
+              <Icons.RefreshCw
+                size={32}
+                className="text-[var(--color-accent-primary)] animate-spin mb-4"
+              />
               <p className="text-sm text-[var(--tm-text-dim)]">Loading analytics...</p>
             </div>
           ) : error ? (
@@ -201,7 +204,7 @@ function FileTypeRow({
     <div className="relative p-3 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg overflow-hidden">
       {/* Background bar */}
       <div
-        className="absolute inset-0 bg-[var(--tm-amber-wash)] transition-all"
+        className="absolute inset-0 bg-[var(--color-accent-secondary)] transition-all"
         style={{ width: `${percentage}%` }}
       />
 
@@ -240,7 +243,7 @@ function LargestFileRow({
     <div className="relative p-3 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg overflow-hidden group">
       {/* Background bar */}
       <div
-        className="absolute inset-0 bg-[var(--tm-amber-wash)] transition-all"
+        className="absolute inset-0 bg-[var(--color-accent-secondary)] transition-all"
         style={{ width: `${percentage}%` }}
       />
 

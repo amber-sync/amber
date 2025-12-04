@@ -64,52 +64,46 @@ export const ComparisonSlider: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-2xl font-bold text-text-primary mb-2">
           Traditional Backups vs. Time Machine
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+        <p className="text-text-secondary max-w-3xl mx-auto">
           Compare storage requirements for {numBackups} backups of a {formatStorage(avgBackupSize)}{' '}
           dataset with {changeRate * 100}% of files changing between backups.
         </p>
       </div>
 
       {/* Interactive Slider */}
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-lg">
+      <div className="bg-gradient-to-br from-layer-1 to-layer-2 border border-border-base rounded-2xl overflow-hidden shadow-lg">
         <div className="relative h-96">
           {/* Left Side - Traditional */}
           <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/40 dark:to-red-900/40 transition-all duration-300 ease-out overflow-hidden"
+            className="absolute inset-y-0 left-0 bg-gradient-to-br from-accent-secondary to-accent-secondary/80 transition-all duration-300 ease-out overflow-hidden"
             style={{ width: `${sliderValue}%` }}
           >
             <div className="h-full p-8 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 bg-accent-primary rounded-xl flex items-center justify-center shadow-lg">
                     <Icons.Copy size={24} className="text-white" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Traditional Backups
-                    </h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Complete copy every time
-                    </p>
+                    <h4 className="text-lg font-bold text-text-primary">Traditional Backups</h4>
+                    <p className="text-xs text-text-secondary">Complete copy every time</p>
                   </div>
                 </div>
 
                 <div className="space-y-4 mt-6">
-                  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-orange-200 dark:border-orange-800">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Storage</p>
-                    <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                  <div className="bg-layer-1/60 backdrop-blur-sm rounded-xl p-4 border border-accent-primary">
+                    <p className="text-xs text-text-secondary mb-1">Total Storage</p>
+                    <p className="text-3xl font-extrabold text-text-primary">
                       {formatStorage(animatedStorage.traditional)}
                     </p>
                   </div>
 
-                  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-orange-200 dark:border-orange-800">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                      Total Files Stored
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <div className="bg-layer-1/60 backdrop-blur-sm rounded-xl p-4 border border-accent-primary">
+                    <p className="text-xs text-text-secondary mb-1">Total Files Stored</p>
+                    <p className="text-2xl font-bold text-text-primary">
                       {formatFiles(animatedFiles.traditional)}
                     </p>
                   </div>
@@ -117,16 +111,16 @@ export const ComparisonSlider: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.X size={16} className="text-red-600 dark:text-red-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.X size={16} className="text-[var(--color-danger)]" />
                   <span>Every backup is a full copy</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.X size={16} className="text-red-600 dark:text-red-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.X size={16} className="text-[var(--color-danger)]" />
                   <span>Wastes disk space on duplicates</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.X size={16} className="text-red-600 dark:text-red-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.X size={16} className="text-[var(--color-danger)]" />
                   <span>Linear storage growth</span>
                 </div>
               </div>
@@ -135,47 +129,41 @@ export const ComparisonSlider: React.FC = () => {
 
           {/* Right Side - Time Machine */}
           <div
-            className="absolute inset-y-0 right-0 bg-gradient-to-bl from-teal-100 to-indigo-100 dark:from-teal-900/40 dark:to-indigo-900/40 transition-all duration-300 ease-out overflow-hidden"
+            className="absolute inset-y-0 right-0 bg-gradient-to-bl from-[var(--color-info-subtle)] to-[var(--color-info-subtle)]/80 transition-all duration-300 ease-out overflow-hidden"
             style={{ width: `${100 - sliderValue}%` }}
           >
             <div className="h-full p-8 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-info)] to-[var(--color-info)]/80 rounded-xl flex items-center justify-center shadow-lg">
                     <Icons.Link size={24} className="text-white" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Time Machine Mode
-                    </h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Smart incremental with hard links
-                    </p>
+                    <h4 className="text-lg font-bold text-text-primary">Time Machine Mode</h4>
+                    <p className="text-xs text-text-secondary">Smart incremental with hard links</p>
                   </div>
                 </div>
 
                 <div className="space-y-4 mt-6">
-                  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-teal-200 dark:border-teal-800">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Storage</p>
-                    <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                  <div className="bg-layer-1/60 backdrop-blur-sm rounded-xl p-4 border border-[var(--color-info)]">
+                    <p className="text-xs text-text-secondary mb-1">Total Storage</p>
+                    <p className="text-3xl font-extrabold text-text-primary">
                       {formatStorage(animatedStorage.timeMachine)}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
-                      <Icons.TrendingDown size={14} className="text-teal-600 dark:text-teal-400" />
-                      <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
+                      <Icons.TrendingDown size={14} className="text-[var(--color-info)]" />
+                      <span className="text-xs font-semibold text-[var(--color-info)]">
                         {savings.toFixed(0)}% less storage
                       </span>
                     </div>
                   </div>
 
-                  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-teal-200 dark:border-teal-800">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                      Physical Files Stored
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <div className="bg-layer-1/60 backdrop-blur-sm rounded-xl p-4 border border-[var(--color-info)]">
+                    <p className="text-xs text-text-secondary mb-1">Physical Files Stored</p>
+                    <p className="text-2xl font-bold text-text-primary">
                       {formatFiles(animatedFiles.timeMachine)}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-text-secondary mt-1">
                       ({formatFiles(animatedFiles.traditional)} appear to user)
                     </p>
                   </div>
@@ -183,16 +171,16 @@ export const ComparisonSlider: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.Check size={16} className="text-teal-600 dark:text-teal-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.Check size={16} className="text-[var(--color-info)]" />
                   <span>Only changed files copied</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.Check size={16} className="text-teal-600 dark:text-teal-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.Check size={16} className="text-[var(--color-info)]" />
                   <span>Unchanged files use hard links</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Icons.Check size={16} className="text-teal-600 dark:text-teal-400" />
+                <div className="flex items-center gap-2 text-sm text-text-primary">
+                  <Icons.Check size={16} className="text-[var(--color-info)]" />
                   <span>Massive storage savings</span>
                 </div>
               </div>
@@ -201,11 +189,11 @@ export const ComparisonSlider: React.FC = () => {
 
           {/* Slider Handle */}
           <div
-            className="absolute inset-y-0 w-1 bg-gradient-to-b from-gray-400 to-gray-600 dark:from-gray-300 dark:to-gray-500 shadow-2xl cursor-ew-resize z-10 transition-all duration-150"
+            className="absolute inset-y-0 w-1 bg-gradient-to-b from-text-secondary to-text-primary shadow-2xl cursor-ew-resize z-10 transition-all duration-150"
             style={{ left: `${sliderValue}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 rounded-full shadow-xl flex items-center justify-center">
-              <Icons.ChevronsLeftRight size={20} className="text-gray-600 dark:text-gray-300" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-layer-1 border-4 border-border-base rounded-full shadow-xl flex items-center justify-center">
+              <Icons.ChevronsLeftRight size={20} className="text-text-secondary" />
             </div>
           </div>
 
@@ -221,8 +209,8 @@ export const ComparisonSlider: React.FC = () => {
         </div>
 
         {/* Instructions */}
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-8 py-4">
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+        <div className="bg-layer-1 border-t border-border-base px-8 py-4">
+          <p className="text-center text-sm text-text-secondary flex items-center justify-center gap-2">
             <Icons.Hand size={16} />
             Drag the slider to compare storage methods
           </p>
@@ -231,70 +219,66 @@ export const ComparisonSlider: React.FC = () => {
 
       {/* Savings Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Icons.Calculator size={18} className="text-indigo-600 dark:text-indigo-400" />
+        <div className="bg-layer-1 border border-border-base rounded-xl p-6">
+          <h4 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+            <Icons.Calculator size={18} className="text-[var(--color-info)]" />
             Storage Calculation
           </h4>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-600 dark:text-gray-400">Dataset size:</span>
-              <span className="font-mono font-semibold text-gray-900 dark:text-white">
+            <div className="flex justify-between items-center pb-2 border-b border-border-base">
+              <span className="text-text-secondary">Dataset size:</span>
+              <span className="font-mono font-semibold text-text-primary">
                 {formatStorage(avgBackupSize)}
               </span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-600 dark:text-gray-400">Number of backups:</span>
-              <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                {numBackups}
-              </span>
+            <div className="flex justify-between items-center pb-2 border-b border-border-base">
+              <span className="text-text-secondary">Number of backups:</span>
+              <span className="font-mono font-semibold text-text-primary">{numBackups}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-600 dark:text-gray-400">Change rate:</span>
-              <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                {changeRate * 100}%
-              </span>
+            <div className="flex justify-between items-center pb-2 border-b border-border-base">
+              <span className="text-text-secondary">Change rate:</span>
+              <span className="font-mono font-semibold text-text-primary">{changeRate * 100}%</span>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <span className="text-gray-900 dark:text-white font-bold">Space saved:</span>
-              <span className="font-mono font-bold text-teal-600 dark:text-teal-400 text-lg">
+              <span className="text-text-primary font-bold">Space saved:</span>
+              <span className="font-mono font-bold text-[var(--color-info)] text-lg">
                 {formatStorage(traditionalStorage - timeMachineStorage)}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl p-6">
-          <h4 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <Icons.Zap size={18} className="text-indigo-600 dark:text-indigo-400" />
+        <div className="bg-gradient-to-br from-[var(--color-info-subtle)] to-[var(--color-info-subtle)]/60 border-2 border-[var(--color-info)] rounded-xl p-6">
+          <h4 className="font-bold text-text-primary mb-3 flex items-center gap-2">
+            <Icons.Zap size={18} className="text-[var(--color-info)]" />
             Real-World Impact
           </h4>
-          <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+          <ul className="space-y-2 text-sm text-text-primary">
             <li className="flex items-start gap-2">
               <Icons.ArrowRight
                 size={16}
-                className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5"
+                className="text-[var(--color-info)] flex-shrink-0 mt-0.5"
               />
               <span>Keep more history without filling your disk</span>
             </li>
             <li className="flex items-start gap-2">
               <Icons.ArrowRight
                 size={16}
-                className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5"
+                className="text-[var(--color-info)] flex-shrink-0 mt-0.5"
               />
               <span>Faster backups (only copying changes)</span>
             </li>
             <li className="flex items-start gap-2">
               <Icons.ArrowRight
                 size={16}
-                className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5"
+                className="text-[var(--color-info)] flex-shrink-0 mt-0.5"
               />
               <span>Lower cloud storage costs if backing up remotely</span>
             </li>
             <li className="flex items-start gap-2">
               <Icons.ArrowRight
                 size={16}
-                className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5"
+                className="text-[var(--color-info)] flex-shrink-0 mt-0.5"
               />
               <span>Every snapshot looks complete when browsing</span>
             </li>

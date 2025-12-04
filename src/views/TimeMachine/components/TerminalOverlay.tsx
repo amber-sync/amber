@@ -88,8 +88,8 @@ export function TerminalOverlay({
           <div className="flex items-center gap-3">
             <h2 className="tm-overlay-title">Sync Output</h2>
             {isRunning && (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--tm-amber-wash)] rounded-full text-xs text-[var(--tm-amber)]">
-                <span className="w-1.5 h-1.5 bg-[var(--tm-amber)] rounded-full animate-pulse" />
+              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--color-accent-secondary)] rounded-full text-xs text-[var(--color-accent-primary)]">
+                <span className="w-1.5 h-1.5 bg-[var(--color-accent-primary)] rounded-full animate-pulse" />
                 Live
               </span>
             )}
@@ -104,7 +104,10 @@ export function TerminalOverlay({
           <div className="px-4 py-3 border-b border-[var(--tm-dust)] bg-[var(--tm-void)]">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Icons.RefreshCw size={14} className="text-[var(--tm-amber)] animate-spin" />
+                <Icons.RefreshCw
+                  size={14}
+                  className="text-[var(--color-accent-primary)] animate-spin"
+                />
                 <span className="text-sm text-[var(--tm-text-bright)]">
                   {progress.percentage}% complete
                 </span>
@@ -115,7 +118,7 @@ export function TerminalOverlay({
             </div>
             <div className="h-1.5 bg-[var(--tm-dust)] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[var(--tm-amber)] transition-all duration-300"
+                className="h-full bg-[var(--color-accent-primary)] transition-all duration-300"
                 style={{ width: `${progress.percentage}%` }}
               />
             </div>
@@ -141,7 +144,7 @@ export function TerminalOverlay({
                       ? 'bg-[var(--tm-error)]/20 text-[var(--tm-error)]'
                       : level === 'warning'
                         ? 'bg-[var(--tm-warning)]/20 text-[var(--tm-warning)]'
-                        : 'bg-[var(--tm-amber-wash)] text-[var(--tm-amber)]'
+                        : 'bg-[var(--color-accent-secondary)] text-[var(--color-accent-primary)]'
                     : 'text-[var(--tm-text-dim)] hover:text-[var(--tm-text-soft)]'
                 }`}
               >
@@ -162,7 +165,7 @@ export function TerminalOverlay({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search logs..."
-              className="w-full pl-7 pr-3 py-1.5 bg-[var(--tm-void)] border border-[var(--tm-dust)] rounded text-xs text-[var(--tm-text-bright)] placeholder:text-[var(--tm-text-muted)] focus:outline-none focus:border-[var(--tm-amber)]"
+              className="w-full pl-7 pr-3 py-1.5 bg-[var(--tm-void)] border border-[var(--tm-dust)] rounded text-xs text-[var(--tm-text-bright)] placeholder:text-[var(--tm-text-muted)] focus:outline-none focus:border-[var(--color-accent-primary)]"
             />
           </div>
 
@@ -171,7 +174,7 @@ export function TerminalOverlay({
             onClick={() => setAutoScroll(!autoScroll)}
             className={`p-1.5 rounded transition-colors ${
               autoScroll
-                ? 'bg-[var(--tm-amber-wash)] text-[var(--tm-amber)]'
+                ? 'bg-[var(--color-accent-secondary)] text-[var(--color-accent-primary)]'
                 : 'text-[var(--tm-text-dim)] hover:text-[var(--tm-text-soft)]'
             }`}
             title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}

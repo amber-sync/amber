@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-app p-4">
           <div className="bg-layer-1 p-8 rounded-2xl shadow-xl max-w-md w-full border border-border-base text-center">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[var(--color-error-subtle)] text-[var(--color-error)] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="32"
@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
               the app.
             </p>
             <div className="bg-layer-2 p-3 rounded-lg text-left mb-6 overflow-auto max-h-32">
-              <code className="text-xs text-red-500 font-mono break-all">
+              <code className="text-xs text-[var(--color-error)] font-mono break-all">
                 {this.state.error?.message}
               </code>
             </div>

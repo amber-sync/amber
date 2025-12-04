@@ -100,8 +100,8 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-base bg-layer-2/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Icons.Code size={20} className="text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-accent-secondary flex items-center justify-center">
+              <Icons.Code size={20} className="text-accent-primary" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-text-primary">Dev Tools</h2>
@@ -164,7 +164,7 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
               <button
                 onClick={handleClearData}
                 disabled={isClearing}
-                className="px-4 py-3 bg-red-500/10 text-red-500 rounded-xl font-medium hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="px-4 py-3 bg-[var(--color-error)]/10 text-[var(--color-error)] rounded-xl font-medium hover:bg-[var(--color-error)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isClearing ? 'Clearing...' : 'Clear'}
               </button>
@@ -176,20 +176,24 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
             <div
               className={`p-4 rounded-xl animate-fade-in ${
                 seedResult.jobs_created === 0
-                  ? 'bg-blue-500/10 border border-blue-500/20'
-                  : 'bg-green-500/10 border border-green-500/20'
+                  ? 'bg-[var(--color-info)]/10 border border-[var(--color-info)]/20'
+                  : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/20'
               }`}
             >
               <div className="flex items-center gap-2 mb-3">
                 {seedResult.jobs_created === 0 ? (
                   <>
-                    <Icons.Info size={18} className="text-blue-500" />
-                    <span className="font-medium text-blue-500">Data Already Exists</span>
+                    <Icons.Info size={18} className="text-[var(--color-info)]" />
+                    <span className="font-medium text-[var(--color-info)]">
+                      Data Already Exists
+                    </span>
                   </>
                 ) : (
                   <>
-                    <Icons.Check size={18} className="text-green-500" />
-                    <span className="font-medium text-green-500">Seeding Complete</span>
+                    <Icons.Check size={18} className="text-[var(--color-success)]" />
+                    <span className="font-medium text-[var(--color-success)]">
+                      Seeding Complete
+                    </span>
                   </>
                 )}
               </div>
@@ -221,7 +225,7 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                 {seedResult.duration_ms > 0 && (
                   <div className="col-span-2 text-text-tertiary">
                     Duration:{' '}
-                    <span className="text-green-500 font-medium">
+                    <span className="text-[var(--color-success)] font-medium">
                       {(seedResult.duration_ms / 1000).toFixed(2)}s
                     </span>
                   </div>
@@ -250,7 +254,7 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                 </>
               ) : (
                 <>
-                  <Icons.Zap size={18} className="text-amber-500" />
+                  <Icons.Zap size={18} className="text-accent-primary" />
                   Run Benchmarks
                 </>
               )}
@@ -285,10 +289,10 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                           <span
                             className={
                               result.avg_ms < 1
-                                ? 'text-green-500'
+                                ? 'text-[var(--color-success)]'
                                 : result.avg_ms < 10
-                                  ? 'text-amber-500'
-                                  : 'text-red-500'
+                                  ? 'text-accent-primary'
+                                  : 'text-[var(--color-error)]'
                             }
                           >
                             {result.avg_ms.toFixed(3)}ms
@@ -310,10 +314,10 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
 
           {/* Error */}
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in">
+            <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 rounded-xl animate-fade-in">
               <div className="flex items-center gap-2">
-                <Icons.AlertCircle size={18} className="text-red-500" />
-                <span className="text-red-500 text-sm">{error}</span>
+                <Icons.AlertCircle size={18} className="text-[var(--color-error)]" />
+                <span className="text-[var(--color-error)] text-sm">{error}</span>
               </div>
             </div>
           )}

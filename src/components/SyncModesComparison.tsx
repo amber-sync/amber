@@ -21,9 +21,9 @@ const MODES: ModeDetails[] = [
   {
     name: 'Time Machine',
     icon: Icons.FolderClock,
-    color: 'text-indigo-600 dark:text-indigo-400',
-    bgGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-    borderColor: 'border-indigo-200 dark:border-indigo-800',
+    color: 'text-accent-primary',
+    bgGradient: 'bg-accent-secondary',
+    borderColor: 'border-accent-primary',
     tagline: 'Versioned snapshots with hard links',
     description:
       'Creates dated snapshot folders (e.g., 2025-01-15-143000) where unchanged files are hard-linked to previous backups. You get complete browsable snapshots while only storing what changed.',
@@ -47,9 +47,9 @@ const MODES: ModeDetails[] = [
   {
     name: 'Mirror',
     icon: Icons.RefreshCw,
-    color: 'text-teal-600 dark:text-teal-400',
-    bgGradient: 'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20',
-    borderColor: 'border-teal-200 dark:border-teal-800',
+    color: 'text-[var(--color-success)]',
+    bgGradient: 'bg-[var(--color-success-subtle)]',
+    borderColor: 'border-[var(--color-success)]',
     tagline: 'Exact replica of source',
     description:
       'Destination becomes an exact mirror of the source. Files deleted from source are also deleted from destination. One-to-one correspondence.',
@@ -74,9 +74,9 @@ const MODES: ModeDetails[] = [
   {
     name: 'Archive',
     icon: Icons.Archive,
-    color: 'text-amber-600 dark:text-amber-400',
-    bgGradient: 'from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
-    borderColor: 'border-amber-200 dark:border-amber-800',
+    color: 'text-accent-primary',
+    bgGradient: 'bg-accent-secondary',
+    borderColor: 'border-accent-primary',
     tagline: 'Copy everything, never delete',
     description:
       'Copies all files from source to destination but never removes anything from destination. Deleted files from source remain in the backup.',
@@ -100,9 +100,9 @@ const MODES: ModeDetails[] = [
   {
     name: 'Custom',
     icon: Icons.Code,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgGradient: 'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20',
-    borderColor: 'border-purple-200 dark:border-purple-800',
+    color: 'text-[var(--color-info)]',
+    bgGradient: 'bg-[var(--color-info-subtle)]',
+    borderColor: 'border-[var(--color-info)]',
     tagline: 'Full control over rsync',
     description:
       'Provide your own rsync command with custom flags and options. Amber provides placeholders for source, destination, and linkDest.',
@@ -130,10 +130,8 @@ export const SyncModesComparison: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Sync Modes Explained
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+        <h3 className="text-2xl font-bold text-text-primary mb-2">Sync Modes Explained</h3>
+        <p className="text-text-secondary max-w-3xl mx-auto">
           Amber offers four sync strategies, each optimized for different backup needs. Choose the
           mode that matches your workflow.
         </p>
@@ -152,18 +150,18 @@ export const SyncModesComparison: React.FC = () => {
               className={`text-left p-5 rounded-xl border-2 transition-all duration-300 ${
                 isSelected
                   ? `${mode.borderColor} shadow-xl scale-105`
-                  : 'border-gray-200 dark:border-gray-700 hover:shadow-lg hover:scale-102'
-              } bg-white dark:bg-gray-800`}
+                  : 'border-border-base hover:shadow-lg hover:scale-102'
+              } bg-layer-1`}
             >
               <div
-                className={`w-12 h-12 rounded-lg bg-gradient-to-br ${mode.bgGradient} flex items-center justify-center mb-3`}
+                className={`w-12 h-12 rounded-lg ${mode.bgGradient} flex items-center justify-center mb-3`}
               >
                 <Icon size={24} className={mode.color} />
               </div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">{mode.name}</h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{mode.tagline}</p>
+              <h4 className="font-bold text-text-primary mb-1">{mode.name}</h4>
+              <p className="text-xs text-text-secondary">{mode.tagline}</p>
               {isSelected && (
-                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-accent-primary">
                   <Icons.ChevronRight size={14} />
                   Selected
                 </div>
@@ -175,56 +173,49 @@ export const SyncModesComparison: React.FC = () => {
 
       {/* Detailed View */}
       <div
-        className={`bg-gradient-to-br ${selected.bgGradient} border-2 ${selected.borderColor} rounded-2xl p-8 animate-fade-in`}
+        className={`${selected.bgGradient} border-2 ${selected.borderColor} rounded-2xl p-8 animate-fade-in`}
       >
         <div className="flex items-start gap-4 mb-6">
           <div className="flex-shrink-0">
             <div
-              className={`w-16 h-16 rounded-xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center border-2 ${selected.borderColor}`}
+              className={`w-16 h-16 rounded-xl bg-layer-1 shadow-lg flex items-center justify-center border-2 ${selected.borderColor}`}
             >
               {React.createElement(selected.icon, { size: 32, className: selected.color })}
             </div>
           </div>
           <div className="flex-1">
-            <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {selected.name}
-            </h4>
+            <h4 className="text-2xl font-bold text-text-primary mb-1">{selected.name}</h4>
             <p className={`text-sm font-semibold ${selected.color} mb-3`}>{selected.tagline}</p>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {selected.description}
-            </p>
+            <p className="text-text-secondary leading-relaxed">{selected.description}</p>
           </div>
         </div>
 
         {/* Use Case */}
-        <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+        <div className="bg-layer-1/50 backdrop-blur-sm border border-border-base rounded-xl p-4 mb-6">
           <div className="flex items-start gap-2">
             <Icons.Target size={18} className={`${selected.color} flex-shrink-0 mt-0.5`} />
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white mb-1">Use Case</p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{selected.useCase}</p>
+              <p className="font-semibold text-text-primary mb-1">Use Case</p>
+              <p className="text-sm text-text-secondary">{selected.useCase}</p>
             </div>
           </div>
         </div>
 
         {/* Pros and Cons */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <div className="bg-layer-1/50 backdrop-blur-sm border border-border-base rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-[var(--color-success)] rounded-full flex items-center justify-center">
                 <Icons.Check size={14} className="text-white" />
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white">Advantages</p>
+              <p className="font-semibold text-text-primary">Advantages</p>
             </div>
             <ul className="space-y-2">
               {selected.pros.map((pro, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
-                >
+                <li key={idx} className="flex items-start gap-2 text-sm text-text-secondary">
                   <Icons.Plus
                     size={14}
-                    className="text-teal-600 dark:text-teal-400 flex-shrink-0 mt-0.5"
+                    className="text-[var(--color-success)] flex-shrink-0 mt-0.5"
                   />
                   <span>{pro}</span>
                 </li>
@@ -232,23 +223,17 @@ export const SyncModesComparison: React.FC = () => {
             </ul>
           </div>
 
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <div className="bg-layer-1/50 backdrop-blur-sm border border-border-base rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-accent-primary rounded-full flex items-center justify-center">
                 <Icons.AlertCircle size={14} className="text-white" />
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white">Considerations</p>
+              <p className="font-semibold text-text-primary">Considerations</p>
             </div>
             <ul className="space-y-2">
               {selected.cons.map((con, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
-                >
-                  <Icons.Minus
-                    size={14}
-                    className="text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
-                  />
+                <li key={idx} className="flex items-start gap-2 text-sm text-text-secondary">
+                  <Icons.Minus size={14} className="text-accent-primary flex-shrink-0 mt-0.5" />
                   <span>{con}</span>
                 </li>
               ))}
@@ -258,7 +243,7 @@ export const SyncModesComparison: React.FC = () => {
 
         {/* Command */}
         <div>
-          <p className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <p className="font-semibold text-text-primary mb-3 flex items-center gap-2">
             <Icons.Terminal size={16} />
             rsync Command
           </p>
@@ -271,72 +256,48 @@ export const SyncModesComparison: React.FC = () => {
       </div>
 
       {/* Quick Reference Table */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+      <div className="bg-layer-1 border border-border-base rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">
-                  Mode
-                </th>
-                <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">
-                  Versions
-                </th>
-                <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">
-                  Deletes
-                </th>
-                <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">
-                  Storage
-                </th>
-                <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">
-                  Best For
-                </th>
+              <tr className="bg-layer-2 border-b border-border-base">
+                <th className="px-6 py-4 text-left font-semibold text-text-primary">Mode</th>
+                <th className="px-6 py-4 text-left font-semibold text-text-primary">Versions</th>
+                <th className="px-6 py-4 text-left font-semibold text-text-primary">Deletes</th>
+                <th className="px-6 py-4 text-left font-semibold text-text-primary">Storage</th>
+                <th className="px-6 py-4 text-left font-semibold text-text-primary">Best For</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-6 py-4 font-semibold text-indigo-600 dark:text-indigo-400">
-                  Time Machine
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Multiple dated snapshots
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Kept in old snapshots
-                </td>
-                <td className="px-6 py-4 text-teal-600 dark:text-teal-400 font-semibold">
+              <tr className="border-b border-border-subtle hover:bg-layer-2">
+                <td className="px-6 py-4 font-semibold text-accent-primary">Time Machine</td>
+                <td className="px-6 py-4 text-text-secondary">Multiple dated snapshots</td>
+                <td className="px-6 py-4 text-text-secondary">Kept in old snapshots</td>
+                <td className="px-6 py-4 text-[var(--color-success)] font-semibold">
                   Minimal (hard links)
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Version control</td>
+                <td className="px-6 py-4 text-text-secondary">Version control</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-6 py-4 font-semibold text-teal-600 dark:text-teal-400">Mirror</td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Single current state</td>
-                <td className="px-6 py-4 text-orange-600 dark:text-orange-400">
-                  Deleted from backup
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">One full copy</td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Exact clones</td>
+              <tr className="border-b border-border-subtle hover:bg-layer-2">
+                <td className="px-6 py-4 font-semibold text-[var(--color-success)]">Mirror</td>
+                <td className="px-6 py-4 text-text-secondary">Single current state</td>
+                <td className="px-6 py-4 text-accent-primary">Deleted from backup</td>
+                <td className="px-6 py-4 text-text-secondary">One full copy</td>
+                <td className="px-6 py-4 text-text-secondary">Exact clones</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-6 py-4 font-semibold text-amber-600 dark:text-amber-400">
-                  Archive
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">All files ever added</td>
-                <td className="px-6 py-4 text-teal-600 dark:text-teal-400">Never deleted</td>
-                <td className="px-6 py-4 text-orange-600 dark:text-orange-400">
-                  Grows indefinitely
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Long-term archives</td>
+              <tr className="border-b border-border-subtle hover:bg-layer-2">
+                <td className="px-6 py-4 font-semibold text-accent-primary">Archive</td>
+                <td className="px-6 py-4 text-text-secondary">All files ever added</td>
+                <td className="px-6 py-4 text-[var(--color-success)]">Never deleted</td>
+                <td className="px-6 py-4 text-accent-primary">Grows indefinitely</td>
+                <td className="px-6 py-4 text-text-secondary">Long-term archives</td>
               </tr>
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-6 py-4 font-semibold text-purple-600 dark:text-purple-400">
-                  Custom
-                </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Depends on command</td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Depends on command</td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Depends on command</td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">Advanced users</td>
+              <tr className="hover:bg-layer-2">
+                <td className="px-6 py-4 font-semibold text-[var(--color-info)]">Custom</td>
+                <td className="px-6 py-4 text-text-secondary">Depends on command</td>
+                <td className="px-6 py-4 text-text-secondary">Depends on command</td>
+                <td className="px-6 py-4 text-text-secondary">Depends on command</td>
+                <td className="px-6 py-4 text-text-secondary">Advanced users</td>
               </tr>
             </tbody>
           </table>
