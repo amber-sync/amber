@@ -59,65 +59,55 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="p-8 space-y-6 relative z-10 max-w-7xl mx-auto">
+    <div className="page-content page-animate-in">
       {/* Header & Compact Stats */}
-      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
-        <div className="no-drag">
-          <h1 className="text-3xl font-bold text-text-primary tracking-tight font-display">
-            Amber
-          </h1>
-          <p className="text-text-tertiary mt-1 font-body">Rsync and Time Machine</p>
-        </div>
+      <div className="page-header--with-actions">
+        <header className="page-header no-drag">
+          <h1 className="page-title font-display">Amber</h1>
+          <p className="page-subtitle font-body">Rsync and Time Machine</p>
+        </header>
 
-        <div className="flex items-center gap-6 bg-layer-2 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
-              <Icons.Database size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Protected
+        <div className="flex items-center gap-4 no-drag">
+          <div className="page-stats">
+            <div className="page-stat">
+              <div className="page-stat-icon">
+                <Icons.Database size={18} />
               </div>
-              <div className="text-lg font-bold text-text-primary leading-none">
-                {formatBytes(totalProtectedSize)}
+              <div>
+                <div className="page-stat-label">Protected</div>
+                <div className="page-stat-value">{formatBytes(totalProtectedSize)}</div>
               </div>
             </div>
-          </div>
-          <div className="w-px h-8 bg-border-base" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
-              <Icons.Activity size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Active Jobs
+            <div className="page-stat-divider" />
+            <div className="page-stat">
+              <div className="page-stat-icon">
+                <Icons.Activity size={18} />
               </div>
-              <div className="text-lg font-bold text-text-primary leading-none">{jobs.length}</div>
-            </div>
-          </div>
-          <div className="w-px h-8 bg-border-base" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
-              <Icons.Archive size={18} />
-            </div>
-            <div>
-              <div className="text-xs text-text-tertiary font-medium uppercase tracking-wider">
-                Snapshots
+              <div>
+                <div className="page-stat-label">Active Jobs</div>
+                <div className="page-stat-value">{jobs.length}</div>
               </div>
-              <div className="text-lg font-bold text-text-primary leading-none">
-                {totalSnapshots}
+            </div>
+            <div className="page-stat-divider" />
+            <div className="page-stat">
+              <div className="page-stat-icon">
+                <Icons.Archive size={18} />
+              </div>
+              <div>
+                <div className="page-stat-label">Snapshots</div>
+                <div className="page-stat-value">{totalSnapshots}</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />} className="no-drag">
-          New Job
-        </Button>
+          <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />}>
+            New Job
+          </Button>
+        </div>
       </div>
 
       {/* Jobs List - Primary Content */}
-      <div className="space-y-3">
+      <div className="page-section space-y-3">
         <div className="flex items-center justify-between px-4 text-xs font-semibold text-text-tertiary uppercase tracking-wider font-display">
           <div className="w-1/3">Job Name</div>
           <div className="w-1/3">Source & Destination</div>
@@ -138,9 +128,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-16 text-center text-text-tertiary bg-layer-2 rounded-2xl border border-dashed border-border-highlight">
-              <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
-              <p>No sync jobs configured yet.</p>
+            <div className="page-empty">
+              <Icons.HardDrive className="page-empty-icon" size={48} />
+              <p className="page-empty-text">No sync jobs configured yet.</p>
             </div>
           )}
         </div>
@@ -148,8 +138,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Analytics Section */}
       {jobs.length > 0 && (
-        <div className="pt-6 border-t border-border-base">
-          <h2 className="text-lg font-semibold text-text-primary mb-4 font-display">Analytics</h2>
+        <div className="page-section pt-6 border-t border-border-base">
+          <h2 className="page-section-title font-display">Analytics</h2>
 
           <div className="grid grid-cols-1 gap-5">
             <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />

@@ -8,7 +8,7 @@ import { TimeMachine } from './views/TimeMachine/TimeMachine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
-import { AmbientBackground } from './components/AmbientBackground';
+// AmbientBackground removed - using clean page backgrounds
 import { DeleteJobModal } from './components/DeleteJobModal';
 import { CommandPalette } from './components/CommandPalette';
 import { FileSearchPalette } from './components/FileSearchPalette';
@@ -468,10 +468,10 @@ function AppContent() {
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
   return (
-    <div className="flex min-h-screen bg-[#f5f5f7] dark:bg-[#0f0f10] text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 relative">
+    <div className="flex min-h-screen bg-[var(--page-bg)] text-text-primary font-sans transition-colors duration-300 relative">
       <div className="fixed top-0 left-0 w-full h-8 z-[100] titlebar-drag" />
 
-      <AmbientBackground />
+      {/* Clean background - no ambient gradients */}
 
       <CommandPalette />
       <FileSearchPalette />

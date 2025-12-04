@@ -30,15 +30,15 @@ export const AppSettings: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 space-y-6 animate-fade-in relative z-10 h-full overflow-y-auto">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Settings</h1>
-        <p className="text-text-secondary mt-1">Application preferences and configuration.</p>
+    <div className="page-content page-scroll page-animate-in">
+      <header className="page-header">
+        <h1 className="page-title font-display">Settings</h1>
+        <p className="page-subtitle font-body">Application preferences and configuration.</p>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2 space-y-8">
-          <div className="bg-layer-1/90 backdrop-blur-sm rounded-2xl border border-border-base p-6 space-y-6">
+      <div className="page-grid page-grid--2col">
+        <div className="space-y-8">
+          <div className="page-card space-y-6">
             {/* Appearance */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
@@ -162,7 +162,7 @@ export const AppSettings: React.FC = () => {
         </div>
 
         {/* About / System Check */}
-        <div className="bg-layer-1/90 backdrop-blur-sm rounded-2xl border border-border-base p-6 h-fit">
+        <div className="page-card h-fit">
           <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2 mb-4">
             <Icons.Shield size={20} /> System Health
           </h3>

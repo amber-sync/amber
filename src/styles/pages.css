@@ -1,0 +1,299 @@
+/**
+ * Amber - Unified Page Layout System
+ *
+ * Consistent page structure across all views, following the
+ * TimeMachine's clean editorial aesthetic.
+ */
+
+/* ============================================
+ * Page Background Tokens
+ * Clean, solid backgrounds - no gradients
+ * ============================================ */
+:root {
+  /* Page backgrounds - matches TimeMachine */
+  --page-bg: #ffffff;
+  --page-bg-alt: #fafafa;
+
+  /* Page content constraints */
+  --page-max-width: 1280px;
+  --page-padding-x: 2rem;
+  --page-padding-y: 2rem;
+  --page-header-height: 72px;
+}
+
+.dark {
+  --page-bg: #0f0f10;
+  --page-bg-alt: #18181b;
+}
+
+/* ============================================
+ * Base Page Container
+ * Applied to all main views
+ * ============================================ */
+.page {
+  min-height: 100%;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  position: relative;
+}
+
+.page--alt {
+  background: var(--page-bg-alt);
+}
+
+/* ============================================
+ * Page Content Wrapper
+ * Constrains content width and adds padding
+ * ============================================ */
+.page-content {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--page-padding-y) var(--page-padding-x);
+  position: relative;
+  z-index: 10;
+}
+
+.page-content--narrow {
+  max-width: 960px;
+}
+
+.page-content--wide {
+  max-width: 1536px;
+}
+
+.page-content--full {
+  max-width: none;
+}
+
+/* ============================================
+ * Page Header
+ * Consistent header structure across views
+ * ============================================ */
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header--with-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .page-header--with-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+ * Page Sections
+ * Consistent spacing between content blocks
+ * ============================================ */
+.page-section {
+  margin-bottom: 1.5rem;
+}
+
+.page-section:last-child {
+  margin-bottom: 0;
+}
+
+.page-section-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+ * Page Cards/Panels
+ * Consistent card styling for content blocks
+ * ============================================ */
+.page-card {
+  background: var(--layer-1);
+  border: 1px solid var(--border-base);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.page-card--glass {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+}
+
+.dark .page-card--glass {
+  background: rgba(24, 24, 27, 0.9);
+}
+
+/* ============================================
+ * Scrollable Page Content
+ * For views that need internal scrolling
+ * ============================================ */
+.page-scroll {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar but keep functionality */
+.page-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-base);
+  border-radius: 3px;
+}
+
+.page-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--border-highlight);
+}
+
+/* ============================================
+ * Page Animations
+ * Consistent entrance animations
+ * ============================================ */
+.page-animate-in {
+  animation: page-fade-in 300ms ease-out forwards;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+ * Page Grid Layouts
+ * Common grid patterns for page content
+ * ============================================ */
+.page-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-grid--2col {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .page-grid--2col {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.page-grid--3col {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+  .page-grid--3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-grid--3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================
+ * Page Stats Bar
+ * Compact stats display (like Dashboard)
+ * ============================================ */
+.page-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--layer-2);
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-base);
+}
+
+.page-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.page-stat-icon {
+  padding: 0.5rem;
+  background: var(--layer-3);
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.page-stat-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.page-stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.page-stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--border-base);
+}
+
+/* ============================================
+ * Empty State
+ * Consistent empty state styling
+ * ============================================ */
+.page-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--layer-2);
+  border: 1px dashed var(--border-highlight);
+  border-radius: 1rem;
+}
+
+.page-empty-icon {
+  margin-bottom: 1rem;
+  opacity: 0.2;
+}
+
+.page-empty-text {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}

@@ -12,13 +12,11 @@ export const HelpSection: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-accent-primary/10 rounded-lg">
-          <Icons.BookOpen size={20} className="text-accent-primary" />
-        </div>
-        <h1 className="text-xl font-bold text-text-primary">Documentation & Resources</h1>
-      </div>
+    <div className="page-content page-content--narrow page-animate-in">
+      <header className="page-header">
+        <h1 className="page-title font-display">Help & Resources</h1>
+        <p className="page-subtitle font-body">Documentation, guides, and system information.</p>
+      </header>
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* Online Docs Card */}
