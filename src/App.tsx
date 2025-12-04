@@ -17,6 +17,7 @@ import { FileSearchPalette } from './components/FileSearchPalette';
 import { DevTools } from './components/DevTools';
 import { AppContextProvider, useApp } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
@@ -620,9 +621,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContextProvider>
-        <AppContent />
-      </AppContextProvider>
+      <ToastProvider>
+        <AppContextProvider>
+          <AppContent />
+        </AppContextProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

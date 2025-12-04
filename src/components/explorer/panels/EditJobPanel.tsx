@@ -3,6 +3,7 @@ import { SyncJob, SyncMode, RsyncConfig } from '../../../types';
 import { api } from '../../../api';
 import { MODE_PRESETS } from '../../../config';
 import { Icons } from '../../IconComponents';
+import { TextInput, PathInput, Select, FormField, Button, IconButton } from '../../ui';
 
 interface EditJobPanelProps {
   job: SyncJob;
@@ -108,104 +109,67 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
       {/* Form content */}
       <div className="flex-1 overflow-y-auto p-4">
         {/* Job Name */}
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-            Job Name
-          </label>
-          <input
-            type="text"
+        <FormField label="Job Name" className="mb-4">
+          <TextInput
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
             placeholder="My Backup Job"
           />
-        </div>
+        </FormField>
 
         {/* Source Path */}
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-            Source Path
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={sourcePath}
-              onChange={e => setSourcePath(e.target.value)}
-              className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
-              placeholder="/Users/you/Documents"
-            />
-            <button
-              onClick={() => handleSelectDirectory('source')}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 dark:border-stone-600 dark:hover:bg-stone-700"
-            >
-              <Icons.FolderOpen className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <FormField label="Source Path" className="mb-4">
+          <PathInput
+            value={sourcePath}
+            onChange={setSourcePath}
+            onBrowse={() => handleSelectDirectory('source')}
+            placeholder="/Users/you/Documents"
+          />
+        </FormField>
 
         {/* Destination Path */}
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-            Destination Path
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={destPath}
-              onChange={e => setDestPath(e.target.value)}
-              className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
-              placeholder="/Volumes/Backup"
-            />
-            <button
-              onClick={() => handleSelectDirectory('dest')}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 dark:border-stone-600 dark:hover:bg-stone-700"
-            >
-              <Icons.FolderOpen className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <FormField label="Destination Path" className="mb-4">
+          <PathInput
+            value={destPath}
+            onChange={setDestPath}
+            onBrowse={() => handleSelectDirectory('dest')}
+            placeholder="/Volumes/Backup"
+          />
+        </FormField>
 
         {/* Sync Mode */}
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-            Backup Mode
-          </label>
-          <select
+        <FormField label="Backup Mode" className="mb-4">
+          <Select
             value={mode}
             onChange={e => setMode(e.target.value as SyncMode)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
-          >
-            <option value={SyncMode.TIME_MACHINE}>
-              Time Machine (incremental with hard links)
-            </option>
-            <option value={SyncMode.MIRROR}>Mirror (exact copy with deletions)</option>
-            <option value={SyncMode.ARCHIVE}>Archive (copy only, no deletions)</option>
-          </select>
-        </div>
+            options={[
+              { value: SyncMode.TIME_MACHINE, label: 'Time Machine (incremental with hard links)' },
+              { value: SyncMode.MIRROR, label: 'Mirror (exact copy with deletions)' },
+              { value: SyncMode.ARCHIVE, label: 'Archive (copy only, no deletions)' },
+            ]}
+          />
+        </FormField>
 
         {/* Schedule */}
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-            Schedule
-          </label>
-          <select
-            value={scheduleInterval ?? ''}
+        <FormField label="Schedule" className="mb-4">
+          <Select
+            value={scheduleInterval?.toString() ?? ''}
             onChange={e => setScheduleInterval(e.target.value ? Number(e.target.value) : null)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
-          >
-            <option value="">Manual only</option>
-            <option value="60">Every hour</option>
-            <option value="240">Every 4 hours</option>
-            <option value="1440">Daily</option>
-            <option value="10080">Weekly</option>
-          </select>
-        </div>
+            options={[
+              { value: '', label: 'Manual only' },
+              { value: '60', label: 'Every hour' },
+              { value: '240', label: 'Every 4 hours' },
+              { value: '1440', label: 'Daily' },
+              { value: '10080', label: 'Weekly' },
+            ]}
+          />
+        </FormField>
 
         {/* Advanced Section */}
         <div className="border-t border-stone-200 pt-4 dark:border-stone-700">
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex w-full items-center justify-between text-sm font-medium text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
+            className="flex w-full items-center justify-between text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
           >
             <span>Advanced Settings</span>
             <Icons.ChevronDown
@@ -216,25 +180,22 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
           {showAdvanced && (
             <div className="mt-4 space-y-4">
               {/* Exclude Patterns */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
-                  Exclude Patterns
-                </label>
+              <FormField label="Exclude Patterns">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <TextInput
                     value={tempPattern}
                     onChange={e => setTempPattern(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAddPattern()}
-                    className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800"
                     placeholder=".DS_Store, node_modules/"
+                    className="flex-1"
                   />
-                  <button
+                  <IconButton
+                    variant="secondary"
+                    size="md"
                     onClick={handleAddPattern}
-                    className="rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 dark:border-stone-600 dark:hover:bg-stone-700"
-                  >
-                    <Icons.Plus className="h-4 w-4" />
-                  </button>
+                    icon={<Icons.Plus className="h-4 w-4" />}
+                    aria-label="Add pattern"
+                  />
                 </div>
                 {excludePatterns.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -254,7 +215,7 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
                     ))}
                   </div>
                 )}
-              </div>
+              </FormField>
             </div>
           )}
         </div>
@@ -263,30 +224,22 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
       {/* Footer with actions */}
       <div className="border-t border-stone-200 p-4 dark:border-stone-700">
         <div className="flex items-center justify-between">
-          <button
-            onClick={handleDelete}
-            className={`rounded-lg px-4 py-2 text-sm font-medium ${
-              confirmDelete
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'
-            }`}
-          >
+          <Button variant={confirmDelete ? 'danger' : 'ghost'} size="md" onClick={handleDelete}>
             {confirmDelete ? 'Confirm Delete' : 'Delete Job'}
-          </button>
+          </Button>
           <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-            >
+            <Button variant="secondary" size="md" onClick={onClose}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleSave}
               disabled={saving || !name.trim() || !sourcePath.trim() || !destPath.trim()}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+              loading={saving}
             >
               {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+            </Button>
           </div>
         </div>
         {confirmDelete && (
