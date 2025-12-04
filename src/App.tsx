@@ -71,6 +71,48 @@ function AppContent() {
   // Options: 'classic' | 'stepper' | 'accordion' | 'twopanel'
   const [jobEditorVariant] = useState<JobEditorVariant>('twopanel');
 
+  // TIM-141: Track source view for proper navigation after job save
+  const [jobEditorSourceView, setJobEditorSourceView] = useState<string | null>(null);
+  const [previousView, setPreviousView] = useState<string | null>(null);
+
+  // TIM-141: Track view changes to capture source view before JOB_EDITOR
+  useEffect(() => {
+    if (view === 'JOB_EDITOR' && previousView && previousView !== 'JOB_EDITOR') {
+      // When entering JOB_EDITOR, if we didn't go through openSettings, use previousView
+      if (!jobEditorSourceView) {
+        setJobEditorSourceView(previousView);
+      }
+      // Also populate form if coming from TIME_MACHINE (which bypasses openSettings)
+      if (previousView === 'TIME_MACHINE' && activeJobId) {
+        const job = jobs.find(j => j.id === activeJobId);
+        if (job && !newJobName) {
+          // Populate form fields that openSettings would set
+          setNewJobName(job.name);
+          setNewJobSource(job.sourcePath);
+          setNewJobDest(job.destPath);
+          setNewJobMode(job.mode);
+          setNewJobSchedule(job.scheduleInterval);
+          setNewJobConfig({
+            ...MODE_PRESETS[job.mode],
+            ...job.config,
+            excludePatterns: [...job.config.excludePatterns],
+            customCommand: job.config.customCommand || undefined,
+            customFlags: '',
+          });
+          if (job.sshConfig) {
+            setSshEnabled(job.sshConfig.enabled);
+            setSshPort(job.sshConfig.port || '');
+            setSshKeyPath(job.sshConfig.identityFile || '');
+            setSshConfigPath(job.sshConfig.configFile || '');
+            setSshProxyJump(job.sshConfig.proxyJump || '');
+            setSshCustomOptions(job.sshConfig.customSshOptions || '');
+          }
+        }
+      }
+    }
+    setPreviousView(view);
+  }, [view, activeJobId, jobs, previousView, jobEditorSourceView, newJobName]);
+
   // Dev Tools Panel (Cmd+Shift+D to toggle)
   const [showDevTools, setShowDevTools] = useState(false);
 
@@ -184,10 +226,13 @@ function AppContent() {
     setView('JOB_EDITOR');
   };
 
-  const openSettings = () => {
+  const openSettings = (sourceView?: string) => {
     if (!activeJobId) return;
     const job = jobs.find(j => j.id === activeJobId);
     if (!job) return;
+
+    // TIM-141: Track where we came from for proper navigation after save
+    setJobEditorSourceView(sourceView || view);
 
     setNewJobName(job.name);
     setNewJobSource(job.sourcePath);
@@ -256,6 +301,9 @@ function AppContent() {
         }
       : { enabled: false };
 
+    // TIM-141: Navigate back to source view (TIME_MACHINE or DETAIL)
+    const returnView = jobEditorSourceView === 'TIME_MACHINE' ? 'TIME_MACHINE' : 'DETAIL';
+
     if (activeJobId) {
       const job = jobs.find(j => j.id === activeJobId);
       if (job) {
@@ -272,7 +320,7 @@ function AppContent() {
         };
         setJobs(prev => prev.map(j => (j.id === activeJobId ? updatedJob : j)));
         persistJob(updatedJob);
-        setView('DETAIL');
+        setView(returnView);
       }
     } else {
       const job: SyncJob = {
@@ -293,9 +341,10 @@ function AppContent() {
       setJobs(prev => [...prev, job]);
       setActiveJobId(job.id);
       persistJob(job);
-      setView('DETAIL');
+      setView(returnView);
     }
     resetForm();
+    setJobEditorSourceView(null);
   };
 
   const promptDelete = (id: string) => {
