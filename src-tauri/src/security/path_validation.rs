@@ -176,9 +176,19 @@ pub fn validate_path(path: &str, allowed_roots: &[&Path]) -> Result<PathBuf> {
 mod tests {
     use super::*;
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     fn setup_test_dir() -> PathBuf {
-        let test_dir = std::env::temp_dir().join("amber_path_test");
+        // Use unique directory per test to avoid parallel test conflicts
+        let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let thread_id = std::thread::current().id();
+        let test_dir = std::env::temp_dir().join(format!(
+            "amber_path_test_{:?}_{}",
+            thread_id, id
+        ));
+        // Clean up first, ignore errors if doesn't exist
         let _ = fs::remove_dir_all(&test_dir);
         fs::create_dir_all(&test_dir).unwrap();
         test_dir
@@ -261,6 +271,8 @@ mod tests {
         fs::write(&outside_file, "secret").unwrap();
 
         let symlink_path = test_dir.join("symlink");
+        // Clean up any existing symlink from previous test runs
+        let _ = fs::remove_file(&symlink_path);
 
         #[cfg(unix)]
         {
@@ -276,6 +288,7 @@ mod tests {
         }
 
         // Cleanup
+        let _ = fs::remove_file(&symlink_path);
         let _ = fs::remove_dir_all(&outside_dir);
     }
 
@@ -285,7 +298,9 @@ mod tests {
         let target_file = test_dir.join("target.txt");
         fs::write(&target_file, "target").unwrap();
 
-        let symlink_path = test_dir.join("symlink");
+        let symlink_path = test_dir.join("symlink_inside");
+        // Clean up any existing symlink from previous test runs
+        let _ = fs::remove_file(&symlink_path);
 
         #[cfg(unix)]
         {
@@ -298,6 +313,9 @@ mod tests {
             // Should succeed because symlink points inside allowed root
             let result = validator.validate(symlink_path.to_str().unwrap());
             assert!(result.is_ok());
+
+            // Cleanup
+            let _ = fs::remove_file(&symlink_path);
         }
     }
 
@@ -318,9 +336,13 @@ mod tests {
 
     #[test]
     fn test_multiple_allowed_roots() {
-        let test_dir1 = std::env::temp_dir().join("amber_test1");
-        let test_dir2 = std::env::temp_dir().join("amber_test2");
+        // Use unique directories to avoid parallel test conflicts
+        let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let test_dir1 = std::env::temp_dir().join(format!("amber_multi_test1_{}", id));
+        let test_dir2 = std::env::temp_dir().join(format!("amber_multi_test2_{}", id));
 
+        let _ = fs::remove_dir_all(&test_dir1);
+        let _ = fs::remove_dir_all(&test_dir2);
         fs::create_dir_all(&test_dir1).unwrap();
         fs::create_dir_all(&test_dir2).unwrap();
 

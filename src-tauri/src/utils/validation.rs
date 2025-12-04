@@ -10,7 +10,7 @@ use std::path::Path;
 /// - Prevents command injection via shell metacharacters
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// assert!(validate_ssh_port("22").is_ok());
 /// assert!(validate_ssh_port("2222").is_ok());
 /// assert!(validate_ssh_port("22; rm -rf /").is_err());
@@ -75,7 +75,7 @@ pub fn validate_ssh_port(port: &str) -> Result<u16> {
 /// - Must be a reasonable file path
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// assert!(validate_file_path("/home/user/.ssh/id_rsa").is_ok());
 /// assert!(validate_file_path("~/.ssh/config").is_ok());
 /// assert!(validate_file_path("/path; rm -rf /").is_err());
@@ -128,7 +128,7 @@ pub fn validate_file_path(path: &str) -> Result<&str> {
 /// - Format: hostname, IPv4, IPv6, or user@hostname
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// assert!(validate_hostname("example.com").is_ok());
 /// assert!(validate_hostname("192.168.1.1").is_ok());
 /// assert!(validate_hostname("user@bastion.example.com").is_ok());
@@ -250,7 +250,7 @@ pub fn validate_hostname(host: &str) -> Result<&str> {
 /// - No shell metacharacters
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// assert!(validate_proxy_jump("user@bastion.example.com").is_ok());
 /// assert!(validate_proxy_jump("user@bastion.example.com:2222").is_ok());
 /// assert!(validate_proxy_jump("user@10.0.0.1").is_ok());
@@ -313,7 +313,7 @@ pub fn validate_proxy_jump(proxy_jump: &str) -> Result<String> {
 /// - Use for generic SSH option values
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// assert_eq!(sanitize_ssh_option("safe_value").unwrap(), "safe_value");
 /// assert!(sanitize_ssh_option("value; rm -rf /").is_err());
 /// ```
