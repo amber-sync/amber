@@ -1,27 +1,35 @@
 /**
- * TimeMachineHeader - Minimal header with job switcher and status
+ * TimeMachineHeader - Header with job switcher, controls, and status
+ *
+ * TIM-138: Added Run/Stop backup and Edit controls
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { SyncJob } from '../../../types';
+import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 
 interface TimeMachineHeaderProps {
   job: SyncJob | null;
   jobs: SyncJob[];
   isRunning: boolean;
+  progress: RsyncProgressData | null;
   onJobSwitch: (jobId: string) => void;
   onBack: () => void;
-  onSettings: () => void;
+  onRunBackup: () => void;
+  onStopBackup: () => void;
+  onEditJob: () => void;
 }
 
 export function TimeMachineHeader({
   job,
   jobs,
   isRunning,
+  progress,
   onJobSwitch,
   onBack,
-  onSettings,
+  onRunBackup,
+  onStopBackup,
+  onEditJob,
 }: TimeMachineHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -103,18 +111,52 @@ export function TimeMachineHeader({
       </div>
 
       <div className="tm-header-right">
-        {/* Live indicator */}
-        {isRunning && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--tm-amber-wash)] rounded-lg">
+        {/* Progress indicator when running */}
+        {isRunning && progress && (
+          <div className="flex items-center gap-3 px-3 py-1.5 bg-[var(--tm-amber-wash)] rounded-lg">
             <div className="tm-live-status-dot" />
-            <span className="text-xs font-medium text-[var(--tm-amber)]">Syncing</span>
+            <span className="text-xs font-medium text-[var(--tm-amber)]">
+              {progress.percentage}%
+            </span>
+            {progress.eta && (
+              <span className="text-xs text-[var(--tm-text-dim)]">ETA {progress.eta}</span>
+            )}
           </div>
         )}
 
-        {/* Settings button */}
-        <button onClick={onSettings} className="tm-settings-btn" title="Settings">
-          <Icons.Settings size={16} />
-        </button>
+        {/* Run/Stop Backup button */}
+        {job &&
+          (isRunning ? (
+            <button
+              onClick={onStopBackup}
+              className="tm-control-btn tm-control-btn--danger"
+              title="Stop Backup"
+            >
+              <Icons.Square size={14} />
+              <span>Stop</span>
+            </button>
+          ) : (
+            <button
+              onClick={onRunBackup}
+              className="tm-control-btn tm-control-btn--primary"
+              title="Run Backup"
+            >
+              <Icons.Play size={14} />
+              <span>Run Backup</span>
+            </button>
+          ))}
+
+        {/* Edit Job button */}
+        {job && (
+          <button
+            onClick={onEditJob}
+            className="tm-control-btn tm-control-btn--secondary"
+            title="Edit Job Settings"
+          >
+            <Icons.Pencil size={14} />
+            <span>Edit</span>
+          </button>
+        )}
       </div>
     </header>
   );
