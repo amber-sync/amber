@@ -23,3 +23,4 @@ export { GlassPanel, type GlassPanelVariant } from './GlassPanel';
 export { CollapsibleSection } from './CollapsibleSection';
 export { StepIndicator } from './StepIndicator';
 export { ProgressRing } from './ProgressRing';
+export { ProgressBar, type ProgressBarVariant, type ProgressBarSize } from './ProgressBar';
