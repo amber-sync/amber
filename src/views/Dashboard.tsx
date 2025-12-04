@@ -64,22 +64,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="no-drag">
           <h1
-            className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight"
+            className="text-3xl font-bold text-text-primary tracking-tight"
             style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
           >
             Amber
           </h1>
-          <p
-            className="text-zinc-500 dark:text-zinc-400 mt-1"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="text-text-tertiary mt-1" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             Rsync and Time Machine
           </p>
         </div>
 
-        <div className="flex items-center gap-6 bg-zinc-50 dark:bg-zinc-900/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
+        <div className="flex items-center gap-6 bg-layer-2 backdrop-blur-md px-6 py-3 rounded-2xl border border-border-base">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
+            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
               <Icons.Database size={18} />
             </div>
             <div>
@@ -93,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
+            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
               <Icons.Activity size={18} />
             </div>
             <div>
@@ -105,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="w-px h-8 bg-border-base" />
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
+            <div className="p-2 bg-layer-3 text-text-secondary rounded-lg">
               <Icons.Archive size={18} />
             </div>
             <div>
@@ -127,7 +124,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Jobs List - Primary Content */}
       <div className="space-y-3">
         <div
-          className="flex items-center justify-between px-4 text-xs font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider"
+          className="flex items-center justify-between px-4 text-xs font-semibold text-text-tertiary uppercase tracking-wider"
           style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
         >
           <div className="w-1/3">Job Name</div>
@@ -149,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ))}
 
           {jobs.length === 0 && (
-            <div className="py-16 text-center text-zinc-500 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700">
+            <div className="py-16 text-center text-text-tertiary bg-layer-2 rounded-2xl border border-dashed border-border-highlight">
               <Icons.HardDrive className="mx-auto mb-4 opacity-20" size={48} />
               <p>No sync jobs configured yet.</p>
             </div>
@@ -161,7 +158,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {jobs.length > 0 && (
         <div className="pt-6 border-t border-border-base">
           <h2
-            className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4"
+            className="text-lg font-semibold text-text-primary mb-4"
             style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
           >
             Analytics
@@ -226,7 +223,7 @@ const JobRow: React.FC<{
   return (
     <div
       onClick={onSelect}
-      className="group relative bg-gradient-to-r from-white to-stone-50/50 dark:from-stone-900 dark:to-stone-800/50 hover:from-stone-50 hover:to-stone-100 dark:hover:from-stone-800 dark:hover:to-stone-700/50 rounded-xl p-4 border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+      className="group relative bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elevated)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center gap-4"
     >
       {/* Status Icon with Connection Dot and Progress */}
       <div className="relative">
@@ -239,7 +236,7 @@ const JobRow: React.FC<{
           <div
             className={`p-2.5 rounded-lg shrink-0 ${
               job.status === JobStatus.SUCCESS
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                ? 'bg-[var(--color-success-subtle)] text-[var(--color-success)]'
                 : 'bg-layer-3 text-text-tertiary'
             }`}
           >
@@ -272,7 +269,7 @@ const JobRow: React.FC<{
       {/* Paths */}
       <div className="w-1/3 min-w-0 flex flex-col gap-1.5">
         <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.sourcePath}>
-          <Icons.Server size={14} className="text-accent-primary shrink-0" />
+          <Icons.Server size={14} className="text-text-tertiary shrink-0" />
           <span className="truncate">
             <span className="font-bold">{getPathName(job.sourcePath)}</span>
             <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">
@@ -281,7 +278,7 @@ const JobRow: React.FC<{
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.destPath}>
-          <Icons.HardDrive size={14} className="text-orange-500 shrink-0" />
+          <Icons.HardDrive size={14} className="text-text-tertiary shrink-0" />
           <span className="truncate">
             <span className="font-bold">{getPathName(job.destPath)}</span>
             <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">
