@@ -510,6 +510,11 @@ function AppContent() {
                 setView('TIME_MACHINE');
               }}
               onCreateJob={openNewJob}
+              onRunBackup={runSync}
+              onEditSettings={id => {
+                setActiveJobId(id);
+                openSettings('DASHBOARD');
+              }}
             />
           </div>
         )}

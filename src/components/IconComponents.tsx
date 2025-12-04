@@ -63,6 +63,7 @@ import {
   Square,
   Pencil,
   ExternalLink,
+  GitCompare,
 } from 'lucide-react';
 
 export const Icons = {
@@ -129,4 +130,5 @@ export const Icons = {
   Square,
   Pencil,
   ExternalLink,
+  GitCompare,
 };

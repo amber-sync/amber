@@ -2,11 +2,13 @@
  * TimeMachineHeader - Header with job switcher, controls, and status
  *
  * TIM-138: Added Run/Stop backup and Edit controls
+ * TIM-151: Added date range filter
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
+import { DateFilter } from '../TimeMachine';
 
 interface TimeMachineHeaderProps {
   job: SyncJob | null;
@@ -19,6 +21,10 @@ interface TimeMachineHeaderProps {
   onStopBackup: () => void;
   onEditJob: () => void;
   onNewJob?: () => void;
+  dateFilter?: DateFilter;
+  onDateFilterChange?: (filter: DateFilter) => void;
+  snapshotCount?: number;
+  totalSnapshotCount?: number;
 }
 
 export function TimeMachineHeader({
@@ -32,6 +38,10 @@ export function TimeMachineHeader({
   onStopBackup,
   onEditJob,
   onNewJob,
+  dateFilter = 'all',
+  onDateFilterChange,
+  snapshotCount,
+  totalSnapshotCount,
 }: TimeMachineHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -113,6 +123,30 @@ export function TimeMachineHeader({
       </div>
 
       <div className="tm-header-right">
+        {/* Date filter (TIM-151) */}
+        {onDateFilterChange && job && (
+          <div className="flex items-center gap-2">
+            <select
+              value={dateFilter}
+              onChange={e => onDateFilterChange(e.target.value as DateFilter)}
+              className="tm-control-btn tm-control-btn--secondary text-sm px-3 py-2"
+            >
+              <option value="all">All Time</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="90days">Last 90 Days</option>
+              <option value="year">Last Year</option>
+            </select>
+            {dateFilter !== 'all' &&
+              snapshotCount !== undefined &&
+              totalSnapshotCount !== undefined && (
+                <span className="text-xs text-[var(--tm-text-dim)]">
+                  {snapshotCount} of {totalSnapshotCount} snapshots
+                </span>
+              )}
+          </div>
+        )}
+
         {/* Progress indicator when running */}
         {isRunning && progress && (
           <div className="flex items-center gap-3 px-3 py-1.5 bg-[var(--tm-amber-wash)] rounded-lg">
