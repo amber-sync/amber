@@ -108,23 +108,26 @@
 }
 
 /* ============================================
- * Timeline Ruler
+ * Timeline Ruler - Compact top bar
  * ============================================ */
 .tm-timeline {
   position: relative;
-  height: 120px;
-  padding: 0 48px;
+  height: 56px;
+  padding: 12px 48px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--tm-space);
   border-bottom: 1px solid var(--tm-dust);
-  background: linear-gradient(180deg, var(--tm-nebula) 0%, var(--tm-space) 100%);
 }
 
 .tm-timeline-track {
   position: relative;
   flex: 1;
-  height: 48px;
+  height: 24px;
   cursor: crosshair;
+  display: flex;
+  align-items: center;
 }
 
 /* The main horizontal line */
@@ -134,8 +137,9 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 1px;
+  height: 2px;
   background: var(--tm-dust);
+  border-radius: 1px;
   transform: translateY(-50%);
 }
 
@@ -225,15 +229,15 @@
   }
 }
 
-/* Year/Month labels */
+/* Month labels - subtle text below the line */
 .tm-timeline-label {
-  font-family: 'JetBrains Mono', var(--font-mono);
   position: absolute;
-  bottom: 8px;
+  top: calc(50% + 10px);
   transform: translateX(-50%);
-  font-size: 10px;
+  font-family: 'JetBrains Mono', var(--font-mono);
+  font-size: 9px;
   font-weight: 500;
-  color: var(--tm-text-dim);
+  color: var(--tm-text-muted);
   letter-spacing: 0.02em;
   white-space: nowrap;
 }

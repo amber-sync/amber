@@ -181,9 +181,9 @@ export function TimelineRuler({
       <div ref={trackRef} className="tm-timeline-track" onClick={handleTrackClick}>
         {/* Month labels */}
         {monthLabels.map((label, i) => (
-          <div key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
+          <span key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
             {label.label}
-          </div>
+          </span>
         ))}
 
         {/* Snapshot markers */}
