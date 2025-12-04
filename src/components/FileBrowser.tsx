@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { List, RowComponentProps } from 'react-window';
 import { Icons } from './IconComponents';
 import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
@@ -8,6 +7,7 @@ import { logger } from '../utils/logger';
 import { isDirectory } from '../types';
 
 const ROW_HEIGHT = 40;
+const MAX_DISPLAY_ITEMS = 500; // Prevent browser crash on huge directories
 
 interface FileEntry {
   name: string;
@@ -50,12 +50,13 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FileEntry[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [showAllItems, setShowAllItems] = useState(false);
 
-  // TIM-58: Virtual scrolling
+  // Container height for scrollable list
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
 
-  // TIM-58: Measure container height for virtual scrolling
+  // Measure container height for scrollable list
   useEffect(() => {
     const container = listContainerRef.current;
     if (!container) return;
@@ -223,6 +224,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
       setSelectedFileForPreview(null);
       setSearchResults(null);
       setSearchQuery('');
+      setShowAllItems(false);
     } else {
       setSelectedFileForPreview(entry);
     }
@@ -239,26 +241,28 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   const relativePath = currentPath.replace(initialPath, '');
   const parts = relativePath.split('/').filter(Boolean);
 
-  // Determine which entries to display
-  const displayEntries = searchResults !== null ? searchResults : entries;
+  // Determine which entries to display (with limit protection)
+  const allEntries = searchResults !== null ? searchResults : entries;
+  const isTruncated = allEntries.length > MAX_DISPLAY_ITEMS && !showAllItems;
+  const displayEntries = isTruncated ? allEntries.slice(0, MAX_DISPLAY_ITEMS) : allEntries;
 
   return (
-    <div className="flex h-full bg-white dark:bg-gray-900">
+    <div className="flex h-full bg-layer-1">
       {/* File Browser Panel */}
       <div
         className={`flex flex-col ${showPreview && selectedFileForPreview ? 'w-1/2' : 'w-full'} transition-all duration-200`}
       >
         {/* Toolbar / Breadcrumbs */}
-        <div className="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="flex items-center gap-2 p-3 border-b border-border-base bg-layer-2/50">
           <button
             onClick={handleNavigateUp}
             disabled={currentPath === initialPath || searchResults !== null}
-            className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            className="p-1.5 rounded-md hover:bg-layer-3 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
           >
             <Icons.ArrowRight className="rotate-180 w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 overflow-hidden flex-1">
+          <div className="flex items-center gap-1 text-text-secondary overflow-hidden flex-1">
             {searchResults !== null ? (
               <span className="flex items-center gap-2">
                 <Icons.Search size={14} />
@@ -268,7 +272,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                     setSearchQuery('');
                     setSearchResults(null);
                   }}
-                  className="ml-2 text-xs text-blue-500 hover:text-blue-600"
+                  className="ml-2 text-xs text-[var(--color-info)] hover:text-[var(--color-info)]"
                 >
                   Clear
                 </button>
@@ -276,7 +280,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
             ) : (
               <>
                 <span
-                  className="cursor-pointer hover:text-blue-500 transition-colors flex items-center gap-1"
+                  className="cursor-pointer hover:text-[var(--color-info)] transition-colors flex items-center gap-1"
                   onClick={() => setCurrentPath(initialPath)}
                 >
                   <Icons.HardDrive size={14} />
@@ -286,9 +290,9 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                   const pathSoFar = initialPath + '/' + parts.slice(0, i + 1).join('/');
                   return (
                     <React.Fragment key={pathSoFar}>
-                      <span className="text-gray-300 dark:text-gray-600">/</span>
+                      <span className="text-text-quaternary">/</span>
                       <span
-                        className="cursor-pointer hover:text-blue-500 transition-colors truncate max-w-[150px]"
+                        className="cursor-pointer hover:text-[var(--color-info)] transition-colors truncate max-w-[150px]"
                         onClick={() => setCurrentPath(pathSoFar)}
                       >
                         {part}
@@ -308,15 +312,15 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="Search files..."
-                className="w-48 px-3 py-1.5 pl-8 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200"
+                className="w-48 px-3 py-1.5 pl-8 text-sm rounded-md border border-border-base bg-layer-1 focus:outline-none focus:ring-2 focus:ring-accent-primary text-text-primary"
               />
               <Icons.Search
                 size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
               />
               {isSearching && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-[var(--color-info)] border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
             </div>
@@ -324,7 +328,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
 
           {/* Indexed indicator */}
           {isIndexed && (
-            <div className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full flex items-center gap-1">
+            <div className="px-2 py-0.5 text-xs bg-[var(--color-success-subtle)] text-[var(--color-success)] rounded-full flex items-center gap-1">
               <Icons.Zap size={10} />
               Fast
             </div>
@@ -334,59 +338,54 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           {selectedFileForPreview && (
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-md hover:bg-layer-3 transition-colors"
               title={showPreview ? 'Hide Preview' : 'Show Preview'}
             >
               {showPreview ? (
-                <Icons.Eye size={16} className="text-blue-500" />
+                <Icons.Eye size={16} className="text-[var(--color-info)]" />
               ) : (
-                <Icons.EyeOff size={16} className="text-gray-400" />
+                <Icons.EyeOff size={16} className="text-text-tertiary" />
               )}
             </button>
           )}
         </div>
 
         {/* File List Header */}
-        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 py-2 border-b border-border-base bg-layer-2 text-xs font-medium text-text-tertiary uppercase tracking-wider">
           <div className="w-5"></div>
           <div>Name</div>
           <div className="text-right">Size</div>
           <div className="text-right">Modified</div>
         </div>
 
-        {/* File List - TIM-58: Virtual Scrolling */}
+        {/* File List */}
         <div className="flex-1 overflow-hidden" ref={listContainerRef}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+              <div className="text-text-tertiary">Loading...</div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-red-500">Error: {error}</div>
+              <div className="text-[var(--color-error)]">Error: {error}</div>
             </div>
           ) : displayEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full text-text-tertiary">
               <Icons.Search size={48} className="mb-2 opacity-20" />
               <div>{searchResults !== null ? 'No files found' : 'Empty directory'}</div>
             </div>
           ) : (
-            <List
-              style={{ height: listHeight }}
-              rowCount={displayEntries.length}
-              rowHeight={ROW_HEIGHT}
-              overscanCount={5}
-              rowProps={{}}
-              rowComponent={({ index, style }: RowComponentProps) => {
-                const entry = displayEntries[index];
+            <div className="overflow-auto" style={{ height: listHeight }}>
+              {displayEntries.map(entry => {
                 const isSelected = selectedFiles.has(entry.path);
                 const isPreviewSelected = selectedFileForPreview?.path === entry.path;
 
                 return (
                   <div
-                    style={style}
+                    key={entry.path}
+                    style={{ height: ROW_HEIGHT }}
                     onClick={() => handleEntryClick(entry)}
-                    className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 items-center hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 transition-colors ${
-                      isPreviewSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 items-center hover:bg-layer-2 cursor-pointer border-b border-border-base transition-colors ${
+                      isPreviewSelected ? 'bg-[var(--color-info-subtle)]' : ''
                     }`}
                   >
                     {/* Checkbox */}
@@ -397,7 +396,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                           checked={isSelected}
                           onChange={() => toggleSelection(null, entry.path)}
                           onClick={e => e.stopPropagation()}
-                          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                          className="w-4 h-4 rounded border-border-base"
                         />
                       )}
                     </div>
@@ -407,36 +406,52 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                       {entry.isDirectory ? (
                         <Icons.Folder
                           size={16}
-                          className="text-blue-500 dark:text-blue-400 flex-shrink-0"
+                          className="text-[var(--color-info)] flex-shrink-0"
                         />
                       ) : (
-                        <Icons.File size={16} className="text-gray-400 flex-shrink-0" />
+                        <Icons.File size={16} className="text-text-tertiary flex-shrink-0" />
                       )}
-                      <span className="truncate text-gray-700 dark:text-gray-300">
-                        {entry.name}
-                      </span>
+                      <span className="truncate text-text-secondary">{entry.name}</span>
                     </div>
 
                     {/* Size */}
-                    <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-sm">
+                    <div className="text-right text-text-tertiary tabular-nums text-sm">
                       {!entry.isDirectory && formatBytes(entry.size)}
                     </div>
 
                     {/* Modified */}
-                    <div className="text-right text-gray-500 dark:text-gray-400 tabular-nums text-xs">
+                    <div className="text-right text-text-tertiary tabular-nums text-xs">
                       {entry.modified.toLocaleDateString()}
                     </div>
                   </div>
                 );
-              }}
-            />
+              })}
+              {/* Truncation warning */}
+              {isTruncated && (
+                <div className="sticky bottom-0 bg-accent-secondary border-t border-border-base px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-accent-primary text-sm">
+                    <Icons.AlertTriangle size={16} />
+                    <span>
+                      Showing {MAX_DISPLAY_ITEMS.toLocaleString()} of{' '}
+                      {allEntries.length.toLocaleString()} items
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowAllItems(true)}
+                    className="px-3 py-1 text-sm bg-accent-primary hover:bg-accent-primary text-white rounded-md transition-colors"
+                  >
+                    Show all (may be slow)
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
 
       {/* Preview Panel */}
       {showPreview && selectedFileForPreview && (
-        <div className="w-1/2 border-l border-gray-200 dark:border-gray-700">
+        <div className="w-1/2 border-l border-border-base">
           <FilePreview
             filePath={selectedFileForPreview.path}
             fileName={selectedFileForPreview.name}
