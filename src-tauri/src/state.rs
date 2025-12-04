@@ -95,8 +95,5 @@ impl AppState {
     }
 }
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self::new().expect("Failed to initialize application state")
-    }
-}
+// Note: Default implementation removed to avoid panic on initialization failure.
+// AppState must be created explicitly with `new()` which returns Result<Self, String>.
