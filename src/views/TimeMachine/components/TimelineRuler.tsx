@@ -254,12 +254,6 @@ export function TimelineRuler({
             </button>
           );
         })}
-
-        {/* NOW indicator */}
-        <div className="tm-now-indicator">
-          <div className="tm-now-dot" />
-          <span className="tm-now-label">Now</span>
-        </div>
       </div>
 
       {/* Zone 3: Month labels (below track) */}
@@ -269,6 +263,10 @@ export function TimelineRuler({
             {label.label}
           </span>
         ))}
+        {/* Now marker - just a label like months */}
+        <span className="tm-timeline-label tm-timeline-label--now" style={{ left: '100%' }}>
+          Now
+        </span>
       </div>
     </div>
   );
