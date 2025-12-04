@@ -6,6 +6,7 @@ import { HistoryView } from './views/HistoryView';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { JobDetail } from './views/JobDetail';
 import { TimeExplorer } from './views/TimeExplorer';
+import { TimeMachine } from './views/TimeMachine/TimeMachine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
@@ -417,6 +418,7 @@ function AppContent() {
     'DASHBOARD',
     'TIMELINE',
     'TIME_EXPLORER',
+    'TIME_MACHINE',
     'HISTORY',
     'APP_SETTINGS',
     'HELP',
@@ -454,8 +456,8 @@ function AppContent() {
               diskStats={destinationStats}
               onSelectJob={id => {
                 setActiveJobId(id);
-                // Navigate to Time Explorer for the selected job
-                setView('TIME_EXPLORER');
+                // Navigate to unified Time Machine for the selected job
+                setView('TIME_MACHINE');
               }}
               onCreateJob={openNewJob}
             />
@@ -465,6 +467,15 @@ function AppContent() {
         {view === 'TIMELINE' && <TimelineView jobs={jobs} diskStats={destinationStats} />}
 
         {view === 'TIME_EXPLORER' && <TimeExplorer />}
+
+        {view === 'TIME_MACHINE' && (
+          <TimeMachine
+            initialJobId={activeJobId || undefined}
+            isRunning={isRunning}
+            progress={progress}
+            logs={logs}
+          />
+        )}
 
         {view === 'HISTORY' && <HistoryView jobs={jobs} />}
 

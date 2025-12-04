@@ -62,6 +62,7 @@ import {
   Hand,
   Square,
   Pencil,
+  ExternalLink,
 } from 'lucide-react';
 
 export const Icons = {
@@ -127,4 +128,5 @@ export const Icons = {
   Hand,
   Square,
   Pencil,
+  ExternalLink,
 };
