@@ -54,16 +54,16 @@ export function DateNavigator({
 
   if (loading) {
     return (
-      <div className="border-b border-stone-200 p-4 dark:border-stone-700">
+      <div className="border-b border-border-base p-4">
         <div className="animate-pulse">
           <div className="mb-3 flex items-center justify-between">
-            <div className="h-6 w-6 rounded bg-stone-200 dark:bg-stone-700" />
-            <div className="h-5 w-12 rounded bg-stone-200 dark:bg-stone-700" />
-            <div className="h-6 w-6 rounded bg-stone-200 dark:bg-stone-700" />
+            <div className="h-6 w-6 rounded bg-layer-3" />
+            <div className="h-5 w-12 rounded bg-layer-3" />
+            <div className="h-6 w-6 rounded bg-layer-3" />
           </div>
           <div className="grid grid-cols-4 gap-1">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-7 rounded bg-stone-100 dark:bg-stone-800" />
+              <div key={i} className="h-7 rounded bg-layer-2" />
             ))}
           </div>
         </div>
@@ -72,24 +72,24 @@ export function DateNavigator({
   }
 
   return (
-    <div className="border-b border-stone-200 p-4 dark:border-stone-700">
+    <div className="border-b border-border-base p-4">
       {/* Year selector */}
       <div className="mb-3 flex items-center justify-between">
         <button
           onClick={() => onYearChange(selectedYear - 1)}
-          className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-800"
+          className="rounded p-1 text-text-secondary hover:bg-layer-3 hover:text-text-primary"
           aria-label="Previous year"
         >
           <Icons.ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-medium">{selectedYear}</span>
+        <span className="text-sm font-medium text-text-primary">{selectedYear}</span>
         <button
           onClick={() => onYearChange(selectedYear + 1)}
           disabled={selectedYear >= currentYear}
           className={`rounded p-1 ${
             selectedYear >= currentYear
-              ? 'cursor-not-allowed opacity-30'
-              : 'hover:bg-stone-100 dark:hover:bg-stone-800'
+              ? 'cursor-not-allowed text-text-quaternary'
+              : 'text-text-secondary hover:bg-layer-3 hover:text-text-primary'
           }`}
           aria-label="Next year"
         >
@@ -114,12 +114,12 @@ export function DateNavigator({
               disabled={isFuture}
               className={`rounded px-2 py-1 text-xs transition ${
                 isFuture
-                  ? 'cursor-not-allowed text-stone-300 dark:text-stone-600'
+                  ? 'cursor-not-allowed text-text-quaternary'
                   : isSelected
-                    ? 'bg-amber-500 text-white'
+                    ? 'bg-accent-primary text-accent-text'
                     : hasBackups
-                      ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
-                      : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800'
+                      ? 'bg-accent-secondary text-text-primary hover:bg-layer-3'
+                      : 'text-text-secondary hover:bg-layer-3'
               }`}
               aria-pressed={isSelected}
               aria-label={`${month} ${selectedYear}${monthDensity ? `, ${monthDensity.count} backups` : ''}`}
@@ -135,16 +135,16 @@ export function DateNavigator({
 
       {/* Selected month info */}
       {selectedMonth && (
-        <div className="mt-2 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+        <div className="mt-2 flex items-center justify-between text-xs text-text-tertiary">
           <span>
             Showing:{' '}
-            <span className="font-medium">
+            <span className="font-medium text-text-primary">
               {MONTHS[selectedMonth - 1]} {selectedYear}
             </span>
           </span>
           <button
             onClick={() => onMonthChange(null)}
-            className="text-amber-600 hover:text-amber-700 dark:text-amber-400"
+            className="text-text-secondary hover:text-text-primary"
           >
             Clear filter
           </button>
