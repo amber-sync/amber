@@ -9,8 +9,6 @@ interface AppContextType {
   activeJobId: string | null;
   view:
     | 'DASHBOARD'
-    | 'TIMELINE'
-    | 'TIME_EXPLORER'
     | 'TIME_MACHINE'
     | 'JOB_EDITOR'
     | 'DETAIL'
@@ -28,8 +26,6 @@ interface AppContextType {
   setView: (
     view:
       | 'DASHBOARD'
-      | 'TIMELINE'
-      | 'TIME_EXPLORER'
       | 'TIME_MACHINE'
       | 'JOB_EDITOR'
       | 'DETAIL'
@@ -87,8 +83,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<
     | 'DASHBOARD'
-    | 'TIMELINE'
-    | 'TIME_EXPLORER'
     | 'TIME_MACHINE'
     | 'JOB_EDITOR'
     | 'DETAIL'

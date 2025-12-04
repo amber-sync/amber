@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
-import { TimelineView } from './views/TimelineView';
 import { RestoreWizard } from './views/RestoreWizard';
 import { HistoryView } from './views/HistoryView';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { JobDetail } from './views/JobDetail';
-import { TimeExplorer } from './views/TimeExplorer';
 import { TimeMachine } from './views/TimeMachine/TimeMachine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
@@ -464,15 +462,9 @@ function AppContent() {
     setRestoreJobId(null);
   };
 
-  const isTopLevel = [
-    'DASHBOARD',
-    'TIMELINE',
-    'TIME_EXPLORER',
-    'TIME_MACHINE',
-    'HISTORY',
-    'APP_SETTINGS',
-    'HELP',
-  ].includes(view);
+  const isTopLevel = ['DASHBOARD', 'TIME_MACHINE', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(
+    view
+  );
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
   return (
@@ -518,10 +510,6 @@ function AppContent() {
             />
           </div>
         )}
-
-        {view === 'TIMELINE' && <TimelineView jobs={jobs} diskStats={destinationStats} />}
-
-        {view === 'TIME_EXPLORER' && <TimeExplorer />}
 
         {view === 'TIME_MACHINE' && (
           <TimeMachine
