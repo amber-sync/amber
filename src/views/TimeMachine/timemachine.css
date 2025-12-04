@@ -256,11 +256,6 @@
   letter-spacing: 0.05em;
 }
 
-/* No tick mark for Now - it's at the edge */
-.tm-timeline-label--now::before {
-  display: none;
-}
-
 @keyframes tm-pulse {
   0%,
   100% {
@@ -284,18 +279,6 @@
   color: var(--tm-text-muted);
   letter-spacing: 0.02em;
   white-space: nowrap;
-}
-
-/* Tick marks connecting labels to the track */
-.tm-timeline-label::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 1px;
-  height: 8px;
-  background: var(--tm-dust);
-  margin-bottom: 4px;
 }
 
 /* Hover tooltip styling (positioned above track) */
