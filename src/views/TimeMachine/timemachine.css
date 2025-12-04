@@ -480,15 +480,23 @@
  * Header
  * ============================================ */
 .tm-header {
-  height: 56px;
+  height: 72px;
+  padding-top: 12px; /* Space for macOS title bar */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding-left: 24px;
+  padding-right: 24px;
   border-bottom: 1px solid var(--tm-dust);
   background: linear-gradient(180deg, var(--tm-glass) 0%, transparent 100%);
   backdrop-filter: blur(20px);
   -webkit-app-region: drag;
+}
+
+/* Ensure icons don't block button clicks */
+.tm-header button svg,
+.tm-header button span {
+  pointer-events: none;
 }
 
 .tm-header-left {
