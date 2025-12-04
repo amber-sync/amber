@@ -57,7 +57,7 @@ describe('RestoreOverlay', () => {
     destPath: '/destination',
     mode: 'TIME_MACHINE' as any,
     destinationType: 'LOCAL' as any,
-    syncConfig: {
+    config: {
       recursive: true,
       compress: false,
       archive: true,
@@ -66,10 +66,9 @@ describe('RestoreOverlay', () => {
       excludePatterns: [],
       customFlags: '',
     },
-    schedule: null,
-    enabled: true,
-    cloudConfig: null,
-    sshConfig: null,
+    scheduleInterval: null,
+    lastRun: null,
+    status: 'IDLE' as any,
   };
 
   const mockSnapshots: TimeMachineSnapshot[] = [
