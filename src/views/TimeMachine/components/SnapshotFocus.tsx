@@ -124,7 +124,7 @@ export function SnapshotFocus({
           icon={<Icons.RefreshCw size={16} />}
           label="Changes"
           value={snapshot.changesCount?.toLocaleString() ?? '—'}
-          highlight={snapshot.changesCount && snapshot.changesCount > 0}
+          highlight={Boolean(snapshot.changesCount && snapshot.changesCount > 0)}
         />
         <StatCard
           icon={<Icons.Zap size={16} />}

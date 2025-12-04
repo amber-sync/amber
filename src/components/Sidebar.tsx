@@ -5,6 +5,7 @@ type View =
   | 'DASHBOARD'
   | 'TIMELINE'
   | 'TIME_EXPLORER'
+  | 'TIME_MACHINE'
   | 'JOB_EDITOR'
   | 'DETAIL'
   | 'HISTORY'
@@ -60,10 +61,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
         onClick={() => onNavigate('TIMELINE')}
       />
       <SidebarButton
-        label="Time Explorer"
+        label="Time Machine"
         icon={<Icons.Clock size={18} />}
-        active={activeView === 'TIME_EXPLORER'}
-        onClick={() => onNavigate('TIME_EXPLORER')}
+        active={activeView === 'TIME_MACHINE'}
+        onClick={() => onNavigate('TIME_MACHINE')}
       />
       <SidebarButton
         label="History"

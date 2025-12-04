@@ -48,7 +48,7 @@ export function AnalyticsOverlay({ isOpen, job, snapshot, onClose }: AnalyticsOv
           api.getLargestFilesOnDestination(job.destPath, job.id, snapshot.timestamp, 20),
         ]);
 
-        const totalSize = fileTypes.reduce((sum, ft) => sum + ft.size, 0);
+        const totalSize = fileTypes.reduce((sum, ft) => sum + ft.totalSize, 0);
         const totalFiles = fileTypes.reduce((sum, ft) => sum + ft.count, 0);
 
         setData({ fileTypes, largestFiles, totalSize, totalFiles });
@@ -66,7 +66,7 @@ export function AnalyticsOverlay({ isOpen, job, snapshot, onClose }: AnalyticsOv
   // Calculate max values for bar charts
   const maxFileTypeSize = useMemo(() => {
     if (!data?.fileTypes.length) return 0;
-    return Math.max(...data.fileTypes.map(ft => ft.size));
+    return Math.max(...data.fileTypes.map(ft => ft.totalSize));
   }, [data?.fileTypes]);
 
   const maxFileSize = useMemo(() => {
@@ -152,8 +152,8 @@ export function AnalyticsOverlay({ isOpen, job, snapshot, onClose }: AnalyticsOv
                         key={i}
                         extension={ft.extension || 'other'}
                         count={ft.count}
-                        size={ft.size}
-                        percentage={(ft.size / maxFileTypeSize) * 100}
+                        size={ft.totalSize}
+                        percentage={(ft.totalSize / maxFileTypeSize) * 100}
                       />
                     ))
                   ) : (
