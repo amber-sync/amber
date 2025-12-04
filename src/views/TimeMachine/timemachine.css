@@ -115,8 +115,8 @@
  * ============================================ */
 .tm-timeline {
   position: relative;
-  height: 160px;
-  padding: 24px 48px 16px;
+  height: 130px;
+  padding: 16px 48px 12px;
   display: flex;
   flex-direction: column;
   background: var(--tm-space);
@@ -125,7 +125,7 @@
 
 /* Top zone for hover tooltips */
 .tm-timeline-tooltip-zone {
-  height: 48px;
+  height: 40px;
   position: relative;
   flex-shrink: 0;
 }
@@ -133,7 +133,7 @@
 /* Middle zone - the actual track */
 .tm-timeline-track {
   position: relative;
-  height: 48px;
+  height: 40px;
   cursor: crosshair;
   display: flex;
   align-items: center;
