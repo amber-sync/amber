@@ -227,9 +227,11 @@ export function TimelineRuler({
                 )}
               </button>
 
-              {/* Tooltip */}
-              {isHovered && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20 pointer-events-none tm-animate-fade-in">
+              {/* Date label - shows below marker when selected or hovered */}
+              {(isSelected || isHovered) && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-20 pointer-events-none tm-animate-fade-in">
+                  {/* Arrow pointing up */}
+                  <div className="w-2 h-2 bg-[var(--tm-nebula)] border-t border-l border-[var(--tm-dust)] rotate-45 absolute left-1/2 -translate-x-1/2 -top-1" />
                   <div className="bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg shadow-xl px-3 py-2 whitespace-nowrap">
                     {marker.isCluster ? (
                       <>
@@ -255,7 +257,6 @@ export function TimelineRuler({
                       </>
                     )}
                   </div>
-                  <div className="w-2 h-2 bg-[var(--tm-nebula)] border-b border-r border-[var(--tm-dust)] rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1" />
                 </div>
               )}
             </div>
