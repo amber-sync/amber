@@ -23,6 +23,9 @@ pub enum AmberError {
     #[error("Job not found: {0}")]
     JobNotFound(String),
 
+    #[error("Job already running: {0}")]
+    JobAlreadyRunning(String),
+
     // Filesystem operations
     #[error("Filesystem error: {0}")]
     Filesystem(String),
