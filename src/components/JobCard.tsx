@@ -1,0 +1,274 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { SyncJob, JobStatus } from '../types';
+import { Icons } from './IconComponents';
+import { formatSchedule, formatRelativeTime } from '../utils';
+import { ConnectionDot, OfflineBadge } from './ConnectionStatus';
+import { Badge, StatusDot, IconButton, ProgressRing, Text, Body, BodySmall, Caption } from './ui';
+
+interface JobMountInfo {
+  mounted: boolean;
+  isExternal: boolean;
+  volumeName?: string;
+}
+
+interface JobCardProps {
+  job: SyncJob;
+  mountInfo?: JobMountInfo;
+  onSelect: () => void;
+  onRunBackup?: (jobId: string) => void;
+  onEditSettings?: (jobId: string) => void;
+}
+
+export const JobCard: React.FC<JobCardProps> = ({
+  job,
+  mountInfo,
+  onSelect,
+  onRunBackup,
+  onEditSettings,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const isRunning = job.status === JobStatus.RUNNING;
+  const mounted = mountInfo?.mounted ?? true;
+
+  // Get status for StatusDot
+  const getStatusDotStatus = (): 'success' | 'error' | 'warning' | 'info' | 'neutral' => {
+    if (isRunning) return 'info';
+    switch (job.status) {
+      case JobStatus.SUCCESS:
+        return 'success';
+      case JobStatus.FAILED:
+        return 'error';
+      default:
+        return 'neutral';
+    }
+  };
+
+  // Format relative time
+  const getRelativeTime = () => {
+    if (!job.lastRun) return 'Never run';
+    return formatRelativeTime(job.lastRun);
+  };
+
+  // Handle card click - toggle expand
+  const handleCardClick = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsExpanded(!isExpanded);
+    } else if (e.key === 'Escape' && isExpanded) {
+      setIsExpanded(false);
+    }
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      aria-label={`${job.name} backup job, ${job.status}, ${getRelativeTime()}`}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      className={`
+        bg-layer-1 rounded-xl border cursor-pointer
+        ${
+          isExpanded
+            ? 'border-border-highlight shadow-[var(--shadow-elevated)]'
+            : 'border-border-base shadow-[var(--shadow-card)] hover:border-border-highlight hover:shadow-[var(--shadow-elevated)]'
+        }
+      `}
+    >
+      {/* Collapsed Header - Always Visible */}
+      <div className="flex items-center gap-3 p-4">
+        {/* Job Icon - colored by availability status */}
+        <div className="shrink-0">
+          {isRunning ? (
+            <ProgressRing
+              progress={0}
+              size={36}
+              strokeWidth={2.5}
+              showLabel={false}
+              variant="default"
+            >
+              <Icons.RefreshCw size={14} className="animate-spin text-accent-primary" />
+            </ProgressRing>
+          ) : (
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                !mounted
+                  ? 'bg-warning-subtle text-[var(--color-warning)]'
+                  : 'bg-layer-2 text-text-secondary'
+              }`}
+            >
+              <Icons.Archive size={18} />
+            </div>
+          )}
+        </div>
+
+        {/* Job Name & Mode */}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <Text variant="heading-4" as="h3" truncate>
+            {job.name}
+          </Text>
+          <ModeBadge mode={job.mode} />
+          {!mounted && <OfflineBadge />}
+        </div>
+
+        {/* Relative Time */}
+        <div className="shrink-0">
+          {isRunning ? (
+            <BodySmall className="text-accent-primary font-medium animate-pulse">
+              Syncing...
+            </BodySmall>
+          ) : (
+            <Caption color="secondary">{getRelativeTime()}</Caption>
+          )}
+        </div>
+
+        {/* Always-Visible Actions */}
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+          {onRunBackup && (
+            <IconButton
+              label={isRunning ? 'Backup running' : 'Run backup now'}
+              variant="ghost"
+              size="sm"
+              disabled={isRunning}
+              onClick={() => onRunBackup(job.id)}
+            >
+              <Icons.Play size={16} />
+            </IconButton>
+          )}
+          {onEditSettings && (
+            <IconButton
+              label="Edit settings"
+              variant="ghost"
+              size="sm"
+              onClick={() => onEditSettings(job.id)}
+            >
+              <Icons.Settings size={16} />
+            </IconButton>
+          )}
+        </div>
+
+        {/* Expand Indicator */}
+        <Icons.ChevronDown
+          size={18}
+          className={`text-text-tertiary shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+        />
+      </div>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="px-4 pb-4">
+          {/* Divider */}
+          <div className="border-t border-border-base mb-4" />
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Source Path */}
+            <div className="space-y-1">
+              <Caption color="tertiary" className="flex items-center gap-1.5">
+                <Icons.FolderOpen size={12} />
+                Source
+              </Caption>
+              <BodySmall className="break-all" title={job.sourcePath}>
+                {job.sourcePath}
+              </BodySmall>
+            </div>
+
+            {/* Destination Path */}
+            <div className="space-y-1">
+              <Caption color="tertiary" className="flex items-center gap-1.5">
+                <Icons.HardDrive size={12} />
+                Destination
+              </Caption>
+              <BodySmall className="break-all" title={job.destPath}>
+                {job.destPath}
+              </BodySmall>
+            </div>
+
+            {/* Schedule */}
+            <div className="space-y-1">
+              <Caption color="tertiary" className="flex items-center gap-1.5">
+                <Icons.Clock size={12} />
+                Schedule
+              </Caption>
+              <BodySmall>{formatSchedule(job.scheduleInterval)}</BodySmall>
+            </div>
+
+            {/* Last Run */}
+            <div className="space-y-1">
+              <Caption color="tertiary" className="flex items-center gap-1.5">
+                <Icons.Activity size={12} />
+                Last Backup
+              </Caption>
+              <BodySmall>
+                {job.lastRun ? (
+                  <>
+                    {new Date(job.lastRun).toLocaleDateString()} at{' '}
+                    {new Date(job.lastRun).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </>
+                ) : (
+                  <span className="text-text-tertiary">Never</span>
+                )}
+              </BodySmall>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border-base">
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                onSelect();
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-primary text-accent-text rounded-xl hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]"
+            >
+              <Icons.Clock size={16} />
+              <Text variant="ui" as="span">
+                View History
+              </Text>
+            </button>
+            {onRunBackup && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  onRunBackup(job.id);
+                }}
+                disabled={isRunning}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-layer-3 text-text-primary rounded-xl hover:bg-layer-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icons.Play size={16} />
+                <Text variant="ui" as="span">
+                  {isRunning ? 'Running...' : 'Run Now'}
+                </Text>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ModeBadge: React.FC<{ mode: SyncJob['mode'] }> = ({ mode }) => {
+  const labels: Record<string, string> = {
+    MIRROR: 'Mirror',
+    ARCHIVE: 'Archive',
+    TIME_MACHINE: 'Time Machine',
+  };
+  return (
+    <span className="px-2 py-0.5 text-xs font-medium text-text-tertiary bg-layer-2 rounded-md">
+      {labels[mode] || 'Mirror'}
+    </span>
+  );
+};
+
+export default JobCard;

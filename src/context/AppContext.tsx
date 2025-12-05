@@ -7,15 +7,7 @@ import { logger } from '../utils/logger';
 interface AppContextType {
   jobs: SyncJob[];
   activeJobId: string | null;
-  view:
-    | 'DASHBOARD'
-    | 'TIME_MACHINE'
-    | 'JOB_EDITOR'
-    | 'DETAIL'
-    | 'HISTORY'
-    | 'APP_SETTINGS'
-    | 'HELP'
-    | 'RESTORE_WIZARD';
+  view: 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
   runInBackground: boolean;
   startOnBoot: boolean;
   notificationsEnabled: boolean;
@@ -24,15 +16,7 @@ interface AppContextType {
   setJobs: React.Dispatch<React.SetStateAction<SyncJob[]>>;
   setActiveJobId: (id: string | null) => void;
   setView: (
-    view:
-      | 'DASHBOARD'
-      | 'TIME_MACHINE'
-      | 'JOB_EDITOR'
-      | 'DETAIL'
-      | 'HISTORY'
-      | 'APP_SETTINGS'
-      | 'HELP'
-      | 'RESTORE_WIZARD'
+    view: 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD'
   ) => void;
   setRunInBackground: (val: boolean) => void;
   setStartOnBoot: (val: boolean) => void;
@@ -82,14 +66,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<
-    | 'DASHBOARD'
-    | 'TIME_MACHINE'
-    | 'JOB_EDITOR'
-    | 'DETAIL'
-    | 'HISTORY'
-    | 'APP_SETTINGS'
-    | 'HELP'
-    | 'RESTORE_WIZARD'
+    'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD'
   >('DASHBOARD');
   const [runInBackground, setRunInBackground] = useState(false);
   const [startOnBoot, setStartOnBoot] = useState(false);

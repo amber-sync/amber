@@ -1,7 +1,9 @@
 use crate::error::Result;
 use crate::types::job::{SyncJob, SyncMode};
-use crate::utils::is_ssh_remote; // TIM-123: Use centralized path utility
-use crate::utils::validation::{validate_file_path, validate_proxy_jump, validate_ssh_port};
+use crate::utils::{is_ssh_remote, ssh_local_part}; // TIM-123: Use centralized path utilities
+use crate::utils::validation::{
+    sanitize_ssh_option, validate_file_path, validate_proxy_jump, validate_ssh_port,
+};
 use chrono::Local;
 use regex::Regex;
 use std::collections::HashMap;
@@ -168,6 +170,24 @@ impl RsyncService {
                         }
                     }
                 }
+                // Validate and add custom SSH options (e.g., "-o Compression=yes")
+                if let Some(ref custom_opts) = ssh.custom_ssh_options {
+                    if !custom_opts.trim().is_empty() {
+                        match sanitize_ssh_option(custom_opts) {
+                            Ok(validated_opts) => {
+                                ssh_cmd.push_str(&format!(" {}", validated_opts));
+                            }
+                            Err(e) => {
+                                log::error!(
+                                    "[rsync_service] Invalid custom SSH options '{}': {}",
+                                    custom_opts,
+                                    e
+                                );
+                            }
+                        }
+                    }
+                }
+
                 if ssh.disable_host_key_checking == Some(true) {
                     ssh_cmd.push_str(
                         " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
@@ -278,20 +298,12 @@ impl RsyncService {
         );
 
         // For SSH remotes like "user@host:/path/to/dir", extract just the directory name
-        let source_basename = if is_ssh_remote(&job.source_path) {
-            // Extract path part after the colon, then get the last component
-            job.source_path
-                .split(':')
-                .nth(1)
-                .and_then(|path| Path::new(path).file_name())
-                .and_then(|n| n.to_str())
-                .unwrap_or("backup")
-        } else {
-            Path::new(&job.source_path)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("backup")
-        };
+        let source_basename = ssh_local_part(&job.source_path)
+            .map(|local_path| Path::new(local_path).file_name())
+            .flatten()
+            .or_else(|| Path::new(&job.source_path).file_name())
+            .and_then(|n| n.to_str())
+            .unwrap_or("backup");
 
         log::info!("[rsync_service] source_basename: '{}'", source_basename);
 
@@ -751,5 +763,129 @@ mod tests {
         // Should NOT have -e flag for local path
         let e_idx = args.iter().position(|a| a == "-e");
         assert!(e_idx.is_none(), "Should NOT have -e flag for local path");
+    }
+
+    #[test]
+    fn test_ssh_custom_options() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: Some("-o Compression=yes".to_string()),
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            ssh_cmd.contains("-o Compression=yes"),
+            "SSH command '{}' should contain custom options",
+            ssh_cmd
+        );
+    }
+
+    #[test]
+    fn test_ssh_all_options_combined() {
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("2222".to_string()),
+            identity_file: Some("/home/user/.ssh/id_ed25519".to_string()),
+            config_file: Some("/home/user/.ssh/config".to_string()),
+            disable_host_key_checking: Some(true),
+            proxy_jump: Some("bastion@10.0.0.1:2222".to_string()),
+            custom_ssh_options: Some("-o ConnectTimeout=30".to_string()),
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        // Verify all options are present
+        assert!(ssh_cmd.contains("ssh"), "Should start with ssh");
+        assert!(ssh_cmd.contains("-p 2222"), "Should contain port");
+        assert!(
+            ssh_cmd.contains("-i /home/user/.ssh/id_ed25519"),
+            "Should contain identity file"
+        );
+        assert!(
+            ssh_cmd.contains("-F /home/user/.ssh/config"),
+            "Should contain config file"
+        );
+        assert!(
+            ssh_cmd.contains("-J bastion@10.0.0.1:2222"),
+            "Should contain proxy jump with port"
+        );
+        assert!(
+            ssh_cmd.contains("-o ConnectTimeout=30"),
+            "Should contain custom options"
+        );
+        assert!(
+            ssh_cmd.contains("StrictHostKeyChecking=no"),
+            "Should contain host key checking disabled"
+        );
+    }
+
+    #[test]
+    fn test_ssh_local_part_extraction() {
+        // Test that ssh_local_part properly extracts paths
+        use crate::utils::ssh_local_part;
+
+        assert_eq!(ssh_local_part("user@host:/var/www"), Some("/var/www"));
+        assert_eq!(ssh_local_part("user@host:/home/user/docs"), Some("/home/user/docs"));
+        assert_eq!(ssh_local_part("user@192.168.1.1:/backup"), Some("/backup"));
+        assert_eq!(ssh_local_part("/local/path"), None);
+        assert_eq!(ssh_local_part("relative/path"), None);
+    }
+
+    #[test]
+    fn test_ssh_remote_source_basename_extraction() {
+        // Verify that source_basename is correctly extracted for SSH remotes
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::TimeMachine);
+        job.source_path = "user@remote:/home/user/documents".to_string();
+
+        // The source basename should be "documents" extracted from the SSH path
+        let args = service.build_rsync_args(&job, "/backup", None);
+
+        // Source should still be the full SSH path with trailing slash
+        assert!(args.iter().any(|a| a == "user@remote:/home/user/documents/"));
+    }
+
+    #[test]
+    fn test_ssh_invalid_custom_options_rejected() {
+        // Invalid options with shell metacharacters should be silently rejected (logged error)
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: Some("$(malicious)".to_string()), // Invalid - command substitution
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        // Should NOT contain the malicious option
+        assert!(
+            !ssh_cmd.contains("$(malicious)"),
+            "Should reject command substitution in custom options"
+        );
+        assert!(
+            !ssh_cmd.contains("malicious"),
+            "Should not include any part of invalid option"
+        );
     }
 }

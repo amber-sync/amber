@@ -1,11 +1,10 @@
 import React from 'react';
 import { SyncMode, RsyncConfig, DestinationType } from '../types';
-import { JobEditor } from './JobEditor';
 import { JobEditorStepper } from './JobEditorStepper';
 import { JobEditorAccordion } from './JobEditorAccordion';
 import { JobEditorTwoPanel } from './JobEditorTwoPanel';
 
-export type JobEditorVariant = 'classic' | 'stepper' | 'accordion' | 'twopanel';
+export type JobEditorVariant = 'stepper' | 'accordion' | 'twopanel';
 
 interface JobEditorWrapperProps {
   variant?: JobEditorVariant;
@@ -71,9 +70,7 @@ export const JobEditorWrapper: React.FC<JobEditorWrapperProps> = ({
     case 'accordion':
       return <JobEditorAccordion {...props} />;
     case 'twopanel':
-      return <JobEditorTwoPanel {...props} />;
-    case 'classic':
     default:
-      return <JobEditor {...props} />;
+      return <JobEditorTwoPanel {...props} />;
   }
 };

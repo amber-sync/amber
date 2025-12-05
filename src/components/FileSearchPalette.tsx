@@ -192,7 +192,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
           // For folders in snapshots, navigate to them in the file browser
           if (result.scope === 'snapshot' && activeJob) {
             setActiveJobId(activeJob.id);
-            setView('DETAIL');
+            setView('TIME_MACHINE');
             // Note: The FileBrowser would need to support path navigation
           }
         } else {

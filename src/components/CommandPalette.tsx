@@ -148,7 +148,7 @@ export const CommandPalette: React.FC = () => {
         icon: <EyeIcon />,
         action: () => {
           setActiveJobId(job.id);
-          setView('DETAIL');
+          setView('TIME_MACHINE');
           setIsOpen(false);
         },
       });

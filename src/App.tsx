@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
-import { HistoryView } from './views/HistoryView';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
-import { JobDetail } from './views/JobDetail';
 import { TimeMachine } from './views/TimeMachine/TimeMachine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
@@ -225,9 +223,10 @@ function AppContent() {
     setView('JOB_EDITOR');
   };
 
-  const openSettings = (sourceView?: string) => {
-    if (!activeJobId) return;
-    const job = jobs.find(j => j.id === activeJobId);
+  const openSettings = (sourceView?: string, jobId?: string) => {
+    const targetJobId = jobId || activeJobId;
+    if (!targetJobId) return;
+    const job = jobs.find(j => j.id === targetJobId);
     if (!job) return;
 
     // TIM-141: Track where we came from for proper navigation after save
@@ -300,8 +299,8 @@ function AppContent() {
         }
       : { enabled: false };
 
-    // TIM-141: Navigate back to source view (TIME_MACHINE or DETAIL)
-    const returnView = jobEditorSourceView === 'TIME_MACHINE' ? 'TIME_MACHINE' : 'DETAIL';
+    // TIM-141: Navigate back to source view (TIME_MACHINE for existing, DASHBOARD for new)
+    const returnView = activeJobId ? 'TIME_MACHINE' : 'DASHBOARD';
 
     if (activeJobId) {
       const job = jobs.find(j => j.id === activeJobId);
@@ -458,17 +457,15 @@ function AppContent() {
       addLog(`Restore failed: ${e.message}`, 'error');
     }
 
-    setView('DETAIL');
+    setView('TIME_MACHINE');
     setRestoreJobId(null);
   };
 
-  const isTopLevel = ['DASHBOARD', 'TIME_MACHINE', 'HISTORY', 'APP_SETTINGS', 'HELP'].includes(
-    view
-  );
+  const isTopLevel = ['DASHBOARD', 'TIME_MACHINE', 'APP_SETTINGS', 'HELP'].includes(view);
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
 
   return (
-    <div className="flex min-h-screen bg-[var(--page-bg)] text-text-primary font-sans transition-colors duration-300 relative">
+    <div className="flex h-screen bg-[var(--page-bg)] text-text-primary font-sans transition-colors duration-300 relative overflow-hidden">
       <div className="fixed top-0 left-0 w-full h-8 z-[100] titlebar-drag" />
 
       {/* Clean background - no ambient gradients */}
@@ -505,42 +502,26 @@ function AppContent() {
               onRunBackup={runSync}
               onEditSettings={id => {
                 setActiveJobId(id);
-                openSettings('DASHBOARD');
+                openSettings('DASHBOARD', id);
               }}
             />
           </div>
         )}
 
         {view === 'TIME_MACHINE' && (
-          <TimeMachine
-            initialJobId={activeJobId || undefined}
-            isRunning={isRunning}
-            progress={progress}
-            logs={logs}
-          />
+          <div className="flex-1 overflow-hidden">
+            <TimeMachine
+              initialJobId={activeJobId || undefined}
+              isRunning={isRunning}
+              progress={progress}
+              logs={logs}
+            />
+          </div>
         )}
-
-        {view === 'HISTORY' && <HistoryView jobs={jobs} />}
 
         {view === 'APP_SETTINGS' && <AppSettings />}
 
         {view === 'HELP' && <HelpSection />}
-
-        {view === 'DETAIL' && activeJob && (
-          <JobDetail
-            job={activeJob}
-            diskStats={destinationStats}
-            isRunning={isRunning}
-            progress={progress}
-            logs={logs}
-            onBack={() => setView('DASHBOARD')}
-            onRun={runSync}
-            onStop={stopSync}
-            onOpenSettings={openSettings}
-            onDelete={promptDelete}
-            onRestore={() => handleOpenRestore(activeJob.id)}
-          />
-        )}
 
         {view === 'RESTORE_WIZARD' &&
           restoreJobId &&
@@ -552,7 +533,7 @@ function AppContent() {
                 job={job}
                 onBack={() => {
                   setRestoreJobId(null);
-                  setView('DETAIL');
+                  setView('TIME_MACHINE');
                 }}
                 onRestore={handleRestoreFiles}
               />
@@ -598,7 +579,7 @@ function AppContent() {
             setSshCustomOptions={setSshCustomOptions}
             setTempExcludePattern={setTempExcludePattern}
             onSave={handleSaveJob}
-            onCancel={() => setView(activeJobId ? 'DETAIL' : 'DASHBOARD')}
+            onCancel={() => setView(activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
             onJobModeChange={handleJobModeChange}

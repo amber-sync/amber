@@ -5,8 +5,6 @@ type View =
   | 'DASHBOARD'
   | 'TIME_MACHINE'
   | 'JOB_EDITOR'
-  | 'DETAIL'
-  | 'HISTORY'
   | 'APP_SETTINGS'
   | 'HELP'
   | 'RESTORE_WIZARD';
@@ -37,7 +35,7 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onCl
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
-  <aside className="w-64 bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
+  <aside className="w-44 bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
     <div className="p-6 flex items-center gap-3">
       <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-accent-text shadow-[var(--shadow-card)]">
         <Icons.Activity size={20} />
@@ -57,12 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
         icon={<Icons.Clock size={18} />}
         active={activeView === 'TIME_MACHINE'}
         onClick={() => onNavigate('TIME_MACHINE')}
-      />
-      <SidebarButton
-        label="History"
-        icon={<Icons.List size={18} />}
-        active={activeView === 'HISTORY'}
-        onClick={() => onNavigate('HISTORY')}
       />
       <SidebarButton
         label="Settings"
