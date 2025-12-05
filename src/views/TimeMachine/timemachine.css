@@ -222,30 +222,23 @@
   border-color: var(--tm-warning);
 }
 
-/* Cluster markers - slightly larger */
+/* Cluster markers - visually distinct with subtle ring */
 .tm-marker--cluster {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
+  border-width: 3px;
+  box-shadow: 0 0 0 3px var(--tm-accent-glow);
 }
 
-/* Cluster badge */
-.tm-marker-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  background: var(--tm-accent);
-  color: var(--tm-space);
-  border-radius: 7px;
-  font-size: 8px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', var(--font-mono);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
+.tm-marker--cluster:hover {
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 0 4px var(--tm-accent-glow);
+}
+
+.tm-marker--cluster.tm-marker--selected {
+  box-shadow:
+    0 0 0 4px var(--tm-accent-glow),
+    0 0 0 6px var(--tm-accent-wash);
 }
 
 /* "Now" label - styled like month labels but at the end */

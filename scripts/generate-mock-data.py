@@ -52,6 +52,12 @@ NUM_SNAPSHOTS_MEDIA = 8  # ~2 months of weekly backups
 FILES_PER_JOB = 500  # Number of actual files to create
 CHANGE_RATE = 0.15  # 15% of files change between snapshots
 
+# Stress test configuration - large dataset for performance testing
+STRESS_TEST_DAILY_SNAPSHOTS = 30   # 30 consecutive daily snapshots
+STRESS_TEST_WEEKLY_SNAPSHOTS = 10  # 10 weekly snapshots spread across the year
+STRESS_TEST_FILES = 2000           # More files per snapshot for stress testing
+STRESS_TEST_SIZE_GB = 30           # Simulated total size
+
 # File templates for realistic content
 DOCUMENT_TYPES = [
     ("txt", 100, 5000, "notes draft document readme changelog"),
@@ -70,6 +76,24 @@ MEDIA_TYPES = [
     ("mp3", 1000000, 5000000, "audio track song"),
     ("mp4", 5000000, 50000000, "video clip recording"),
     ("pdf", 100000, 2000000, "document report manual"),
+]
+
+# Stress test file types - mix of documents and media for realistic large backup
+STRESS_TEST_TYPES = [
+    ("txt", 1000, 50000, "notes draft document readme changelog log data"),
+    ("md", 2000, 80000, "README documentation guide tutorial spec"),
+    ("json", 500, 100000, "config package settings manifest data export"),
+    ("csv", 5000, 500000, "data export report analytics metrics log"),
+    ("py", 2000, 100000, "script utils main app test module handler"),
+    ("js", 2000, 80000, "index app utils helpers components module"),
+    ("ts", 2000, 80000, "index app utils helpers components service"),
+    ("tsx", 3000, 120000, "component page layout modal form hook"),
+    ("html", 3000, 150000, "index page template layout email"),
+    ("css", 1000, 50000, "styles main theme variables animations"),
+    ("jpg", 100000, 2000000, "photo image picture scan"),
+    ("png", 50000, 500000, "screenshot icon logo diagram"),
+    ("pdf", 200000, 5000000, "document report manual spec"),
+    ("mp3", 3000000, 10000000, "audio track song recording"),
 ]
 
 # Job definitions
@@ -107,6 +131,41 @@ JOBS = [
         ],
     },
 ]
+
+# Stress test job - large dataset for UI/performance testing
+STRESS_TEST_JOB = {
+    "id": "stress-test-backup",
+    "name": "Stress Test (30GB)",
+    "source_path": "/Users/demo/StressTest",
+    "file_types": STRESS_TEST_TYPES,
+    "num_snapshots": STRESS_TEST_DAILY_SNAPSHOTS + STRESS_TEST_WEEKLY_SNAPSHOTS,
+    "files_per_job": STRESS_TEST_FILES,
+    "is_stress_test": True,
+    "directories": [
+        "Projects/webapp/src/components",
+        "Projects/webapp/src/hooks",
+        "Projects/webapp/src/utils",
+        "Projects/webapp/public",
+        "Projects/api/src/routes",
+        "Projects/api/src/services",
+        "Projects/api/src/models",
+        "Projects/mobile/ios",
+        "Projects/mobile/android",
+        "Projects/scripts",
+        "Documents/reports/2024",
+        "Documents/reports/2023",
+        "Documents/specs",
+        "Documents/notes",
+        "Media/photos/2024",
+        "Media/photos/2023",
+        "Media/screenshots",
+        "Media/diagrams",
+        "Archive/old-projects",
+        "Archive/backups",
+        "Downloads/temp",
+        "Downloads/installers",
+    ],
+}
 
 # Track generated data
 GENERATED_SNAPSHOTS = {}
@@ -221,8 +280,9 @@ def generate_job_files(job: dict, rng: random.Random) -> list:
     files = []
     file_types = job["file_types"]
     directories = job["directories"]
+    num_files = job.get("files_per_job", FILES_PER_JOB)
 
-    for i in range(FILES_PER_JOB):
+    for i in range(num_files):
         # Pick random directory and file type
         directory = rng.choice(directories)
         ext, min_size, max_size, name_parts = rng.choice(file_types)
@@ -257,10 +317,24 @@ def create_snapshot(job: dict, snapshot_num: int, total_snapshots: int,
 
     job_id = job["id"]
     job_dir = MOCK_DATA_DIR / job_id
+    is_stress_test = job.get("is_stress_test", False)
 
     # Calculate timestamp (going backwards from now)
     now = datetime.now()
-    days_ago = (total_snapshots - snapshot_num) * 7  # Weekly snapshots
+
+    if is_stress_test:
+        # Stress test: 30 daily snapshots, then 10 weekly snapshots
+        if snapshot_num <= STRESS_TEST_DAILY_SNAPSHOTS:
+            # Daily snapshots (most recent 30 days)
+            days_ago = STRESS_TEST_DAILY_SNAPSHOTS - snapshot_num
+        else:
+            # Weekly snapshots (spread across ~70 days before daily range)
+            weekly_index = snapshot_num - STRESS_TEST_DAILY_SNAPSHOTS
+            days_ago = STRESS_TEST_DAILY_SNAPSHOTS + (weekly_index * 7)
+    else:
+        # Regular jobs: weekly snapshots
+        days_ago = (total_snapshots - snapshot_num) * 7
+
     snapshot_time = now - timedelta(days=days_ago, hours=rng.randint(0, 12))
     timestamp_ms = int(snapshot_time.timestamp() * 1000)  # Milliseconds for manifest/folder names
     timestamp_sec = int(snapshot_time.timestamp())        # Seconds for mtime (Rust multiplies by 1000)
@@ -525,7 +599,7 @@ def generate_manifest(job: dict):
     print(f"    Snapshots: {len(manifest_snapshots)}")
 
 
-def generate_jobs_json():
+def generate_jobs_json_for(jobs_list: list):
     """Generate jobs.json for the app.
 
     Note: snapshots field is included for backwards compatibility but
@@ -536,7 +610,7 @@ def generate_jobs_json():
     jobs_data = []
     now_ms = int(datetime.now().timestamp() * 1000)
 
-    for job in JOBS:
+    for job in jobs_list:
         job_id = job["id"]
         dest_path = str((MOCK_DATA_DIR / job_id).resolve())
 
@@ -580,12 +654,36 @@ def generate_jobs_json():
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate mock backup data for Amber")
+    parser.add_argument(
+        "--stress-test",
+        action="store_true",
+        help="Generate stress test job with 40 snapshots (30 daily + 10 weekly) and 2000+ files"
+    )
+    parser.add_argument(
+        "--stress-test-only",
+        action="store_true",
+        help="Only generate stress test job (skip regular mock jobs)"
+    )
+    args = parser.parse_args()
+
     print("=" * 60)
     print("Amber Time Machine Mock Data Generator")
     print("=" * 60)
     print(f"Creating REAL files with hard links between snapshots")
     print(f"Output: {MOCK_DATA_DIR}")
     print(f"Using TIM-127 destination-centric architecture: <dest>/.amber-meta/index.db")
+
+    if args.stress_test or args.stress_test_only:
+        print()
+        print("🔥 STRESS TEST MODE ENABLED")
+        print(f"   - {STRESS_TEST_DAILY_SNAPSHOTS} daily snapshots (last 30 days)")
+        print(f"   - {STRESS_TEST_WEEKLY_SNAPSHOTS} weekly snapshots (spread across year)")
+        print(f"   - {STRESS_TEST_FILES} files per snapshot")
+        print(f"   - ~{STRESS_TEST_SIZE_GB}GB simulated total size")
+
     print()
 
     # Ensure output directory exists
@@ -593,9 +691,18 @@ def main():
 
     start_time = time.time()
 
+    # Determine which jobs to generate
+    jobs_to_generate = []
+    if args.stress_test_only:
+        jobs_to_generate = [STRESS_TEST_JOB]
+    elif args.stress_test:
+        jobs_to_generate = JOBS + [STRESS_TEST_JOB]
+    else:
+        jobs_to_generate = JOBS
+
     # Generate each job with its own per-destination database
     job_connections = []
-    for job in JOBS:
+    for job in jobs_to_generate:
         conn = generate_job(job)
         job_connections.append((job, conn))
 
@@ -607,11 +714,11 @@ def main():
 
     # Generate manifest.json for each job (for frontend to load snapshots)
     print("\nGenerating manifests...")
-    for job in JOBS:
+    for job in jobs_to_generate:
         generate_manifest(job)
 
-    # Generate jobs.json
-    generate_jobs_json()
+    # Generate jobs.json (uses GENERATED_SNAPSHOTS which includes all generated jobs)
+    generate_jobs_json_for(jobs_to_generate)
 
     # Stats
     elapsed = time.time() - start_time
@@ -619,7 +726,7 @@ def main():
     # Calculate total DB size across all destinations
     total_db_size = sum(
         get_dest_db_path(job["id"]).stat().st_size
-        for job in JOBS
+        for job in jobs_to_generate
         if get_dest_db_path(job["id"]).exists()
     )
     db_size_mb = total_db_size / (1024 * 1024)
@@ -627,21 +734,21 @@ def main():
     # Count total files on disk
     total_files = sum(
         len(list((MOCK_DATA_DIR / job["id"]).rglob("*")))
-        for job in JOBS
+        for job in jobs_to_generate
     )
 
     print()
     print("=" * 60)
     print("Generation Complete!")
     print("=" * 60)
-    print(f"  Total snapshots: {sum(job['num_snapshots'] for job in JOBS)}")
+    print(f"  Total snapshots: {sum(job['num_snapshots'] for job in jobs_to_generate)}")
     print(f"  Files on disk: {total_files:,}")
     print(f"  Total database size: {db_size_mb:.1f} MB")
     print(f"  Time elapsed: {elapsed:.1f} seconds")
     print()
     print("Output files (destination-centric):")
     print(f"  {JOBS_JSON_PATH}")
-    for job in JOBS:
+    for job in jobs_to_generate:
         print(f"  {MOCK_DATA_DIR / job['id']}/")
         print(f"    └── .amber-meta/")
         print(f"        ├── manifest.json")
