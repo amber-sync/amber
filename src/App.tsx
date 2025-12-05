@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dashboard } from './views/Dashboard';
+import { DashboardPage } from './features/dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { TimeMachine } from './views/TimeMachine/TimeMachine';
@@ -491,7 +491,7 @@ function AppContent() {
       <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
         {/* Dashboard and TimeMachine kept mounted for instant switching */}
         <div className="flex-1 overflow-hidden" style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}>
-          <Dashboard
+          <DashboardPage
             jobs={jobs}
             diskStats={destinationStats}
             onSelectJob={id => {
