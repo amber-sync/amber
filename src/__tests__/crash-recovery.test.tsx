@@ -187,19 +187,16 @@ describe('Crash and Recovery Testing', () => {
       });
     });
 
-    it('should handle network timeout errors', async () => {
+    it('should handle network timeout errors in sync context', () => {
+      // Note: Async timeout errors cannot be caught by Error Boundaries
+      // This test verifies sync error handling for timeout-like scenarios
       const TimeoutComponent = () => {
-        const [status, setStatus] = React.useState('loading');
-
-        React.useEffect(() => {
-          const timeout = setTimeout(() => {
-            throw new Error('Network timeout');
-          }, 100);
-
-          return () => clearTimeout(timeout);
-        }, []);
-
-        return <div>{status}</div>;
+        // Simulate a synchronous timeout check
+        const hasTimedOut = true;
+        if (hasTimedOut) {
+          throw new Error('Network timeout');
+        }
+        return <div>loading</div>;
       };
 
       render(
@@ -208,14 +205,7 @@ describe('Crash and Recovery Testing', () => {
         </ErrorBoundary>,
       );
 
-      await waitFor(
-        () => {
-          expect(screen.queryByText('Something went wrong')).toBeInTheDocument();
-        },
-        { timeout: 300 },
-      ).catch(() => {
-        // Timeout errors may not be caught by error boundary in test environment
-      });
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     });
   });
 
@@ -240,21 +230,17 @@ describe('Crash and Recovery Testing', () => {
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     });
 
-    it('should handle event listener cleanup errors', async () => {
+    it('should handle cleanup function errors', () => {
+      // Note: Event handler errors outside React lifecycle cannot be caught by Error Boundaries
+      // This test verifies sync error handling in effect setup
       const EventComponent = () => {
         React.useEffect(() => {
-          const handler = () => {
-            throw new Error('Event handler error');
-          };
-
-          window.addEventListener('test-event', handler);
-
-          // Trigger the event
-          window.dispatchEvent(new Event('test-event'));
-
-          return () => {
-            window.removeEventListener('test-event', handler);
-          };
+          // Simulate a setup error (sync, during effect execution)
+          const shouldFail = true;
+          if (shouldFail) {
+            throw new Error('Effect setup error');
+          }
+          return () => {};
         }, []);
 
         return <div>Event component</div>;
@@ -266,9 +252,8 @@ describe('Crash and Recovery Testing', () => {
         </ErrorBoundary>,
       );
 
-      await waitFor(() => {
-        expect(screen.queryByText('Something went wrong')).toBeInTheDocument();
-      });
+      // React 18+ catches errors in useEffect setup in error boundaries
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     });
   });
 

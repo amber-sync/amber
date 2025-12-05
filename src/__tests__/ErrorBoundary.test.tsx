@@ -91,8 +91,9 @@ describe('ErrorBoundary', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should log error details via logger', () => {
-    const { logger } = require('../utils/logger');
+  it('should log error details via logger', async () => {
+    // Using dynamic import instead of require
+    const { logger } = await import('../utils/logger');
 
     render(
       <ErrorBoundary>

@@ -53,7 +53,7 @@ function FileRow({
   onToggleSelection,
 }: RowComponentProps<FileRowProps>) {
   const entry = entries[index];
-  if (!entry) return null;
+  if (!entry) return <div style={style} {...ariaAttributes} />;
 
   const isSelected = selectedFiles.has(entry.path);
   const isPreviewSelected = selectedFileForPreview?.path === entry.path;
