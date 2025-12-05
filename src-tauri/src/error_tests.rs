@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::error::{AmberError, Result};
     use std::io;
 
