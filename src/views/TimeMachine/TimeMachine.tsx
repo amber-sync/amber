@@ -53,7 +53,7 @@ export function TimeMachine({
   progress = null,
   logs = [],
 }: TimeMachineProps) {
-  const { jobs, activeJobId, setActiveJobId, setView, runSync, stopSync, persistJob, deleteJob } =
+  const { jobs, activeJobId, setActiveJobId, setView, navigateBack, runSync, stopSync, persistJob, deleteJob } =
     useApp();
 
   // Current job
@@ -240,8 +240,8 @@ export function TimeMachine({
   }, []);
 
   const handleBack = useCallback(() => {
-    setView('DASHBOARD');
-  }, [setView]);
+    navigateBack();
+  }, [navigateBack]);
 
   const handleSelectSnapshot = useCallback((timestamp: number) => {
     setSelectedTimestamp(timestamp);
