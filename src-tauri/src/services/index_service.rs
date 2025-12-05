@@ -261,12 +261,16 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
         // Enable WAL mode for better concurrent read performance
-        conn.execute_batch("PRAGMA journal_mode=WAL;")
-            .map_err(|e| AmberError::Index(format!("Failed to set WAL mode: {}", e)))?;
-
-        // Enable foreign key enforcement (SQLite has this OFF by default!)
-        conn.execute_batch("PRAGMA foreign_keys = ON;")
-            .map_err(|e| AmberError::Index(format!("Failed to enable foreign keys: {}", e)))?;
+        // Also apply performance PRAGMA optimizations for large datasets (150K+ files)
+        conn.execute_batch(
+            "PRAGMA journal_mode=WAL;
+             PRAGMA foreign_keys = ON;
+             PRAGMA cache_size = -64000;      -- 64MB cache for better performance
+             PRAGMA temp_store = MEMORY;      -- Store temp tables in memory
+             PRAGMA mmap_size = 268435456;    -- 256MB memory-mapped I/O
+             PRAGMA synchronous = NORMAL;"    // Balanced safety/performance
+        )
+        .map_err(|e| AmberError::Index(format!("Failed to set database optimizations: {}", e)))?;
 
         // Check current version
         let version: i32 = conn
@@ -333,6 +337,23 @@ impl IndexService {
                 CREATE INDEX IF NOT EXISTS idx_files_path ON files(snapshot_id, path);
                 CREATE INDEX IF NOT EXISTS idx_files_name ON files(name);
 
+                -- Composite indexes for performance optimization (TIM-150K+)
+                -- Directory browsing with ORDER BY (avoids sorting in query)
+                CREATE INDEX IF NOT EXISTS idx_files_snapshot_parent_type_name
+                ON files(snapshot_id, parent_path, file_type DESC, name ASC);
+
+                -- File type statistics aggregation
+                CREATE INDEX IF NOT EXISTS idx_files_snapshot_type_size
+                ON files(snapshot_id, file_type, size);
+
+                -- Snapshots range queries for timeline views
+                CREATE INDEX IF NOT EXISTS idx_snapshots_job_timestamp
+                ON snapshots(job_id, timestamp DESC);
+
+                -- Global search join optimization
+                CREATE INDEX IF NOT EXISTS idx_snapshots_id_job_timestamp
+                ON snapshots(id, job_id, timestamp);
+
                 -- Update version
                 PRAGMA user_version = 1;
                 "#,
@@ -377,6 +398,10 @@ impl IndexService {
             // Rebuild FTS index from existing data
             self.rebuild_fts_index(conn)?;
         }
+
+        // Analyze tables to update query planner statistics
+        conn.execute_batch("ANALYZE;")
+            .map_err(|e| AmberError::Index(format!("Failed to analyze database: {}", e)))?;
 
         Ok(())
     }
