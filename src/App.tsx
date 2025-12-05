@@ -3,7 +3,7 @@ import { Dashboard } from './views/Dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { TimeMachine } from './views/TimeMachine/TimeMachine';
-import { AppSettings } from './views/AppSettings';
+import { SettingsPage } from './features/settings';
 import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
 // AmbientBackground removed - using clean page backgrounds
@@ -518,7 +518,7 @@ function AppContent() {
         </div>
 
         <div className="flex-1 overflow-hidden" style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}>
-          <AppSettings />
+          <SettingsPage />
         </div>
 
         {view === 'HELP' && <HelpSection />}
