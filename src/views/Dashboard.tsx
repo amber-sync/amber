@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { SyncJob, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
 import { formatBytes } from '../utils';
@@ -55,13 +55,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0);
   }, [jobs]);
 
-  const handleDayClick = (date: Date, backups: DayBackup[]) => {
+  const handleDayClick = useCallback((date: Date, backups: DayBackup[]) => {
     if (backups.length > 0) {
       setSelectedDay({ date, backups });
     } else {
       setSelectedDay(null);
     }
-  };
+  }, []);
 
   return (
     <div className="page-content page-animate-in">

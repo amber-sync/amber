@@ -93,6 +93,15 @@ pub struct FileTypeStats {
     pub total_size: i64,
 }
 
+/// Paginated directory contents with metadata
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectoryContents {
+    pub files: Vec<FileNode>,
+    pub total_count: usize,
+    pub has_more: bool,
+}
+
 /// Largest file info for analytics
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -586,12 +595,33 @@ impl IndexService {
     }
 
     /// Get files in a directory (for browsing UI)
+    /// Returns all files without pagination (legacy method for backward compatibility)
     pub fn get_directory_contents(
         &self,
         job_id: &str,
         timestamp: i64,
         parent_path: &str,
     ) -> Result<Vec<FileNode>> {
+        // Call paginated version with no limits
+        let contents = self.get_directory_contents_paginated(
+            job_id,
+            timestamp,
+            parent_path,
+            None,
+            None,
+        )?;
+        Ok(contents.files)
+    }
+
+    /// Get files in a directory with pagination support
+    pub fn get_directory_contents_paginated(
+        &self,
+        job_id: &str,
+        timestamp: i64,
+        parent_path: &str,
+        limit: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<DirectoryContents> {
         let conn = self
             .conn
             .lock()
@@ -606,37 +636,53 @@ impl IndexService {
             )
             .map_err(|_| AmberError::Index("Snapshot not found in index".to_string()))?;
 
-        // Get files in directory
+        // Get total count for pagination metadata
+        let total_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM files WHERE snapshot_id = ? AND parent_path = ?",
+                params![snapshot_id, parent_path],
+                |row| row.get(0),
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to count files: {}", e)))?;
+
+        // Get files in directory with pagination
+        let limit_val = limit.unwrap_or(500);
+        let offset_val = offset.unwrap_or(0);
+
         let mut stmt = conn
             .prepare(
                 "SELECT path, name, size, mtime, file_type
                  FROM files
                  WHERE snapshot_id = ? AND parent_path = ?
-                 ORDER BY file_type DESC, name ASC",
+                 ORDER BY file_type DESC, name ASC
+                 LIMIT ? OFFSET ?",
             )
             .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
 
         let files = stmt
-            .query_map(params![snapshot_id, parent_path], |row| {
-                let path: String = row.get(0)?;
-                let name: String = row.get(1)?;
-                let size: i64 = row.get(2)?;
-                let mtime: i64 = row.get(3)?;
-                let file_type: String = row.get(4)?;
+            .query_map(
+                params![snapshot_id, parent_path, limit_val as i64, offset_val as i64],
+                |row| {
+                    let path: String = row.get(0)?;
+                    let name: String = row.get(1)?;
+                    let size: i64 = row.get(2)?;
+                    let mtime: i64 = row.get(3)?;
+                    let file_type: String = row.get(4)?;
 
-                let is_dir = file_type == "dir";
-                let node_type = if is_dir { "dir" } else { "file" };
+                    let is_dir = file_type == "dir";
+                    let node_type = if is_dir { "dir" } else { "file" };
 
-                Ok(FileNode {
-                    id: path.replace('/', "-"),
-                    name,
-                    node_type: node_type.to_string(),
-                    size: size as u64,
-                    modified: mtime * 1000, // Convert to millis
-                    children: if is_dir { Some(Vec::new()) } else { None },
-                    path,
-                })
-            })
+                    Ok(FileNode {
+                        id: path.replace('/', "-"),
+                        name,
+                        node_type: node_type.to_string(),
+                        size: size as u64,
+                        modified: mtime * 1000, // Convert to millis
+                        children: if is_dir { Some(Vec::new()) } else { None },
+                        path,
+                    })
+                },
+            )
             .map_err(|e| AmberError::Index(format!("Failed to query files: {}", e)))?;
 
         let mut result = Vec::new();
@@ -646,7 +692,13 @@ impl IndexService {
             }
         }
 
-        Ok(result)
+        let has_more = offset_val + result.len() < total_count as usize;
+
+        Ok(DirectoryContents {
+            files: result,
+            total_count: total_count as usize,
+            has_more,
+        })
     }
 
     /// List all indexed snapshots for a job

@@ -32,6 +32,7 @@ import type {
   JobWithStatus,
   DiscoveredBackup,
   MigrationReport,
+  DirectoryContents,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -357,6 +358,25 @@ class AmberAPI {
     parentPath: string
   ): Promise<FileNode[]> {
     return invoke('get_indexed_directory', { jobId, timestamp, parentPath });
+  }
+
+  /**
+   * Get directory contents from SQLite index with pagination (for large directories)
+   */
+  async getIndexedDirectoryPaginated(
+    jobId: string,
+    timestamp: number,
+    parentPath: string,
+    limit?: number,
+    offset?: number
+  ): Promise<DirectoryContents> {
+    return invoke('get_indexed_directory_paginated', {
+      jobId,
+      timestamp,
+      parentPath,
+      limit,
+      offset
+    });
   }
 
   /**
