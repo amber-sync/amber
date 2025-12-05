@@ -3,74 +3,78 @@
  *
  * A clean, minimal aesthetic for navigating backup history.
  * Typography-focused with near-monochrome palette.
+ *
+ * TIM-183: Uses global design tokens from index.css where values match.
+ * TM-specific aliases provide semantic naming within TimeMachine scope.
  */
 
 /* ============================================
  * Editorial Color Palette (UI-012: Minimal, near-monochrome)
+ * Maps to global tokens where values match, keeps TM-specific overrides
  * ============================================ */
 
 /* Light Mode (default) */
 .tm-container {
-  /* Clean white backgrounds */
-  --tm-void: #fafafa;
-  --tm-space: #ffffff;
-  --tm-nebula: #ffffff;
-  --tm-dust: #e4e4e7; /* zinc-200 */
-  --tm-mist: #d4d4d8; /* zinc-300 */
+  /* Backgrounds - mapped to global layer tokens */
+  --tm-void: var(--bg-layer-2); /* #fafafa */
+  --tm-space: var(--bg-layer-1); /* #ffffff */
+  --tm-nebula: var(--bg-layer-1); /* #ffffff */
+  --tm-dust: var(--border-base); /* #e4e4e7 zinc-200 */
+  --tm-mist: var(--border-highlight); /* #d4d4d8 zinc-300 */
 
-  /* Editorial accent - near-black */
-  --tm-accent: #27272a; /* zinc-800 */
-  --tm-accent-bright: #18181b; /* zinc-900 */
-  --tm-accent-dim: #3f3f46; /* zinc-700 */
-  --tm-accent-glow: rgba(39, 39, 42, 0.06);
-  --tm-accent-wash: rgba(39, 39, 42, 0.04);
+  /* Accent - mapped to global accent tokens */
+  --tm-accent: var(--accent-primary); /* #27272a zinc-800 */
+  --tm-accent-bright: var(--accent-hover); /* #18181b zinc-900 */
+  --tm-accent-dim: #3f3f46; /* zinc-700 - TM-specific */
+  --tm-accent-glow: rgba(39, 39, 42, 0.06); /* TM-specific: lighter than global */
+  --tm-accent-wash: rgba(39, 39, 42, 0.04); /* TM-specific */
 
-  /* Text hierarchy - light mode */
-  --tm-text-bright: #18181b; /* zinc-900 */
-  --tm-text-soft: #3f3f46; /* zinc-700 */
-  --tm-text-dim: #71717a; /* zinc-500 */
-  --tm-text-muted: #a1a1aa; /* zinc-400 */
+  /* Text - mapped to global text tokens */
+  --tm-text-bright: var(--text-primary); /* #18181b zinc-900 */
+  --tm-text-soft: #3f3f46; /* zinc-700 - TM-specific: darker than --text-secondary */
+  --tm-text-dim: var(--text-tertiary); /* #71717a zinc-500 */
+  --tm-text-muted: var(--text-quaternary); /* #a1a1aa zinc-400 */
 
-  /* Semantic colors - subtle */
-  --tm-success: #16a34a;
-  --tm-warning: #ca8a04;
-  --tm-error: #dc2626;
+  /* Semantic colors - TM editorial variants */
+  --tm-success: #16a34a; /* TM-specific: green-600 */
+  --tm-warning: #ca8a04; /* TM-specific: yellow-600 */
+  --tm-error: #dc2626; /* TM-specific: red-600 */
 
-  /* Glass effects - light mode */
-  --tm-glass: rgba(255, 255, 255, 0.92);
-  --tm-glass-border: rgba(0, 0, 0, 0.06);
+  /* Glass - mapped to global glass tokens */
+  --tm-glass: var(--glass-bg-elevated); /* rgba(255, 255, 255, 0.92) */
+  --tm-glass-border: var(--glass-border); /* rgba(0, 0, 0, 0.06) */
 }
 
 /* Dark Mode */
 .dark .tm-container {
-  /* Deep charcoal backgrounds */
-  --tm-void: #09090b; /* zinc-950 */
-  --tm-space: #18181b; /* zinc-900 */
-  --tm-nebula: #18181b;
-  --tm-dust: #27272a; /* zinc-800 */
-  --tm-mist: #3f3f46; /* zinc-700 */
+  /* Backgrounds - mapped to global layer tokens */
+  --tm-void: var(--bg-layer-1); /* #09090b zinc-950 */
+  --tm-space: var(--bg-layer-2); /* #18181b zinc-900 */
+  --tm-nebula: var(--bg-layer-2); /* #18181b */
+  --tm-dust: var(--border-base); /* #27272a zinc-800 */
+  --tm-mist: var(--border-highlight); /* #3f3f46 zinc-700 */
 
-  /* Editorial accent - light for dark mode */
-  --tm-accent: #fafafa; /* zinc-50 */
-  --tm-accent-bright: #ffffff;
-  --tm-accent-dim: #d4d4d8; /* zinc-300 */
-  --tm-accent-glow: rgba(250, 250, 250, 0.08);
-  --tm-accent-wash: rgba(250, 250, 250, 0.04);
+  /* Accent - mapped to global accent tokens */
+  --tm-accent: var(--accent-primary); /* #fafafa zinc-50 */
+  --tm-accent-bright: var(--accent-hover); /* #ffffff */
+  --tm-accent-dim: #d4d4d8; /* zinc-300 - TM-specific */
+  --tm-accent-glow: rgba(250, 250, 250, 0.08); /* TM-specific */
+  --tm-accent-wash: rgba(250, 250, 250, 0.04); /* TM-specific */
 
-  /* Text hierarchy - dark mode */
-  --tm-text-bright: #fafafa; /* zinc-50 */
-  --tm-text-soft: #a1a1aa; /* zinc-400 */
-  --tm-text-dim: #71717a; /* zinc-500 */
-  --tm-text-muted: #52525b; /* zinc-600 */
+  /* Text - mapped to global text tokens */
+  --tm-text-bright: var(--text-primary); /* #fafafa zinc-50 */
+  --tm-text-soft: var(--text-secondary); /* #a1a1aa zinc-400 */
+  --tm-text-dim: var(--text-tertiary); /* #71717a zinc-500 */
+  --tm-text-muted: var(--text-quaternary); /* #52525b zinc-600 */
 
-  /* Semantic colors - dark mode */
-  --tm-success: #22c55e;
-  --tm-warning: #eab308;
-  --tm-error: #ef4444;
+  /* Semantic colors - TM editorial variants */
+  --tm-success: #22c55e; /* TM-specific: green-500 */
+  --tm-warning: #eab308; /* TM-specific: yellow-500 */
+  --tm-error: #ef4444; /* TM-specific: red-500 */
 
-  /* Glass effects - dark mode */
-  --tm-glass: rgba(24, 24, 27, 0.92);
-  --tm-glass-border: rgba(255, 255, 255, 0.06);
+  /* Glass - mapped to global glass tokens */
+  --tm-glass: var(--glass-bg-elevated); /* rgba(24, 24, 27, 0.92) */
+  --tm-glass-border: var(--glass-border); /* rgba(255, 255, 255, 0.06) */
 }
 
 /* ============================================
@@ -91,22 +95,10 @@
 }
 
 /* ============================================
- * Typography - Unified Design System (UI-005)
+ * Typography - Uses global font utilities (TIM-183)
+ * Use: font-display, font-body, font-mono from index.css/tailwind
+ * Removed: .tm-font-display, .tm-font-body, .tm-font-mono (duplicates)
  * ============================================ */
-.tm-font-display {
-  font-family: 'Plus Jakarta Sans', var(--font-sans);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.tm-font-body {
-  font-family: 'DM Sans', var(--font-sans);
-}
-
-.tm-font-mono {
-  font-family: 'JetBrains Mono', var(--font-mono);
-  font-size: 0.875em;
-}
 
 /* ============================================
  * Timeline Ruler - 3-zone layout with breathing room

@@ -44,7 +44,7 @@ function LiveActivityBarComponent({ isRunning, progress, logs, onExpand }: LiveA
         <div className="tm-live-status">
           {percentage > 0 ? `Syncing... ${percentage}%` : 'Starting sync...'}
         </div>
-        <div className="tm-live-file tm-font-mono">{currentFile}</div>
+        <div className="tm-live-file font-mono">{currentFile}</div>
       </div>
 
       {/* ETA */}

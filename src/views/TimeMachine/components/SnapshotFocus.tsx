@@ -133,10 +133,10 @@ function SnapshotFocusComponent({
     <div className="tm-focus">
       {/* Date display - prominent typography */}
       <div>
-        <h1 className="tm-focus-date tm-font-display">
+        <h1 className="tm-focus-date font-display">
           {dateParts.month} {dateParts.day}, {dateParts.year}
         </h1>
-        <p className="tm-focus-time tm-font-body">
+        <p className="tm-focus-time font-body">
           {dateParts.weekday}, {dateParts.time}
         </p>
         <p className="tm-focus-relative">{dateParts.relative}</p>
