@@ -9,6 +9,10 @@
 
 @layer base {
   :root {
+    /* Page Background - Clean, solid */
+    --page-bg: #ffffff;
+    --page-bg-alt: #fafafa;
+
     /* Light Theme - Editorial Neutrals */
     --bg-layer-1: #ffffff;
     --bg-layer-2: #fafafa;
@@ -48,6 +52,10 @@
   }
 
   .dark {
+    /* Page Background - Clean, solid */
+    --page-bg: #0f0f10;
+    --page-bg-alt: #18181b;
+
     /* Dark Theme - Deep Editorial */
     --bg-layer-1: #09090b; /* zinc-950 */
     --bg-layer-2: #18181b; /* zinc-900 */
