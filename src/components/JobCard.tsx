@@ -3,7 +3,7 @@ import { SyncJob, JobStatus } from '../types';
 import { Icons } from './IconComponents';
 import { formatSchedule, formatRelativeTime } from '../utils';
 import { OfflineBadge } from './ConnectionStatus';
-import { IconButton, ProgressRing, Text, BodySmall, Caption } from './ui';
+import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall } from './ui';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -162,9 +162,9 @@ export const JobCard = React.memo<JobCardProps>(function JobCard({
                 <Icons.FolderOpen size={12} />
                 Source
               </Caption>
-              <BodySmall className="break-all" title={job.sourcePath}>
+              <CodeSmall className="break-all" title={job.sourcePath}>
                 {job.sourcePath}
-              </BodySmall>
+              </CodeSmall>
             </div>
 
             {/* Destination Path */}
@@ -173,9 +173,9 @@ export const JobCard = React.memo<JobCardProps>(function JobCard({
                 <Icons.HardDrive size={12} />
                 Destination
               </Caption>
-              <BodySmall className="break-all" title={job.destPath}>
+              <CodeSmall className="break-all" title={job.destPath}>
                 {job.destPath}
-              </BodySmall>
+              </CodeSmall>
             </div>
 
             {/* Schedule */}
