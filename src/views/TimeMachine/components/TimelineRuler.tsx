@@ -117,29 +117,75 @@ export function TimelineRuler({
     return clusters;
   }, [snapshots, getPosition]);
 
-  // Generate month labels
+  // Generate month labels with smart density and collision detection
   const monthLabels = useMemo(() => {
-    const labels: { position: number; label: string }[] = [];
     const startDate = new Date(timeRange.start);
     const endDate = new Date(timeRange.end);
     const months = differenceInMonths(endDate, startDate);
 
-    const current = startOfMonth(startDate);
-    const maxLabels = Math.min(12, months + 1);
-    const step = Math.max(1, Math.floor(months / maxLabels));
+    if (months < 0) return [];
 
-    for (let i = 0; i <= months; i += step) {
+    // Generate all candidate labels first
+    const candidates: { position: number; date: Date; isFirstOfYear: boolean }[] = [];
+
+    for (let i = 0; i <= months; i++) {
       const date = addMonths(startOfMonth(startDate), i);
       const pos = getPosition(date.getTime());
+
+      // Only include labels within visible range
       if (pos >= 0 && pos <= 95) {
-        labels.push({
+        candidates.push({
           position: pos,
-          label: format(date, 'MMM yyyy'),
+          date,
+          isFirstOfYear: date.getMonth() === 0 || i === 0,
         });
       }
     }
 
-    return labels;
+    if (candidates.length === 0) return [];
+
+    // Smart collision detection - minimum spacing between labels
+    // Each label is ~60-80px, timeline is ~800px, so ~8-10% minimum spacing
+    const MIN_LABEL_SPACING = 8; // % between labels to prevent overlap
+
+    const filtered: typeof candidates = [];
+    let lastPosition = -Infinity;
+
+    for (const candidate of candidates) {
+      const spacing = candidate.position - lastPosition;
+
+      // Always show first label and year changes, otherwise check spacing
+      if (filtered.length === 0 || candidate.isFirstOfYear || spacing >= MIN_LABEL_SPACING) {
+        filtered.push(candidate);
+        lastPosition = candidate.position;
+      }
+    }
+
+    // Adaptive formatting based on label density
+    // If sparse (few labels): show full "Aug 2025"
+    // If dense (many labels): show short "Aug", but always show year on first label and year changes
+    const labelDensity = filtered.length / Math.max(1, months);
+    const useSparseFormat = labelDensity < 0.3 || months <= 6;
+
+    return filtered.map((item, index) => {
+      let labelFormat: string;
+
+      if (index === 0 || item.isFirstOfYear) {
+        // Always show year on first label and when year changes
+        labelFormat = 'MMM yyyy';
+      } else if (useSparseFormat) {
+        // Sparse timeline: show full format
+        labelFormat = 'MMM yyyy';
+      } else {
+        // Dense timeline: show short format
+        labelFormat = 'MMM';
+      }
+
+      return {
+        position: item.position,
+        label: format(item.date, labelFormat),
+      };
+    });
   }, [timeRange, getPosition]);
 
   // Handle track click
@@ -254,14 +300,7 @@ export function TimelineRuler({
                 ${marker.isCluster ? 'tm-marker--cluster' : ''}
               `}
               style={{ left: `${toDisplayPosition(marker.position)}%` }}
-            >
-              {/* Cluster count badge */}
-              {marker.isCluster && (
-                <span className="tm-marker-badge">
-                  {marker.snapshots.length > 9 ? '9+' : marker.snapshots.length}
-                </span>
-              )}
-            </button>
+            />
           );
         })}
       </div>
