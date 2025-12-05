@@ -1,21 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { List, type RowComponentProps } from 'react-window';
+/**
+ * TIM-189: FileBrowser component using VirtualFileList for rendering
+ */
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Icons } from './IconComponents';
-import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
+import { VirtualFileList, type FileEntry } from './data-display';
 import { api } from '../api';
 import { logger } from '../utils/logger';
 import { isDirectory } from '../types';
-
-const ROW_HEIGHT = 40;
-
-interface FileEntry {
-  name: string;
-  path: string;
-  isDirectory: boolean;
-  size: number;
-  modified: Date;
-}
 
 interface FileBrowserProps {
   initialPath: string;
@@ -27,80 +20,6 @@ interface FileBrowserProps {
   snapshotTimestamp?: number;
   // TIM-127: Destination path for destination-based index
   destPath?: string;
-}
-
-// Row props passed via react-window v2 rowProps
-interface FileRowProps {
-  entries: FileEntry[];
-  selectedFiles: Set<string>;
-  selectedFileForPreview: FileEntry | null;
-  selectable: boolean;
-  onEntryClick: (entry: FileEntry) => void;
-  onToggleSelection: (e: React.MouseEvent | null, path: string) => void;
-}
-
-// FileRow component defined OUTSIDE FileBrowser for stable reference
-// This is critical for react-window v2 performance
-function FileRow({
-  index,
-  style,
-  ariaAttributes,
-  entries,
-  selectedFiles,
-  selectedFileForPreview,
-  selectable,
-  onEntryClick,
-  onToggleSelection,
-}: RowComponentProps<FileRowProps>) {
-  const entry = entries[index];
-  if (!entry) return <div style={style} {...ariaAttributes} />;
-
-  const isSelected = selectedFiles.has(entry.path);
-  const isPreviewSelected = selectedFileForPreview?.path === entry.path;
-
-  return (
-    <div
-      {...ariaAttributes}
-      style={style}
-      onClick={() => onEntryClick(entry)}
-      className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 items-center hover:bg-layer-2 cursor-pointer border-b border-border-base transition-colors ${
-        isPreviewSelected ? 'bg-[var(--color-info-subtle)]' : ''
-      }`}
-    >
-      {/* Checkbox */}
-      <div className="flex items-center">
-        {selectable && (
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onToggleSelection(null, entry.path)}
-            onClick={e => e.stopPropagation()}
-            className="w-4 h-4 rounded border-border-base"
-          />
-        )}
-      </div>
-
-      {/* Name */}
-      <div className="flex items-center gap-2 min-w-0">
-        {entry.isDirectory ? (
-          <Icons.Folder size={16} className="text-[var(--color-info)] flex-shrink-0" />
-        ) : (
-          <Icons.File size={16} className="text-text-tertiary flex-shrink-0" />
-        )}
-        <span className="truncate text-text-secondary">{entry.name}</span>
-      </div>
-
-      {/* Size */}
-      <div className="text-right text-text-tertiary tabular-nums text-sm">
-        {!entry.isDirectory && formatBytes(entry.size)}
-      </div>
-
-      {/* Modified */}
-      <div className="text-right text-text-tertiary tabular-nums text-xs">
-        {entry.modified.toLocaleDateString()}
-      </div>
-    </div>
-  );
 }
 
 export const FileBrowser: React.FC<FileBrowserProps> = ({
@@ -125,10 +44,6 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   const [searchResults, setSearchResults] = useState<FileEntry[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Container height for scrollable list
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  const [listHeight, setListHeight] = useState(400);
-
   // Use refs for values needed in loadDirectory to avoid dependency churn
   const isIndexedRef = useRef(isIndexed);
   const destPathRef = useRef(destPath);
@@ -152,24 +67,6 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   useEffect(() => {
     initialPathRef.current = initialPath;
   }, [initialPath]);
-
-  // Measure container height for scrollable list
-  useEffect(() => {
-    const container = listContainerRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver(resizeEntries => {
-      for (const entry of resizeEntries) {
-        setListHeight(entry.contentRect.height);
-      }
-    });
-
-    resizeObserver.observe(container);
-    // Initial measurement
-    setListHeight(container.clientHeight);
-
-    return () => resizeObserver.disconnect();
-  }, []);
 
   // Check if snapshot is indexed (TIM-127: use destination-based index)
   useEffect(() => {
@@ -208,21 +105,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
 
       if (useIndex && dest && job && timestamp) {
         // TIM-127: Use fast SQLite query from destination index
-        // Convert current absolute path to relative path for SQLite query
         const relativePath = path === initPath ? '' : path.replace(initPath + '/', '');
-        const result = await api.getDirectoryFromDestination(
-          dest,
-          job,
-          timestamp,
-          relativePath
-        );
+        const result = await api.getDirectoryFromDestination(dest, job, timestamp, relativePath);
 
         formatted = result.map((item: any) => ({
           name: item.name,
-          // SQLite stores RELATIVE paths (e.g., "Projects/webapp")
-          // Convert to absolute path for navigation by prepending initialPath
           path: `${initPath}/${item.path}`,
-          // Use centralized isDirectory() from types.ts - matches Rust file_type module
           isDirectory: isDirectory(item.type),
           size: item.size,
           modified: new Date(item.modified),
@@ -253,7 +141,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []); // Empty deps - uses refs for all external values
+  }, []);
 
   // Load directory when path changes OR when isIndexed status changes
   useEffect(() => {
@@ -279,7 +167,6 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
       }
 
       if (!isIndexed || !destPath || !jobId || !snapshotTimestamp) {
-        // Search not available without index
         return;
       }
 
@@ -294,9 +181,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         );
         const formatted: FileEntry[] = results.map((item: any) => ({
           name: item.name,
-          // SQLite stores RELATIVE paths - convert to absolute for navigation
           path: `${initialPath}/${item.path}`,
-          // Use centralized isDirectory() from types.ts - matches Rust file_type module
           isDirectory: isDirectory(item.type),
           size: item.size,
           modified: new Date(item.modified),
@@ -329,29 +214,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     }
   }, []);
 
-  const toggleSelection = useCallback((e: React.MouseEvent | null, path: string) => {
-    e?.stopPropagation();
-    if (onSelectionChange) {
-      onSelectionChange(path, !selectedFiles.has(path));
-    }
-  }, [onSelectionChange, selectedFiles]);
-
   // Breadcrumbs
   const relativePath = currentPath.replace(initialPath, '');
   const parts = relativePath.split('/').filter(Boolean);
 
-  // Determine which entries to display (virtualization handles large lists)
+  // Determine which entries to display
   const displayEntries = searchResults !== null ? searchResults : entries;
-
-  // Memoize rowProps to prevent unnecessary re-renders
-  const rowProps = useMemo<FileRowProps>(() => ({
-    entries: displayEntries,
-    selectedFiles,
-    selectedFileForPreview,
-    selectable,
-    onEntryClick: handleEntryClick,
-    onToggleSelection: toggleSelection,
-  }), [displayEntries, selectedFiles, selectedFileForPreview, selectable, handleEntryClick, toggleSelection]);
 
   return (
     <div className="flex h-full bg-layer-1">
@@ -465,8 +333,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           <div className="text-right">Modified</div>
         </div>
 
-        {/* File List */}
-        <div className="flex-1 overflow-hidden" ref={listContainerRef}>
+        {/* File List - TIM-189: Using VirtualFileList component */}
+        <div className="flex-1 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-text-tertiary">Loading...</div>
@@ -475,19 +343,15 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-[var(--color-error)]">Error: {error}</div>
             </div>
-          ) : displayEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-text-tertiary">
-              <Icons.Search size={48} className="mb-2 opacity-20" />
-              <div>{searchResults !== null ? 'No files found' : 'Empty directory'}</div>
-            </div>
           ) : (
-            <List
-              defaultHeight={listHeight}
-              rowComponent={FileRow}
-              rowCount={displayEntries.length}
-              rowHeight={ROW_HEIGHT}
-              rowProps={rowProps}
-              overscanCount={5}
+            <VirtualFileList
+              items={displayEntries}
+              onItemClick={handleEntryClick}
+              selectable={selectable}
+              selectedFiles={selectedFiles}
+              onSelectionChange={onSelectionChange}
+              highlightedItem={selectedFileForPreview}
+              emptyMessage={searchResults !== null ? 'No files found' : 'Empty directory'}
             />
           )}
         </div>
