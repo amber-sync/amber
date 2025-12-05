@@ -3,7 +3,7 @@ import { SyncJob, JobStatus } from '../types';
 import { Icons } from './IconComponents';
 import { formatSchedule, formatRelativeTime } from '../utils';
 import { OfflineBadge } from './ConnectionStatus';
-import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall } from './ui';
+import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall, ModeBadge } from './ui';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -256,18 +256,5 @@ export const JobCard = React.memo<JobCardProps>(function JobCard({
     prevProps.onEditSettings === nextProps.onEditSettings
   );
 });
-
-const ModeBadge: React.FC<{ mode: SyncJob['mode'] }> = ({ mode }) => {
-  const labels: Record<string, string> = {
-    MIRROR: 'Mirror',
-    ARCHIVE: 'Archive',
-    TIME_MACHINE: 'Time Machine',
-  };
-  return (
-    <span className="px-2 py-0.5 text-xs font-medium text-text-tertiary bg-layer-2 rounded-md">
-      {labels[mode] || 'Mirror'}
-    </span>
-  );
-};
 
 export default JobCard;
