@@ -355,6 +355,16 @@ export interface MountStatus {
   volumeName?: string;
 }
 
+/**
+ * TIM-184: Consolidated mount info for job components.
+ * Subset of MountStatus without path field.
+ */
+export interface JobMountInfo {
+  mounted: boolean;
+  isExternal: boolean;
+  volumeName?: string;
+}
+
 // TIM-110: Snapshot info from manifest (compatible with Snapshot type)
 export interface SnapshotInfo {
   id: string;

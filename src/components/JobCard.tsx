@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import { SyncJob, JobStatus } from '../types';
+import { SyncJob, JobStatus, JobMountInfo } from '../types';
 import { Icons } from './IconComponents';
 import { formatSchedule, formatRelativeTime } from '../utils';
 import { OfflineBadge } from './ConnectionStatus';
 import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall } from './ui';
-
-interface JobMountInfo {
-  mounted: boolean;
-  isExternal: boolean;
-  volumeName?: string;
-}
 
 interface JobCardProps {
   job: SyncJob;

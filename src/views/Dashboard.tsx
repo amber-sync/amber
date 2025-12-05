@@ -1,17 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { SyncJob, DiskStats } from '../types';
+import { SyncJob, DiskStats, JobMountInfo } from '../types';
 import { Icons } from '../components/IconComponents';
 import { formatBytes } from '../utils';
 import { BackupCalendar } from '../components/analytics';
 import { format } from 'date-fns';
 import { Button, Card, StatusDot, IconButton } from '../components/ui';
 import { JobCard } from '../components/JobCard';
-
-interface JobMountInfo {
-  mounted: boolean;
-  isExternal: boolean;
-  volumeName?: string;
-}
 
 interface DashboardProps {
   jobs: SyncJob[];
