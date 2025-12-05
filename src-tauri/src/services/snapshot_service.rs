@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::services::index_service::IndexService;
 use crate::services::manifest_service;
 use crate::types::snapshot::{file_type, FileNode, SnapshotMetadata};
 use regex::Regex;
@@ -38,12 +39,22 @@ impl SnapshotService {
 
     /// List all snapshots for a job
     ///
-    /// Priority order for stats:
-    /// 1. Manifest.json (authoritative, created during backup)
-    /// 2. Legacy JSON cache (for backwards compatibility)
-    /// 3. Default to (0, 0) with warning log
+    /// TIM-191: Unified source of truth with priority order:
+    /// 1. SQLite index at destination (fastest, most accurate)
+    /// 2. Manifest.json (authoritative, created during backup)
+    /// 3. Legacy filesystem scan with JSON cache (fallback)
     pub async fn list_snapshots(&self, job_id: &str, dest_path: &str) -> Result<Vec<SnapshotMetadata>> {
-        // Try to read from manifest first (authoritative source)
+        // TIM-191: Check SQLite index first (fastest and most reliable)
+        if let Some(snapshots) = self.list_snapshots_from_index(job_id, dest_path) {
+            log::debug!(
+                "[snapshot_service] Loaded {} snapshots from SQLite index for job {}",
+                snapshots.len(),
+                job_id
+            );
+            return Ok(snapshots);
+        }
+
+        // Try to read from manifest (authoritative source for non-indexed jobs)
         if let Some(snapshots) = self.list_snapshots_from_manifest(dest_path).await {
             log::debug!(
                 "[snapshot_service] Loaded {} snapshots from manifest for job {}",
@@ -53,12 +64,46 @@ impl SnapshotService {
             return Ok(snapshots);
         }
 
-        // Fall back to filesystem scan with cache lookup
+        // Fall back to filesystem scan with cache lookup (legacy/deprecated)
         log::debug!(
-            "[snapshot_service] No manifest found, falling back to filesystem scan for job {}",
+            "[snapshot_service] No index or manifest found, falling back to filesystem scan for job {}",
             job_id
         );
         self.list_snapshots_from_filesystem(job_id, dest_path).await
+    }
+
+    /// TIM-191: Read snapshots from SQLite index at destination
+    /// Returns None if index doesn't exist or is empty for this job
+    fn list_snapshots_from_index(&self, job_id: &str, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
+        // Try to open the destination index
+        let index = IndexService::for_destination(dest_path).ok()?;
+
+        // Get snapshots from index
+        let indexed_snapshots = index.list_snapshots(job_id).ok()?;
+
+        if indexed_snapshots.is_empty() {
+            return None;
+        }
+
+        // Convert IndexedSnapshot -> SnapshotMetadata
+        let snapshots: Vec<SnapshotMetadata> = indexed_snapshots
+            .into_iter()
+            .map(|s| SnapshotMetadata {
+                id: s.timestamp.to_string(),
+                timestamp: s.timestamp,
+                date: chrono::DateTime::from_timestamp(s.timestamp / 1000, 0)
+                    .map(|d| d.to_rfc3339())
+                    .unwrap_or_default(),
+                size_bytes: s.total_size as u64,
+                file_count: s.file_count as u64,
+                path: s.root_path,
+                status: "Complete".to_string(), // Index only contains complete snapshots
+                duration: None,
+                changes_count: None,
+            })
+            .collect();
+
+        Some(snapshots)
     }
 
     /// Read snapshots from manifest.json (preferred method)
