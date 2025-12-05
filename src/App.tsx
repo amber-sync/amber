@@ -5,7 +5,7 @@ import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
 import { TimeMachine } from './views/TimeMachine/TimeMachine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar } from './components/layout';
 // AmbientBackground removed - using clean page backgrounds
 import { DeleteJobModal } from './components/DeleteJobModal';
 import { CommandPalette } from './components/CommandPalette';

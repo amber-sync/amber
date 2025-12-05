@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icons } from './IconComponents';
+import { Icons } from '../IconComponents';
 
 type View =
   | 'DASHBOARD'
