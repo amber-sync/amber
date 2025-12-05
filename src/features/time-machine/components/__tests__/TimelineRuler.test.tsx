@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TimelineRuler } from '../TimelineRuler';
-import { TimeMachineSnapshot } from '../../TimeMachine';
+import { TimeMachineSnapshot } from '../../TimeMachinePage';
 
 // Mock date-fns to ensure consistent date formatting in tests
 vi.mock('date-fns', async () => {

@@ -17,7 +17,7 @@ import userEvent from '@testing-library/user-event';
 import { RestoreOverlay } from '../RestoreOverlay';
 import { api } from '../../../../api';
 import type { SyncJob } from '../../../../types';
-import type { TimeMachineSnapshot } from '../../TimeMachine';
+import type { TimeMachineSnapshot } from '../../TimeMachinePage';
 
 // Mock the api module
 vi.mock('../../../../api', () => ({

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
 import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
-import { TimeMachine } from './views/TimeMachine/TimeMachine';
+import { TimeMachinePage } from './features/time-machine';
 import { AppSettings } from './views/AppSettings';
 import { HelpSection } from './components/HelpSection';
 import { Sidebar } from './components/Sidebar';
@@ -509,7 +509,7 @@ function AppContent() {
         </div>
 
         <div className="flex-1 overflow-hidden" style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}>
-          <TimeMachine
+          <TimeMachinePage
             initialJobId={activeJobId || undefined}
             isRunning={isRunning}
             progress={progress}

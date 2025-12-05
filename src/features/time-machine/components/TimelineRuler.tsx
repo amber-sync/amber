@@ -7,7 +7,7 @@
 
 import React, { useRef, useMemo, useCallback, useState } from 'react';
 import { format, startOfMonth, addMonths, differenceInMonths } from 'date-fns';
-import { TimeMachineSnapshot } from '../TimeMachine';
+import { TimeMachineSnapshot } from '../TimeMachinePage';
 
 interface TimelineRulerProps {
   snapshots: TimeMachineSnapshot[];
