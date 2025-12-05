@@ -96,6 +96,13 @@ export interface IndexedSnapshot {
   totalSize: number;
 }
 
+// Paginated directory contents with metadata
+export interface DirectoryContents {
+  files: FileNode[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
 // TIM-101: File type stats from SQLite index
 export interface FileTypeStats {
   extension: string;

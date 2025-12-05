@@ -9,7 +9,7 @@ pub async fn list_snapshots(
     job_id: String,
     dest_path: String,
 ) -> Result<Vec<SnapshotMetadata>> {
-    state.snapshot_service.list_snapshots(&job_id, &dest_path)
+    state.snapshot_service.list_snapshots(&job_id, &dest_path).await
 }
 
 /// List snapshots within a date range (for Time Explorer filtering)
@@ -45,6 +45,7 @@ pub async fn get_snapshot_tree(
     state
         .snapshot_service
         .get_snapshot_tree(&job_id, timestamp, &snapshot_path)
+        .await
 }
 
 /// Get directory contents from index (fast)

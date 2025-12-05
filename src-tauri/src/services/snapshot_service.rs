@@ -58,7 +58,7 @@ impl SnapshotService {
             "[snapshot_service] No manifest found, falling back to filesystem scan for job {}",
             job_id
         );
-        self.list_snapshots_from_filesystem(job_id, dest_path)
+        self.list_snapshots_from_filesystem(job_id, dest_path).await
     }
 
     /// Read snapshots from manifest.json (preferred method)
