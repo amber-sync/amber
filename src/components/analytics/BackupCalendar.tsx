@@ -23,7 +23,7 @@ interface DayBackup {
 }
 
 // GitHub-style contribution heatmap - shows full year (52 weeks)
-export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick }) => {
+export const BackupCalendar = React.memo<BackupCalendarProps>(function BackupCalendar({ jobs, onDayClick }) {
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
 
   // Aggregate backups by date
@@ -210,4 +210,22 @@ export const BackupCalendar: React.FC<BackupCalendarProps> = ({ jobs, onDayClick
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for jobs array - shallow comparison
+  if (prevProps.jobs.length !== nextProps.jobs.length) return false;
+
+  // Check if job snapshots have changed
+  for (let i = 0; i < prevProps.jobs.length; i++) {
+    const prevJob = prevProps.jobs[i];
+    const nextJob = nextProps.jobs[i];
+
+    if (prevJob.id !== nextJob.id) return false;
+
+    const prevSnapshots = prevJob.snapshots ?? [];
+    const nextSnapshots = nextJob.snapshots ?? [];
+
+    if (prevSnapshots.length !== nextSnapshots.length) return false;
+  }
+
+  return prevProps.onDayClick === nextProps.onDayClick;
+});

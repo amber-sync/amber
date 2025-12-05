@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SyncJob, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
 import { formatBytes } from '../utils';
@@ -42,13 +42,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; backups: DayBackup[] } | null>(null);
 
-  const totalProtectedSize = jobs.reduce((acc, job) => {
-    const snapshots = job.snapshots ?? [];
-    const latest = snapshots[snapshots.length - 1];
-    return acc + (latest?.sizeBytes || 0);
-  }, 0);
+  // Memoize expensive calculations
+  const totalProtectedSize = useMemo(() => {
+    return jobs.reduce((acc, job) => {
+      const snapshots = job.snapshots ?? [];
+      const latest = snapshots[snapshots.length - 1];
+      return acc + (latest?.sizeBytes || 0);
+    }, 0);
+  }, [jobs]);
 
-  const totalSnapshots = jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0);
+  const totalSnapshots = useMemo(() => {
+    return jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0);
+  }, [jobs]);
 
   const handleDayClick = (date: Date, backups: DayBackup[]) => {
     if (backups.length > 0) {

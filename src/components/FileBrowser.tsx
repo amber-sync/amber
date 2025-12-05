@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { List } from 'react-window';
+import { FixedSizeList as List } from 'react-window';
 import { Icons } from './IconComponents';
 import { formatBytes } from '../utils/formatters';
 import { FilePreview } from './FilePreview';
@@ -242,6 +242,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   // Determine which entries to display (virtualization handles large lists)
   const displayEntries = searchResults !== null ? searchResults : entries;
 
+<<<<<<< HEAD
   // Row component for virtualization
   const FileRow = useCallback(
     ({
@@ -296,6 +297,59 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     },
     [displayEntries, selectedFiles, selectedFileForPreview, selectable, handleEntryClick, toggleSelection]
   );
+=======
+  // Memoized row renderer for virtualization performance
+  const Row = React.memo(({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const entry = displayEntries[index];
+    const isSelected = selectedFiles.has(entry.path);
+    const isPreviewSelected = selectedFileForPreview?.path === entry.path;
+
+    return (
+      <div
+        style={style}
+        onClick={() => handleEntryClick(entry)}
+        className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 items-center hover:bg-layer-2 cursor-pointer border-b border-border-base transition-colors ${
+          isPreviewSelected ? 'bg-[var(--color-info-subtle)]' : ''
+        }`}
+      >
+        {/* Checkbox */}
+        <div className="flex items-center">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelection(null, entry.path)}
+              onClick={e => e.stopPropagation()}
+              className="w-4 h-4 rounded border-border-base"
+            />
+          )}
+        </div>
+
+        {/* Name */}
+        <div className="flex items-center gap-2 min-w-0">
+          {entry.isDirectory ? (
+            <Icons.Folder size={16} className="text-[var(--color-info)] flex-shrink-0" />
+          ) : (
+            <Icons.File size={16} className="text-text-tertiary flex-shrink-0" />
+          )}
+          <span className="truncate text-text-secondary">{entry.name}</span>
+        </div>
+
+        {/* Size */}
+        <div className="text-right text-text-tertiary tabular-nums text-sm">
+          {!entry.isDirectory && formatBytes(entry.size)}
+        </div>
+
+        {/* Modified */}
+        <div className="text-right text-text-tertiary tabular-nums text-xs">
+          {entry.modified.toLocaleDateString()}
+        </div>
+      </div>
+    );
+  });
+
+  Row.displayName = 'FileRow';
+>>>>>>> perf/phase1-react-memo
 
   return (
     <div className="flex h-full bg-layer-1">
