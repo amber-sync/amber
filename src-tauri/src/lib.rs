@@ -10,6 +10,26 @@ mod utils;
 pub use state::AppState;
 use tauri::Manager;
 
+/// TIM-192: Macro to register all Tauri commands with DRY principle.
+/// Core commands are listed once, dev commands are conditionally included only in debug builds.
+macro_rules! register_commands {
+    (
+        core: [$($core:path),* $(,)?],
+        dev: [$($dev:path),* $(,)?]
+    ) => {
+        {
+            #[cfg(debug_assertions)]
+            {
+                tauri::generate_handler![$($core,)* $($dev,)*]
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                tauri::generate_handler![$($core,)*]
+            }
+        }
+    };
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -46,171 +66,94 @@ pub fn run() {
             }
         });
 
-    // Register handlers - dev commands only in debug builds
-    #[cfg(debug_assertions)]
-    let builder = builder.invoke_handler(tauri::generate_handler![
-        // Job commands
-        commands::jobs::get_jobs,
-        commands::jobs::get_jobs_with_status,
-        commands::jobs::save_job,
-        commands::jobs::delete_job,
-        commands::jobs::delete_job_data,
-        // Rsync commands
-        commands::rsync::run_rsync,
-        commands::rsync::kill_rsync,
-        // Rclone commands
-        commands::rclone::check_rclone,
-        commands::rclone::list_rclone_remotes,
-        commands::rclone::run_rclone,
-        commands::rclone::kill_rclone,
-        // Snapshot commands
-        commands::snapshots::list_snapshots,
-        commands::snapshots::list_snapshots_in_range,
-        commands::snapshots::get_snapshot_tree,
-        commands::snapshots::get_indexed_directory,
-        commands::snapshots::get_indexed_directory_paginated,
-        commands::snapshots::index_snapshot,
-        commands::snapshots::is_snapshot_indexed,
-        commands::snapshots::search_snapshot_files,
-        commands::snapshots::search_files_global,
-        commands::snapshots::get_snapshot_stats,
-        commands::snapshots::get_file_type_stats,
-        commands::snapshots::get_largest_files,
-        commands::snapshots::delete_snapshot_index,
-        commands::snapshots::delete_job_index,
-        commands::snapshots::restore_files,
-        commands::snapshots::restore_snapshot,
-        commands::snapshots::get_destination_index_path,
-        commands::snapshots::destination_has_index,
-        commands::snapshots::export_index_to_destination,
-        // TIM-127: Destination-based index commands
-        commands::snapshots::index_snapshot_on_destination,
-        commands::snapshots::get_directory_from_destination,
-        commands::snapshots::is_indexed_on_destination,
-        commands::snapshots::search_files_on_destination,
-        commands::snapshots::get_file_type_stats_on_destination,
-        commands::snapshots::get_largest_files_on_destination,
-        commands::snapshots::delete_snapshot_from_destination,
-        commands::snapshots::list_snapshots_in_range_on_destination,
-        commands::snapshots::get_job_aggregate_stats,
-        commands::snapshots::get_job_aggregate_stats_on_destination,
-        commands::snapshots::get_snapshot_density,
-        commands::snapshots::get_snapshot_density_on_destination,
-        // Filesystem commands
-        commands::filesystem::read_dir,
-        commands::filesystem::read_file_preview,
-        commands::filesystem::read_file_as_base64,
-        commands::filesystem::open_path,
-        commands::filesystem::show_item_in_folder,
-        commands::filesystem::get_disk_stats,
-        commands::filesystem::get_volume_info,
-        commands::filesystem::list_volumes,
-        commands::filesystem::search_volume,
-        commands::filesystem::is_path_mounted,
-        commands::filesystem::check_destinations,
-        commands::filesystem::scan_for_backups,
-        commands::filesystem::find_orphan_backups,
-        commands::filesystem::import_backup_as_job,
-        // Preferences commands
-        commands::preferences::get_preferences,
-        commands::preferences::set_preferences,
-        commands::preferences::test_notification,
-        // Manifest commands
-        commands::manifest::get_manifest,
-        commands::manifest::get_or_create_manifest,
-        commands::manifest::manifest_exists,
-        commands::manifest::add_manifest_snapshot,
-        commands::manifest::remove_manifest_snapshot,
-        commands::manifest::get_amber_meta_path,
-        // Migration commands
-        commands::migration::needs_migration,
-        commands::migration::run_migration,
-        // Dev commands (debug only)
-        commands::dev::dev_seed_data,
-        commands::dev::dev_run_benchmarks,
-        commands::dev::dev_clear_data,
-        commands::dev::dev_db_stats,
-    ]);
-
-    #[cfg(not(debug_assertions))]
-    let builder = builder.invoke_handler(tauri::generate_handler![
-        // Job commands
-        commands::jobs::get_jobs,
-        commands::jobs::get_jobs_with_status,
-        commands::jobs::save_job,
-        commands::jobs::delete_job,
-        commands::jobs::delete_job_data,
-        // Rsync commands
-        commands::rsync::run_rsync,
-        commands::rsync::kill_rsync,
-        // Rclone commands
-        commands::rclone::check_rclone,
-        commands::rclone::list_rclone_remotes,
-        commands::rclone::run_rclone,
-        commands::rclone::kill_rclone,
-        // Snapshot commands
-        commands::snapshots::list_snapshots,
-        commands::snapshots::list_snapshots_in_range,
-        commands::snapshots::get_snapshot_tree,
-        commands::snapshots::get_indexed_directory,
-        commands::snapshots::get_indexed_directory_paginated,
-        commands::snapshots::index_snapshot,
-        commands::snapshots::is_snapshot_indexed,
-        commands::snapshots::search_snapshot_files,
-        commands::snapshots::search_files_global,
-        commands::snapshots::get_snapshot_stats,
-        commands::snapshots::get_file_type_stats,
-        commands::snapshots::get_largest_files,
-        commands::snapshots::delete_snapshot_index,
-        commands::snapshots::delete_job_index,
-        commands::snapshots::restore_files,
-        commands::snapshots::restore_snapshot,
-        commands::snapshots::get_destination_index_path,
-        commands::snapshots::destination_has_index,
-        commands::snapshots::export_index_to_destination,
-        // TIM-127: Destination-based index commands
-        commands::snapshots::index_snapshot_on_destination,
-        commands::snapshots::get_directory_from_destination,
-        commands::snapshots::is_indexed_on_destination,
-        commands::snapshots::search_files_on_destination,
-        commands::snapshots::get_file_type_stats_on_destination,
-        commands::snapshots::get_largest_files_on_destination,
-        commands::snapshots::delete_snapshot_from_destination,
-        commands::snapshots::list_snapshots_in_range_on_destination,
-        commands::snapshots::get_job_aggregate_stats,
-        commands::snapshots::get_job_aggregate_stats_on_destination,
-        commands::snapshots::get_snapshot_density,
-        commands::snapshots::get_snapshot_density_on_destination,
-        // Filesystem commands
-        commands::filesystem::read_dir,
-        commands::filesystem::read_file_preview,
-        commands::filesystem::read_file_as_base64,
-        commands::filesystem::open_path,
-        commands::filesystem::show_item_in_folder,
-        commands::filesystem::get_disk_stats,
-        commands::filesystem::get_volume_info,
-        commands::filesystem::list_volumes,
-        commands::filesystem::search_volume,
-        commands::filesystem::is_path_mounted,
-        commands::filesystem::check_destinations,
-        commands::filesystem::scan_for_backups,
-        commands::filesystem::find_orphan_backups,
-        commands::filesystem::import_backup_as_job,
-        // Preferences commands
-        commands::preferences::get_preferences,
-        commands::preferences::set_preferences,
-        commands::preferences::test_notification,
-        // Manifest commands
-        commands::manifest::get_manifest,
-        commands::manifest::get_or_create_manifest,
-        commands::manifest::manifest_exists,
-        commands::manifest::add_manifest_snapshot,
-        commands::manifest::remove_manifest_snapshot,
-        commands::manifest::get_amber_meta_path,
-        // Migration commands
-        commands::migration::needs_migration,
-        commands::migration::run_migration,
-    ]);
+    // TIM-192: Single source of truth for command registration
+    let builder = builder.invoke_handler(register_commands!(
+        core: [
+            // Job commands
+            commands::jobs::get_jobs,
+            commands::jobs::get_jobs_with_status,
+            commands::jobs::save_job,
+            commands::jobs::delete_job,
+            commands::jobs::delete_job_data,
+            // Rsync commands
+            commands::rsync::run_rsync,
+            commands::rsync::kill_rsync,
+            // Rclone commands
+            commands::rclone::check_rclone,
+            commands::rclone::list_rclone_remotes,
+            commands::rclone::run_rclone,
+            commands::rclone::kill_rclone,
+            // Snapshot commands
+            commands::snapshots::list_snapshots,
+            commands::snapshots::list_snapshots_in_range,
+            commands::snapshots::get_snapshot_tree,
+            commands::snapshots::get_indexed_directory,
+            commands::snapshots::get_indexed_directory_paginated,
+            commands::snapshots::index_snapshot,
+            commands::snapshots::is_snapshot_indexed,
+            commands::snapshots::search_snapshot_files,
+            commands::snapshots::search_files_global,
+            commands::snapshots::get_snapshot_stats,
+            commands::snapshots::get_file_type_stats,
+            commands::snapshots::get_largest_files,
+            commands::snapshots::delete_snapshot_index,
+            commands::snapshots::delete_job_index,
+            commands::snapshots::restore_files,
+            commands::snapshots::restore_snapshot,
+            commands::snapshots::get_destination_index_path,
+            commands::snapshots::destination_has_index,
+            commands::snapshots::export_index_to_destination,
+            // TIM-127: Destination-based index commands
+            commands::snapshots::index_snapshot_on_destination,
+            commands::snapshots::get_directory_from_destination,
+            commands::snapshots::is_indexed_on_destination,
+            commands::snapshots::search_files_on_destination,
+            commands::snapshots::get_file_type_stats_on_destination,
+            commands::snapshots::get_largest_files_on_destination,
+            commands::snapshots::delete_snapshot_from_destination,
+            commands::snapshots::list_snapshots_in_range_on_destination,
+            commands::snapshots::get_job_aggregate_stats,
+            commands::snapshots::get_job_aggregate_stats_on_destination,
+            commands::snapshots::get_snapshot_density,
+            commands::snapshots::get_snapshot_density_on_destination,
+            // Filesystem commands
+            commands::filesystem::read_dir,
+            commands::filesystem::read_file_preview,
+            commands::filesystem::read_file_as_base64,
+            commands::filesystem::open_path,
+            commands::filesystem::show_item_in_folder,
+            commands::filesystem::get_disk_stats,
+            commands::filesystem::get_volume_info,
+            commands::filesystem::list_volumes,
+            commands::filesystem::search_volume,
+            commands::filesystem::is_path_mounted,
+            commands::filesystem::check_destinations,
+            commands::filesystem::scan_for_backups,
+            commands::filesystem::find_orphan_backups,
+            commands::filesystem::import_backup_as_job,
+            // Preferences commands
+            commands::preferences::get_preferences,
+            commands::preferences::set_preferences,
+            commands::preferences::test_notification,
+            // Manifest commands
+            commands::manifest::get_manifest,
+            commands::manifest::get_or_create_manifest,
+            commands::manifest::manifest_exists,
+            commands::manifest::add_manifest_snapshot,
+            commands::manifest::remove_manifest_snapshot,
+            commands::manifest::get_amber_meta_path,
+            // Migration commands
+            commands::migration::needs_migration,
+            commands::migration::run_migration,
+        ],
+        dev: [
+            // Dev commands (debug only)
+            commands::dev::dev_seed_data,
+            commands::dev::dev_run_benchmarks,
+            commands::dev::dev_clear_data,
+            commands::dev::dev_db_stats,
+        ]
+    ));
 
     if let Err(e) = builder.run(tauri::generate_context!()) {
         eprintln!("Application error: {}", e);
