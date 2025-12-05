@@ -10,20 +10,58 @@
  * Clean, solid backgrounds - no gradients
  * ============================================ */
 :root {
-  /* Page backgrounds - matches TimeMachine */
+  /* Page backgrounds */
   --page-bg: #ffffff;
   --page-bg-alt: #fafafa;
 
   /* Page content constraints */
   --page-max-width: 1280px;
-  --page-padding-x: 2rem;
-  --page-padding-y: 2rem;
   --page-header-height: 72px;
 
-  /* Page indentation - consistent spacing */
-  --page-indent-left: 32px;
-  --page-indent-right: 32px;
-  --page-indent-top: 29px;
+  /* Page indentation - rem-based for zoom compatibility */
+  --page-indent-left: 2rem;      /* 32px */
+  --page-indent-right: 2rem;     /* 32px */
+  --page-indent-top: 1.8125rem;  /* 29px - titlebar clearance */
+  --page-indent-bottom: 2rem;    /* 32px */
+
+  /* Content width constraints - fluid scaling */
+  --content-width-default: min(100%, 1280px);
+  --content-width-narrow: min(100%, 960px);
+  --content-width-wide: min(100%, 1536px);
+
+  /* Section gaps */
+  --section-gap-xs: 0.75rem;   /* 12px */
+  --section-gap-sm: 1rem;      /* 16px */
+  --section-gap-md: 1.5rem;    /* 24px */
+  --section-gap-lg: 2rem;      /* 32px */
+  --section-gap-xl: 3rem;      /* 48px */
+
+  /* Content gaps */
+  --content-gap-xs: 0.5rem;    /* 8px */
+  --content-gap-sm: 0.75rem;   /* 12px */
+  --content-gap-md: 1rem;      /* 16px */
+  --content-gap-lg: 1.5rem;    /* 24px */
+
+  /* Component heights */
+  --titlebar-height: 38px;
+  --toolbar-height: 56px;
+  --footer-height: 56px;
+
+  /* Panel widths */
+  --panel-width-sm: 300px;
+  --panel-width-md: 400px;
+  --panel-width-lg: 600px;
+  --panel-width-xl: 800px;
+
+  /* Modal widths */
+  --modal-width-sm: 400px;
+  --modal-width-md: 560px;
+  --modal-width-lg: 720px;
+
+  /* Grid gaps */
+  --grid-gap: var(--content-gap-md);
+  --grid-gap-sm: var(--content-gap-sm);
+  --grid-gap-lg: var(--content-gap-lg);
 }
 
 .dark {
@@ -53,8 +91,8 @@
 .page-content {
   max-width: var(--page-max-width);
   margin: 0 auto;
-  padding: var(--page-indent-top) var(--page-indent-right) var(--page-padding-y)
-    var(--page-indent-left);
+  padding: var(--page-indent-top) var(--page-indent-right)
+           var(--page-indent-bottom) var(--page-indent-left);
   position: relative;
   z-index: 10;
 }
@@ -302,4 +340,28 @@
 .page-empty-text {
   color: var(--text-tertiary);
   font-size: 0.875rem;
+}
+
+/* ============================================
+ * Layout Utility Classes
+ * Spacing utilities for consistent layouts
+ * ============================================ */
+.layout-section {
+  margin-bottom: var(--section-gap-md);
+}
+
+.layout-section:last-child {
+  margin-bottom: 0;
+}
+
+.layout-gap {
+  gap: var(--content-gap-md);
+}
+
+.layout-gap-sm {
+  gap: var(--content-gap-sm);
+}
+
+.layout-gap-lg {
+  gap: var(--content-gap-lg);
 }
