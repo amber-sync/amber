@@ -5,7 +5,7 @@
  * Uses Observatory styling with data visualization elements.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
 import { TimeMachineSnapshot } from '../TimeMachine';
 import { Icons } from '../../../components/IconComponents';
@@ -26,7 +26,7 @@ interface AnalyticsData {
   totalFiles: number;
 }
 
-export function AnalyticsOverlay({ isOpen, job, snapshot, onClose }: AnalyticsOverlayProps) {
+function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: AnalyticsOverlayProps) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -271,5 +271,8 @@ function LargestFileRow({
     </div>
   );
 }
+
+export const AnalyticsOverlay = memo(AnalyticsOverlayComponent);
+AnalyticsOverlay.displayName = 'AnalyticsOverlay';
 
 export default AnalyticsOverlay;

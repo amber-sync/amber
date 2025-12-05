@@ -5,7 +5,7 @@
  * Uses Observatory styling with monospace terminal aesthetic.
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { LogEntry, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 
@@ -20,7 +20,7 @@ interface TerminalOverlayProps {
 
 type LogFilter = 'all' | 'info' | 'warning' | 'error';
 
-export function TerminalOverlay({
+function TerminalOverlayComponent({
   isOpen,
   logs,
   progress,
@@ -259,5 +259,8 @@ function LogLine({ log }: { log: LogEntry }) {
     </div>
   );
 }
+
+export const TerminalOverlay = memo(TerminalOverlayComponent);
+TerminalOverlay.displayName = 'TerminalOverlay';
 
 export default TerminalOverlay;

@@ -4,6 +4,7 @@
  * Wraps the existing FileBrowser component in the Observatory overlay style.
  */
 
+import { memo } from 'react';
 import { FileBrowser } from '../../../components/FileBrowser';
 import { Icons } from '../../../components/IconComponents';
 
@@ -16,7 +17,7 @@ interface FileExplorerOverlayProps {
   onClose: () => void;
 }
 
-export function FileExplorerOverlay({
+function FileExplorerOverlayComponent({
   isOpen,
   path,
   jobId,
@@ -54,5 +55,8 @@ export function FileExplorerOverlay({
     </div>
   );
 }
+
+export const FileExplorerOverlay = memo(FileExplorerOverlayComponent);
+FileExplorerOverlay.displayName = 'FileExplorerOverlay';
 
 export default FileExplorerOverlay;

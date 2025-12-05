@@ -60,20 +60,44 @@ export function TimeMachine({
   const [currentJobId, setCurrentJobId] = useState<string | null>(
     initialJobId || activeJobId || null
   );
+
+  // Sync currentJobId when navigating to TimeMachine with different job (component stays mounted)
+  useEffect(() => {
+    if (initialJobId && initialJobId !== currentJobId) {
+      setCurrentJobId(initialJobId);
+    }
+  }, [initialJobId]);
+
   const currentJob = useMemo(
     () => jobs.find((j: SyncJob) => j.id === currentJobId) || null,
     [jobs, currentJobId]
   );
 
-  // Snapshots for current job
-  const [snapshots, setSnapshots] = useState<TimeMachineSnapshot[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Snapshots for current job - use in-memory data immediately for instant render
+  const [snapshots, setSnapshots] = useState<TimeMachineSnapshot[]>(() => {
+    // Initialize from in-memory job data for instant render
+    const job = jobs.find((j: SyncJob) => j.id === (initialJobId || activeJobId));
+    if (job?.snapshots?.length) {
+      return job.snapshots
+        .map(s => ({ ...s, jobId: job.id, jobName: job.name }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(false); // Start as false since we have in-memory data
 
   // Date filter state (TIM-151)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
-  // Timeline state
-  const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(null);
+  // Timeline state - initialize to latest snapshot for instant render
+  const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(() => {
+    const job = jobs.find((j: SyncJob) => j.id === (initialJobId || activeJobId));
+    if (job?.snapshots?.length) {
+      const sorted = [...job.snapshots].sort((a, b) => a.timestamp - b.timestamp);
+      return sorted[sorted.length - 1].timestamp;
+    }
+    return null;
+  });
 
   // Filtered snapshots based on date range (TIM-151)
   const filteredSnapshots = useMemo(() => {
@@ -113,42 +137,60 @@ export function TimeMachine({
   const [compareMode, setCompareMode] = useState(false);
   const [compareSnapshot, setCompareSnapshot] = useState<TimeMachineSnapshot | null>(null);
 
-  // Load snapshots when job changes
+  // Sync snapshots from in-memory job data (instant, no loading state)
   useEffect(() => {
     if (!currentJob) {
       setSnapshots([]);
-      setLoading(false);
       return;
     }
 
-    const loadSnapshots = async () => {
-      setLoading(true);
+    // Use in-memory snapshots directly - no API call needed for instant render
+    const jobSnapshots = currentJob.snapshots ?? [];
+    const enriched: TimeMachineSnapshot[] = jobSnapshots
+      .map(s => ({
+        ...s,
+        jobId: currentJob.id,
+        jobName: currentJob.name,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    setSnapshots(enriched);
+
+    // Auto-select latest snapshot if none selected
+    if (enriched.length > 0 && !selectedTimestamp) {
+      setSelectedTimestamp(enriched[enriched.length - 1].timestamp);
+    }
+  }, [currentJob, currentJob?.snapshots?.length]);
+
+  // Background refresh from API (optional, non-blocking)
+  useEffect(() => {
+    if (!currentJob) return;
+
+    const refreshFromApi = async () => {
       try {
         const snapshotList = await api.listSnapshots(currentJob.id, currentJob.destPath);
-        // Enrich and sort by timestamp (oldest first, so newest is at the end/right)
-        const enriched: TimeMachineSnapshot[] = snapshotList
-          .map(s => ({
-            ...s,
-            jobId: currentJob.id,
-            jobName: currentJob.name,
-          }))
-          .sort((a, b) => a.timestamp - b.timestamp);
-        setSnapshots(enriched);
-
-        // Auto-select latest snapshot (rightmost on timeline)
-        if (enriched.length > 0) {
-          setSelectedTimestamp(enriched[enriched.length - 1].timestamp);
+        // Only update if we got more snapshots than in-memory
+        if (snapshotList.length > (currentJob.snapshots?.length ?? 0)) {
+          const enriched: TimeMachineSnapshot[] = snapshotList
+            .map(s => ({
+              ...s,
+              jobId: currentJob.id,
+              jobName: currentJob.name,
+            }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+          setSnapshots(enriched);
         }
       } catch (error) {
-        console.error('Failed to load snapshots:', error);
-        setSnapshots([]);
-      } finally {
-        setLoading(false);
+        // Silently fail - we already have in-memory data
+        console.debug('Background snapshot refresh failed:', error);
       }
     };
 
-    loadSnapshots();
-  }, [currentJob]);
+    // Delay API call to not block initial render
+    const timer = setTimeout(refreshFromApi, 500);
+    return () => clearTimeout(timer);
+  }, [currentJob?.id]);
+
 
   // Sync active job with context
   useEffect(() => {

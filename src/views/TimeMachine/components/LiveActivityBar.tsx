@@ -8,6 +8,7 @@
  * - Expand button to view full logs
  */
 
+import { memo } from 'react';
 import { LogEntry, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 
@@ -18,7 +19,7 @@ interface LiveActivityBarProps {
   onExpand: () => void;
 }
 
-export function LiveActivityBar({ isRunning, progress, logs, onExpand }: LiveActivityBarProps) {
+function LiveActivityBarComponent({ isRunning, progress, logs, onExpand }: LiveActivityBarProps) {
   // Only show when running
   if (!isRunning) {
     return null;
@@ -56,5 +57,8 @@ export function LiveActivityBar({ isRunning, progress, logs, onExpand }: LiveAct
     </div>
   );
 }
+
+export const LiveActivityBar = memo(LiveActivityBarComponent);
+LiveActivityBar.displayName = 'LiveActivityBar';
 
 export default LiveActivityBar;

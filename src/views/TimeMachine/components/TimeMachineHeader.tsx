@@ -5,7 +5,7 @@
  * TIM-151: Added date range filter
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 import { Button, IconButton } from '../../../components/ui';
@@ -35,7 +35,7 @@ const dateFilterLabels: Record<DateFilter, string> = {
   year: '1 Year',
 };
 
-export function TimeMachineHeader({
+function TimeMachineHeaderComponent({
   job,
   jobs,
   isRunning,
@@ -226,5 +226,8 @@ export function TimeMachineHeader({
     </header>
   );
 }
+
+export const TimeMachineHeader = memo(TimeMachineHeaderComponent);
+TimeMachineHeader.displayName = 'TimeMachineHeader';
 
 export default TimeMachineHeader;

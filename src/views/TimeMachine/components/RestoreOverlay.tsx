@@ -4,7 +4,7 @@
  * Wraps the RestorePanel component with Observatory styling.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { SyncJob, Snapshot } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../../components/IconComponents';
@@ -25,7 +25,7 @@ interface RestoreOverlayProps {
   onClose: () => void;
 }
 
-export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: RestoreOverlayProps) {
+function RestoreOverlayComponent({ isOpen, job, snapshot, snapshots, onClose }: RestoreOverlayProps) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<TimeMachineSnapshot | null>(snapshot);
   const [targetPath, setTargetPath] = useState('');
   const [restoreMode, setRestoreMode] = useState<RestoreMode>('merge');
@@ -409,5 +409,8 @@ export function RestoreOverlay({ isOpen, job, snapshot, snapshots, onClose }: Re
     </div>
   );
 }
+
+export const RestoreOverlay = memo(RestoreOverlayComponent);
+RestoreOverlay.displayName = 'RestoreOverlay';
 
 export default RestoreOverlay;

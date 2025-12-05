@@ -79,6 +79,7 @@
 .tm-container {
   background: var(--tm-space);
   color: var(--tm-text-bright);
+  width: 100%;
   height: 100%;
   position: relative;
   overflow: hidden;
@@ -334,15 +335,13 @@
 .tm-focus {
   flex: 1;
   min-height: 0; /* TIM-175: Prevent flex item from expanding beyond allocated space */
-  overflow-y: auto; /* TIM-175: Allow internal scrolling if content exceeds available space */
+  overflow: hidden; /* TIM-175: No scrolling - content must fit */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 48px 40px;
+  padding: 24px 32px 32px;
   text-align: center;
-  /* TIM-175: Ensure content fits within viewport (Header 72px + Timeline 140px + LiveBar ~60px + margins ~32px) */
-  max-height: calc(100vh - 72px - 140px - 60px - 32px);
 }
 
 .tm-focus-date {
@@ -366,33 +365,30 @@
 .tm-focus-relative {
   font-size: 14px;
   color: var(--tm-text-dim);
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 /* Stats grid */
 .tm-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: 16px;
+  margin-bottom: 24px;
   width: 100%;
   max-width: 700px;
 }
 
 .tm-stat {
-  background: linear-gradient(180deg, var(--tm-nebula) 0%, var(--tm-space) 100%);
+  background: var(--tm-nebula);
   border: 1px solid var(--tm-dust);
   border-radius: 16px;
   padding: 20px;
   text-align: center;
-  transition: all 200ms ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: background 200ms ease;
 }
 
 .tm-stat:hover {
-  background: linear-gradient(180deg, var(--tm-dust) 0%, var(--tm-nebula) 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  background: var(--tm-dust);
 }
 
 /* Dark mode enhancements */
@@ -433,7 +429,7 @@
 .tm-actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .tm-action-btn {
@@ -482,9 +478,8 @@
   left: 0;
   right: 0;
   height: 56px;
-  background: var(--tm-glass);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--tm-glass-border);
+  background: var(--tm-space);
+  border-top: 1px solid var(--tm-dust);
   display: flex;
   align-items: center;
   padding: 0 24px;
@@ -574,8 +569,7 @@
  * Header
  * ============================================ */
 .tm-header {
-  height: auto;
-  min-height: 72px;
+  height: 72px;
   padding-top: var(--page-indent-top);
   padding-bottom: 12px;
   display: flex;
@@ -777,8 +771,7 @@
 .tm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: stretch;
   z-index: 200;
@@ -858,21 +851,18 @@
  * Analytics Preview
  * ============================================ */
 .tm-analytics {
-  background: linear-gradient(180deg, var(--tm-nebula) 0%, var(--tm-space) 100%);
+  background: var(--tm-nebula);
   border: 1px solid var(--tm-dust);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px 20px;
   width: 100%;
   max-width: 700px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-  will-change: transform; /* Optimize transforms */
-  min-height: 100px; /* Fixed height to prevent layout shifts */
+  height: 88px;
+  overflow: hidden;
 }
 
 .tm-analytics:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
 }
 
 /* Dark mode enhancements */
@@ -888,7 +878,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .tm-analytics-title {
@@ -950,7 +940,7 @@
 
 @keyframes tm-fade-in {
   from {
-    opacity: 0;
+    opacity: 1;
   }
   to {
     opacity: 1;
@@ -959,25 +949,23 @@
 
 @keyframes tm-slide-up {
   from {
-    opacity: 0;
-    transform: translateY(20px);
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .tm-animate-fade-in {
-  animation: tm-fade-in 300ms ease-out forwards;
+  animation: tm-fade-in 0ms forwards;
 }
 
 .tm-animate-slide-up {
-  animation: tm-slide-up 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: tm-slide-up 0ms forwards;
 }
 
-/* Stagger animation delays */
-.tm-stagger-1 {
+/* Removed for instant rendering - TIM-167 */
+/* .tm-stagger-1 {
   animation-delay: 50ms;
 }
 .tm-stagger-2 {
@@ -988,7 +976,7 @@
 }
 .tm-stagger-4 {
   animation-delay: 200ms;
-}
+} */
 
 /* ============================================
  * Responsive

@@ -489,36 +489,33 @@ function AppContent() {
       {isTopLevel && <Sidebar activeView={view} onNavigate={setView} />}
 
       <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
-        {view === 'DASHBOARD' && (
-          <div className="flex-1 overflow-y-auto">
-            <Dashboard
-              jobs={jobs}
-              diskStats={destinationStats}
-              onSelectJob={id => {
-                setActiveJobId(id);
-                // Navigate to unified Time Machine for the selected job
-                setView('TIME_MACHINE');
-              }}
-              onCreateJob={openNewJob}
-              onRunBackup={runSync}
-              onEditSettings={id => {
-                setActiveJobId(id);
-                openSettings('DASHBOARD', id);
-              }}
-            />
-          </div>
-        )}
+        {/* Dashboard and TimeMachine kept mounted for instant switching */}
+        <div className="flex-1 overflow-hidden" style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}>
+          <Dashboard
+            jobs={jobs}
+            diskStats={destinationStats}
+            onSelectJob={id => {
+              setActiveJobId(id);
+              // Navigate to unified Time Machine for the selected job
+              setView('TIME_MACHINE');
+            }}
+            onCreateJob={openNewJob}
+            onRunBackup={runSync}
+            onEditSettings={id => {
+              setActiveJobId(id);
+              openSettings('DASHBOARD', id);
+            }}
+          />
+        </div>
 
-        {view === 'TIME_MACHINE' && (
-          <div className="flex-1 overflow-hidden">
-            <TimeMachine
-              initialJobId={activeJobId || undefined}
-              isRunning={isRunning}
-              progress={progress}
-              logs={logs}
-            />
-          </div>
-        )}
+        <div className="flex-1 overflow-hidden" style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}>
+          <TimeMachine
+            initialJobId={activeJobId || undefined}
+            isRunning={isRunning}
+            progress={progress}
+            logs={logs}
+          />
+        </div>
 
         {view === 'APP_SETTINGS' && <AppSettings />}
 

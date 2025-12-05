@@ -5,7 +5,7 @@
  * Uses the Observatory design language with prominent typography.
  */
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef, memo } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
 import { TimeMachineSnapshot } from '../TimeMachine';
@@ -29,7 +29,10 @@ interface AnalyticsData {
   largestFiles: LargestFile[];
 }
 
-export function SnapshotFocus({
+// Cache analytics data to prevent re-fetching during navigation (TIM-167 performance fix)
+const analyticsCache = new Map<string, AnalyticsData>();
+
+function SnapshotFocusComponent({
   snapshot,
   job,
   onBrowseFiles,
@@ -42,32 +45,61 @@ export function SnapshotFocus({
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
-  // Load analytics when snapshot changes
+  // Track pending requests to avoid race conditions
+  const pendingRequestRef = useRef<string | null>(null);
+
+  // Load analytics when snapshot changes - with caching
   useEffect(() => {
     if (!snapshot || !job.destPath) {
       setAnalytics(null);
       return;
     }
 
+    const cacheKey = `${job.id}-${snapshot.timestamp}`;
+
+    // Check cache first - instant return if we have data
+    const cached = analyticsCache.get(cacheKey);
+    if (cached) {
+      setAnalytics(cached);
+      setAnalyticsLoading(false);
+      return;
+    }
+
     const loadAnalytics = async () => {
+      // Track this request
+      pendingRequestRef.current = cacheKey;
       setAnalyticsLoading(true);
+
       try {
         const [fileTypes, largestFiles] = await Promise.all([
           api.getFileTypeStatsOnDestination(job.destPath, job.id, snapshot.timestamp, 6),
           api.getLargestFilesOnDestination(job.destPath, job.id, snapshot.timestamp, 3),
         ]);
-        setAnalytics({ fileTypes, largestFiles });
+
+        const data = { fileTypes, largestFiles };
+
+        // Only update if this is still the pending request (user hasn't navigated away)
+        if (pendingRequestRef.current === cacheKey) {
+          analyticsCache.set(cacheKey, data);
+          setAnalytics(data);
+        }
       } catch (err) {
         console.error('Failed to load analytics:', err);
-        setAnalytics(null);
+        if (pendingRequestRef.current === cacheKey) {
+          setAnalytics(null);
+        }
       } finally {
-        setAnalyticsLoading(false);
+        if (pendingRequestRef.current === cacheKey) {
+          setAnalyticsLoading(false);
+        }
       }
     };
 
-    // Small delay to avoid loading during rapid navigation
-    const timer = setTimeout(loadAnalytics, 200);
-    return () => clearTimeout(timer);
+    // Load analytics immediately - caching handles rapid navigation (TIM-167)
+    loadAnalytics();
+    return () => {
+      pendingRequestRef.current = null;
+    };
   }, [snapshot?.timestamp, job.id, job.destPath]);
 
   // Format date parts
@@ -100,7 +132,7 @@ export function SnapshotFocus({
   return (
     <div className="tm-focus">
       {/* Date display - prominent typography */}
-      <div className="tm-animate-slide-up">
+      <div>
         <h1 className="tm-focus-date tm-font-display">
           {dateParts.month} {dateParts.day}, {dateParts.year}
         </h1>
@@ -111,7 +143,7 @@ export function SnapshotFocus({
       </div>
 
       {/* Stats grid */}
-      <div className="tm-stats-grid tm-animate-slide-up tm-stagger-1">
+      <div className="tm-stats-grid">
         <StatCard
           icon={<Icons.File size={16} />}
           label="Files"
@@ -136,7 +168,7 @@ export function SnapshotFocus({
       </div>
 
       {/* Quick actions */}
-      <div className="tm-actions tm-animate-slide-up tm-stagger-2">
+      <div className="tm-actions">
         <button onClick={onBrowseFiles} className="tm-action-btn tm-action-btn--primary">
           <Icons.FolderOpen size={18} />
           <span>Browse Files</span>
@@ -202,7 +234,7 @@ export function SnapshotFocus({
       </div>
 
       {/* Status indicator */}
-      <div className="mt-6 flex items-center gap-2 text-xs tm-animate-fade-in tm-stagger-4">
+      <div className="mt-6 flex items-center gap-2 text-xs">
         <div
           className={`w-2 h-2 rounded-full ${
             snapshot.status === 'Complete'
@@ -250,5 +282,8 @@ function StatCard({
     </div>
   );
 }
+
+export const SnapshotFocus = memo(SnapshotFocusComponent);
+SnapshotFocus.displayName = 'SnapshotFocus';
 
 export default SnapshotFocus;
