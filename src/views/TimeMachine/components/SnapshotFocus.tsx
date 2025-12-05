@@ -158,22 +158,30 @@ export function SnapshotFocus({
         </button>
       </div>
 
-      {/* Analytics preview */}
-      {(analytics || analyticsLoading) && (
-        <div className="tm-analytics tm-animate-slide-up tm-stagger-3">
-          <div className="tm-analytics-header">
-            <span className="tm-analytics-title">File Types</span>
-            <button onClick={onViewAnalytics} className="tm-analytics-expand">
-              View all →
-            </button>
-          </div>
-          {analyticsLoading ? (
+      {/* Analytics preview - always rendered to prevent layout shift (TIM-172) */}
+      <div className="tm-analytics">
+        {analyticsLoading ? (
+          <>
+            <div className="tm-analytics-header">
+              <span className="tm-analytics-title">File Types</span>
+              <button onClick={onViewAnalytics} className="tm-analytics-expand">
+                View all →
+              </button>
+            </div>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className="h-8 w-20 bg-[var(--tm-dust)] rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : analytics?.fileTypes && analytics.fileTypes.length > 0 ? (
+          </>
+        ) : analytics?.fileTypes && analytics.fileTypes.length > 0 ? (
+          <>
+            <div className="tm-analytics-header">
+              <span className="tm-analytics-title">File Types</span>
+              <button onClick={onViewAnalytics} className="tm-analytics-expand">
+                View all →
+              </button>
+            </div>
             <div className="tm-file-types">
               {analytics.fileTypes.slice(0, 6).map((ft, i) => (
                 <div key={i} className="tm-file-type">
@@ -182,11 +190,16 @@ export function SnapshotFocus({
                 </div>
               ))}
             </div>
-          ) : (
+          </>
+        ) : (
+          <>
+            <div className="tm-analytics-header">
+              <span className="tm-analytics-title">File Types</span>
+            </div>
             <p className="text-sm text-[var(--tm-text-dim)]">No file type data available</p>
-          )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Status indicator */}
       <div className="mt-6 flex items-center gap-2 text-xs tm-animate-fade-in tm-stagger-4">

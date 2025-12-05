@@ -333,12 +333,16 @@
  * ============================================ */
 .tm-focus {
   flex: 1;
+  min-height: 0; /* TIM-175: Prevent flex item from expanding beyond allocated space */
+  overflow-y: auto; /* TIM-175: Allow internal scrolling if content exceeds available space */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 32px 48px 40px;
   text-align: center;
+  /* TIM-175: Ensure content fits within viewport (Header 72px + Timeline 140px + LiveBar ~60px + margins ~32px) */
+  max-height: calc(100vh - 72px - 140px - 60px - 32px);
 }
 
 .tm-focus-date {
