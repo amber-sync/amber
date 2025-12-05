@@ -1,9 +1,14 @@
-import React from 'react';
-import { SyncMode, RsyncConfig, DestinationType } from '../types';
-import { Icons } from '../components/IconComponents';
-import { GlassPanel, TextInput, Toggle, PathInput, SectionHeader } from '../components/ui';
+/**
+ * TIM-190: Unified Job Editor component
+ * Consolidated from JobEditorTwoPanel - other variants removed
+ */
 
-interface JobEditorTwoPanelProps {
+import React from 'react';
+import { SyncMode, RsyncConfig, DestinationType } from '../../types';
+import { Icons } from '../../components/IconComponents';
+import { GlassPanel, TextInput, Toggle, PathInput, SectionHeader } from '../../components/ui';
+
+export interface JobEditorProps {
   // Form state
   jobName: string;
   jobSource: string;
@@ -83,7 +88,7 @@ const SYNC_MODES = [
   },
 ];
 
-export const JobEditorTwoPanel: React.FC<JobEditorTwoPanelProps> = ({
+export const JobEditor: React.FC<JobEditorProps> = ({
   jobName,
   jobSource,
   jobDest,
