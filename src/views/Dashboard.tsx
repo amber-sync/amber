@@ -64,7 +64,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, []);
 
   return (
-    <div className="page-content page-animate-in">
+    <div className="page page-scroll page-animate-in">
+      <div className="page-content">
       {/* Stats Bar & New Job Button */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4 no-drag">
@@ -182,6 +183,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -24,6 +24,7 @@
   --page-indent-left: 32px;
   --page-indent-right: 32px;
   --page-indent-top: 29px;
+  --page-indent-bottom: 32px;
 }
 
 .dark {
@@ -48,27 +49,31 @@
 
 /* ============================================
  * Page Content Wrapper
- * Constrains content width and adds padding
+ * Full-width layout with consistent padding
  * ============================================ */
 .page-content {
-  max-width: var(--page-max-width);
-  margin: 0 auto;
-  padding: var(--page-indent-top) var(--page-indent-right) var(--page-padding-y)
+  width: 100%;
+  height: 100%;
+  padding: var(--page-indent-top) var(--page-indent-right) var(--page-indent-bottom)
     var(--page-indent-left);
   position: relative;
   z-index: 10;
 }
 
+/* Optional max-width modifiers if needed */
+.page-content--constrained {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
 .page-content--narrow {
   max-width: 960px;
+  margin: 0 auto;
 }
 
 .page-content--wide {
   max-width: 1536px;
-}
-
-.page-content--full {
-  max-width: none;
+  margin: 0 auto;
 }
 
 /* ============================================

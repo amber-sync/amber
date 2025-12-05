@@ -517,7 +517,9 @@ function AppContent() {
           />
         </div>
 
-        {view === 'APP_SETTINGS' && <AppSettings />}
+        <div className="flex-1 overflow-hidden" style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}>
+          <AppSettings />
+        </div>
 
         {view === 'HELP' && <HelpSection />}
 
