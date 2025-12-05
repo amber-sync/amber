@@ -4,6 +4,10 @@
 
 import { RsyncConfig, SyncMode } from '../types';
 
+// TIM-185: Re-export constants for convenient access
+export { FILE_TYPE, isDirectory, isFile } from './constants';
+export type { FileType } from './constants';
+
 /**
  * Base rsync configuration used as foundation for all modes.
  * Individual mode presets may override specific values.
