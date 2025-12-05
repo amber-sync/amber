@@ -26,6 +26,16 @@ interface ClusteredMarker {
 const CLUSTER_THRESHOLD_PERCENT = 2; // Minimum % between markers before clustering
 const MAX_MARKERS = 80;
 
+// Timeline display margins - shrinks the visual timeline to leave breathing room
+const TIMELINE_MARGIN_LEFT = 4; // % from left edge
+const TIMELINE_MARGIN_RIGHT = 4; // % from right edge
+const TIMELINE_USABLE_WIDTH = 100 - TIMELINE_MARGIN_LEFT - TIMELINE_MARGIN_RIGHT;
+
+// Maps logical position (0-100%) to display position with margins
+const toDisplayPosition = (position: number): number => {
+  return TIMELINE_MARGIN_LEFT + (position / 100) * TIMELINE_USABLE_WIDTH;
+};
+
 export function TimelineRuler({
   snapshots,
   selectedTimestamp,
@@ -186,7 +196,7 @@ export function TimelineRuler({
         {activeMarker && (
           <div
             className="tm-timeline-tooltip tm-animate-fade-in"
-            style={{ left: `${activeMarker.position}%` }}
+            style={{ left: `${toDisplayPosition(activeMarker.position)}%` }}
           >
             <div className="tm-timeline-tooltip-content">
               {activeMarker.isCluster ? (
@@ -243,7 +253,7 @@ export function TimelineRuler({
                 ${hasPartial && !hasFailed ? 'tm-marker--partial' : ''}
                 ${marker.isCluster ? 'tm-marker--cluster' : ''}
               `}
-              style={{ left: `${marker.position}%` }}
+              style={{ left: `${toDisplayPosition(marker.position)}%` }}
             >
               {/* Cluster count badge */}
               {marker.isCluster && (
@@ -259,12 +269,19 @@ export function TimelineRuler({
       {/* Zone 3: Month labels (below track) */}
       <div className="tm-timeline-labels">
         {monthLabels.map((label, i) => (
-          <span key={i} className="tm-timeline-label" style={{ left: `${label.position}%` }}>
+          <span
+            key={i}
+            className="tm-timeline-label"
+            style={{ left: `${toDisplayPosition(label.position)}%` }}
+          >
             {label.label}
           </span>
         ))}
         {/* Now marker - just a label like months */}
-        <span className="tm-timeline-label tm-timeline-label--now" style={{ left: '100%' }}>
+        <span
+          className="tm-timeline-label tm-timeline-label--now"
+          style={{ left: `${toDisplayPosition(100)}%` }}
+        >
           Now
         </span>
       </div>

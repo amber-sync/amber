@@ -19,6 +19,11 @@
   --page-padding-x: 2rem;
   --page-padding-y: 2rem;
   --page-header-height: 72px;
+
+  /* Page indentation - consistent spacing */
+  --page-indent-left: 32px;
+  --page-indent-right: 32px;
+  --page-indent-top: 29px;
 }
 
 .dark {
@@ -48,7 +53,8 @@
 .page-content {
   max-width: var(--page-max-width);
   margin: 0 auto;
-  padding: var(--page-padding-y) var(--page-padding-x);
+  padding: var(--page-indent-top) var(--page-indent-right) var(--page-padding-y)
+    var(--page-indent-left);
   position: relative;
   z-index: 10;
 }

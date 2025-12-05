@@ -329,7 +329,7 @@ export function TimeMachine({
   // No job selected state
   if (!currentJob) {
     return (
-      <div className="tm-container flex flex-col h-screen">
+      <div className="tm-container flex flex-col h-full">
         <TimeMachineHeader
           job={null}
           jobs={jobs}
@@ -349,7 +349,7 @@ export function TimeMachine({
   // No snapshots state
   if (!loading && snapshots.length === 0) {
     return (
-      <div className="tm-container flex flex-col h-screen">
+      <div className="tm-container flex flex-col h-full">
         <TimeMachineHeader
           job={currentJob}
           jobs={jobs}
@@ -373,7 +373,7 @@ export function TimeMachine({
   }
 
   return (
-    <div className="tm-container flex flex-col h-screen">
+    <div className="tm-container flex flex-col h-full">
       {/* Header with job switcher and controls (TIM-138, TIM-151) */}
       <TimeMachineHeader
         job={currentJob}

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { SyncJob, JobStatus, DiskStats } from '../types';
+import { SyncJob, DiskStats } from '../types';
 import { Icons } from '../components/IconComponents';
-import { formatBytes, formatSchedule, truncateMiddle, formatRelativeTime } from '../utils';
+import { formatBytes } from '../utils';
 import { BackupCalendar } from '../components/analytics';
-import { ConnectionDot, OfflineBadge } from '../components/ConnectionStatus';
 import { format } from 'date-fns';
-import { Button, Card, Badge, StatusDot, IconButton, ProgressRing } from '../components/ui';
+import { Button, Card, StatusDot, IconButton } from '../components/ui';
+import { JobCard } from '../components/JobCard';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -102,17 +102,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Jobs List - Primary Content */}
-      <div className="page-section space-y-3">
-        <div className="flex items-center justify-between px-4 text-xs font-semibold text-text-tertiary uppercase tracking-wider font-display">
-          <div className="w-1/3">Job Name</div>
-          <div className="w-1/3">Source & Destination</div>
-          <div className="w-1/6 text-right">Schedule</div>
-          <div className="w-1/6 text-right">Last Run</div>
+      <div className="page-section">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-text-tertiary uppercase tracking-wider font-display">
+            Backup Jobs
+          </h2>
+          <span className="text-xs text-text-quaternary">Click to expand details</span>
         </div>
 
         <div className="space-y-3">
           {jobs.map(job => (
-            <JobRow
+            <JobCard
               key={job.id}
               job={job}
               mountInfo={mountStatus?.[job.id]}
@@ -178,162 +178,5 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
     </div>
-  );
-};
-
-const JobRow: React.FC<{
-  job: SyncJob;
-  mountInfo?: JobMountInfo;
-  onSelect: () => void;
-  onRunBackup?: (jobId: string) => void;
-  onEditSettings?: (jobId: string) => void;
-}> = ({ job, mountInfo, onSelect, onRunBackup, onEditSettings }) => {
-  const getPathName = (p: string) => p.split('/').pop() || p;
-  const isRunning = job.status === JobStatus.RUNNING;
-  const mounted = mountInfo?.mounted ?? true; // Default to mounted if no info
-
-  return (
-    <div
-      onClick={onSelect}
-      className="group relative bg-layer-1 hover:bg-layer-2 rounded-xl p-4 border border-border-base shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elevated)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center gap-4"
-    >
-      {/* Status Icon with Connection Dot and Progress */}
-      <div className="relative">
-        {isRunning ? (
-          // Show progress ring when running
-          <ProgressRing progress={0} size={48} strokeWidth={3} showLabel={false} variant="default">
-            <Icons.RefreshCw size={20} className="animate-spin text-accent-primary" />
-          </ProgressRing>
-        ) : (
-          <div
-            className={`p-2.5 rounded-lg shrink-0 ${
-              job.status === JobStatus.SUCCESS
-                ? 'bg-[var(--color-success-subtle)] text-[var(--color-success)]'
-                : 'bg-layer-3 text-text-tertiary'
-            }`}
-          >
-            <Icons.Database size={20} />
-          </div>
-        )}
-        {/* Connection status dot */}
-        <div className="absolute -top-0.5 -right-0.5">
-          <ConnectionDot mounted={mounted} isRunning={isRunning} />
-        </div>
-      </div>
-
-      {/* Job Name & Mode */}
-      <div className="w-1/3 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="font-bold text-text-primary truncate">{job.name}</h3>
-          <ModePill mode={job.mode} />
-          {!mounted && <OfflineBadge />}
-        </div>
-        <div className="flex items-center gap-2">
-          {isRunning && (
-            <span className="text-xs font-medium text-accent-primary animate-pulse">
-              Syncing...
-            </span>
-          )}
-          {!isRunning && <span className="text-xs text-text-secondary truncate">{job.status}</span>}
-        </div>
-      </div>
-
-      {/* Paths */}
-      <div className="w-1/3 min-w-0 flex flex-col gap-1.5">
-        <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.sourcePath}>
-          <Icons.Server size={14} className="text-text-tertiary shrink-0" />
-          <span className="truncate">
-            <span className="font-bold">{getPathName(job.sourcePath)}</span>
-            <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">
-              {truncateMiddle(job.sourcePath, 30)}
-            </span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-text-secondary" title={job.destPath}>
-          <Icons.HardDrive size={14} className="text-text-tertiary shrink-0" />
-          <span className="truncate">
-            <span className="font-bold">{getPathName(job.destPath)}</span>
-            <span className="text-text-tertiary ml-1.5 font-mono text-[10px]">
-              {truncateMiddle(job.destPath, 30)}
-            </span>
-          </span>
-        </div>
-      </div>
-
-      {/* Schedule */}
-      <div className="w-1/6 text-right text-sm text-text-secondary">
-        <div className="flex items-center justify-end gap-1.5">
-          <Icons.Clock size={14} className="opacity-70" />
-          {formatSchedule(job.scheduleInterval)}
-        </div>
-      </div>
-
-      {/* Last Run */}
-      <div className="w-1/6 text-right">
-        <div className="text-sm font-medium text-text-primary">
-          {job.lastRun ? new Date(job.lastRun).toLocaleDateString() : 'Never'}
-        </div>
-        <div className="text-xs text-text-tertiary">
-          {job.lastRun
-            ? new Date(job.lastRun).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : '--:--'}
-        </div>
-      </div>
-
-      {/* Quick Actions - Hover Revealed */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-        {onRunBackup && (
-          <IconButton
-            label="Run backup now"
-            variant="ghost"
-            size="sm"
-            onClick={e => {
-              e.stopPropagation();
-              onRunBackup(job.id);
-            }}
-          >
-            <Icons.Play className="w-4 h-4" />
-          </IconButton>
-        )}
-        <IconButton
-          label="View backup history"
-          variant="ghost"
-          size="sm"
-          onClick={e => {
-            e.stopPropagation();
-            onSelect();
-          }}
-        >
-          <Icons.Clock className="w-4 h-4" />
-        </IconButton>
-        {onEditSettings && (
-          <IconButton
-            label="Edit job settings"
-            variant="ghost"
-            size="sm"
-            onClick={e => {
-              e.stopPropagation();
-              onEditSettings(job.id);
-            }}
-          >
-            <Icons.Settings className="w-4 h-4" />
-          </IconButton>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const ModePill: React.FC<{ mode: SyncJob['mode'] }> = ({ mode }) => {
-  const map: Record<string, { status: 'info' | 'warning' | 'success'; label: string }> = {
-    MIRROR: { status: 'info', label: 'Mirror' },
-    ARCHIVE: { status: 'warning', label: 'Archive' },
-    TIME_MACHINE: { status: 'success', label: 'TM' },
-  };
-  const config = map[mode] || map.MIRROR;
-  return (
-    <Badge status={config.status} size="sm" variant="subtle">
-      {config.label}
-    </Badge>
   );
 };

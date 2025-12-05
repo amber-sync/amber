@@ -1,0 +1,336 @@
+/**
+ * Typography Utilities - Tailwind-compatible utility classes
+ *
+ * These classes use @apply to compose semantic typography styles
+ * for convenient use with Tailwind CSS workflows.
+ */
+
+@layer components {
+  /* ========================================
+   * SEMANTIC TYPOGRAPHY UTILITIES
+   * ======================================== */
+
+  /* Display/Hero */
+  .typo-display-util {
+    @apply text-display;
+  }
+
+  /* Headings */
+  .typo-h1-util {
+    @apply text-heading-1;
+  }
+
+  .typo-h2-util {
+    @apply text-heading-2;
+  }
+
+  .typo-h3-util {
+    @apply text-heading-3;
+  }
+
+  .typo-h4-util {
+    @apply text-heading-4;
+  }
+
+  /* Body */
+  .typo-body-util {
+    @apply text-body;
+  }
+
+  .typo-body-lg-util {
+    @apply text-body-lg;
+  }
+
+  .typo-body-sm-util {
+    @apply text-body-sm;
+  }
+
+  /* Labels */
+  .typo-label-util {
+    @apply text-label;
+  }
+
+  .typo-label-normal-util {
+    @apply text-label-normal;
+  }
+
+  /* Captions */
+  .typo-caption-util {
+    @apply text-caption;
+  }
+
+  .typo-caption-sm-util {
+    @apply text-caption-sm;
+  }
+
+  /* Code */
+  .typo-code-util {
+    @apply text-code;
+  }
+
+  .typo-code-sm-util {
+    @apply text-code-sm;
+  }
+
+  /* UI */
+  .typo-ui-util {
+    @apply text-ui;
+  }
+
+  .typo-ui-sm-util {
+    @apply text-ui-sm;
+  }
+
+  /* Badge */
+  .typo-badge-util {
+    @apply text-badge;
+  }
+
+  /* ========================================
+   * COMMON COMBINATIONS
+   * ======================================== */
+
+  /* Page Title - Large heading with primary color */
+  .text-page-title {
+    @apply text-heading-1 text-primary;
+  }
+
+  /* Section Title - Medium heading with primary color */
+  .text-section-title {
+    @apply text-heading-2 text-primary;
+  }
+
+  /* Card Title - Smaller heading */
+  .text-card-title {
+    @apply text-heading-3 text-primary;
+  }
+
+  /* Form Label - Uppercase small label */
+  .text-form-label {
+    @apply text-label text-secondary;
+  }
+
+  /* Help Text - Small secondary text */
+  .text-help {
+    @apply text-caption text-tertiary;
+  }
+
+  /* Error Message - Small error text */
+  .text-error-message {
+    @apply text-body-sm text-error;
+  }
+
+  /* Success Message - Small success text */
+  .text-success-message {
+    @apply text-body-sm text-success;
+  }
+
+  /* Warning Message - Small warning text */
+  .text-warning-message {
+    @apply text-body-sm text-warning;
+  }
+
+  /* File Path - Monospace with truncation */
+  .text-file-path {
+    @apply text-code text-secondary truncate;
+  }
+
+  /* Timestamp - Small muted text */
+  .text-timestamp {
+    @apply text-caption text-quaternary;
+  }
+
+  /* Menu Item - UI text with proper weight */
+  .text-menu-item {
+    @apply text-ui text-primary;
+  }
+
+  /* Button Text - UI text with medium weight */
+  .text-button {
+    @apply text-ui font-medium;
+  }
+
+  /* Badge Text - Small uppercase badge */
+  .text-badge-default {
+    @apply text-badge;
+  }
+
+  /* ========================================
+   * SEMANTIC HTML ELEMENT DEFAULTS
+   * ======================================== */
+
+  /* Apply semantic typography to HTML elements */
+  h1 {
+    @apply text-heading-1;
+  }
+
+  h2 {
+    @apply text-heading-2;
+  }
+
+  h3 {
+    @apply text-heading-3;
+  }
+
+  h4 {
+    @apply text-heading-4;
+  }
+
+  p {
+    @apply text-body;
+  }
+
+  label {
+    @apply text-label-normal;
+  }
+
+  code {
+    @apply text-code-sm;
+  }
+
+  small {
+    @apply text-caption;
+  }
+
+  /* ========================================
+   * LINK STYLES
+   * ======================================== */
+
+  .text-link {
+    @apply text-body text-info underline hover:text-info/80 transition-colors;
+  }
+
+  .text-link-subtle {
+    @apply text-body text-secondary hover:text-primary transition-colors;
+  }
+
+  /* ========================================
+   * LIST STYLES
+   * ======================================== */
+
+  .text-list-item {
+    @apply text-body text-primary;
+  }
+
+  .text-list-label {
+    @apply text-body-sm text-secondary font-medium;
+  }
+
+  /* ========================================
+   * TABLE TYPOGRAPHY
+   * ======================================== */
+
+  .text-table-header {
+    @apply text-label text-tertiary font-medium;
+  }
+
+  .text-table-cell {
+    @apply text-body text-primary;
+  }
+
+  .text-table-cell-secondary {
+    @apply text-body-sm text-secondary;
+  }
+
+  /* ========================================
+   * EMPHASIS UTILITIES
+   * ======================================== */
+
+  .text-emphasized {
+    @apply font-medium;
+  }
+
+  .text-strong {
+    @apply font-semibold;
+  }
+
+  .text-muted {
+    @apply text-tertiary;
+  }
+
+  .text-subtle {
+    @apply text-quaternary;
+  }
+
+  /* ========================================
+   * MONOSPACE VARIANTS
+   * ======================================== */
+
+  .text-mono {
+    @apply font-mono;
+  }
+
+  .text-mono-sm {
+    @apply font-mono text-code-sm;
+  }
+
+  /* ========================================
+   * OVERFLOW UTILITIES
+   * ======================================== */
+
+  .text-ellipsis {
+    @apply truncate;
+  }
+
+  .text-clip-2 {
+    @apply text-truncate-2;
+  }
+
+  .text-clip-3 {
+    @apply text-truncate-3;
+  }
+}
+
+/* ========================================
+ * USAGE EXAMPLES WITH UTILITIES
+ * ========================================
+ *
+ * <!-- Page with semantic typography -->
+ * <div class="p-6">
+ *   <h1 class="text-page-title mb-2">Dashboard</h1>
+ *   <p class="text-help mb-8">Manage your backup jobs</p>
+ *
+ *   <section class="mb-6">
+ *     <h2 class="text-section-title mb-4">Active Jobs</h2>
+ *
+ *     <div class="card">
+ *       <h3 class="text-card-title mb-2">Documents Backup</h3>
+ *       <p class="text-body mb-1">Daily backup of documents folder</p>
+ *       <p class="text-file-path">/Users/name/Documents</p>
+ *       <time class="text-timestamp">Last run: 2 hours ago</time>
+ *     </div>
+ *   </section>
+ *
+ *   <form>
+ *     <label class="text-form-label mb-2">Job Name</label>
+ *     <input type="text" />
+ *     <p class="text-help mt-1">Enter a unique name for this job</p>
+ *   </form>
+ * </div>
+ *
+ * <!-- Button with typography -->
+ * <button class="text-button px-4 py-2 bg-accent-primary text-white">
+ *   Save Changes
+ * </button>
+ *
+ * <!-- Badge -->
+ * <span class="text-badge-default px-2 py-1 bg-success-subtle text-success">
+ *   Active
+ * </span>
+ *
+ * <!-- Table -->
+ * <table>
+ *   <thead>
+ *     <tr>
+ *       <th class="text-table-header">Name</th>
+ *       <th class="text-table-header">Size</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr>
+ *       <td class="text-table-cell">report.pdf</td>
+ *       <td class="text-table-cell-secondary">2.4 MB</td>
+ *     </tr>
+ *   </tbody>
+ * </table>
+ */

@@ -61,6 +61,7 @@ pub fn make_relative(path: &Path, root: &Path) -> String {
 /// assert_eq!(make_absolute("Users/john", "/Volumes/Backup"), "/Volumes/Backup/Users/john");
 /// assert_eq!(make_absolute("", "/Volumes/Backup"), "/Volumes/Backup");
 /// ```
+#[allow(dead_code)] // Reserved for future path reconstruction features
 pub fn make_absolute(relative: &str, root: &str) -> String {
     if relative.is_empty() {
         root.to_string()
@@ -70,6 +71,7 @@ pub fn make_absolute(relative: &str, root: &str) -> String {
 }
 
 /// Join path segments, handling trailing slashes correctly
+#[allow(dead_code)] // Reserved for future path handling features
 pub fn join_paths(base: &str, segment: &str) -> String {
     if segment.is_empty() {
         base.to_string()

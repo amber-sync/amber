@@ -1,0 +1,457 @@
+/**
+ * Amber Design System - Typography System
+ *
+ * A comprehensive, semantic typography system for the Amber desktop application.
+ * Uses CSS custom properties for easy theming and accessibility.
+ *
+ * USAGE:
+ * - Use semantic class names (.text-heading-1, .text-body, etc.)
+ * - All sizes are rem-based for accessibility
+ * - Supports dark/light mode automatically
+ * - Optimized for desktop app readability
+ */
+
+:root {
+  /* ========================================
+   * TYPOGRAPHY TOKENS - Base Values
+   * ======================================== */
+
+  /* Display/Hero - App name, major headlines (rare) */
+  --typo-display-size: 2.5rem; /* 40px */
+  --typo-display-line-height: 1.1;
+  --typo-display-weight: 700;
+  --typo-display-letter-spacing: -0.02em;
+  --typo-display-family: var(--font-display);
+
+  /* Heading 1 - Page titles, primary headings */
+  --typo-h1-size: 1.75rem; /* 28px */
+  --typo-h1-line-height: 1.2;
+  --typo-h1-weight: 700;
+  --typo-h1-letter-spacing: -0.015em;
+  --typo-h1-family: var(--font-display);
+
+  /* Heading 2 - Section headers, secondary headings */
+  --typo-h2-size: 1.5rem; /* 24px */
+  --typo-h2-line-height: 1.25;
+  --typo-h2-weight: 600;
+  --typo-h2-letter-spacing: -0.01em;
+  --typo-h2-family: var(--font-display);
+
+  /* Heading 3 - Subsection headers */
+  --typo-h3-size: 1.25rem; /* 20px */
+  --typo-h3-line-height: 1.3;
+  --typo-h3-weight: 600;
+  --typo-h3-letter-spacing: -0.005em;
+  --typo-h3-family: var(--font-display);
+
+  /* Heading 4 - Card headers, tertiary headings */
+  --typo-h4-size: 1.125rem; /* 18px */
+  --typo-h4-line-height: 1.35;
+  --typo-h4-weight: 600;
+  --typo-h4-letter-spacing: 0em;
+  --typo-h4-family: var(--font-sans);
+
+  /* Body - Default paragraph text */
+  --typo-body-size: 0.875rem; /* 14px */
+  --typo-body-line-height: 1.5;
+  --typo-body-weight: 400;
+  --typo-body-letter-spacing: 0em;
+  --typo-body-family: var(--font-sans);
+
+  /* Body Large - Emphasized paragraph text */
+  --typo-body-lg-size: 1rem; /* 16px */
+  --typo-body-lg-line-height: 1.5;
+  --typo-body-lg-weight: 400;
+  --typo-body-lg-letter-spacing: 0em;
+  --typo-body-lg-family: var(--font-sans);
+
+  /* Body Small - De-emphasized paragraph text */
+  --typo-body-sm-size: 0.8125rem; /* 13px */
+  --typo-body-sm-line-height: 1.5;
+  --typo-body-sm-weight: 400;
+  --typo-body-sm-letter-spacing: 0em;
+  --typo-body-sm-family: var(--font-sans);
+
+  /* Label - Form labels, section labels */
+  --typo-label-size: 0.75rem; /* 12px */
+  --typo-label-line-height: 1.4;
+  --typo-label-weight: 600;
+  --typo-label-letter-spacing: 0.03em;
+  --typo-label-family: var(--font-sans);
+  --typo-label-transform: uppercase;
+
+  /* Label Normal - Non-uppercase labels */
+  --typo-label-normal-size: 0.875rem; /* 14px */
+  --typo-label-normal-line-height: 1.4;
+  --typo-label-normal-weight: 500;
+  --typo-label-normal-letter-spacing: 0em;
+  --typo-label-normal-family: var(--font-sans);
+
+  /* Caption - Timestamps, metadata, helper text */
+  --typo-caption-size: 0.6875rem; /* 11px */
+  --typo-caption-line-height: 1.4;
+  --typo-caption-weight: 400;
+  --typo-caption-letter-spacing: 0.01em;
+  --typo-caption-family: var(--font-sans);
+
+  /* Caption Small - Very small metadata */
+  --typo-caption-sm-size: 0.625rem; /* 10px */
+  --typo-caption-sm-line-height: 1.4;
+  --typo-caption-sm-weight: 400;
+  --typo-caption-sm-letter-spacing: 0.01em;
+  --typo-caption-sm-family: var(--font-sans);
+
+  /* Code/Mono - File paths, technical data */
+  --typo-code-size: 0.8125rem; /* 13px */
+  --typo-code-line-height: 1.5;
+  --typo-code-weight: 400;
+  --typo-code-letter-spacing: 0em;
+  --typo-code-family: var(--font-mono);
+
+  /* Code Small - Inline code snippets */
+  --typo-code-sm-size: 0.75rem; /* 12px */
+  --typo-code-sm-line-height: 1.5;
+  --typo-code-sm-weight: 400;
+  --typo-code-sm-letter-spacing: 0em;
+  --typo-code-sm-family: var(--font-mono);
+
+  /* UI Text - Buttons, navigation, menu items */
+  --typo-ui-size: 0.875rem; /* 14px */
+  --typo-ui-line-height: 1.3;
+  --typo-ui-weight: 500;
+  --typo-ui-letter-spacing: 0.005em;
+  --typo-ui-family: var(--font-sans);
+
+  /* UI Small - Small buttons, compact UI */
+  --typo-ui-sm-size: 0.8125rem; /* 13px */
+  --typo-ui-sm-line-height: 1.3;
+  --typo-ui-sm-weight: 500;
+  --typo-ui-sm-letter-spacing: 0.005em;
+  --typo-ui-sm-family: var(--font-sans);
+
+  /* Badge - Badges, tags, counts */
+  --typo-badge-size: 0.6875rem; /* 11px */
+  --typo-badge-line-height: 1.2;
+  --typo-badge-weight: 600;
+  --typo-badge-letter-spacing: 0.02em;
+  --typo-badge-family: var(--font-sans);
+  --typo-badge-transform: uppercase;
+}
+
+/* ========================================
+ * SEMANTIC TYPOGRAPHY CLASSES
+ * ======================================== */
+
+/* Display/Hero Text */
+.text-display,
+.typo-display {
+  font-family: var(--typo-display-family);
+  font-size: var(--typo-display-size);
+  font-weight: var(--typo-display-weight);
+  line-height: var(--typo-display-line-height);
+  letter-spacing: var(--typo-display-letter-spacing);
+  color: var(--text-primary);
+}
+
+/* Headings */
+.text-heading-1,
+.typo-h1 {
+  font-family: var(--typo-h1-family);
+  font-size: var(--typo-h1-size);
+  font-weight: var(--typo-h1-weight);
+  line-height: var(--typo-h1-line-height);
+  letter-spacing: var(--typo-h1-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-heading-2,
+.typo-h2 {
+  font-family: var(--typo-h2-family);
+  font-size: var(--typo-h2-size);
+  font-weight: var(--typo-h2-weight);
+  line-height: var(--typo-h2-line-height);
+  letter-spacing: var(--typo-h2-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-heading-3,
+.typo-h3 {
+  font-family: var(--typo-h3-family);
+  font-size: var(--typo-h3-size);
+  font-weight: var(--typo-h3-weight);
+  line-height: var(--typo-h3-line-height);
+  letter-spacing: var(--typo-h3-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-heading-4,
+.typo-h4 {
+  font-family: var(--typo-h4-family);
+  font-size: var(--typo-h4-size);
+  font-weight: var(--typo-h4-weight);
+  line-height: var(--typo-h4-line-height);
+  letter-spacing: var(--typo-h4-letter-spacing);
+  color: var(--text-primary);
+}
+
+/* Body Text */
+.text-body,
+.typo-body {
+  font-family: var(--typo-body-family);
+  font-size: var(--typo-body-size);
+  font-weight: var(--typo-body-weight);
+  line-height: var(--typo-body-line-height);
+  letter-spacing: var(--typo-body-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-body-lg,
+.typo-body-lg {
+  font-family: var(--typo-body-lg-family);
+  font-size: var(--typo-body-lg-size);
+  font-weight: var(--typo-body-lg-weight);
+  line-height: var(--typo-body-lg-line-height);
+  letter-spacing: var(--typo-body-lg-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-body-sm,
+.typo-body-sm {
+  font-family: var(--typo-body-sm-family);
+  font-size: var(--typo-body-sm-size);
+  font-weight: var(--typo-body-sm-weight);
+  line-height: var(--typo-body-sm-line-height);
+  letter-spacing: var(--typo-body-sm-letter-spacing);
+  color: var(--text-secondary);
+}
+
+/* Labels */
+.text-label,
+.typo-label {
+  font-family: var(--typo-label-family);
+  font-size: var(--typo-label-size);
+  font-weight: var(--typo-label-weight);
+  line-height: var(--typo-label-line-height);
+  letter-spacing: var(--typo-label-letter-spacing);
+  text-transform: var(--typo-label-transform);
+  color: var(--text-secondary);
+}
+
+.text-label-normal,
+.typo-label-normal {
+  font-family: var(--typo-label-normal-family);
+  font-size: var(--typo-label-normal-size);
+  font-weight: var(--typo-label-normal-weight);
+  line-height: var(--typo-label-normal-line-height);
+  letter-spacing: var(--typo-label-normal-letter-spacing);
+  color: var(--text-secondary);
+}
+
+/* Captions */
+.text-caption,
+.typo-caption {
+  font-family: var(--typo-caption-family);
+  font-size: var(--typo-caption-size);
+  font-weight: var(--typo-caption-weight);
+  line-height: var(--typo-caption-line-height);
+  letter-spacing: var(--typo-caption-letter-spacing);
+  color: var(--text-tertiary);
+}
+
+.text-caption-sm,
+.typo-caption-sm {
+  font-family: var(--typo-caption-sm-family);
+  font-size: var(--typo-caption-sm-size);
+  font-weight: var(--typo-caption-sm-weight);
+  line-height: var(--typo-caption-sm-line-height);
+  letter-spacing: var(--typo-caption-sm-letter-spacing);
+  color: var(--text-tertiary);
+}
+
+/* Code/Mono */
+.text-code,
+.typo-code {
+  font-family: var(--typo-code-family);
+  font-size: var(--typo-code-size);
+  font-weight: var(--typo-code-weight);
+  line-height: var(--typo-code-line-height);
+  letter-spacing: var(--typo-code-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-code-sm,
+.typo-code-sm {
+  font-family: var(--typo-code-sm-family);
+  font-size: var(--typo-code-sm-size);
+  font-weight: var(--typo-code-sm-weight);
+  line-height: var(--typo-code-sm-line-height);
+  letter-spacing: var(--typo-code-sm-letter-spacing);
+  color: var(--text-secondary);
+}
+
+/* UI Text */
+.text-ui,
+.typo-ui {
+  font-family: var(--typo-ui-family);
+  font-size: var(--typo-ui-size);
+  font-weight: var(--typo-ui-weight);
+  line-height: var(--typo-ui-line-height);
+  letter-spacing: var(--typo-ui-letter-spacing);
+  color: var(--text-primary);
+}
+
+.text-ui-sm,
+.typo-ui-sm {
+  font-family: var(--typo-ui-sm-family);
+  font-size: var(--typo-ui-sm-size);
+  font-weight: var(--typo-ui-sm-weight);
+  line-height: var(--typo-ui-sm-line-height);
+  letter-spacing: var(--typo-ui-sm-letter-spacing);
+  color: var(--text-primary);
+}
+
+/* Badges */
+.text-badge,
+.typo-badge {
+  font-family: var(--typo-badge-family);
+  font-size: var(--typo-badge-size);
+  font-weight: var(--typo-badge-weight);
+  line-height: var(--typo-badge-line-height);
+  letter-spacing: var(--typo-badge-letter-spacing);
+  text-transform: var(--typo-badge-transform);
+}
+
+/* ========================================
+ * COLOR MODIFIERS
+ * Use these with typography classes
+ * ======================================== */
+
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+.text-quaternary {
+  color: var(--text-quaternary);
+}
+.text-success {
+  color: var(--color-success);
+}
+.text-warning {
+  color: var(--color-warning);
+}
+.text-error {
+  color: var(--color-error);
+}
+.text-info {
+  color: var(--color-info);
+}
+
+/* ========================================
+ * WEIGHT MODIFIERS
+ * ======================================== */
+
+.font-weight-normal {
+  font-weight: var(--font-normal);
+}
+.font-weight-medium {
+  font-weight: var(--font-medium);
+}
+.font-weight-semibold {
+  font-weight: var(--font-semibold);
+}
+.font-weight-bold {
+  font-weight: var(--font-bold);
+}
+
+/* ========================================
+ * RESPONSIVE ADJUSTMENTS
+ * ======================================== */
+
+/* On very small windows, scale down headings slightly */
+@media (max-width: 768px) {
+  :root {
+    --typo-display-size: 2rem; /* 32px */
+    --typo-h1-size: 1.5rem; /* 24px */
+    --typo-h2-size: 1.25rem; /* 20px */
+    --typo-h3-size: 1.125rem; /* 18px */
+  }
+}
+
+/* ========================================
+ * ACCESSIBILITY UTILITIES
+ * ======================================== */
+
+/* Ensure minimum contrast ratios */
+.text-aa-compliant {
+  color: var(--text-primary);
+  /* WCAG AA: 4.5:1 for normal text, 3:1 for large text */
+}
+
+.text-aaa-compliant {
+  color: var(--text-primary);
+  /* WCAG AAA: 7:1 for normal text, 4.5:1 for large text */
+}
+
+/* Truncation helpers */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ========================================
+ * USAGE EXAMPLES
+ * ========================================
+ *
+ * <!-- Page Title -->
+ * <h1 class="text-heading-1">Backup Dashboard</h1>
+ *
+ * <!-- Section Header -->
+ * <h2 class="text-heading-2">Recent Jobs</h2>
+ *
+ * <!-- Card Header -->
+ * <h3 class="text-heading-3">Job Details</h3>
+ *
+ * <!-- Form Label -->
+ * <label class="text-label">Source Directory</label>
+ *
+ * <!-- Body Text -->
+ * <p class="text-body">This is the default paragraph text.</p>
+ *
+ * <!-- Secondary Text -->
+ * <p class="text-body-sm text-secondary">Additional information goes here.</p>
+ *
+ * <!-- File Path -->
+ * <span class="text-code">/Users/name/Documents</span>
+ *
+ * <!-- Timestamp -->
+ * <time class="text-caption">2 hours ago</time>
+ *
+ * <!-- Button Text -->
+ * <button class="text-ui">Save Changes</button>
+ *
+ * <!-- Badge -->
+ * <span class="text-badge">Active</span>
+ *
+ * <!-- With color modifier -->
+ * <p class="text-body text-error">Error message</p>
+ */

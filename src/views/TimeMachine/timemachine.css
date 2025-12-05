@@ -79,7 +79,7 @@
 .tm-container {
   background: var(--tm-space);
   color: var(--tm-text-bright);
-  min-height: 100vh;
+  height: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -116,11 +116,12 @@
 .tm-timeline {
   position: relative;
   height: 140px;
-  padding: 12px 48px;
-  margin-top: 8px;
+  padding: 12px var(--page-indent-right) 12px var(--page-indent-left);
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   background: var(--tm-space);
+  flex-shrink: 0;
 }
 
 /* Top zone for hover tooltips */
@@ -285,10 +286,9 @@
 .tm-timeline-tooltip {
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 20;
   pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .tm-timeline-tooltip-content {
@@ -344,13 +344,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: 32px 48px 40px;
   text-align: center;
 }
 
 .tm-focus-date {
   font-family: 'Plus Jakarta Sans', var(--font-sans);
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 800;
   line-height: 1;
   color: var(--tm-text-bright);
@@ -369,7 +369,7 @@
 .tm-focus-relative {
   font-size: 14px;
   color: var(--tm-text-dim);
-  margin-bottom: 40px;
+  margin-bottom: 28px;
 }
 
 /* Stats grid */
@@ -577,15 +577,18 @@
  * Header
  * ============================================ */
 .tm-header {
-  height: 72px;
-  padding-top: 12px; /* Space for macOS title bar */
+  height: auto;
+  min-height: 72px;
+  padding-top: var(--page-indent-top);
+  padding-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: var(--page-indent-left);
+  padding-right: var(--page-indent-right);
   background: var(--tm-space);
   -webkit-app-region: drag;
+  flex-shrink: 0;
 }
 
 /* Ensure icons don't block button clicks */

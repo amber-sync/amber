@@ -80,18 +80,18 @@ export function TimeMachineHeader({
         {/* Job selector dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button onClick={() => setDropdownOpen(!dropdownOpen)} className="tm-job-selector">
-            <Icons.Database size={14} />
+            <Icons.Folder size={16} className="text-text-secondary" />
             <span>{job?.name || 'Select Job'}</span>
             <Icons.ChevronDown
               size={14}
-              className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+              className={`text-text-tertiary transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
             />
           </button>
 
           {/* Dropdown menu */}
           {dropdownOpen && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg shadow-xl overflow-hidden z-50 tm-animate-fade-in">
-              <div className="p-2">
+            <div className="absolute top-full left-0 mt-2 w-64 bg-layer-1 border border-border-base rounded-xl shadow-xl overflow-hidden z-50 tm-animate-fade-in">
+              <div className="p-1.5">
                 {jobs.map(j => (
                   <button
                     key={j.id}
@@ -99,35 +99,29 @@ export function TimeMachineHeader({
                       onJobSwitch(j.id);
                       setDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                       j.id === job?.id
-                        ? 'bg-[var(--tm-amber-wash)] text-[var(--tm-amber)]'
-                        : 'hover:bg-[var(--tm-dust)] text-[var(--tm-text-soft)]'
+                        ? 'bg-accent-secondary text-text-primary'
+                        : 'hover:bg-layer-2 text-text-secondary'
                     }`}
                   >
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        j.status === 'RUNNING'
-                          ? 'bg-[var(--tm-amber)] animate-pulse'
-                          : j.status === 'SUCCESS'
-                            ? 'bg-[var(--tm-success)]'
-                            : 'bg-[var(--tm-text-dim)]'
-                      }`}
+                    <Icons.Folder
+                      size={16}
+                      className={j.id === job?.id ? 'text-accent-primary' : 'text-text-tertiary'}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{j.name}</div>
-                      <div className="text-xs text-[var(--tm-text-dim)] truncate">
-                        {j.sourcePath}
-                      </div>
+                      <div className="font-medium truncate text-sm">{j.name}</div>
+                      <div className="text-xs text-text-tertiary truncate">{j.sourcePath}</div>
                     </div>
+                    {j.status === 'RUNNING' && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse" />
+                    )}
                   </button>
                 ))}
               </div>
 
               {jobs.length === 0 && (
-                <div className="p-4 text-center text-sm text-[var(--tm-text-dim)]">
-                  No jobs configured
-                </div>
+                <div className="p-4 text-center text-sm text-text-tertiary">No jobs configured</div>
               )}
             </div>
           )}
