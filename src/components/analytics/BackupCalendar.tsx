@@ -103,12 +103,15 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(function BackupCal
     return 'bg-accent-primary';
   };
 
-  const handleDayClick = (date: Date) => {
-    if (!onDayClick) return;
-    const key = format(date, 'yyyy-MM-dd');
-    const backups = backupsByDate.get(key) || [];
-    onDayClick(date, backups);
-  };
+  const handleDayClick = useMemo(
+    () => (date: Date) => {
+      if (!onDayClick) return;
+      const key = format(date, 'yyyy-MM-dd');
+      const backups = backupsByDate.get(key) || [];
+      onDayClick(date, backups);
+    },
+    [onDayClick, backupsByDate]
+  );
 
   const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 

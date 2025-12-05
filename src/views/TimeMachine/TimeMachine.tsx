@@ -92,9 +92,16 @@ export function TimeMachine({
     return snapshots.filter(s => s.timestamp >= cutoff);
   }, [snapshots, dateFilter]);
 
+  // Create a Map for O(1) snapshot lookup instead of Array.find()
+  const snapshotMap = useMemo(() => {
+    const map = new Map<number, TimeMachineSnapshot>();
+    filteredSnapshots.forEach(s => map.set(s.timestamp, s));
+    return map;
+  }, [filteredSnapshots]);
+
   const selectedSnapshot = useMemo(
-    () => filteredSnapshots.find(s => s.timestamp === selectedTimestamp) || null,
-    [filteredSnapshots, selectedTimestamp]
+    () => (selectedTimestamp ? snapshotMap.get(selectedTimestamp) || null : null),
+    [snapshotMap, selectedTimestamp]
   );
 
   // Overlay state

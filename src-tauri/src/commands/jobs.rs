@@ -4,6 +4,7 @@ use crate::services::manifest_service;
 use crate::state::AppState;
 use crate::types::job::SyncJob;
 use crate::types::manifest::ManifestSnapshot;
+use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tauri::State;
@@ -73,63 +74,93 @@ pub async fn get_jobs(state: State<'_, AppState>) -> Result<Vec<SyncJob>> {
 pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobWithStatus>> {
     let jobs = state.store.load_jobs()?;
 
-    let mut results = Vec::with_capacity(jobs.len());
+    // Pre-compute mount status and volume info for all jobs
+    let job_info: Vec<_> = jobs
+        .iter()
+        .map(|job| {
+            let dest_path = Path::new(&job.dest_path);
+            let mounted = dest_path.exists() && dest_path.is_dir();
+            let vol_info = crate::utils::get_volume_info(&job.dest_path);
+            (mounted, vol_info)
+        })
+        .collect();
 
-    for job in jobs {
-        let dest_path = Path::new(&job.dest_path);
-        let mounted = dest_path.exists() && dest_path.is_dir();
+    // Create futures for parallel manifest/cache loading
+    let snapshot_futures: Vec<_> = jobs
+        .iter()
+        .zip(&job_info)
+        .map(|(job, (mounted, _))| {
+            let job_id = job.id.clone();
+            let dest_path = job.dest_path.clone();
+            let mounted = *mounted;
 
-        // Get volume info using shared helper
-        let vol_info = crate::utils::get_volume_info(&job.dest_path);
+            async move {
+                if mounted {
+                    // Try to load from manifest
+                    match manifest_service::read_manifest(&dest_path).await {
+                        Ok(Some(manifest)) => {
+                            // Update the local cache with fresh data
+                            let manifest_snapshots = manifest.snapshots.clone();
+                            if let Err(e) =
+                                cache_service::write_snapshot_cache(&job_id, manifest_snapshots)
+                                    .await
+                            {
+                                log::warn!(
+                                    "Failed to update snapshot cache for job {}: {}",
+                                    job_id,
+                                    e
+                                );
+                            }
 
-        // Load snapshots from manifest if mounted, otherwise from cache
-        let (snapshots, snapshot_source, cached_at) = if mounted {
-            match manifest_service::read_manifest(&job.dest_path).await {
-                Ok(Some(manifest)) => {
-                    // Update the local cache with fresh data
-                    let manifest_snapshots = manifest.snapshots.clone();
-                    if let Err(e) =
-                        cache_service::write_snapshot_cache(&job.id, manifest_snapshots).await
-                    {
-                        log::warn!("Failed to update snapshot cache for job {}: {}", job.id, e);
+                            let snaps: Vec<SnapshotInfo> = manifest
+                                .snapshots
+                                .into_iter()
+                                .map(SnapshotInfo::from)
+                                .collect();
+                            (snaps, "manifest".to_string(), None)
+                        }
+                        Ok(None) => (Vec::new(), "none".to_string(), None),
+                        Err(_) => (Vec::new(), "none".to_string(), None),
                     }
-
-                    let snaps: Vec<SnapshotInfo> = manifest
-                        .snapshots
-                        .into_iter()
-                        .map(SnapshotInfo::from)
-                        .collect();
-                    (snaps, "manifest".to_string(), None)
+                } else {
+                    // Not mounted - try to load from cache
+                    match cache_service::read_snapshot_cache(&job_id).await {
+                        Ok(Some(cache)) => {
+                            let snaps: Vec<SnapshotInfo> = cache
+                                .snapshots
+                                .into_iter()
+                                .map(SnapshotInfo::from)
+                                .collect();
+                            (snaps, "cache".to_string(), Some(cache.cached_at))
+                        }
+                        Ok(None) => (Vec::new(), "none".to_string(), None),
+                        Err(_) => (Vec::new(), "none".to_string(), None),
+                    }
                 }
-                Ok(None) => (Vec::new(), "none".to_string(), None),
-                Err(_) => (Vec::new(), "none".to_string(), None),
             }
-        } else {
-            // Not mounted - try to load from cache
-            match cache_service::read_snapshot_cache(&job.id).await {
-                Ok(Some(cache)) => {
-                    let snaps: Vec<SnapshotInfo> = cache
-                        .snapshots
-                        .into_iter()
-                        .map(SnapshotInfo::from)
-                        .collect();
-                    (snaps, "cache".to_string(), Some(cache.cached_at))
-                }
-                Ok(None) => (Vec::new(), "none".to_string(), None),
-                Err(_) => (Vec::new(), "none".to_string(), None),
-            }
-        };
+        })
+        .collect();
 
-        results.push(JobWithStatus {
-            job,
-            mounted,
-            is_external: vol_info.is_external,
-            volume_name: vol_info.volume_name,
-            snapshots,
-            snapshot_source,
-            cached_at,
-        });
-    }
+    // Execute all snapshot loading operations in parallel
+    let snapshot_results = join_all(snapshot_futures).await;
+
+    // Build final results by combining jobs with their snapshot data
+    let results: Vec<JobWithStatus> = jobs
+        .into_iter()
+        .zip(job_info)
+        .zip(snapshot_results)
+        .map(|((job, (mounted, vol_info)), (snapshots, snapshot_source, cached_at))| {
+            JobWithStatus {
+                job,
+                mounted,
+                is_external: vol_info.is_external,
+                volume_name: vol_info.volume_name,
+                snapshots,
+                snapshot_source,
+                cached_at,
+            }
+        })
+        .collect();
 
     Ok(results)
 }
