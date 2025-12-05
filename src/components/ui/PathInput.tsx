@@ -40,8 +40,9 @@ export const PathInput: React.FC<PathInputProps> = ({
             onChange={e => onChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
+            style={{ fontFamily: 'var(--font-sans)' }}
             className={`
-              w-full pl-10 pr-4 py-3 rounded-xl font-mono text-sm
+              w-full pl-10 pr-4 py-3 rounded-xl text-sm
               bg-layer-2 border border-border-base text-text-primary
               placeholder-text-tertiary
               focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent

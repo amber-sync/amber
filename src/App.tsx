@@ -299,8 +299,9 @@ function AppContent() {
         }
       : { enabled: false };
 
-    // TIM-141: Navigate back to source view (TIME_MACHINE for existing, DASHBOARD for new)
-    const returnView = activeJobId ? 'TIME_MACHINE' : 'DASHBOARD';
+    // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
+    type ViewType = 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
+    const returnView = (jobEditorSourceView || (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
 
     if (activeJobId) {
       const job = jobs.find(j => j.id === activeJobId);
