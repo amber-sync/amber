@@ -149,3 +149,7 @@ impl From<rusqlite::Error> for AmberError {
         AmberError::Database(err.to_string())
     }
 }
+
+#[cfg(test)]
+#[path = "error_tests.rs"]
+mod error_tests;
