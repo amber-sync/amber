@@ -60,20 +60,24 @@ fn parse_rsync_progress(line: &str) -> Option<(String, u8, String, String)> {
 }
 
 /// Calculate file count and total size for a directory
-fn calculate_snapshot_stats(path: &std::path::Path) -> (u64, u64) {
-    let mut file_count = 0u64;
-    let mut total_size = 0u64;
+async fn calculate_snapshot_stats(path: std::path::PathBuf) -> (u64, u64) {
+    tokio::task::spawn_blocking(move || {
+        let mut file_count = 0u64;
+        let mut total_size = 0u64;
 
-    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            file_count += 1;
-            if let Ok(metadata) = entry.metadata() {
-                total_size += metadata.len();
+        for entry in WalkDir::new(&path).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_file() {
+                file_count += 1;
+                if let Ok(metadata) = entry.metadata() {
+                    total_size += metadata.len();
+                }
             }
         }
-    }
 
-    (file_count, total_size)
+        (file_count, total_size)
+    })
+    .await
+    .unwrap_or((0, 0))
 }
 
 #[tauri::command]
@@ -224,7 +228,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                 let duration_ms = (end_time - info.start_time) as u64;
 
                 // Calculate snapshot stats
-                let (file_count, total_size) = calculate_snapshot_stats(&info.snapshot_path);
+                let (file_count, total_size) = calculate_snapshot_stats(info.snapshot_path.clone()).await;
 
                 // Create snapshot entry
                 let snapshot = ManifestSnapshot::new(
