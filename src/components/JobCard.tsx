@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SyncJob, JobStatus } from '../types';
 import { Icons } from './IconComponents';
 import { formatSchedule, formatRelativeTime } from '../utils';
-import { ConnectionDot, OfflineBadge } from './ConnectionStatus';
-import { Badge, StatusDot, IconButton, ProgressRing, Text, Body, BodySmall, Caption } from './ui';
+import { OfflineBadge } from './ConnectionStatus';
+import { IconButton, ProgressRing, Text, BodySmall, Caption } from './ui';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -19,30 +19,17 @@ interface JobCardProps {
   onEditSettings?: (jobId: string) => void;
 }
 
-export const JobCard: React.FC<JobCardProps> = ({
+export const JobCard = React.memo<JobCardProps>(function JobCard({
   job,
   mountInfo,
   onSelect,
   onRunBackup,
   onEditSettings,
-}) => {
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isRunning = job.status === JobStatus.RUNNING;
   const mounted = mountInfo?.mounted ?? true;
-
-  // Get status for StatusDot
-  const getStatusDotStatus = (): 'success' | 'error' | 'warning' | 'info' | 'neutral' => {
-    if (isRunning) return 'info';
-    switch (job.status) {
-      case JobStatus.SUCCESS:
-        return 'success';
-      case JobStatus.FAILED:
-        return 'error';
-      default:
-        return 'neutral';
-    }
-  };
 
   // Format relative time
   const getRelativeTime = () => {
@@ -256,7 +243,19 @@ export const JobCard: React.FC<JobCardProps> = ({
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison - return true if props are equal (skip re-render)
+  return (
+    prevProps.job.id === nextProps.job.id &&
+    prevProps.job.status === nextProps.job.status &&
+    prevProps.job.lastRun === nextProps.job.lastRun &&
+    prevProps.job.name === nextProps.job.name &&
+    prevProps.mountInfo?.mounted === nextProps.mountInfo?.mounted &&
+    prevProps.onSelect === nextProps.onSelect &&
+    prevProps.onRunBackup === nextProps.onRunBackup &&
+    prevProps.onEditSettings === nextProps.onEditSettings
+  );
+});
 
 const ModeBadge: React.FC<{ mode: SyncJob['mode'] }> = ({ mode }) => {
   const labels: Record<string, string> = {
