@@ -217,7 +217,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     setCurrentPath(parent);
   };
 
-  const handleEntryClick = (entry: FileEntry) => {
+  const handleEntryClick = useCallback((entry: FileEntry) => {
     if (entry.isDirectory) {
       setCurrentPath(entry.path);
       setSelectedFileForPreview(null);
@@ -226,14 +226,14 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     } else {
       setSelectedFileForPreview(entry);
     }
-  };
+  }, []);
 
-  const toggleSelection = (e: React.MouseEvent | null, path: string) => {
+  const toggleSelection = useCallback((e: React.MouseEvent | null, path: string) => {
     e?.stopPropagation();
     if (onSelectionChange) {
       onSelectionChange(path, !selectedFiles.has(path));
     }
-  };
+  }, [onSelectionChange, selectedFiles]);
 
   // Breadcrumbs
   const relativePath = currentPath.replace(initialPath, '');
