@@ -6,8 +6,10 @@ type ViewType = 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | '
 interface UIContextType {
   activeJobId: string | null;
   view: ViewType;
+  previousView: ViewType | null;
   setActiveJobId: (id: string | null) => void;
   setView: (view: ViewType) => void;
+  navigateBack: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -15,6 +17,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [view, setView] = useState<ViewType>('DASHBOARD');
+  const [previousView, setPreviousView] = useState<ViewType | null>(null);
   const { jobs } = useJobs();
 
   // Initialize activeJobId with first job when jobs are loaded
@@ -24,13 +27,32 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   }, [jobs, activeJobId]);
 
+  // Enhanced setView that tracks previous view
+  const handleSetView = (newView: ViewType) => {
+    setPreviousView(view);
+    setView(newView);
+  };
+
+  // Navigate back to previous view
+  const navigateBack = () => {
+    if (previousView) {
+      setView(previousView);
+      setPreviousView(null);
+    } else {
+      // Default fallback to DASHBOARD if no previous view
+      setView('DASHBOARD');
+    }
+  };
+
   return (
     <UIContext.Provider
       value={{
         activeJobId,
         view,
+        previousView,
         setActiveJobId,
-        setView,
+        setView: handleSetView,
+        navigateBack,
       }}
     >
       {children}
