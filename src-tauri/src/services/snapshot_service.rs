@@ -42,9 +42,9 @@ impl SnapshotService {
     /// 1. Manifest.json (authoritative, created during backup)
     /// 2. Legacy JSON cache (for backwards compatibility)
     /// 3. Default to (0, 0) with warning log
-    pub fn list_snapshots(&self, job_id: &str, dest_path: &str) -> Result<Vec<SnapshotMetadata>> {
+    pub async fn list_snapshots(&self, job_id: &str, dest_path: &str) -> Result<Vec<SnapshotMetadata>> {
         // Try to read from manifest first (authoritative source)
-        if let Some(snapshots) = self.list_snapshots_from_manifest(dest_path) {
+        if let Some(snapshots) = self.list_snapshots_from_manifest(dest_path).await {
             log::debug!(
                 "[snapshot_service] Loaded {} snapshots from manifest for job {}",
                 snapshots.len(),
@@ -58,15 +58,14 @@ impl SnapshotService {
             "[snapshot_service] No manifest found, falling back to filesystem scan for job {}",
             job_id
         );
-        self.list_snapshots_from_filesystem(job_id, dest_path)
+        self.list_snapshots_from_filesystem(job_id, dest_path).await
     }
 
     /// Read snapshots from manifest.json (preferred method)
-    fn list_snapshots_from_manifest(&self, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
-        // Use blocking read since this is a sync function
+    async fn list_snapshots_from_manifest(&self, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
         let manifest_path = manifest_service::get_manifest_path(dest_path);
 
-        let data = std::fs::read_to_string(&manifest_path).ok()?;
+        let data = tokio::fs::read_to_string(&manifest_path).await.ok()?;
         let manifest: crate::types::manifest::BackupManifest = serde_json::from_str(&data).ok()?;
 
         let mut snapshots: Vec<SnapshotMetadata> = manifest
@@ -99,7 +98,7 @@ impl SnapshotService {
     }
 
     /// Fall back to filesystem scan with cache lookup (legacy method)
-    fn list_snapshots_from_filesystem(
+    async fn list_snapshots_from_filesystem(
         &self,
         job_id: &str,
         dest_path: &str,
@@ -109,12 +108,18 @@ impl SnapshotService {
 
         let mut snapshots = Vec::new();
 
-        let entries = match std::fs::read_dir(dest_path) {
-            Ok(e) => e,
+        let entries = match tokio::fs::read_dir(dest_path).await {
+            Ok(mut e) => {
+                let mut entries = Vec::new();
+                while let Ok(Some(entry)) = e.next_entry().await {
+                    entries.push(entry);
+                }
+                entries
+            }
             Err(_) => return Ok(snapshots),
         };
 
-        for entry in entries.filter_map(|e| e.ok()) {
+        for entry in entries {
             let path = entry.path();
             if !path.is_dir() {
                 continue;
@@ -130,7 +135,7 @@ impl SnapshotService {
                 let full_path = path.to_string_lossy().to_string();
 
                 // Try cache first, log warning if missing
-                let (size_bytes, file_count) = match self.load_cached_stats(job_id, timestamp) {
+                let (size_bytes, file_count) = match self.load_cached_stats(job_id, timestamp).await {
                     Some(stats) => stats,
                     None => {
                         log::warn!(
@@ -177,15 +182,15 @@ impl SnapshotService {
             .unwrap_or(0)
     }
 
-    fn load_cached_stats(&self, job_id: &str, timestamp: i64) -> Option<(u64, u64)> {
+    async fn load_cached_stats(&self, job_id: &str, timestamp: i64) -> Option<(u64, u64)> {
         let cache_path = self.get_cache_path(job_id, timestamp);
-        let data = std::fs::read_to_string(&cache_path).ok()?;
+        let data = tokio::fs::read_to_string(&cache_path).await.ok()?;
         let cached: CachedSnapshot = serde_json::from_str(&data).ok()?;
         Some((cached.stats.size_bytes, cached.stats.file_count))
     }
 
     /// Get the file tree for a snapshot
-    pub fn get_snapshot_tree(
+    pub async fn get_snapshot_tree(
         &self,
         job_id: &str,
         timestamp: i64,
@@ -193,23 +198,23 @@ impl SnapshotService {
     ) -> Result<Vec<FileNode>> {
         let cache_path = self.get_cache_path(job_id, timestamp);
 
-        if let Ok(data) = std::fs::read_to_string(&cache_path) {
+        if let Ok(data) = tokio::fs::read_to_string(&cache_path).await {
             if let Ok(cached) = serde_json::from_str::<CachedSnapshot>(&data) {
                 return Ok(cached.tree);
             }
         }
 
-        self.index_snapshot(job_id, timestamp, snapshot_path)
+        self.index_snapshot(job_id, timestamp, snapshot_path).await
     }
 
     /// Index a snapshot and cache the result
-    pub fn index_snapshot(
+    pub async fn index_snapshot(
         &self,
         job_id: &str,
         timestamp: i64,
         snapshot_path: &str,
     ) -> Result<Vec<FileNode>> {
-        let entries = self.scan_directory(snapshot_path)?;
+        let entries = self.scan_directory(snapshot_path).await?;
         let tree = self.build_file_tree(snapshot_path, &entries);
         let stats = self.calculate_stats(&tree);
 
@@ -224,37 +229,42 @@ impl SnapshotService {
 
         let cache_path = self.get_cache_path(job_id, timestamp);
         if let Ok(json) = serde_json::to_string(&cached) {
-            let _ = std::fs::write(&cache_path, json);
+            let _ = tokio::fs::write(&cache_path, json).await;
         }
 
         Ok(tree)
     }
 
-    fn scan_directory(&self, dir_path: &str) -> Result<Vec<ScanEntry>> {
-        let mut entries = Vec::new();
+    async fn scan_directory(&self, dir_path: &str) -> Result<Vec<ScanEntry>> {
+        let dir_path = dir_path.to_string();
+        tokio::task::spawn_blocking(move || {
+            let mut entries = Vec::new();
 
-        for entry in WalkDir::new(dir_path).min_depth(1) {
-            if let Ok(e) = entry {
-                if let Ok(metadata) = e.metadata() {
-                    let modified = metadata
-                        .modified()
-                        .ok()
-                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                        .map(|d| d.as_millis() as i64)
-                        .unwrap_or(0);
+            for entry in WalkDir::new(&dir_path).min_depth(1) {
+                if let Ok(e) = entry {
+                    if let Ok(metadata) = e.metadata() {
+                        let modified = metadata
+                            .modified()
+                            .ok()
+                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                            .map(|d| d.as_millis() as i64)
+                            .unwrap_or(0);
 
-                    entries.push(ScanEntry {
-                        path: e.path().to_string_lossy().to_string(),
-                        name: e.file_name().to_string_lossy().to_string(),
-                        is_dir: metadata.is_dir(),
-                        size: metadata.len(),
-                        modified,
-                    });
+                        entries.push(ScanEntry {
+                            path: e.path().to_string_lossy().to_string(),
+                            name: e.file_name().to_string_lossy().to_string(),
+                            is_dir: metadata.is_dir(),
+                            size: metadata.len(),
+                            modified,
+                        });
+                    }
                 }
             }
-        }
 
-        Ok(entries)
+            Ok(entries)
+        })
+        .await
+        .unwrap_or_else(|_| Ok(Vec::new()))
     }
 
     fn build_file_tree(&self, root_dir: &str, entries: &[ScanEntry]) -> Vec<FileNode> {
