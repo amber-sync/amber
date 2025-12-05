@@ -51,6 +51,8 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 rand = "0.8"
 # Machine hostname for manifest
 hostname = "0.4"
+# Parallel manifest loading
+futures = "0.3"
 # Type-safe IPC (commented out until specta v2 stable)
 # specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde_json", "uuid"] }
 # specta-typescript = "0.0.9"
