@@ -60,6 +60,21 @@ pub async fn get_indexed_directory(
         .get_directory_contents(&job_id, timestamp, &parent_path)
 }
 
+/// Get directory contents from index with pagination (for large directories)
+#[tauri::command]
+pub async fn get_indexed_directory_paginated(
+    state: State<'_, AppState>,
+    job_id: String,
+    timestamp: i64,
+    parent_path: String,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> Result<crate::services::index_service::DirectoryContents> {
+    state
+        .index_service
+        .get_directory_contents_paginated(&job_id, timestamp, &parent_path, limit, offset)
+}
+
 /// Index a snapshot after backup completes
 #[tauri::command]
 pub async fn index_snapshot(
