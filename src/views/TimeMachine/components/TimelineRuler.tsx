@@ -5,7 +5,7 @@
  * The central axis for navigating through backup history.
  */
 
-import { useRef, useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useCallback, useState } from 'react';
 import { format, startOfMonth, addMonths, differenceInMonths } from 'date-fns';
 import { TimeMachineSnapshot } from '../TimeMachine';
 
@@ -36,13 +36,13 @@ const toDisplayPosition = (position: number): number => {
   return TIMELINE_MARGIN_LEFT + (position / 100) * TIMELINE_USABLE_WIDTH;
 };
 
-export function TimelineRuler({
+export const TimelineRuler = React.memo<TimelineRulerProps>(function TimelineRuler({
   snapshots,
   selectedTimestamp,
   timeRange,
   onSelectSnapshot,
   loading = false,
-}: TimelineRulerProps) {
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [hoveredMarker, setHoveredMarker] = useState<ClusteredMarker | null>(null);
 
@@ -326,6 +326,16 @@ export function TimelineRuler({
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison - return true if props are equal (skip re-render)
+  return (
+    prevProps.snapshots.length === nextProps.snapshots.length &&
+    prevProps.selectedTimestamp === nextProps.selectedTimestamp &&
+    prevProps.timeRange.start === nextProps.timeRange.start &&
+    prevProps.timeRange.end === nextProps.timeRange.end &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.onSelectSnapshot === nextProps.onSelectSnapshot
+  );
+});
 
 export default TimelineRuler;
