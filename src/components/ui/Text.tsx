@@ -260,7 +260,99 @@ export const Code = React.forwardRef<HTMLElement, CodeProps>(
 Code.displayName = 'Code';
 
 /* ========================================
+ * STATUS MESSAGE - Alert boxes with icon + text
+ * ======================================== */
+
+export type StatusVariant = 'error' | 'warning' | 'success' | 'info';
+
+export interface StatusMessageProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Status variant determines color scheme */
+  variant: StatusVariant;
+  /** Show icon (default: true) */
+  icon?: boolean;
+  /** Size of the message */
+  size?: 'sm' | 'base';
+  /** Children content */
+  children: React.ReactNode;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+const statusStyles: Record<StatusVariant, { bg: string; border: string; text: string }> = {
+  error: { bg: 'bg-error-subtle', border: 'border-error/30', text: 'text-error' },
+  warning: { bg: 'bg-warning-subtle', border: 'border-warning/30', text: 'text-warning' },
+  success: { bg: 'bg-success-subtle', border: 'border-success/30', text: 'text-success' },
+  info: { bg: 'bg-info-subtle', border: 'border-info/30', text: 'text-info' },
+};
+
+export const StatusMessage = React.forwardRef<HTMLDivElement, StatusMessageProps>(
+  ({ variant, icon = true, size = 'base', className = '', children, ...props }, ref) => {
+    const styles = statusStyles[variant];
+    const sizeClass = size === 'sm' ? 'text-body-sm' : 'text-body';
+
+    const classes = [
+      'px-3 py-2 rounded-lg border',
+      styles.bg,
+      styles.border,
+      styles.text,
+      sizeClass,
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    return (
+      <div ref={ref} className={classes} role="alert" {...props}>
+        {children}
+      </div>
+    );
+  }
+);
+
+StatusMessage.displayName = 'StatusMessage';
+
+/* ========================================
+ * FORM LABEL - Consistent form labels
+ * ======================================== */
+
+export interface FormLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
+  /** Label size */
+  size?: 'sm' | 'base';
+  /** Required indicator */
+  required?: boolean;
+  /** Children content */
+  children: React.ReactNode;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+export const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
+  ({ size = 'base', required, className = '', children, ...props }, ref) => {
+    const sizeClass = size === 'sm' ? 'text-caption' : 'text-body-sm';
+
+    const classes = [
+      'block mb-2',
+      sizeClass,
+      'font-weight-medium',
+      'text-text-secondary',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    return (
+      <label ref={ref} className={classes} {...props}>
+        {children}
+        {required && <span className="text-error ml-1">*</span>}
+      </label>
+    );
+  }
+);
+
+FormLabel.displayName = 'FormLabel';
+
+/* ========================================
  * EXPORT ALL
  * ======================================== */
 
-export default { Title, Body, Caption, Code };
+export default { Title, Body, Caption, Code, StatusMessage, FormLabel };

@@ -40,14 +40,19 @@ export { ProgressRing } from './ProgressRing';
 export { ProgressBar, type ProgressBarVariant, type ProgressBarSize } from './ProgressBar';
 export { PageHeader } from './PageHeader';
 
-// Typography components - Simplified system (4 components)
+// Typography components - Simplified semantic system
 export {
   Title,
   Body,
   Caption,
   Code,
+  StatusMessage,
+  FormLabel,
   type TitleProps,
   type BodyProps,
   type CaptionProps,
   type CodeProps,
+  type StatusVariant,
+  type StatusMessageProps,
+  type FormLabelProps,
 } from './Text';

@@ -43,9 +43,9 @@ const sizeStyles: Record<ProgressBarSize, { track: string; label: string }> = {
 
 const variantStyles: Record<ProgressBarVariant, string> = {
   default: 'bg-accent-primary',
-  success: 'bg-[var(--color-success)]',
-  warning: 'bg-[var(--color-warning)]',
-  error: 'bg-[var(--color-error)]',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  error: 'bg-error',
 };
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({

@@ -13,9 +13,9 @@ interface SectionHeaderProps {
 }
 
 const variantStyles: Record<SectionHeaderVariant, string> = {
-  panel: 'text-sm font-bold text-text-primary mb-4 flex items-center gap-2',
-  'form-label': 'block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3',
-  page: 'text-3xl font-bold text-text-primary tracking-tight',
+  panel: 'text-heading-4 text-text-primary mb-4 flex items-center gap-2',
+  'form-label': 'block text-label text-text-secondary mb-3',
+  page: 'text-heading-1 text-text-primary',
 };
 
 const defaultTags: Record<SectionHeaderVariant, TagType> = {

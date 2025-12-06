@@ -21,24 +21,24 @@ const sizeStyles: Record<BadgeSize, string> = {
 
 const statusColors: Record<BadgeStatus, { solid: string; subtle: string; outline: string }> = {
   success: {
-    solid: 'bg-[var(--color-success)] text-white',
-    subtle: 'bg-[var(--color-success-subtle)] text-[var(--color-success)]',
-    outline: 'border border-[var(--color-success)] text-[var(--color-success)] bg-transparent',
+    solid: 'bg-success text-white',
+    subtle: 'bg-success-subtle text-success',
+    outline: 'border border-success text-success bg-transparent',
   },
   warning: {
-    solid: 'bg-[var(--color-warning)] text-white',
-    subtle: 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)]',
-    outline: 'border border-[var(--color-warning)] text-[var(--color-warning)] bg-transparent',
+    solid: 'bg-warning text-white',
+    subtle: 'bg-warning-subtle text-warning',
+    outline: 'border border-warning text-warning bg-transparent',
   },
   error: {
-    solid: 'bg-[var(--color-error)] text-white',
-    subtle: 'bg-[var(--color-error-subtle)] text-[var(--color-error)]',
-    outline: 'border border-[var(--color-error)] text-[var(--color-error)] bg-transparent',
+    solid: 'bg-error text-white',
+    subtle: 'bg-error-subtle text-error',
+    outline: 'border border-error text-error bg-transparent',
   },
   info: {
-    solid: 'bg-[var(--color-info)] text-white',
-    subtle: 'bg-[var(--color-info-subtle)] text-[var(--color-info)]',
-    outline: 'border border-[var(--color-info)] text-[var(--color-info)] bg-transparent',
+    solid: 'bg-info text-white',
+    subtle: 'bg-info-subtle text-info',
+    outline: 'border border-info text-info bg-transparent',
   },
   neutral: {
     solid: 'bg-layer-3 text-text-primary',

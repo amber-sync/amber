@@ -17,10 +17,10 @@ const sizeStyles: Record<StatusDotSize, string> = {
 };
 
 const statusColors: Record<StatusDotStatus, string> = {
-  success: 'bg-[var(--color-success)]',
-  warning: 'bg-[var(--color-warning)]',
-  error: 'bg-[var(--color-error)]',
-  info: 'bg-[var(--color-info)]',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  error: 'bg-error',
+  info: 'bg-info',
   neutral: 'bg-text-tertiary',
   idle: 'bg-text-quaternary',
 };

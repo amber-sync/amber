@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Icons } from '../../components/IconComponents';
 import { FileBrowser } from '../../components/shared/FileBrowser';
-import { Title, Body, Caption } from '../../components/ui';
+import { Title, Body, Caption, StatusMessage } from '../../components/ui';
 import { SyncJob, Snapshot } from '../../types';
 import { formatBytes } from '../../utils/formatters';
 import { api } from '../../api';
@@ -172,9 +172,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
             <Body
               size="sm"
               weight="medium"
-              className={
-                isRestoring || !activeSnapshot ? 'text-text-tertiary' : 'text-[var(--color-info)]'
-              }
+              color={isRestoring || !activeSnapshot ? 'tertiary' : undefined}
+              className={isRestoring || !activeSnapshot ? '' : 'text-[var(--color-info)]'}
             >
               Restore Full Snapshot
             </Body>
@@ -218,7 +217,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
                 title="Sort by Date"
               >
                 <Caption
-                  className={`font-weight-medium ${sortBy === 'date' ? 'text-[var(--color-info)]' : 'text-text-secondary'}`}
+                  color={sortBy === 'date' ? undefined : 'secondary'}
+                  className={`font-weight-medium ${sortBy === 'date' ? 'text-[var(--color-info)]' : ''}`}
                 >
                   Date
                 </Caption>
@@ -231,7 +231,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
                 title="Sort by Size"
               >
                 <Caption
-                  className={`font-weight-medium ${sortBy === 'size' ? 'text-[var(--color-info)]' : 'text-text-secondary'}`}
+                  color={sortBy === 'size' ? undefined : 'secondary'}
+                  className={`font-weight-medium ${sortBy === 'size' ? 'text-[var(--color-info)]' : ''}`}
                 >
                   Size
                 </Caption>
@@ -258,11 +259,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
                   <Body
                     size="sm"
                     weight="medium"
-                    className={
-                      selectedSnapshotId === snap.id
-                        ? 'text-[var(--color-info)]'
-                        : 'text-text-primary'
-                    }
+                    color={selectedSnapshotId === snap.id ? undefined : 'primary'}
+                    className={selectedSnapshotId === snap.id ? 'text-[var(--color-info)]' : ''}
                   >
                     {new Date(snap.timestamp).toLocaleString(undefined, {
                       dateStyle: 'medium',
@@ -284,14 +282,11 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
         <div className="flex-1 flex flex-col overflow-hidden bg-layer-2 p-6">
           {activeSnapshot && snapshotPath ? (
             <div className="h-full flex flex-col gap-4">
-              <div className="bg-[var(--color-info-subtle)] border border-[var(--color-info)]/20 rounded-lg p-3 flex items-start gap-3">
-                <Icons.Info size={18} className="shrink-0 mt-0.5 text-[var(--color-info)]" />
-                <Body size="sm" className="text-[var(--color-info)]">
-                  Viewing snapshot from{' '}
-                  <strong>{new Date(activeSnapshot.timestamp).toLocaleString()}</strong>. Select
-                  files to restore them to the original location.
-                </Body>
-              </div>
+              <StatusMessage variant="info">
+                Viewing snapshot from{' '}
+                <strong>{new Date(activeSnapshot.timestamp).toLocaleString()}</strong>. Select files
+                to restore them to the original location.
+              </StatusMessage>
 
               <div className="flex-1 bg-layer-1 rounded-xl border border-border-base shadow-sm overflow-hidden">
                 <FileBrowser

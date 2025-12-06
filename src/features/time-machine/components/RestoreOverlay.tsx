@@ -13,6 +13,7 @@ import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Select } from '../../../components/ui/Select';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
+import { Title, Body, Caption, Code, FormLabel, StatusMessage } from '../../../components/ui';
 
 type RestoreMode = 'merge' | 'mirror';
 type RestoreStep = 'configure' | 'confirm';
@@ -119,7 +120,9 @@ function RestoreOverlayComponent({
       <div className="tm-overlay-panel" style={{ width: '480px' }}>
         {/* Header */}
         <div className="tm-overlay-header">
-          <h2 className="tm-overlay-title">Restore Files</h2>
+          <Title level={3} className="tm-overlay-title">
+            Restore Files
+          </Title>
           <button onClick={onClose} className="tm-overlay-close">
             <Icons.X size={18} />
           </button>
@@ -130,13 +133,15 @@ function RestoreOverlayComponent({
           {success ? (
             <div className="flex flex-col items-center justify-center text-center py-8">
               <div className="w-16 h-16 rounded-full bg-success-subtle flex items-center justify-center mb-4">
-                <Icons.Check size={32} className="text-[var(--color-success)]" />
+                <Icons.Check size={32} className="text-success" />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary mb-2">Restore Complete</h3>
-              <p className="text-sm text-text-tertiary mb-4">Files have been restored to:</p>
-              <code className="px-3 py-1.5 bg-layer-3 rounded-lg text-sm text-text-secondary font-mono mb-6">
-                {targetPath}
-              </code>
+              <Title level={3} className="mb-2">
+                Restore Complete
+              </Title>
+              <Body size="sm" color="tertiary" className="mb-4">
+                Files have been restored to:
+              </Body>
+              <Code className="px-3 py-1.5 bg-layer-3 rounded-lg mb-6">{targetPath}</Code>
               <Button
                 variant="primary"
                 onClick={handleOpenTarget}
@@ -149,9 +154,7 @@ function RestoreOverlayComponent({
             <div className="space-y-6">
               {/* Snapshot Selection */}
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Snapshot to Restore
-                </label>
+                <FormLabel>Snapshot to Restore</FormLabel>
                 <Select
                   value={selectedSnapshot?.id || ''}
                   onChange={e => {
@@ -170,30 +173,38 @@ function RestoreOverlayComponent({
               {/* Snapshot Info */}
               {selectedSnapshot && (
                 <div className="p-4 bg-layer-2 border border-border-base rounded-lg">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <span className="text-text-tertiary">Date:</span>
-                      <span className="ml-2 text-text-primary">
+                      <Caption color="tertiary" as="span">
+                        Date:
+                      </Caption>
+                      <Body size="sm" as="span" className="ml-2">
                         {new Date(selectedSnapshot.timestamp).toLocaleDateString()}
-                      </span>
+                      </Body>
                     </div>
                     <div>
-                      <span className="text-text-tertiary">Time:</span>
-                      <span className="ml-2 text-text-primary">
+                      <Caption color="tertiary" as="span">
+                        Time:
+                      </Caption>
+                      <Body size="sm" as="span" className="ml-2">
                         {new Date(selectedSnapshot.timestamp).toLocaleTimeString()}
-                      </span>
+                      </Body>
                     </div>
                     <div>
-                      <span className="text-text-tertiary">Files:</span>
-                      <span className="ml-2 text-text-primary">
+                      <Caption color="tertiary" as="span">
+                        Files:
+                      </Caption>
+                      <Body size="sm" as="span" className="ml-2">
                         {selectedSnapshot.fileCount?.toLocaleString()}
-                      </span>
+                      </Body>
                     </div>
                     <div>
-                      <span className="text-text-tertiary">Size:</span>
-                      <span className="ml-2 text-text-primary">
+                      <Caption color="tertiary" as="span">
+                        Size:
+                      </Caption>
+                      <Body size="sm" as="span" className="ml-2">
                         {formatBytes(selectedSnapshot.sizeBytes ?? 0)}
-                      </span>
+                      </Body>
                     </div>
                   </div>
                 </div>
@@ -201,9 +212,7 @@ function RestoreOverlayComponent({
 
               {/* Target Path */}
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Restore To
-                </label>
+                <FormLabel>Restore To</FormLabel>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -225,9 +234,7 @@ function RestoreOverlayComponent({
 
               {/* Restore Mode */}
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-3">
-                  Restore Mode
-                </label>
+                <FormLabel className="mb-3">Restore Mode</FormLabel>
                 <div className="space-y-3">
                   {/* Merge Option */}
                   <label
@@ -246,11 +253,13 @@ function RestoreOverlayComponent({
                       className="mt-0.5 accent-accent-primary"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-text-primary">Merge (Safe)</div>
-                      <div className="text-xs text-text-tertiary mt-0.5">
+                      <Body size="sm" weight="medium">
+                        Merge (Safe)
+                      </Body>
+                      <Caption size="sm" color="tertiary" className="mt-0.5">
                         Copy files from snapshot. Updates existing files but keeps any extra files
                         in the destination.
-                      </div>
+                      </Caption>
                     </div>
                   </label>
 
@@ -258,7 +267,7 @@ function RestoreOverlayComponent({
                   <label
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                       restoreMode === 'mirror'
-                        ? 'bg-error-subtle border-[var(--color-error)]'
+                        ? 'bg-error-subtle border-error'
                         : 'bg-layer-2 border-border-base hover:border-border-highlight'
                     }`}
                   >
@@ -268,19 +277,24 @@ function RestoreOverlayComponent({
                       value="mirror"
                       checked={restoreMode === 'mirror'}
                       onChange={() => setRestoreMode('mirror')}
-                      className="mt-0.5 accent-[var(--color-error)]"
+                      className="mt-0.5 accent-error"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-text-primary flex items-center gap-2">
-                        Mirror (Exact)
-                        <span className="text-[10px] px-1.5 py-0.5 bg-error-subtle text-[var(--color-error)] rounded font-semibold">
+                      <div className="flex items-center gap-2">
+                        <Body size="sm" weight="medium" as="span">
+                          Mirror (Exact)
+                        </Body>
+                        <Caption
+                          size="sm"
+                          className="px-1.5 py-0.5 bg-error-subtle text-error rounded font-semibold uppercase"
+                        >
                           DESTRUCTIVE
-                        </span>
+                        </Caption>
                       </div>
-                      <div className="text-xs text-text-tertiary mt-0.5">
+                      <Caption size="sm" color="tertiary" className="mt-0.5">
                         Make destination an exact copy. Files not in the snapshot will be{' '}
-                        <strong className="text-[var(--color-error)]">deleted</strong>.
-                      </div>
+                        <strong className="text-error">deleted</strong>.
+                      </Caption>
                     </div>
                   </label>
                 </div>
@@ -288,9 +302,9 @@ function RestoreOverlayComponent({
 
               {/* Error */}
               {error && (
-                <div className="px-3 py-2 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg text-sm text-[var(--color-error)]">
+                <StatusMessage variant="error" size="sm">
                   {error}
-                </div>
+                </StatusMessage>
               )}
 
               {/* Actions */}
@@ -313,79 +327,87 @@ function RestoreOverlayComponent({
             <div className="space-y-6">
               {/* Warning for Mirror mode */}
               {restoreMode === 'mirror' && (
-                <div className="flex items-start gap-3 p-4 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg">
-                  <Icons.AlertTriangle
-                    size={20}
-                    className="text-[var(--color-error)] flex-shrink-0 mt-0.5"
-                  />
+                <StatusMessage variant="error" className="flex items-start gap-3 p-4">
+                  <Icons.AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-sm text-[var(--color-error)]">
+                    <Body size="sm" weight="semibold">
                       Warning: Mirror Mode
-                    </div>
-                    <div className="text-xs text-text-tertiary mt-1">
+                    </Body>
+                    <Caption size="sm" color="tertiary" className="mt-1">
                       This will delete any files in the destination that are not in the snapshot.
                       This action cannot be undone.
-                    </div>
+                    </Caption>
                   </div>
-                </div>
+                </StatusMessage>
               )}
 
               {/* Summary */}
               <div className="p-4 bg-layer-2 border border-border-base rounded-lg space-y-3">
-                <h4 className="text-sm font-semibold text-text-primary">Restore Summary</h4>
-                <div className="space-y-2 text-sm">
+                <Title level={4}>Restore Summary</Title>
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">Snapshot:</span>
-                    <span className="text-text-primary">
+                    <Caption color="tertiary" as="span">
+                      Snapshot:
+                    </Caption>
+                    <Body size="sm" as="span">
                       {selectedSnapshot && new Date(selectedSnapshot.timestamp).toLocaleString()}
-                    </span>
+                    </Body>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">Files:</span>
-                    <span className="text-text-primary">
+                    <Caption color="tertiary" as="span">
+                      Files:
+                    </Caption>
+                    <Body size="sm" as="span">
                       {selectedSnapshot?.fileCount?.toLocaleString()}
-                    </span>
+                    </Body>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">Size:</span>
-                    <span className="text-text-primary">
+                    <Caption color="tertiary" as="span">
+                      Size:
+                    </Caption>
+                    <Body size="sm" as="span">
                       {formatBytes(selectedSnapshot?.sizeBytes ?? 0)}
-                    </span>
+                    </Body>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">Mode:</span>
-                    <span
-                      className={
-                        restoreMode === 'mirror'
-                          ? 'text-[var(--color-error)] font-medium'
-                          : 'text-text-primary'
-                      }
+                    <Caption color="tertiary" as="span">
+                      Mode:
+                    </Caption>
+                    <Body
+                      size="sm"
+                      as="span"
+                      weight={restoreMode === 'mirror' ? 'medium' : 'normal'}
+                      color={restoreMode === 'mirror' ? 'error' : 'primary'}
                     >
                       {restoreMode === 'merge' ? 'Merge (Safe)' : 'Mirror (Exact)'}
-                    </span>
+                    </Body>
                   </div>
                   <div className="pt-2 border-t border-border-base">
-                    <span className="text-text-tertiary">Destination:</span>
-                    <code className="block mt-1 px-2 py-1 bg-layer-3 rounded text-xs text-text-secondary font-mono break-all">
+                    <Caption color="tertiary" as="span">
+                      Destination:
+                    </Caption>
+                    <Code size="sm" className="block mt-1 px-2 py-1 bg-layer-3 rounded break-all">
                       {targetPath}
-                    </code>
+                    </Code>
                   </div>
                 </div>
               </div>
 
               {/* Progress */}
               {progress && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-accent-secondary rounded-lg text-sm text-accent-primary">
-                  <Icons.RefreshCw size={16} className="animate-spin" />
-                  {progress}
+                <div className="flex items-center gap-2 px-3 py-2 bg-accent-secondary rounded-lg">
+                  <Icons.RefreshCw size={16} className="animate-spin text-accent-primary" />
+                  <Body size="sm" className="text-accent-primary">
+                    {progress}
+                  </Body>
                 </div>
               )}
 
               {/* Error */}
               {error && (
-                <div className="px-3 py-2 bg-error-subtle border border-[var(--color-error)]/30 rounded-lg text-sm text-[var(--color-error)]">
+                <StatusMessage variant="error" size="sm">
                   {error}
-                </div>
+                </StatusMessage>
               )}
 
               {/* Actions */}

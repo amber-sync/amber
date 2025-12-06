@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
+import { Body, Caption } from './Text';
 
 interface Step {
   id: string | number;
@@ -61,13 +62,13 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                 )}
               </div>
               <div className="ml-4 pb-8">
-                <p
-                  className={`font-medium ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}
-                >
+                <Body size="sm" weight="medium" color={isActive ? 'primary' : 'secondary'}>
                   {step.label}
-                </p>
+                </Body>
                 {step.description && (
-                  <p className="text-xs text-text-tertiary mt-0.5">{step.description}</p>
+                  <Caption size="sm" color="tertiary" className="mt-0.5">
+                    {step.description}
+                  </Caption>
                 )}
               </div>
             </div>
@@ -106,11 +107,13 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
               >
                 {isCompleted ? <Icons.Check size={18} strokeWidth={3} /> : index + 1}
               </button>
-              <p
-                className={`mt-2 text-xs font-medium text-center ${isActive ? 'text-text-primary' : 'text-text-tertiary'}`}
+              <Caption
+                size="sm"
+                color={isActive ? 'primary' : 'tertiary'}
+                className="mt-2 font-medium text-center"
               >
                 {step.label}
-              </p>
+              </Caption>
             </div>
 
             {!isLast && (

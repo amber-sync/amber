@@ -5,7 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
 import { logger } from '../../utils/logger';
 import { PageContainer } from '../../components/layout';
-import { Title, Body, Caption } from '../../components/ui';
+import { Title, Body, Caption, StatusMessage } from '../../components/ui';
 
 const APP_VERSION = '0.0.1-beta';
 
@@ -156,17 +156,12 @@ export const SettingsPage: React.FC = () => {
           <Title level={4} className="flex items-center gap-2">
             <Icons.Shield size={18} /> System Health
           </Title>
-          <div className="p-4 rounded-xl bg-success-subtle border border-[var(--color-success)]/20">
-            <Body
-              weight="medium"
-              className="flex items-center gap-2 text-[var(--color-success)] mb-1"
-            >
+          <StatusMessage variant="success" className="p-4 rounded-xl">
+            <Body weight="medium" className="flex items-center gap-2 mb-1">
               <Icons.CheckCircle size={16} /> Environment Ready
             </Body>
-            <Caption className="text-[var(--color-success)]/80">
-              All necessary binary dependencies detected.
-            </Caption>
-          </div>
+            <Caption>All necessary binary dependencies detected.</Caption>
+          </StatusMessage>
 
           <div className="space-y-3 py-2">
             <div className="flex justify-between">

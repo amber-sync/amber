@@ -3,7 +3,15 @@ import { SyncJob, SyncMode, RsyncConfig } from '../../../types';
 import { api } from '../../../api';
 import { MODE_PRESETS } from '../../../config';
 import { Icons } from '../../IconComponents';
-import { TextInput, PathInput, Select, FormField, Button, IconButton } from '../../ui';
+import {
+  TextInput,
+  PathInput,
+  Select,
+  FormField,
+  Button,
+  IconButton,
+  StatusMessage,
+} from '../../ui';
 
 interface EditJobPanelProps {
   job: SyncJob;
@@ -244,9 +252,9 @@ export function EditJobPanel({ job, onSave, onDelete, onClose }: EditJobPanelPro
           </div>
         </div>
         {confirmDelete && (
-          <p className="mt-2 text-xs text-[var(--color-error)]">
-            Click &quot;Confirm Delete&quot; again to permanently delete this job.
-          </p>
+          <StatusMessage variant="error" size="sm" className="mt-2">
+            Click "Confirm Delete" again to permanently delete this job.
+          </StatusMessage>
         )}
       </div>
     </div>

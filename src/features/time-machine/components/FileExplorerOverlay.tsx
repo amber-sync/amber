@@ -7,6 +7,7 @@
 import { memo } from 'react';
 import { FileBrowser } from '../../../components/shared/FileBrowser';
 import { Icons } from '../../../components/IconComponents';
+import { Title } from '../../../components/ui';
 
 interface FileExplorerOverlayProps {
   isOpen: boolean;
@@ -36,7 +37,9 @@ function FileExplorerOverlayComponent({
       <div className="tm-overlay-panel">
         {/* Header */}
         <div className="tm-overlay-header">
-          <h2 className="tm-overlay-title">File Browser</h2>
+          <Title level={3} className="tm-overlay-title">
+            File Browser
+          </Title>
           <button onClick={onClose} className="tm-overlay-close">
             <Icons.X size={18} />
           </button>

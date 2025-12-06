@@ -47,6 +47,17 @@ pub fn run() {
                                 .build(),
                         )?;
                     }
+
+                    // Initialize MCP plugin for Claude Code integration (dev only)
+                    #[cfg(feature = "mcp")]
+                    {
+                        app.handle().plugin(tauri_plugin_mcp::init_with_config(
+                            tauri_plugin_mcp::PluginConfig::new("Amber".to_string())
+                                .start_socket_server(true)
+                                .socket_path("/tmp/tauri-mcp.sock".into()),
+                        ))?;
+                    }
+
                     Ok(())
                 }
                 Err(e) => {

@@ -20,24 +20,24 @@ const baseStyles =
   'shadow-lg transition-all backdrop-blur-sm overflow-hidden';
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: 'bg-layer-1/95 border-[var(--color-success)] shadow-[0_0_20px_rgba(16,185,129,0.15)]',
-  error: 'bg-layer-1/95 border-[var(--color-error)] shadow-[0_0_20px_rgba(239,68,68,0.15)]',
-  warning: 'bg-layer-1/95 border-[var(--color-warning)] shadow-[0_0_20px_rgba(245,158,11,0.15)]',
-  info: 'bg-layer-1/95 border-[var(--color-info)] shadow-[0_0_20px_rgba(59,130,246,0.15)]',
+  success: 'bg-layer-1/95 border-success shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+  error: 'bg-layer-1/95 border-error shadow-[0_0_20px_rgba(239,68,68,0.15)]',
+  warning: 'bg-layer-1/95 border-warning shadow-[0_0_20px_rgba(245,158,11,0.15)]',
+  info: 'bg-layer-1/95 border-info shadow-[0_0_20px_rgba(59,130,246,0.15)]',
 };
 
 const variantIconColors: Record<ToastVariant, string> = {
-  success: 'text-[var(--color-success)]',
-  error: 'text-[var(--color-error)]',
-  warning: 'text-[var(--color-warning)]',
-  info: 'text-[var(--color-info)]',
+  success: 'text-success',
+  error: 'text-error',
+  warning: 'text-warning',
+  info: 'text-info',
 };
 
 const variantAccentColors: Record<ToastVariant, string> = {
-  success: 'bg-[var(--color-success)]',
-  error: 'bg-[var(--color-error)]',
-  warning: 'bg-[var(--color-warning)]',
-  info: 'bg-[var(--color-info)]',
+  success: 'bg-success',
+  error: 'bg-error',
+  warning: 'bg-warning',
+  info: 'bg-info',
 };
 
 const icons: Record<ToastVariant, React.ReactNode> = {

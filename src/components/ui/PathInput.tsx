@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
+import { FormLabel } from './Text';
 
 interface PathInputProps {
   value: string;
@@ -25,9 +26,7 @@ export const PathInput: React.FC<PathInputProps> = ({
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {label && (
-        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-          {label}
-        </label>
+        <FormLabel className="text-xs font-bold uppercase tracking-wider">{label}</FormLabel>
       )}
       <div className="flex gap-2">
         <div className="flex-1 relative">

@@ -5,6 +5,7 @@
  */
 
 import React, { forwardRef } from 'react';
+import { Body, Caption } from './Text';
 
 interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   /** Checkbox label */
@@ -47,7 +48,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             disabled={disabled}
             className={`
               ${styles.checkbox} rounded border-2 transition-all duration-150
-              ${error ? 'border-[var(--color-error)]' : 'border-border-highlight'}
+              ${error ? 'border-error' : 'border-border-highlight'}
               bg-layer-2
               checked:bg-accent-primary checked:border-accent-primary
               checked:hover:bg-[var(--accent-hover)] checked:hover:border-[var(--accent-hover)]
@@ -61,12 +62,14 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         {(label || description) && (
           <div className="flex flex-col">
             {label && (
-              <span className={`${styles.label} font-medium text-text-primary`}>{label}</span>
+              <Body size="sm" weight="medium" as="span">
+                {label}
+              </Body>
             )}
             {description && (
-              <span className={`${styles.description} text-text-tertiary mt-0.5`}>
+              <Caption size="sm" color="tertiary" className="mt-0.5">
                 {description}
-              </span>
+              </Caption>
             )}
           </div>
         )}

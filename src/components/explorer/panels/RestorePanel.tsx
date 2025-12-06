@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { SyncJob, Snapshot } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../IconComponents';
-import { Button, IconButton, Select } from '../../ui';
+import { Button, IconButton, Select, StatusMessage } from '../../ui';
 import { formatBytes } from '../../../utils';
 
 interface RestorePanelProps {
@@ -193,9 +193,9 @@ export function RestorePanel({ job, selectedSnapshot, snapshots, onClose }: Rest
 
             {/* Error */}
             {error && (
-              <div className="mb-4 rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
+              <StatusMessage variant="error" size="sm" className="mb-4">
                 {error}
-              </div>
+              </StatusMessage>
             )}
 
             {/* Info */}

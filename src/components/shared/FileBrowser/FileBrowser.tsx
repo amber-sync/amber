@@ -14,6 +14,7 @@ import {
   type IndexedDirEntry,
   type ReadDirEntry,
 } from '../../../types';
+import { Caption, Body, Badge, StatusMessage } from '../../ui';
 
 interface FileBrowserProps {
   initialPath: string;
@@ -246,37 +247,37 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
             {searchResults !== null ? (
               <span className="flex items-center gap-2">
                 <Icons.Search size={14} />
-                Search results for "{searchQuery}"
+                <Caption color="secondary">Search results for "{searchQuery}"</Caption>
                 <button
                   onClick={() => {
                     setSearchQuery('');
                     setSearchResults(null);
                   }}
-                  className="ml-2 text-xs text-[var(--color-info)] hover:text-[var(--color-info)]"
+                  className="ml-2 text-accent-primary hover:text-accent-secondary transition-colors"
                 >
-                  Clear
+                  <Caption size="sm">Clear</Caption>
                 </button>
               </span>
             ) : (
               <>
-                <span
-                  className="cursor-pointer hover:text-[var(--color-info)] transition-colors flex items-center gap-1"
+                <button
+                  className="cursor-pointer transition-colors flex items-center gap-1 text-text-secondary hover:text-accent-primary"
                   onClick={() => setCurrentPath(initialPath)}
                 >
                   <Icons.HardDrive size={14} />
-                  Root
-                </span>
+                  <Caption>Root</Caption>
+                </button>
                 {parts.map((part, i) => {
                   const pathSoFar = initialPath + '/' + parts.slice(0, i + 1).join('/');
                   return (
                     <React.Fragment key={pathSoFar}>
-                      <span className="text-text-quaternary">/</span>
-                      <span
-                        className="cursor-pointer hover:text-[var(--color-info)] transition-colors truncate max-w-[150px]"
+                      <Caption color="quaternary">/</Caption>
+                      <button
+                        className="cursor-pointer transition-colors truncate max-w-[150px] text-text-secondary hover:text-accent-primary"
                         onClick={() => setCurrentPath(pathSoFar)}
                       >
-                        {part}
-                      </span>
+                        <Caption>{part}</Caption>
+                      </button>
                     </React.Fragment>
                   );
                 })}
@@ -300,7 +301,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
               />
               {isSearching && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                  <div className="w-3 h-3 border-2 border-[var(--color-info)] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
             </div>
@@ -308,10 +309,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
 
           {/* Indexed indicator */}
           {isIndexed && (
-            <div className="px-2 py-0.5 text-xs bg-[var(--color-success-subtle)] text-[var(--color-success)] rounded-full flex items-center gap-1">
-              <Icons.Zap size={10} />
-              Fast
-            </div>
+            <Badge status="success" variant="subtle" size="sm">
+              <div className="flex items-center gap-1">
+                <Icons.Zap size={10} />
+                Fast
+              </div>
+            </Badge>
           )}
 
           {/* Preview Toggle */}
@@ -322,7 +325,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
               title={showPreview ? 'Hide Preview' : 'Show Preview'}
             >
               {showPreview ? (
-                <Icons.Eye size={16} className="text-[var(--color-info)]" />
+                <Icons.Eye size={16} className="text-accent-primary" />
               ) : (
                 <Icons.EyeOff size={16} className="text-text-tertiary" />
               )}
@@ -331,22 +334,36 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         </div>
 
         {/* File List Header */}
-        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 py-2 border-b border-border-base bg-layer-2 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-4 py-2 border-b border-border-base bg-layer-2">
           <div className="w-5"></div>
-          <div>Name</div>
-          <div className="text-right">Size</div>
-          <div className="text-right">Modified</div>
+          <Caption size="sm" color="tertiary" className="font-medium uppercase tracking-wider">
+            Name
+          </Caption>
+          <Caption
+            size="sm"
+            color="tertiary"
+            className="text-right font-medium uppercase tracking-wider"
+          >
+            Size
+          </Caption>
+          <Caption
+            size="sm"
+            color="tertiary"
+            className="text-right font-medium uppercase tracking-wider"
+          >
+            Modified
+          </Caption>
         </div>
 
         {/* File List - TIM-189: Using VirtualFileList component */}
         <div className="flex-1 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-text-tertiary">Loading...</div>
+              <Caption color="tertiary">Loading...</Caption>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-[var(--color-error)]">Error: {error}</div>
+              <StatusMessage variant="error">Error: {error}</StatusMessage>
             </div>
           ) : (
             <VirtualFileList

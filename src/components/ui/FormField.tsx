@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { Body, Caption } from './Text';
 
 interface FormFieldProps {
   /** Field label */
@@ -40,14 +41,26 @@ export const FormField: React.FC<FormFieldProps> = ({
           className="text-sm font-medium text-text-primary flex items-center gap-1"
         >
           {label}
-          {required && <span className="text-[var(--color-error)]">*</span>}
+          {required && (
+            <Body as="span" size="sm" color="error">
+              *
+            </Body>
+          )}
         </label>
       )}
       {children}
       {(error || hint) && (
-        <p className={`text-xs ${error ? 'text-[var(--color-error)]' : 'text-text-tertiary'}`}>
-          {error || hint}
-        </p>
+        <>
+          {error ? (
+            <Body as="p" size="sm" color="error">
+              {error}
+            </Body>
+          ) : (
+            <Caption size="sm" color="tertiary">
+              {hint}
+            </Caption>
+          )}
+        </>
       )}
     </div>
   );

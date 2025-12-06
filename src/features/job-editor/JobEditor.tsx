@@ -11,10 +11,13 @@ import {
   TextInput,
   Toggle,
   PathInput,
-  SectionHeader,
   ExclusionPatternEditor,
   COMMON_PATTERNS,
   ScheduleSelector,
+  Title,
+  Body,
+  Caption,
+  FormLabel,
 } from '../../components/ui';
 
 export interface JobEditorProps {
@@ -140,12 +143,10 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               <Icons.FolderSync size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text-primary">
-                {isEditing ? 'Edit Backup Job' : 'New Backup Job'}
-              </h1>
-              <p className="text-xs text-text-secondary">
+              <Title level={2}>{isEditing ? 'Edit Backup Job' : 'New Backup Job'}</Title>
+              <Caption size="sm" color="secondary">
                 {jobName || 'Configure your backup settings'}
-              </p>
+              </Caption>
             </div>
           </div>
           <button
@@ -164,7 +165,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             <div className="space-y-6">
               {/* Job Name */}
               <div>
-                <SectionHeader variant="form-label">Job Name</SectionHeader>
+                <FormLabel>Job Name</FormLabel>
                 <TextInput
                   value={jobName}
                   onChange={e => setJobName(e.target.value)}
@@ -185,14 +186,12 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               {/* Destination */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <SectionHeader variant="form-label" className="mb-0">
-                    Destination
-                  </SectionHeader>
+                  <FormLabel className="mb-0">Destination</FormLabel>
                   <div className="flex bg-layer-2 p-0.5 rounded-lg">
                     <button
                       type="button"
                       onClick={() => setDestinationType(DestinationType.LOCAL)}
-                      className={`px-2.5 py-1 rounded-md text-2xs font-medium transition-all flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-caption-sm font-medium transition-all flex items-center gap-1 ${
                         destinationType === DestinationType.LOCAL
                           ? 'bg-layer-1 text-text-primary shadow-sm'
                           : 'text-text-tertiary hover:text-text-secondary'
@@ -204,7 +203,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     <button
                       type="button"
                       onClick={() => setDestinationType(DestinationType.CLOUD)}
-                      className={`px-2.5 py-1 rounded-md text-2xs font-medium transition-all flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-caption-sm font-medium transition-all flex items-center gap-1 ${
                         destinationType === DestinationType.CLOUD
                           ? 'bg-layer-1 text-text-primary shadow-sm'
                           : 'text-text-tertiary hover:text-text-secondary'
@@ -258,7 +257,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
               {/* Sync Mode */}
               <div>
-                <SectionHeader variant="form-label">Sync Mode</SectionHeader>
+                <FormLabel>Sync Mode</FormLabel>
                 <div className="grid grid-cols-3 gap-2">
                   {SYNC_MODES.map(({ mode, label, description, icon }) => (
                     <button
@@ -279,9 +278,13 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                         >
                           {icon}
                         </span>
-                        <span className="font-medium text-sm text-text-primary">{label}</span>
+                        <Body size="sm" weight="medium" as="span">
+                          {label}
+                        </Body>
                       </div>
-                      <p className="text-2xs text-text-tertiary">{description}</p>
+                      <Caption size="sm" color="tertiary" as="span">
+                        {description}
+                      </Caption>
                     </button>
                   ))}
                 </div>
@@ -294,13 +297,13 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             <div className="space-y-6">
               {/* Schedule */}
               <div>
-                <SectionHeader variant="form-label">Schedule</SectionHeader>
+                <FormLabel>Schedule</FormLabel>
                 <ScheduleSelector value={jobSchedule} onChange={setJobSchedule} />
               </div>
 
               {/* Exclusions */}
               <div>
-                <SectionHeader variant="form-label">Exclusions</SectionHeader>
+                <FormLabel>Exclusions</FormLabel>
                 <ExclusionPatternEditor
                   patterns={jobConfig.excludePatterns}
                   onChange={patterns =>
@@ -312,7 +315,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
               {/* Options */}
               <div>
-                <SectionHeader variant="form-label">Options</SectionHeader>
+                <FormLabel>Options</FormLabel>
                 <div className="space-y-3">
                   <Toggle
                     checked={jobConfig.compress}
@@ -338,7 +341,9 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Icons.Server size={18} className="text-text-tertiary" />
-                    <span className="font-medium text-text-primary text-sm">SSH Connection</span>
+                    <Body size="sm" weight="medium" as="span">
+                      SSH Connection
+                    </Body>
                   </div>
                   <Toggle checked={sshEnabled} onChange={setSshEnabled} size="sm" />
                 </div>
@@ -389,7 +394,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               <button
                 type="button"
                 onClick={onDelete}
-                className="px-4 py-2 rounded-xl font-medium text-error hover:bg-error-subtle transition-colors flex items-center gap-2"
+                className="px-4 py-2 rounded-xl text-button text-error hover:bg-error-subtle transition-colors flex items-center gap-2"
               >
                 <Icons.Trash2 size={16} />
                 Delete Job
@@ -400,7 +405,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2 rounded-xl font-medium text-text-secondary hover:bg-layer-3 transition-colors"
+              className="px-5 py-2 rounded-xl text-button text-text-secondary hover:bg-layer-3 transition-colors"
             >
               Cancel
             </button>
@@ -408,7 +413,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               type="button"
               onClick={onSave}
               disabled={!canSave}
-              className="px-5 py-2 rounded-xl font-medium text-white bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2 rounded-xl text-button text-white bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isEditing ? 'Save Changes' : 'Create Job'}
             </button>

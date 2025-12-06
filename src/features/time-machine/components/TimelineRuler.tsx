@@ -8,6 +8,7 @@
 import React, { useRef, useMemo, useCallback, useState } from 'react';
 import { format, startOfMonth, addMonths, differenceInMonths } from 'date-fns';
 import { TimeMachineSnapshot } from '../TimeMachinePage';
+import { Body, Caption } from '../../../components/ui';
 
 interface TimelineRulerProps {
   snapshots: TimeMachineSnapshot[];
@@ -248,10 +249,10 @@ export const TimelineRuler = React.memo<TimelineRulerProps>(
               <div className="tm-timeline-tooltip-content">
                 {activeMarker.isCluster ? (
                   <>
-                    <div className="text-sm font-semibold text-[var(--tm-text-bright)]">
+                    <Body size="sm" weight="semibold" className="text-[var(--tm-text-bright)]">
                       {activeMarker.snapshots.length} snapshots
-                    </div>
-                    <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                    </Body>
+                    <Caption className="text-[var(--tm-text-dim)] mt-0.5">
                       {format(new Date(activeMarker.snapshots[0].timestamp), 'MMM d')} –{' '}
                       {format(
                         new Date(
@@ -259,16 +260,16 @@ export const TimelineRuler = React.memo<TimelineRulerProps>(
                         ),
                         'MMM d, yyyy'
                       )}
-                    </div>
+                    </Caption>
                   </>
                 ) : (
                   <>
-                    <div className="text-sm font-semibold text-[var(--tm-text-bright)]">
+                    <Body size="sm" weight="semibold" className="text-[var(--tm-text-bright)]">
                       {format(new Date(activeMarker.snapshots[0].timestamp), 'MMM d, yyyy')}
-                    </div>
-                    <div className="text-xs text-[var(--tm-text-dim)] mt-0.5">
+                    </Body>
+                    <Caption className="text-[var(--tm-text-dim)] mt-0.5">
                       {format(new Date(activeMarker.snapshots[0].timestamp), 'h:mm a')}
-                    </div>
+                    </Caption>
                   </>
                 )}
               </div>

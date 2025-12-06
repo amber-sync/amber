@@ -83,12 +83,13 @@ export const JobCard = React.memo<JobCardProps>(
             ) : (
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  !mounted
-                    ? 'bg-warning-subtle text-[var(--color-warning)]'
-                    : 'bg-layer-2 text-text-secondary'
+                  !mounted ? 'bg-warning-subtle' : 'bg-layer-2'
                 }`}
               >
-                <Icons.Archive size={18} />
+                <Icons.Archive
+                  size={18}
+                  className={!mounted ? 'text-warning-primary' : 'text-text-secondary'}
+                />
               </div>
             )}
           </div>
@@ -105,7 +106,12 @@ export const JobCard = React.memo<JobCardProps>(
           {/* Relative Time */}
           <div className="shrink-0">
             {isRunning ? (
-              <Body size="sm" as="span" className="text-accent-primary font-medium animate-pulse">
+              <Body
+                size="sm"
+                as="span"
+                weight="medium"
+                className="text-accent-primary animate-pulse"
+              >
                 Syncing...
               </Body>
             ) : (
@@ -202,7 +208,9 @@ export const JobCard = React.memo<JobCardProps>(
                       })}
                     </>
                   ) : (
-                    <span className="text-text-tertiary">Never</span>
+                    <Body size="sm" as="span" color="tertiary">
+                      Never
+                    </Body>
                   )}
                 </Body>
               </div>
@@ -215,10 +223,10 @@ export const JobCard = React.memo<JobCardProps>(
                   e.stopPropagation();
                   onSelect();
                 }}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-primary text-accent-text rounded-xl hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-primary rounded-xl hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]"
               >
-                <Icons.Clock size={16} />
-                <Body size="sm" as="span">
+                <Icons.Clock size={16} className="text-accent-text" />
+                <Body size="sm" as="span" className="text-accent-text">
                   View History
                 </Body>
               </button>
@@ -229,10 +237,10 @@ export const JobCard = React.memo<JobCardProps>(
                     onRunBackup(job.id);
                   }}
                   disabled={isRunning}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-layer-3 text-text-primary rounded-xl hover:bg-layer-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-layer-3 rounded-xl hover:bg-layer-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icons.Play size={16} />
-                  <Body size="sm" as="span">
+                  <Icons.Play size={16} className="text-text-primary" />
+                  <Body size="sm" as="span" color="primary">
                     {isRunning ? 'Running...' : 'Run Now'}
                   </Body>
                 </button>

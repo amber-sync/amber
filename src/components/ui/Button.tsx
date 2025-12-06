@@ -34,10 +34,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     'active:bg-layer-2 ' +
     'focus:ring-accent-primary/30',
   danger:
-    'bg-[var(--color-error)] text-white ' +
-    'hover:bg-[var(--color-error)]/90 ' +
-    'active:bg-[var(--color-error)]/80 ' +
-    'focus:ring-[var(--color-error)]/30',
+    'bg-error text-white ' + 'hover:bg-error/90 ' + 'active:bg-error/80 ' + 'focus:ring-error/30',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

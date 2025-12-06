@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "dev": "tauri dev",
+    "dev:mcp": "tauri dev --features mcp",
     "dev:frontend": "vite",
     "build": "tauri build",
     "build:frontend": "vite build",

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Body, Caption } from './Text';
 
 interface ToggleProps {
   checked: boolean;
@@ -59,8 +60,16 @@ export const Toggle: React.FC<ToggleProps> = ({
       </button>
       {(label || description) && (
         <div className="flex flex-col">
-          {label && <span className="text-sm font-medium text-text-primary">{label}</span>}
-          {description && <span className="text-xs text-text-tertiary mt-0.5">{description}</span>}
+          {label && (
+            <Body size="sm" weight="medium" as="span">
+              {label}
+            </Body>
+          )}
+          {description && (
+            <Caption size="sm" color="tertiary" className="mt-0.5">
+              {description}
+            </Caption>
+          )}
         </div>
       )}
     </label>

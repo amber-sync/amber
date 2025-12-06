@@ -31,6 +31,7 @@ import { EmptyState } from './components/EmptyState';
 import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
 import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
 import { PageContainer } from '../../components/layout';
+import { Title, Body, Caption, Code } from '../../components/ui';
 
 // Styles
 import './timemachine.css';
@@ -542,12 +543,12 @@ export function TimeMachinePage({
           width="lg"
         >
           <div className="p-4">
-            <h3 className="text-sm font-medium text-text-primary mb-4">
+            <Body size="sm" weight="medium" className="mb-4">
               Select a snapshot to compare with{' '}
               {selectedSnapshot?.timestamp
                 ? new Date(selectedSnapshot.timestamp).toLocaleDateString()
                 : 'current'}
-            </h3>
+            </Body>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {filteredSnapshots
                 .filter(s => s.id !== selectedSnapshot?.id)
@@ -561,21 +562,21 @@ export function TimeMachinePage({
                         : 'border-border-base hover:bg-layer-2'
                     }`}
                   >
-                    <div className="font-medium text-text-primary">
+                    <Body size="sm" weight="medium">
                       {new Date(snapshot.timestamp).toLocaleDateString()}
-                    </div>
-                    <div className="text-sm text-text-secondary">
+                    </Body>
+                    <Body size="sm" color="secondary">
                       {new Date(snapshot.timestamp).toLocaleTimeString()}
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-text-tertiary">
-                      <span className="flex items-center gap-1">
+                    </Body>
+                    <div className="flex items-center gap-3 mt-2">
+                      <Caption className="flex items-center gap-1">
                         <Icons.File size={12} />
                         {snapshot.fileCount?.toLocaleString() ?? '—'} files
-                      </span>
-                      <span className="flex items-center gap-1">
+                      </Caption>
+                      <Caption className="flex items-center gap-1">
                         <Icons.HardDrive size={12} />
                         {formatBytes(snapshot.sizeBytes ?? 0)}
-                      </span>
+                      </Caption>
                     </div>
                   </button>
                 ))}
@@ -583,12 +584,16 @@ export function TimeMachinePage({
 
             {compareSnapshot && selectedSnapshot && (
               <div className="mt-6 p-4 bg-layer-2 rounded-lg">
-                <h4 className="font-medium text-text-primary mb-4">Comparison Summary</h4>
+                <Body size="sm" weight="medium" className="mb-4">
+                  Comparison Summary
+                </Body>
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-text-secondary">Original</div>
-                      <div className="text-xs text-text-tertiary">
+                      <Body size="sm" weight="medium" color="secondary">
+                        Original
+                      </Body>
+                      <Caption color="tertiary">
                         {new Date(selectedSnapshot.timestamp).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -596,12 +601,14 @@ export function TimeMachinePage({
                           hour: 'numeric',
                           minute: '2-digit',
                         })}
-                      </div>
+                      </Caption>
                     </div>
                     <Icons.ArrowRight className="text-text-tertiary mt-1" size={16} />
                     <div className="text-right">
-                      <div className="text-sm font-medium text-text-secondary">Compared</div>
-                      <div className="text-xs text-text-tertiary">
+                      <Body size="sm" weight="medium" color="secondary">
+                        Compared
+                      </Body>
+                      <Caption color="tertiary">
                         {new Date(compareSnapshot.timestamp).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -609,22 +616,25 @@ export function TimeMachinePage({
                           hour: 'numeric',
                           minute: '2-digit',
                         })}
-                      </div>
+                      </Caption>
                     </div>
                   </div>
 
                   <div className="border-t border-border-base pt-3 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">File count difference</span>
-                      <span
-                        className={`font-mono ${
+                    <div className="flex items-center justify-between">
+                      <Body size="sm" color="secondary">
+                        File count difference
+                      </Body>
+                      <Code
+                        size="sm"
+                        className={
                           (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
                             ? 'text-[var(--color-success)]'
                             : (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) <
                                 0
                               ? 'text-[var(--color-error)]'
                               : 'text-text-tertiary'
-                        }`}
+                        }
                       >
                         {(compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
                           ? '+'
@@ -632,20 +642,23 @@ export function TimeMachinePage({
                         {(
                           (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0)
                         ).toLocaleString()}
-                      </span>
+                      </Code>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">Size difference</span>
-                      <span
-                        className={`font-mono ${
+                    <div className="flex items-center justify-between">
+                      <Body size="sm" color="secondary">
+                        Size difference
+                      </Body>
+                      <Code
+                        size="sm"
+                        className={
                           (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
                             ? 'text-[var(--color-success)]'
                             : (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) <
                                 0
                               ? 'text-[var(--color-error)]'
                               : 'text-text-tertiary'
-                        }`}
+                        }
                       >
                         {(compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
                           ? '+'
@@ -655,12 +668,14 @@ export function TimeMachinePage({
                             (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0)
                           )
                         )}
-                      </span>
+                      </Code>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">Time elapsed</span>
-                      <span className="font-mono text-text-primary">
+                    <div className="flex items-center justify-between">
+                      <Body size="sm" color="secondary">
+                        Time elapsed
+                      </Body>
+                      <Code size="sm">
                         {Math.abs(
                           Math.round(
                             (compareSnapshot.timestamp - selectedSnapshot.timestamp) /
@@ -668,14 +683,14 @@ export function TimeMachinePage({
                           )
                         )}{' '}
                         day(s)
-                      </span>
+                      </Code>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-xs text-text-tertiary mt-4 pt-4 border-t border-border-base">
+                <Caption color="tertiary" className="mt-4 pt-4 border-t border-border-base block">
                   Detailed file-by-file comparison coming soon...
-                </p>
+                </Caption>
               </div>
             )}
           </div>
