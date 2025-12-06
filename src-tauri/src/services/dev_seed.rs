@@ -195,15 +195,13 @@ impl DevSeeder {
 
     /// Run benchmarks on the seeded data
     pub fn run_benchmarks(&self) -> Result<Vec<BenchmarkResult>> {
-        let mut results = Vec::new();
-
-        results.push(self.benchmark_list_snapshots()?);
-        results.push(self.benchmark_directory_contents()?);
-        results.push(self.benchmark_fts_search_common()?);
-        results.push(self.benchmark_fts_search_rare()?);
-        results.push(self.benchmark_snapshot_stats()?);
-
-        Ok(results)
+        Ok(vec![
+            self.benchmark_list_snapshots()?,
+            self.benchmark_directory_contents()?,
+            self.benchmark_fts_search_common()?,
+            self.benchmark_fts_search_rare()?,
+            self.benchmark_snapshot_stats()?,
+        ])
     }
 
     fn benchmark_list_snapshots(&self) -> Result<BenchmarkResult> {

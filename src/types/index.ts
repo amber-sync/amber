@@ -64,18 +64,10 @@ export {
 } from './rsync';
 
 // Dev
-export {
-  type DevSeedResult,
-  type DevBenchmarkResult,
-  type DevDbStats,
-} from './dev';
+export { type DevSeedResult, type DevBenchmarkResult, type DevDbStats } from './dev';
 
 // Migration
-export {
-  type DiscoveredBackup,
-  type JobMigrationResult,
-  type MigrationReport,
-} from './migration';
+export { type DiscoveredBackup, type JobMigrationResult, type MigrationReport } from './migration';
 
 // Helper functions
 import type { SyncJob } from './jobs';

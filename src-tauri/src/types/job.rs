@@ -65,6 +65,7 @@ impl Default for RsyncConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct SshConfig {
     pub enabled: bool,
     pub port: Option<String>,
@@ -73,20 +74,6 @@ pub struct SshConfig {
     pub disable_host_key_checking: Option<bool>,
     pub proxy_jump: Option<String>,
     pub custom_ssh_options: Option<String>,
-}
-
-impl Default for SshConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            port: None,
-            identity_file: None,
-            config_file: None,
-            disable_host_key_checking: None,
-            proxy_jump: None,
-            custom_ssh_options: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,3 +1,5 @@
+#![allow(clippy::lines_filter_map_ok)]
+
 use crate::error::Result;
 use crate::services::index_service::IndexService;
 use crate::services::manifest_service;
@@ -134,47 +136,44 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
             let reader = BufReader::new(stdout);
             let mut current_file: Option<String> = None;
 
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    // Skip empty lines
-                    if line.trim().is_empty() {
-                        continue;
-                    }
+            for line in reader.lines().flatten() {
+                // Skip empty lines
+                if line.trim().is_empty() {
+                    continue;
+                }
 
-                    // Try to parse as progress line
-                    if let Some((transferred, percentage, speed, eta)) = parse_rsync_progress(&line)
+                // Try to parse as progress line
+                if let Some((transferred, percentage, speed, eta)) = parse_rsync_progress(&line) {
+                    let _ = app.emit(
+                        "rsync-progress",
+                        RsyncProgressPayload {
+                            job_id: job_id.clone(),
+                            transferred,
+                            percentage,
+                            speed,
+                            eta,
+                            current_file: current_file.clone(),
+                        },
+                    );
+                } else {
+                    // Non-progress line (file name or info)
+                    // Update current file if it looks like a filename
+                    if !line.starts_with("sending")
+                        && !line.starts_with("receiving")
+                        && !line.starts_with("total")
+                        && !line.contains("files to consider")
                     {
-                        let _ = app.emit(
-                            "rsync-progress",
-                            RsyncProgressPayload {
-                                job_id: job_id.clone(),
-                                transferred,
-                                percentage,
-                                speed,
-                                eta,
-                                current_file: current_file.clone(),
-                            },
-                        );
-                    } else {
-                        // Non-progress line (file name or info)
-                        // Update current file if it looks like a filename
-                        if !line.starts_with("sending")
-                            && !line.starts_with("receiving")
-                            && !line.starts_with("total")
-                            && !line.contains("files to consider")
-                        {
-                            current_file = Some(line.clone());
-                        }
-
-                        // Emit as log
-                        let _ = app.emit(
-                            "rsync-log",
-                            RsyncLogPayload {
-                                job_id: job_id.clone(),
-                                message: line,
-                            },
-                        );
+                        current_file = Some(line.clone());
                     }
+
+                    // Emit as log
+                    let _ = app.emit(
+                        "rsync-log",
+                        RsyncLogPayload {
+                            job_id: job_id.clone(),
+                            message: line,
+                        },
+                    );
                 }
             }
         }))
@@ -188,17 +187,15 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
         let app = app_handle.clone();
         Some(std::thread::spawn(move || {
             let reader = BufReader::new(stderr);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    if !line.trim().is_empty() {
-                        let _ = app.emit(
-                            "rsync-log",
-                            RsyncLogPayload {
-                                job_id: job_id.clone(),
-                                message: format!("[stderr] {}", line),
-                            },
-                        );
-                    }
+            for line in reader.lines().flatten() {
+                if !line.trim().is_empty() {
+                    let _ = app.emit(
+                        "rsync-log",
+                        RsyncLogPayload {
+                            job_id: job_id.clone(),
+                            message: format!("[stderr] {}", line),
+                        },
+                    );
                 }
             }
         }))
@@ -228,7 +225,8 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                 let duration_ms = (end_time - info.start_time) as u64;
 
                 // Calculate snapshot stats
-                let (file_count, total_size) = calculate_snapshot_stats(info.snapshot_path.clone()).await;
+                let (file_count, total_size) =
+                    calculate_snapshot_stats(info.snapshot_path.clone()).await;
 
                 // Create snapshot entry
                 let snapshot = ManifestSnapshot::new(

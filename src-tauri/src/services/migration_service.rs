@@ -58,7 +58,7 @@ impl LegacySnapshot {
     fn to_manifest_snapshot(&self) -> ManifestSnapshot {
         // Generate folder name from timestamp
         let datetime = chrono::DateTime::from_timestamp_millis(self.timestamp)
-            .unwrap_or_else(|| chrono::Utc::now());
+            .unwrap_or_else(chrono::Utc::now);
         let folder_name = datetime.format("%Y-%m-%d-%H%M%S").to_string();
 
         ManifestSnapshot::from_timestamp(
@@ -76,7 +76,7 @@ pub fn needs_migration(store: &Store) -> bool {
     match store.load_jobs() {
         Ok(jobs) => jobs
             .iter()
-            .any(|job| job.snapshots.as_ref().map_or(false, |s| !s.is_empty())),
+            .any(|job| job.snapshots.as_ref().is_some_and(|s| !s.is_empty())),
         Err(_) => false,
     }
 }

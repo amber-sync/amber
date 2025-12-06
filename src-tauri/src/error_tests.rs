@@ -14,7 +14,10 @@ mod tests {
     fn test_filesystem_error_with_context() {
         let err = AmberError::fs_error("/path/to/file", "Permission denied");
         assert!(matches!(err, AmberError::Filesystem(_)));
-        assert_eq!(err.to_string(), "Filesystem error: /path/to/file: Permission denied");
+        assert_eq!(
+            err.to_string(),
+            "Filesystem error: /path/to/file: Permission denied"
+        );
     }
 
     #[test]
@@ -42,14 +45,20 @@ mod tests {
     fn test_scheduler_error_with_context() {
         let err = AmberError::scheduler_for_job("job-123", "Failed to schedule");
         assert!(matches!(err, AmberError::Scheduler(_)));
-        assert_eq!(err.to_string(), "Scheduler error: job 'job-123': Failed to schedule");
+        assert_eq!(
+            err.to_string(),
+            "Scheduler error: job 'job-123': Failed to schedule"
+        );
     }
 
     #[test]
     fn test_snapshot_error_with_context() {
         let err = AmberError::snapshot_for_job("job-456", "Snapshot creation failed");
         assert!(matches!(err, AmberError::Snapshot(_)));
-        assert_eq!(err.to_string(), "Snapshot error: job 'job-456': Snapshot creation failed");
+        assert_eq!(
+            err.to_string(),
+            "Snapshot error: job 'job-456': Snapshot creation failed"
+        );
     }
 
     #[test]
@@ -109,7 +118,10 @@ mod tests {
     fn test_rsync_error() {
         let err = AmberError::Rsync("Process failed with exit code 1".to_string());
         assert!(matches!(err, AmberError::Rsync(_)));
-        assert_eq!(err.to_string(), "Rsync failed: Process failed with exit code 1");
+        assert_eq!(
+            err.to_string(),
+            "Rsync failed: Process failed with exit code 1"
+        );
     }
 
     #[test]

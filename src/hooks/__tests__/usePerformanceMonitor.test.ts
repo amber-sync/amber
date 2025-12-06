@@ -22,7 +22,7 @@ describe('usePerformanceMonitor', () => {
     const { result } = renderHook(() => usePerformanceMonitor('TestComponent'));
 
     const mockOperation = vi.fn(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
     });
 
     await result.current.track('test-operation', mockOperation);
@@ -71,17 +71,13 @@ describe('usePerformanceMonitor', () => {
   });
 
   it('should respect devOnly option', () => {
-    const { result } = renderHook(() =>
-      usePerformanceMonitor('TestComponent', { devOnly: false })
-    );
+    const { result } = renderHook(() => usePerformanceMonitor('TestComponent', { devOnly: false }));
 
     expect(result.current).toBeDefined();
   });
 
   it('should disable tracking when not in dev mode', async () => {
-    const { result } = renderHook(() =>
-      usePerformanceMonitor('TestComponent', { devOnly: true })
-    );
+    const { result } = renderHook(() => usePerformanceMonitor('TestComponent', { devOnly: true }));
 
     const mockOperation = vi.fn();
     await result.current.track('test', mockOperation);
@@ -109,9 +105,7 @@ describe('usePerformanceMonitor', () => {
       throw new Error('Test error');
     });
 
-    await expect(result.current.track('test-error', mockOperation)).rejects.toThrow(
-      'Test error'
-    );
+    await expect(result.current.track('test-error', mockOperation)).rejects.toThrow('Test error');
   });
 
   it('should track multiple operations sequentially', async () => {

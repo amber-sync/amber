@@ -28,7 +28,7 @@ const onRenderCallback: ProfilerOnRenderCallback = (
   actualDuration,
   baseDuration,
   startTime,
-  commitTime,
+  commitTime
 ) => {
   results.push({
     name: `${id}_${phase}`,
@@ -51,7 +51,7 @@ function generateStressTestData() {
       files.push({
         id: `${i}-${j}`,
         path: `/data/folder${Math.floor(j / 100)}/file_${j}.txt`,
-        size: 1024 * (j % 1000 + 1),
+        size: 1024 * ((j % 1000) + 1),
         mtime: 1700000000 + j,
       });
     }

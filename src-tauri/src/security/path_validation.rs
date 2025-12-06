@@ -184,10 +184,7 @@ mod tests {
         // Use unique directory per test to avoid parallel test conflicts
         let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
         let thread_id = std::thread::current().id();
-        let test_dir = std::env::temp_dir().join(format!(
-            "amber_path_test_{:?}_{}",
-            thread_id, id
-        ));
+        let test_dir = std::env::temp_dir().join(format!("amber_path_test_{:?}_{}", thread_id, id));
         // Clean up first, ignore errors if doesn't exist
         let _ = fs::remove_dir_all(&test_dir);
         fs::create_dir_all(&test_dir).unwrap();

@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
@@ -60,11 +57,11 @@ module.exports = {
       },
       fontSize: {
         '2xs': ['var(--text-2xs)', { lineHeight: 'var(--leading-normal)' }],
-        'xs': ['var(--text-xs)', { lineHeight: 'var(--leading-normal)' }],
-        'sm': ['var(--text-sm)', { lineHeight: 'var(--leading-normal)' }],
-        'base': ['var(--text-base)', { lineHeight: 'var(--leading-normal)' }],
-        'lg': ['var(--text-lg)', { lineHeight: 'var(--leading-normal)' }],
-        'xl': ['var(--text-xl)', { lineHeight: 'var(--leading-tight)' }],
+        xs: ['var(--text-xs)', { lineHeight: 'var(--leading-normal)' }],
+        sm: ['var(--text-sm)', { lineHeight: 'var(--leading-normal)' }],
+        base: ['var(--text-base)', { lineHeight: 'var(--leading-normal)' }],
+        lg: ['var(--text-lg)', { lineHeight: 'var(--leading-normal)' }],
+        xl: ['var(--text-xl)', { lineHeight: 'var(--leading-tight)' }],
         '2xl': ['var(--text-2xl)', { lineHeight: 'var(--leading-tight)' }],
         '3xl': ['var(--text-3xl)', { lineHeight: 'var(--leading-tight)' }],
         '4xl': ['var(--text-4xl)', { lineHeight: 'var(--leading-none)' }],
@@ -79,84 +76,84 @@ module.exports = {
 
       // Spacing using design tokens
       spacing: {
-        '0.5': 'var(--space-0-5)',
-        '1': 'var(--space-1)',
-        '2': 'var(--space-2)',
-        '3': 'var(--space-3)',
-        '4': 'var(--space-4)',
-        '5': 'var(--space-5)',
-        '6': 'var(--space-6)',
-        '7': 'var(--space-7)',
-        '8': 'var(--space-8)',
-        '10': 'var(--space-10)',
-        '12': 'var(--space-12)',
-        '16': 'var(--space-16)',
-        '20': 'var(--space-20)',
-        '24': 'var(--space-24)',
-        'sidebar': 'var(--sidebar-width)',
+        0.5: 'var(--space-0-5)',
+        1: 'var(--space-1)',
+        2: 'var(--space-2)',
+        3: 'var(--space-3)',
+        4: 'var(--space-4)',
+        5: 'var(--space-5)',
+        6: 'var(--space-6)',
+        7: 'var(--space-7)',
+        8: 'var(--space-8)',
+        10: 'var(--space-10)',
+        12: 'var(--space-12)',
+        16: 'var(--space-16)',
+        20: 'var(--space-20)',
+        24: 'var(--space-24)',
+        sidebar: 'var(--sidebar-width)',
         'sidebar-collapsed': 'var(--sidebar-width-collapsed)',
-        'titlebar': 'var(--titlebar-height)',
+        titlebar: 'var(--titlebar-height)',
       },
 
       // Border radius
       borderRadius: {
-        'none': 'var(--radius-none)',
-        'sm': 'var(--radius-sm)',
-        'DEFAULT': 'var(--radius-md)',
-        'md': 'var(--radius-md)',
-        'lg': 'var(--radius-lg)',
-        'xl': 'var(--radius-xl)',
+        none: 'var(--radius-none)',
+        sm: 'var(--radius-sm)',
+        DEFAULT: 'var(--radius-md)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
         '2xl': 'var(--radius-2xl)',
         '3xl': 'var(--radius-3xl)',
-        'full': 'var(--radius-full)',
+        full: 'var(--radius-full)',
       },
 
       // Shadows
       boxShadow: {
-        'xs': 'var(--shadow-xs)',
-        'sm': 'var(--shadow-sm)',
-        'DEFAULT': 'var(--shadow-md)',
-        'md': 'var(--shadow-md)',
-        'lg': 'var(--shadow-lg)',
-        'xl': 'var(--shadow-xl)',
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow-md)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
         '2xl': 'var(--shadow-2xl)',
-        'inner': 'var(--shadow-inner)',
+        inner: 'var(--shadow-inner)',
         'glow-accent': 'var(--glow-accent)',
         'glow-error': 'var(--glow-error)',
         'glow-success': 'var(--glow-success)',
         // New enhanced shadows
-        'glow': 'var(--shadow-glow)',
-        'card': 'var(--shadow-card)',
-        'elevated': 'var(--shadow-elevated)',
-        'float': 'var(--shadow-float)',
-        'glass': 'var(--glass-shadow)',
+        glow: 'var(--shadow-glow)',
+        card: 'var(--shadow-card)',
+        elevated: 'var(--shadow-elevated)',
+        float: 'var(--shadow-float)',
+        glass: 'var(--glass-shadow)',
       },
 
       // Z-index
       zIndex: {
-        'dropdown': 'var(--z-dropdown)',
-        'sticky': 'var(--z-sticky)',
-        'fixed': 'var(--z-fixed)',
+        dropdown: 'var(--z-dropdown)',
+        sticky: 'var(--z-sticky)',
+        fixed: 'var(--z-fixed)',
         'modal-backdrop': 'var(--z-modal-backdrop)',
-        'modal': 'var(--z-modal)',
-        'popover': 'var(--z-popover)',
-        'tooltip': 'var(--z-tooltip)',
-        'toast': 'var(--z-toast)',
-        'max': 'var(--z-max)',
+        modal: 'var(--z-modal)',
+        popover: 'var(--z-popover)',
+        tooltip: 'var(--z-tooltip)',
+        toast: 'var(--z-toast)',
+        max: 'var(--z-max)',
       },
 
       // Transitions
       transitionDuration: {
-        'instant': 'var(--duration-instant)',
-        'fast': 'var(--duration-fast)',
-        'normal': 'var(--duration-normal)',
-        'slow': 'var(--duration-slow)',
-        'slower': 'var(--duration-slower)',
-        'slowest': 'var(--duration-slowest)',
+        instant: 'var(--duration-instant)',
+        fast: 'var(--duration-fast)',
+        normal: 'var(--duration-normal)',
+        slow: 'var(--duration-slow)',
+        slower: 'var(--duration-slower)',
+        slowest: 'var(--duration-slowest)',
       },
       transitionTimingFunction: {
-        'bounce': 'var(--ease-bounce)',
-        'elastic': 'var(--ease-elastic)',
+        bounce: 'var(--ease-bounce)',
+        elastic: 'var(--ease-elastic)',
       },
 
       // Background Gradients
@@ -169,7 +166,7 @@ module.exports = {
 
       // Animations
       animation: {
-        'heartbeat': 'heartbeat 2s infinite',
+        heartbeat: 'heartbeat 2s infinite',
         'progress-pulse': 'progress-pulse 2s linear infinite',
         'fade-in': 'fade-in 0.3s ease-out',
         'fade-in-up': 'fade-in-up 0.3s ease-out',
@@ -185,58 +182,62 @@ module.exports = {
         'collapse-up': 'collapse-up 0.2s ease-out',
       },
       keyframes: {
-        'heartbeat': {
+        heartbeat: {
           '0%, 100%': { transform: 'scale(1)', opacity: '1' },
           '50%': { transform: 'scale(1.1)', opacity: '0.9' },
         },
         'progress-pulse': {
           '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' }
+          '100%': { transform: 'translateX(100%)' },
         },
         'fade-in': {
           '0%': { opacity: '0' },
-          '100%': { opacity: '1' }
+          '100%': { opacity: '1' },
         },
         'fade-in-up': {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' }
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'fade-out': {
           '0%': { opacity: '1' },
-          '100%': { opacity: '0' }
+          '100%': { opacity: '0' },
         },
         'scale-in': {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' }
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
         'slide-in-right': {
           '0%': { opacity: '0', transform: 'translateX(20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' }
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         'slide-in-left': {
           '0%': { opacity: '0', transform: 'translateX(-20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' }
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         'slide-in-up': {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' }
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-in-down': {
           '0%': { opacity: '0', transform: 'translateY(-20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' }
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'pulse-subtle': {
           '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' }
+          '50%': { opacity: '0.7' },
         },
         'collapse-down': {
           '0%': { opacity: '0', height: '0', transform: 'translateY(-8px)' },
-          '100%': { opacity: '1', height: 'var(--radix-collapsible-content-height)', transform: 'translateY(0)' }
+          '100%': {
+            opacity: '1',
+            height: 'var(--radix-collapsible-content-height)',
+            transform: 'translateY(0)',
+          },
         },
         'collapse-up': {
           '0%': { opacity: '1', height: 'var(--radix-collapsible-content-height)' },
-          '100%': { opacity: '0', height: '0' }
-        }
+          '100%': { opacity: '0', height: '0' },
+        },
       },
 
       // Component heights
@@ -263,4 +264,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};

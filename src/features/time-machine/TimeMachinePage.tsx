@@ -53,8 +53,17 @@ export function TimeMachinePage({
   progress = null,
   logs = [],
 }: TimeMachineProps) {
-  const { jobs, activeJobId, setActiveJobId, setView, navigateBack, runSync, stopSync, persistJob, deleteJob } =
-    useApp();
+  const {
+    jobs,
+    activeJobId,
+    setActiveJobId,
+    setView,
+    navigateBack,
+    runSync,
+    stopSync,
+    persistJob,
+    deleteJob,
+  } = useApp();
 
   // Current job
   const [currentJobId, setCurrentJobId] = useState<string | null>(
@@ -190,7 +199,6 @@ export function TimeMachinePage({
     const timer = setTimeout(refreshFromApi, 500);
     return () => clearTimeout(timer);
   }, [currentJob?.id]);
-
 
   // Sync active job with context
   useEffect(() => {

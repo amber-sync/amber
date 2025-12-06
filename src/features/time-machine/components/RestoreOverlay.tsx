@@ -25,7 +25,13 @@ interface RestoreOverlayProps {
   onClose: () => void;
 }
 
-function RestoreOverlayComponent({ isOpen, job, snapshot, snapshots, onClose }: RestoreOverlayProps) {
+function RestoreOverlayComponent({
+  isOpen,
+  job,
+  snapshot,
+  snapshots,
+  onClose,
+}: RestoreOverlayProps) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<TimeMachineSnapshot | null>(snapshot);
   const [targetPath, setTargetPath] = useState('');
   const [restoreMode, setRestoreMode] = useState<RestoreMode>('merge');

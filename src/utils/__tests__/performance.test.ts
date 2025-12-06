@@ -25,7 +25,7 @@ describe('Performance Utilities', () => {
   describe('measureTime', () => {
     it('should measure async function execution time', async () => {
       const mockFn = vi.fn(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10));
         return 'result';
       });
 

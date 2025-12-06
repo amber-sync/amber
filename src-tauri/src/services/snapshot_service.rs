@@ -43,7 +43,11 @@ impl SnapshotService {
     /// 1. SQLite index at destination (fastest, most accurate)
     /// 2. Manifest.json (authoritative, created during backup)
     /// 3. Legacy filesystem scan with JSON cache (fallback)
-    pub async fn list_snapshots(&self, job_id: &str, dest_path: &str) -> Result<Vec<SnapshotMetadata>> {
+    pub async fn list_snapshots(
+        &self,
+        job_id: &str,
+        dest_path: &str,
+    ) -> Result<Vec<SnapshotMetadata>> {
         // TIM-191: Check SQLite index first (fastest and most reliable)
         if let Some(snapshots) = self.list_snapshots_from_index(job_id, dest_path) {
             log::debug!(
@@ -74,7 +78,11 @@ impl SnapshotService {
 
     /// TIM-191: Read snapshots from SQLite index at destination
     /// Returns None if index doesn't exist or is empty for this job
-    fn list_snapshots_from_index(&self, job_id: &str, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
+    fn list_snapshots_from_index(
+        &self,
+        job_id: &str,
+        dest_path: &str,
+    ) -> Option<Vec<SnapshotMetadata>> {
         // Try to open the destination index
         let index = IndexService::for_destination(dest_path).ok()?;
 
@@ -180,7 +188,8 @@ impl SnapshotService {
                 let full_path = path.to_string_lossy().to_string();
 
                 // Try cache first, log warning if missing
-                let (size_bytes, file_count) = match self.load_cached_stats(job_id, timestamp).await {
+                let (size_bytes, file_count) = match self.load_cached_stats(job_id, timestamp).await
+                {
                     Some(stats) => stats,
                     None => {
                         log::warn!(
@@ -261,7 +270,7 @@ impl SnapshotService {
     ) -> Result<Vec<FileNode>> {
         let entries = self.scan_directory(snapshot_path).await?;
         let tree = self.build_file_tree(snapshot_path, &entries);
-        let stats = self.calculate_stats(&tree);
+        let stats = Self::calculate_stats(&tree);
 
         let cached = CachedSnapshot {
             timestamp,
@@ -285,24 +294,22 @@ impl SnapshotService {
         tokio::task::spawn_blocking(move || {
             let mut entries = Vec::new();
 
-            for entry in WalkDir::new(&dir_path).min_depth(1) {
-                if let Ok(e) = entry {
-                    if let Ok(metadata) = e.metadata() {
-                        let modified = metadata
-                            .modified()
-                            .ok()
-                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                            .map(|d| d.as_millis() as i64)
-                            .unwrap_or(0);
+            for e in WalkDir::new(&dir_path).min_depth(1).into_iter().flatten() {
+                if let Ok(metadata) = e.metadata() {
+                    let modified = metadata
+                        .modified()
+                        .ok()
+                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                        .map(|d| d.as_millis() as i64)
+                        .unwrap_or(0);
 
-                        entries.push(ScanEntry {
-                            path: e.path().to_string_lossy().to_string(),
-                            name: e.file_name().to_string_lossy().to_string(),
-                            is_dir: metadata.is_dir(),
-                            size: metadata.len(),
-                            modified,
-                        });
-                    }
+                    entries.push(ScanEntry {
+                        path: e.path().to_string_lossy().to_string(),
+                        name: e.file_name().to_string_lossy().to_string(),
+                        is_dir: metadata.is_dir(),
+                        size: metadata.len(),
+                        modified,
+                    });
                 }
             }
 
@@ -375,14 +382,14 @@ impl SnapshotService {
         tree
     }
 
-    fn calculate_stats(&self, nodes: &[FileNode]) -> (u64, u64) {
+    fn calculate_stats(nodes: &[FileNode]) -> (u64, u64) {
         let mut size = 0u64;
         let mut count = 0u64;
 
         for node in nodes {
             if file_type::is_dir(&node.node_type) {
                 if let Some(ref children) = node.children {
-                    let (s, c) = self.calculate_stats(children);
+                    let (s, c) = Self::calculate_stats(children);
                     size += s;
                     count += c;
                 }

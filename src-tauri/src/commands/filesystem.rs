@@ -125,8 +125,7 @@ pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
     let output = Command::new("df").args(["-k", &path]).output()?;
 
     if !output.status.success() {
-        return Err(crate::error::AmberError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        return Err(crate::error::AmberError::Io(std::io::Error::other(
             "df command failed",
         )));
     }
@@ -135,8 +134,7 @@ pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
     let lines: Vec<&str> = stdout.lines().collect();
 
     if lines.len() < 2 {
-        return Err(crate::error::AmberError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        return Err(crate::error::AmberError::Io(std::io::Error::other(
             "Unexpected df output",
         )));
     }
@@ -145,8 +143,7 @@ pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
     // Format: Filesystem 1K-blocks Used Available Capacity Mounted on
     let parts: Vec<&str> = lines[1].split_whitespace().collect();
     if parts.len() < 4 {
-        return Err(crate::error::AmberError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        return Err(crate::error::AmberError::Io(std::io::Error::other(
             "Unexpected df output format",
         )));
     }

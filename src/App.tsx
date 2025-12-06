@@ -296,8 +296,15 @@ function AppContent() {
       : { enabled: false };
 
     // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
-    type ViewType = 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
-    const returnView = (jobEditorSourceView || (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
+    type ViewType =
+      | 'DASHBOARD'
+      | 'TIME_MACHINE'
+      | 'JOB_EDITOR'
+      | 'APP_SETTINGS'
+      | 'HELP'
+      | 'RESTORE_WIZARD';
+    const returnView = (jobEditorSourceView ||
+      (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
 
     if (activeJobId) {
       const job = jobs.find(j => j.id === activeJobId);
@@ -486,7 +493,10 @@ function AppContent() {
 
       <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
         {/* Dashboard and TimeMachine kept mounted for instant switching */}
-        <div className="flex-1 overflow-hidden" style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}>
+        <div
+          className="flex-1 overflow-hidden"
+          style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}
+        >
           <DashboardPage
             jobs={jobs}
             diskStats={destinationStats}
@@ -504,7 +514,10 @@ function AppContent() {
           />
         </div>
 
-        <div className="flex-1 overflow-hidden" style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}>
+        <div
+          className="flex-1 overflow-hidden"
+          style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}
+        >
           <TimeMachinePage
             initialJobId={activeJobId || undefined}
             isRunning={isRunning}
@@ -513,7 +526,10 @@ function AppContent() {
           />
         </div>
 
-        <div className="flex-1 overflow-hidden" style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}>
+        <div
+          className="flex-1 overflow-hidden"
+          style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}
+        >
           <SettingsPage />
         </div>
 

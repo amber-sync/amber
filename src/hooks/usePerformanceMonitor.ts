@@ -120,9 +120,7 @@ export function usePerformanceMonitor(
 
         if (import.meta.env.DEV && duration) {
           const actualDuration = endTime - startTime;
-          console.log(
-            `[Performance] ${componentName}.${label}: ${actualDuration.toFixed(2)}ms`
-          );
+          console.log(`[Performance] ${componentName}.${label}: ${actualDuration.toFixed(2)}ms`);
         }
       }
     },
@@ -143,9 +141,7 @@ export function usePerformanceMonitor(
       const duration = trackerRef.current.end(label);
 
       if (import.meta.env.DEV && duration) {
-        console.log(
-          `[Performance] ${componentName}.${label}: ${duration.toFixed(2)}ms`
-        );
+        console.log(`[Performance] ${componentName}.${label}: ${duration.toFixed(2)}ms`);
       }
     },
     [componentName, isEnabled]

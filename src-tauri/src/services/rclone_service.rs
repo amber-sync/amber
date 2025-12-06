@@ -105,7 +105,7 @@ impl RcloneService {
             .lines()
             .filter_map(|line| {
                 let parts: Vec<&str> = line.splitn(2, ':').collect();
-                if parts.len() >= 1 {
+                if !parts.is_empty() {
                     let name = parts[0].trim().to_string();
                     // The second part after colon contains the type
                     let remote_type = if parts.len() > 1 {

@@ -40,11 +40,11 @@ jobs:
           # Add targets
           rustup target add x86_64-apple-darwin
           rustup target add aarch64-apple-darwin
-          
+
           # Build for both architectures
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target aarch64-apple-darwin
-          
+
           # Create universal binary using lipo
           lipo -create -output target/release/amber-sidecar-universal \
             target/x86_64-apple-darwin/release/amber-sidecar \
@@ -52,7 +52,7 @@ jobs:
             
           # Verify universal binary
           lipo -info target/release/amber-sidecar-universal
-          
+
           # Move to expected location for electron-builder
           # We'll put it in a 'bin' folder or root of resources
           mkdir -p ../resources

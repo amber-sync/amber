@@ -19,19 +19,13 @@ async function buildIcons() {
   console.log('Generating PNG files...');
   for (const size of sizes) {
     const outputPath = path.join(ICONS_DIR, `icon-${size}.png`);
-    await sharp(LOGO_PATH)
-      .resize(size, size)
-      .png()
-      .toFile(outputPath);
+    await sharp(LOGO_PATH).resize(size, size).png().toFile(outputPath);
     console.log(`  ✓ Generated icon-${size}.png`);
   }
 
   // Generate tray icon (16x16 for macOS menu bar)
   const trayPath = path.join(ICONS_DIR, 'tray.png');
-  await sharp(LOGO_PATH)
-    .resize(16, 16)
-    .png()
-    .toFile(trayPath);
+  await sharp(LOGO_PATH).resize(16, 16).png().toFile(trayPath);
   console.log('  ✓ Generated tray.png (16x16)');
 
   // Generate .icns (macOS) and .ico (Windows) using icon-gen
@@ -41,13 +35,13 @@ async function buildIcons() {
     await generateIcon(LOGO_PATH, ICONS_DIR, {
       icns: {
         name: 'icon',
-        sizes: [16, 32, 64, 128, 256, 512, 1024]
+        sizes: [16, 32, 64, 128, 256, 512, 1024],
       },
       ico: {
         name: 'icon',
-        sizes: [16, 32, 64, 128, 256]
+        sizes: [16, 32, 64, 128, 256],
       },
-      report: true
+      report: true,
     });
     console.log('  ✓ Generated icon.icns (macOS)');
     console.log('  ✓ Generated icon.ico (Windows)');

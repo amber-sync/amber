@@ -149,8 +149,8 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
         .into_iter()
         .zip(job_info)
         .zip(snapshot_results)
-        .map(|((job, (mounted, vol_info)), (snapshots, snapshot_source, cached_at))| {
-            JobWithStatus {
+        .map(
+            |((job, (mounted, vol_info)), (snapshots, snapshot_source, cached_at))| JobWithStatus {
                 job,
                 mounted,
                 is_external: vol_info.is_external,
@@ -158,8 +158,8 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                 snapshots,
                 snapshot_source,
                 cached_at,
-            }
-        })
+            },
+        )
         .collect();
 
     Ok(results)
@@ -249,10 +249,10 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
 
     // Remove the directory and all contents
     fs::remove_dir_all(path).await.map_err(|e| {
-        crate::error::AmberError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to delete backup data: {}", e),
-        ))
+        crate::error::AmberError::Io(std::io::Error::other(format!(
+            "Failed to delete backup data: {}",
+            e
+        )))
     })?;
 
     log::info!("Deleted backup data at: {}", dest_path);

@@ -32,7 +32,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <CrashingComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('Crash and Recovery Testing', () => {
       const { rerender } = render(
         <ErrorBoundary>
           <UpdatingComponent shouldCrash={false} />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Normal')).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('Crash and Recovery Testing', () => {
       rerender(
         <ErrorBoundary>
           <UpdatingComponent shouldCrash={true} />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <NullReferenceComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <UndefinedCallComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <ArrayComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <StateComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <InfiniteLoopComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       // Should eventually catch the error
@@ -179,7 +179,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <ApiComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       await waitFor(() => {
@@ -202,7 +202,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <TimeoutComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <MemoryComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -249,7 +249,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <EventComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       // React 18+ catches errors in useEffect setup in error boundaries
@@ -272,7 +272,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <TypeComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -290,7 +290,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <DateComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -314,7 +314,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <LibraryComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -336,7 +336,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <CrashingComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       const reloadButton = screen.getByRole('button', { name: /reload application/i });
@@ -353,7 +353,7 @@ describe('Crash and Recovery Testing', () => {
       render(
         <ErrorBoundary>
           <CrashingComponent />
-        </ErrorBoundary>,
+        </ErrorBoundary>
       );
 
       expect(logger.error).toHaveBeenCalledWith(
@@ -361,7 +361,7 @@ describe('Crash and Recovery Testing', () => {
         expect.any(Error),
         expect.objectContaining({
           componentStack: expect.any(String),
-        }),
+        })
       );
     });
   });

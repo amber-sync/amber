@@ -36,10 +36,14 @@ function init() {
   ensureDir(DEST_DIR);
 
   createFile(path.join(SOURCE_DIR, 'hello.txt'), 0, 'Hello World! This is the initial version.\n');
-  createFile(path.join(SOURCE_DIR, 'config.json'), 0, JSON.stringify({ version: 1, setting: 'default' }, null, 2));
+  createFile(
+    path.join(SOURCE_DIR, 'config.json'),
+    0,
+    JSON.stringify({ version: 1, setting: 'default' }, null, 2)
+  );
   createFile(path.join(SOURCE_DIR, 'data', 'large.bin'), 1024 * 1024 * 5); // 5MB
   createFile(path.join(SOURCE_DIR, 'images', 'logo.png'), 1024 * 50);
-  
+
   // Create backup marker
   fs.writeFileSync(path.join(DEST_DIR, '.dest_backup-marker'), '');
 
@@ -51,10 +55,10 @@ function init() {
 
 function step2() {
   log('Applying Step 2 changes (Incremental)...');
-  
+
   // Modify existing
   fs.appendFileSync(path.join(SOURCE_DIR, 'hello.txt'), 'Update: Step 2 was here.\n');
-  
+
   // Create new
   createFile(path.join(SOURCE_DIR, 'step2_new.txt'), 0, 'This file was added in step 2.\n');
   createFile(path.join(SOURCE_DIR, 'data', 'extra.bin'), 1024 * 1024);
@@ -75,7 +79,11 @@ function step3() {
   fs.appendFileSync(path.join(SOURCE_DIR, 'hello.txt'), 'Update: Step 3 final update.\n');
 
   // Restore deleted file (simulating user undo or just change)
-  createFile(path.join(SOURCE_DIR, 'config.json'), 0, JSON.stringify({ version: 2, setting: 'updated' }, null, 2));
+  createFile(
+    path.join(SOURCE_DIR, 'config.json'),
+    0,
+    JSON.stringify({ version: 2, setting: 'updated' }, null, 2)
+  );
 
   // Deep structure
   createFile(path.join(SOURCE_DIR, 'deep', 'nested', 'folder', 'secret.txt'), 0, 'Hidden treasure');

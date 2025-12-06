@@ -1,9 +1,9 @@
 use crate::error::Result;
 use crate::types::job::{SyncJob, SyncMode};
-use crate::utils::{is_ssh_remote, ssh_local_part}; // TIM-123: Use centralized path utilities
 use crate::utils::validation::{
     sanitize_ssh_option, validate_file_path, validate_proxy_jump, validate_ssh_port,
 };
+use crate::utils::{is_ssh_remote, ssh_local_part}; // TIM-123: Use centralized path utilities
 use chrono::Local;
 use regex::Regex;
 use std::collections::HashMap;
@@ -103,11 +103,7 @@ impl RsyncService {
         }
 
         // SSH config - either explicit or auto-detected from remote path
-        let ssh_enabled = job
-            .ssh_config
-            .as_ref()
-            .map(|s| s.enabled)
-            .unwrap_or(false);
+        let ssh_enabled = job.ssh_config.as_ref().map(|s| s.enabled).unwrap_or(false);
         let auto_detect_ssh = is_ssh_remote(&job.source_path);
 
         if ssh_enabled || auto_detect_ssh {
@@ -137,7 +133,11 @@ impl RsyncService {
                                 ssh_cmd.push_str(&format!(" -i {}", validated_path));
                             }
                             Err(e) => {
-                                log::error!("[rsync_service] Invalid identity file '{}': {}", identity, e);
+                                log::error!(
+                                    "[rsync_service] Invalid identity file '{}': {}",
+                                    identity,
+                                    e
+                                );
                             }
                         }
                     }
@@ -151,7 +151,11 @@ impl RsyncService {
                                 ssh_cmd.push_str(&format!(" -F {}", validated_path));
                             }
                             Err(e) => {
-                                log::error!("[rsync_service] Invalid config file '{}': {}", config, e);
+                                log::error!(
+                                    "[rsync_service] Invalid config file '{}': {}",
+                                    config,
+                                    e
+                                );
                             }
                         }
                     }
@@ -165,7 +169,11 @@ impl RsyncService {
                                 ssh_cmd.push_str(&format!(" -J {}", validated_proxy));
                             }
                             Err(e) => {
-                                log::error!("[rsync_service] Invalid proxy jump '{}': {}", proxy, e);
+                                log::error!(
+                                    "[rsync_service] Invalid proxy jump '{}': {}",
+                                    proxy,
+                                    e
+                                );
                             }
                         }
                     }
@@ -189,9 +197,8 @@ impl RsyncService {
                 }
 
                 if ssh.disable_host_key_checking == Some(true) {
-                    ssh_cmd.push_str(
-                        " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
-                    );
+                    ssh_cmd
+                        .push_str(" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null");
                 }
             }
 
@@ -299,8 +306,7 @@ impl RsyncService {
 
         // For SSH remotes like "user@host:/path/to/dir", extract just the directory name
         let source_basename = ssh_local_part(&job.source_path)
-            .map(|local_path| Path::new(local_path).file_name())
-            .flatten()
+            .and_then(|local_path| Path::new(local_path).file_name())
             .or_else(|| Path::new(&job.source_path).file_name())
             .and_then(|n| n.to_str())
             .unwrap_or("backup");
@@ -344,10 +350,7 @@ impl RsyncService {
             .stderr(Stdio::piped())
             .spawn()?;
 
-        log::info!(
-            "[rsync_service] rsync spawned with PID: {}",
-            child.id()
-        );
+        log::info!("[rsync_service] rsync spawned with PID: {}", child.id());
 
         // Track active job
         if let Ok(mut jobs) = self.active_jobs.lock() {
@@ -383,9 +386,7 @@ impl RsyncService {
                         .status();
 
                     // Also kill the specific PID in case process group kill didn't work
-                    let _ = Command::new("kill")
-                        .args(["-9", &pid.to_string()])
-                        .status();
+                    let _ = Command::new("kill").args(["-9", &pid.to_string()]).status();
 
                     // Additionally, try pkill to catch any orphaned rsync children
                     let _ = Command::new("pkill")
@@ -559,7 +560,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("ssh"));
@@ -583,7 +587,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("StrictHostKeyChecking=no"));
@@ -604,7 +611,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(ssh_cmd.contains("-J bastion@10.0.0.1"));
@@ -667,7 +677,8 @@ mod tests {
     fn test_custom_command_substitution() {
         let service = RsyncService::new();
         let mut job = create_test_job(SyncMode::TimeMachine);
-        job.config.custom_command = Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
+        job.config.custom_command =
+            Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
 
         let args = service.build_rsync_args(&job, "/dest/new", Some("/dest/old"));
         assert!(args.contains(&"/src/".to_string()));
@@ -710,7 +721,11 @@ mod tests {
 
         // Should match pattern YYYY-MM-DD-HHMMSS
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}-\d{6}$").unwrap();
-        assert!(re.is_match(&name), "Folder name '{}' doesn't match expected format", name);
+        assert!(
+            re.is_match(&name),
+            "Folder name '{}' doesn't match expected format",
+            name
+        );
     }
 
     #[test]
@@ -726,7 +741,9 @@ mod tests {
     fn test_is_ssh_remote_detection() {
         // Valid SSH remotes
         assert!(super::is_ssh_remote("user@host:/path"));
-        assert!(super::is_ssh_remote("fmahner@iris.cbs.mpg.de:/home/fmahner"));
+        assert!(super::is_ssh_remote(
+            "fmahner@iris.cbs.mpg.de:/home/fmahner"
+        ));
         assert!(super::is_ssh_remote("root@192.168.1.1:/var/backup"));
 
         // Not SSH remotes (local paths)
@@ -780,7 +797,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         assert!(
@@ -805,7 +825,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         // Verify all options are present
@@ -839,7 +862,10 @@ mod tests {
         use crate::utils::ssh_local_part;
 
         assert_eq!(ssh_local_part("user@host:/var/www"), Some("/var/www"));
-        assert_eq!(ssh_local_part("user@host:/home/user/docs"), Some("/home/user/docs"));
+        assert_eq!(
+            ssh_local_part("user@host:/home/user/docs"),
+            Some("/home/user/docs")
+        );
         assert_eq!(ssh_local_part("user@192.168.1.1:/backup"), Some("/backup"));
         assert_eq!(ssh_local_part("/local/path"), None);
         assert_eq!(ssh_local_part("relative/path"), None);
@@ -856,7 +882,9 @@ mod tests {
         let args = service.build_rsync_args(&job, "/backup", None);
 
         // Source should still be the full SSH path with trailing slash
-        assert!(args.iter().any(|a| a == "user@remote:/home/user/documents/"));
+        assert!(args
+            .iter()
+            .any(|a| a == "user@remote:/home/user/documents/"));
     }
 
     #[test]
@@ -875,7 +903,10 @@ mod tests {
         });
 
         let args = service.build_rsync_args(&job, "/dest", None);
-        let e_idx = args.iter().position(|a| a == "-e").expect("-e flag missing");
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
         let ssh_cmd = &args[e_idx + 1];
 
         // Should NOT contain the malicious option

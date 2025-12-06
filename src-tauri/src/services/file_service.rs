@@ -32,24 +32,27 @@ impl FileService {
 
         let mut entries = Vec::new();
 
-        for entry in WalkDir::new(path).min_depth(1).max_depth(1) {
-            if let Ok(e) = entry {
-                if let Ok(metadata) = e.metadata() {
-                    let modified = metadata
-                        .modified()
-                        .ok()
-                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                        .map(|d| d.as_secs())
-                        .unwrap_or(0);
+        for e in WalkDir::new(path)
+            .min_depth(1)
+            .max_depth(1)
+            .into_iter()
+            .flatten()
+        {
+            if let Ok(metadata) = e.metadata() {
+                let modified = metadata
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
 
-                    entries.push(FileEntry {
-                        path: e.path().to_string_lossy().to_string(),
-                        name: e.file_name().to_string_lossy().to_string(),
-                        is_dir: metadata.is_dir(),
-                        size: metadata.len(),
-                        modified,
-                    });
-                }
+                entries.push(FileEntry {
+                    path: e.path().to_string_lossy().to_string(),
+                    name: e.file_name().to_string_lossy().to_string(),
+                    is_dir: metadata.is_dir(),
+                    size: metadata.len(),
+                    modified,
+                });
             }
         }
 
@@ -68,24 +71,27 @@ impl FileService {
 
         let mut entries = Vec::new();
 
-        for entry in WalkDir::new(path).min_depth(1).max_depth(max_depth) {
-            if let Ok(e) = entry {
-                if let Ok(metadata) = e.metadata() {
-                    let modified = metadata
-                        .modified()
-                        .ok()
-                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                        .map(|d| d.as_secs())
-                        .unwrap_or(0);
+        for e in WalkDir::new(path)
+            .min_depth(1)
+            .max_depth(max_depth)
+            .into_iter()
+            .flatten()
+        {
+            if let Ok(metadata) = e.metadata() {
+                let modified = metadata
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
 
-                    entries.push(FileEntry {
-                        path: e.path().to_string_lossy().to_string(),
-                        name: e.file_name().to_string_lossy().to_string(),
-                        is_dir: metadata.is_dir(),
-                        size: metadata.len(),
-                        modified,
-                    });
-                }
+                entries.push(FileEntry {
+                    path: e.path().to_string_lossy().to_string(),
+                    name: e.file_name().to_string_lossy().to_string(),
+                    is_dir: metadata.is_dir(),
+                    size: metadata.len(),
+                    modified,
+                });
             }
         }
 
@@ -120,12 +126,7 @@ impl FileService {
 
     /// Open path with default application
     pub fn open_path(&self, path: &str) -> Result<()> {
-        open::that(path).map_err(|e| {
-            AmberError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })
+        open::that(path).map_err(|e| AmberError::Io(std::io::Error::other(e.to_string())))
     }
 
     /// Show item in Finder

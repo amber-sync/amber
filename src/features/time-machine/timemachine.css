@@ -332,7 +332,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--page-indent-top) var(--page-indent-right) var(--page-indent-bottom) var(--page-indent-left);
+  padding: var(--page-indent-top) var(--page-indent-right) var(--page-indent-bottom)
+    var(--page-indent-left);
   text-align: center;
 }
 

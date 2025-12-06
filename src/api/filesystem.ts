@@ -34,10 +34,9 @@ export async function getDiskStats(path: string): Promise<{
   error?: string;
 }> {
   try {
-    const result = await invoke<{ totalBytes: number; availableBytes: number }>(
-      'get_volume_info',
-      { path }
-    );
+    const result = await invoke<{ totalBytes: number; availableBytes: number }>('get_volume_info', {
+      path,
+    });
     return {
       success: true,
       stats: {

@@ -18,10 +18,7 @@ export interface PerformanceMetric {
  * Measure the execution time of a function
  * Logs the result in development mode
  */
-export async function measureTime<T>(
-  label: string,
-  fn: () => T | Promise<T>
-): Promise<T> {
+export async function measureTime<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
   const startTime = performance.now();
 
   try {
@@ -42,10 +39,7 @@ export async function measureTime<T>(
     const duration = endTime - startTime;
 
     if (import.meta.env.DEV) {
-      console.error(
-        `[Performance] ${label} failed after ${duration.toFixed(2)}ms`,
-        error
-      );
+      console.error(`[Performance] ${label} failed after ${duration.toFixed(2)}ms`, error);
     }
 
     throw error;
@@ -76,10 +70,7 @@ export function measureTimeSync<T>(label: string, fn: () => T): T {
     const duration = endTime - startTime;
 
     if (import.meta.env.DEV) {
-      console.error(
-        `[Performance] ${label} failed after ${duration.toFixed(2)}ms`,
-        error
-      );
+      console.error(`[Performance] ${label} failed after ${duration.toFixed(2)}ms`, error);
     }
 
     throw error;
@@ -109,9 +100,7 @@ export class PerformanceTracker {
     const metric = this.metrics.get(label);
     if (!metric) {
       if (import.meta.env.DEV) {
-        console.warn(
-          `[PerformanceTracker] No metric found for label: ${label}`
-        );
+        console.warn(`[PerformanceTracker] No metric found for label: ${label}`);
       }
       return undefined;
     }
@@ -161,16 +150,13 @@ export class PerformanceTracker {
     }
 
     const sortedMetrics = metrics
-      .filter((m) => m.duration !== undefined)
+      .filter(m => m.duration !== undefined)
       .sort((a, b) => (b.duration || 0) - (a.duration || 0));
 
-    const totalTime = sortedMetrics.reduce(
-      (sum, m) => sum + (m.duration || 0),
-      0
-    );
+    const totalTime = sortedMetrics.reduce((sum, m) => sum + (m.duration || 0), 0);
 
     console.table(
-      sortedMetrics.map((m) => ({
+      sortedMetrics.map(m => ({
         Label: m.label,
         'Duration (ms)': m.duration?.toFixed(2),
         '% of Total': ((m.duration! / totalTime) * 100).toFixed(1) + '%',
@@ -189,12 +175,10 @@ export class PerformanceTracker {
     slowest: { label: string; duration: number } | null;
     metrics: Array<{ label: string; duration: number }>;
   } {
-    const metrics = this.getAll().filter((m) => m.duration !== undefined);
+    const metrics = this.getAll().filter(m => m.duration !== undefined);
     const totalTime = metrics.reduce((sum, m) => sum + (m.duration || 0), 0);
 
-    const sortedMetrics = metrics.sort(
-      (a, b) => (b.duration || 0) - (a.duration || 0)
-    );
+    const sortedMetrics = metrics.sort((a, b) => (b.duration || 0) - (a.duration || 0));
 
     return {
       namespace: this.namespace,
@@ -204,7 +188,7 @@ export class PerformanceTracker {
         sortedMetrics.length > 0
           ? { label: sortedMetrics[0].label, duration: sortedMetrics[0].duration! }
           : null,
-      metrics: sortedMetrics.map((m) => ({
+      metrics: sortedMetrics.map(m => ({
         label: m.label,
         duration: m.duration!,
       })),

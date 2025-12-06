@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -47,12 +47,14 @@ fn bench_payload_serialization(c: &mut Criterion) {
 
     // Small payload (10 snapshots)
     let small_payload = SnapshotListResponse {
-        snapshots: (0..10).map(|i| SnapshotInfo {
-            id: i,
-            timestamp: 1700000000 + i * 3600,
-            manifest_path: format!("/manifests/snap_{}.json", i),
-            state: "completed".to_string(),
-        }).collect(),
+        snapshots: (0..10)
+            .map(|i| SnapshotInfo {
+                id: i,
+                timestamp: 1700000000 + i * 3600,
+                manifest_path: format!("/manifests/snap_{}.json", i),
+                state: "completed".to_string(),
+            })
+            .collect(),
     };
 
     group.bench_function("small_payload_10_snapshots", |b| {
@@ -65,11 +67,13 @@ fn bench_payload_serialization(c: &mut Criterion) {
 
     // Medium payload (100 files)
     let medium_payload = FileListResponse {
-        files: (0..100).map(|i| FileInfo {
-            path: format!("/data/folder{}/file_{}.txt", i / 10, i),
-            size: 1024 * (i + 1),
-            mtime: 1700000000 + i,
-        }).collect(),
+        files: (0..100)
+            .map(|i| FileInfo {
+                path: format!("/data/folder{}/file_{}.txt", i / 10, i),
+                size: 1024 * (i + 1),
+                mtime: 1700000000 + i,
+            })
+            .collect(),
         total: 2000,
     };
 
@@ -83,11 +87,13 @@ fn bench_payload_serialization(c: &mut Criterion) {
 
     // Large payload (2000 files - full snapshot)
     let large_payload = FileListResponse {
-        files: (0..2000).map(|i| FileInfo {
-            path: format!("/data/folder{}/file_{}.txt", i / 100, i),
-            size: 1024 * (i % 1000 + 1),
-            mtime: 1700000000 + i,
-        }).collect(),
+        files: (0..2000)
+            .map(|i| FileInfo {
+                path: format!("/data/folder{}/file_{}.txt", i / 100, i),
+                size: 1024 * (i % 1000 + 1),
+                mtime: 1700000000 + i,
+            })
+            .collect(),
         total: 2000,
     };
 
@@ -150,11 +156,13 @@ fn bench_batch_vs_individual(c: &mut Criterion) {
             let _parsed: FileListRequest = serde_json::from_str(&serialized).unwrap();
 
             let response = FileListResponse {
-                files: (0..1000).map(|i| FileInfo {
-                    path: format!("/data/file_{}.txt", i),
-                    size: 1024,
-                    mtime: 1700000000,
-                }).collect(),
+                files: (0..1000)
+                    .map(|i| FileInfo {
+                        path: format!("/data/file_{}.txt", i),
+                        size: 1024,
+                        mtime: 1700000000,
+                    })
+                    .collect(),
                 total: 2000,
             };
 
@@ -202,11 +210,13 @@ fn bench_streaming_file_list(c: &mut Criterion) {
 
                     let mut all_files = Vec::new();
                     for chunk_idx in 0..chunks {
-                        let files: Vec<FileInfo> = (0..size).map(|i| FileInfo {
-                            path: format!("/data/file_{}.txt", chunk_idx * size + i),
-                            size: 1024,
-                            mtime: 1700000000,
-                        }).collect();
+                        let files: Vec<FileInfo> = (0..size)
+                            .map(|i| FileInfo {
+                                path: format!("/data/file_{}.txt", chunk_idx * size + i),
+                                size: 1024,
+                                mtime: 1700000000,
+                            })
+                            .collect();
 
                         let response = FileListResponse {
                             files,
@@ -214,13 +224,14 @@ fn bench_streaming_file_list(c: &mut Criterion) {
                         };
 
                         let serialized = serde_json::to_string(&response).unwrap();
-                        let deserialized: FileListResponse = serde_json::from_str(&serialized).unwrap();
+                        let deserialized: FileListResponse =
+                            serde_json::from_str(&serialized).unwrap();
                         all_files.extend(deserialized.files);
                     }
 
                     black_box(all_files)
                 });
-            }
+            },
         );
     }
 
@@ -260,7 +271,7 @@ fn bench_command_round_trip(c: &mut Criterion) {
     });
 }
 
-criterion_group!{
+criterion_group! {
     name = benches;
     config = Criterion::default()
         .sample_size(100)

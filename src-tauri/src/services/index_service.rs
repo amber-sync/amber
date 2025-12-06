@@ -53,7 +53,7 @@ impl FileType {
     }
 
     #[allow(dead_code)]
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s {
             "dir" => FileType::Directory,
             "symlink" => FileType::Symlink,
@@ -277,7 +277,7 @@ impl IndexService {
              PRAGMA cache_size = -64000;      -- 64MB cache for better performance
              PRAGMA temp_store = MEMORY;      -- Store temp tables in memory
              PRAGMA mmap_size = 268435456;    -- 256MB memory-mapped I/O
-             PRAGMA synchronous = NORMAL;"    // Balanced safety/performance
+             PRAGMA synchronous = NORMAL;", // Balanced safety/performance
         )
         .map_err(|e| AmberError::Index(format!("Failed to set database optimizations: {}", e)))?;
 
@@ -519,7 +519,7 @@ impl IndexService {
                 // TIM-123: Use centralized make_relative utility
                 let parent_path = path
                     .parent()
-                    .map(|p| make_relative(p, &root))
+                    .map(|p| make_relative(p, root))
                     .unwrap_or_default();
 
                 let file_type = if metadata.is_dir() {
@@ -603,13 +603,8 @@ impl IndexService {
         parent_path: &str,
     ) -> Result<Vec<FileNode>> {
         // Call paginated version with no limits
-        let contents = self.get_directory_contents_paginated(
-            job_id,
-            timestamp,
-            parent_path,
-            None,
-            None,
-        )?;
+        let contents =
+            self.get_directory_contents_paginated(job_id, timestamp, parent_path, None, None)?;
         Ok(contents.files)
     }
 
@@ -661,7 +656,12 @@ impl IndexService {
 
         let files = stmt
             .query_map(
-                params![snapshot_id, parent_path, limit_val as i64, offset_val as i64],
+                params![
+                    snapshot_id,
+                    parent_path,
+                    limit_val as i64,
+                    offset_val as i64
+                ],
                 |row| {
                     let path: String = row.get(0)?;
                     let name: String = row.get(1)?;
@@ -686,10 +686,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query files: {}", e)))?;
 
         let mut result = Vec::new();
-        for file in files {
-            if let Ok(f) = file {
-                result.push(f);
-            }
+        for f in files.flatten() {
+            result.push(f);
         }
 
         let has_more = offset_val + result.len() < total_count as usize;
@@ -731,10 +729,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query snapshots: {}", e)))?;
 
         let mut result = Vec::new();
-        for snapshot in snapshots {
-            if let Ok(s) = snapshot {
-                result.push(s);
-            }
+        for s in snapshots.flatten() {
+            result.push(s);
         }
 
         Ok(result)
@@ -776,10 +772,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query snapshots: {}", e)))?;
 
         let mut result = Vec::new();
-        for snapshot in snapshots {
-            if let Ok(s) = snapshot {
-                result.push(s);
-            }
+        for s in snapshots.flatten() {
+            result.push(s);
         }
 
         Ok(result)
@@ -874,10 +868,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query density: {}", e)))?;
 
         let mut result = Vec::new();
-        for d in density {
-            if let Ok(entry) = d {
-                result.push(entry);
-            }
+        for entry in density.flatten() {
+            result.push(entry);
         }
 
         Ok(result)
@@ -989,10 +981,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to search files: {}", e)))?;
 
         let mut result = Vec::new();
-        for file in files {
-            if let Ok(f) = file {
-                result.push(f);
-            }
+        for f in files.flatten() {
+            result.push(f);
         }
 
         Ok(result)
@@ -1063,10 +1053,8 @@ impl IndexService {
                 })
                 .map_err(|e| AmberError::Index(format!("FTS search failed: {}", e)))?;
 
-            for r in rows {
-                if let Ok(item) = r {
-                    result.push(item);
-                }
+            for item in rows.flatten() {
+                result.push(item);
             }
         } else {
             let rows = stmt
@@ -1075,10 +1063,8 @@ impl IndexService {
                 })
                 .map_err(|e| AmberError::Index(format!("FTS search failed: {}", e)))?;
 
-            for r in rows {
-                if let Ok(item) = r {
-                    result.push(item);
-                }
+            for item in rows.flatten() {
+                result.push(item);
             }
         }
 
@@ -1185,10 +1171,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query file types: {}", e)))?;
 
         let mut result = Vec::new();
-        for stat in stats {
-            if let Ok(s) = stat {
-                result.push(s);
-            }
+        for s in stats.flatten() {
+            result.push(s);
         }
 
         Ok(result)
@@ -1239,10 +1223,8 @@ impl IndexService {
             .map_err(|e| AmberError::Index(format!("Failed to query largest files: {}", e)))?;
 
         let mut result = Vec::new();
-        for file in files {
-            if let Ok(f) = file {
-                result.push(f);
-            }
+        for f in files.flatten() {
+            result.push(f);
         }
 
         Ok(result)

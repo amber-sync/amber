@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useJobs } from './JobsContext';
 
-type ViewType = 'DASHBOARD' | 'TIME_MACHINE' | 'JOB_EDITOR' | 'APP_SETTINGS' | 'HELP' | 'RESTORE_WIZARD';
+type ViewType =
+  | 'DASHBOARD'
+  | 'TIME_MACHINE'
+  | 'JOB_EDITOR'
+  | 'APP_SETTINGS'
+  | 'HELP'
+  | 'RESTORE_WIZARD';
 
 interface UIContextType {
   activeJobId: string | null;

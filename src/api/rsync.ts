@@ -5,7 +5,12 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type Event } from '@tauri-apps/api/event';
-import type { SyncJob, RsyncLogPayload, RsyncProgressPayload, RsyncCompletePayload } from '../types';
+import type {
+  SyncJob,
+  RsyncLogPayload,
+  RsyncProgressPayload,
+  RsyncCompletePayload,
+} from '../types';
 
 // Event callback types
 export type RsyncLogCallback = (data: RsyncLogPayload) => void;

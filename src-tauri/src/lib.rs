@@ -57,10 +57,10 @@ pub fn run() {
                     show_startup_error(&e);
 
                     // Return error to prevent app from starting
-                    Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Application initialization failed: {}", e),
-                    ))
+                    Err(Box::new(std::io::Error::other(format!(
+                        "Application initialization failed: {}",
+                        e
+                    )))
                     .into())
                 }
             }
