@@ -1,1 +1,14 @@
+#!/bin/sh
+
+# Run lint-staged for frontend (JS/TS) and Rust formatting
 npx lint-staged
+
+# Check if any Rust files were staged
+if git diff --cached --name-only | grep -q "src-tauri/.*\.rs$"; then
+  echo "Running Clippy on Rust files..."
+  cd src-tauri && cargo clippy -- -D warnings
+  if [ $? -ne 0 ]; then
+    echo "Clippy found errors. Please fix them before committing."
+    exit 1
+  fi
+fi
