@@ -384,7 +384,7 @@ export function TimeMachinePage({
   // No job selected state
   if (!currentJob) {
     return (
-      <PageContainer width="full" noPadding scrollable>
+      <PageContainer width="default" noPadding scrollable>
         <div className="tm-container flex flex-col min-h-full">
           <TimeMachineHeader
             job={null}
@@ -406,7 +406,7 @@ export function TimeMachinePage({
   // No snapshots state
   if (!loading && snapshots.length === 0) {
     return (
-      <PageContainer width="full" noPadding scrollable>
+      <PageContainer width="default" noPadding scrollable>
         <div className="tm-container flex flex-col min-h-full">
           <TimeMachineHeader
             job={currentJob}
@@ -436,7 +436,7 @@ export function TimeMachinePage({
   }
 
   return (
-    <PageContainer width="full" noPadding scrollable>
+    <PageContainer width="default" noPadding scrollable>
       <div className="tm-container flex flex-col min-h-full">
         {/* Header with job switcher and controls (TIM-138, TIM-151) */}
         <TimeMachineHeader

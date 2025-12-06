@@ -34,9 +34,9 @@ export interface PageContainerProps {
 }
 
 const widthClasses: Record<PageWidth, string> = {
-  narrow: 'max-w-[960px]',
-  default: 'max-w-[1280px]',
-  wide: 'max-w-[1536px]',
+  narrow: 'max-w-[clamp(700px,75vw,900px)]',
+  default: 'max-w-[clamp(900px,85vw,1400px)]',
+  wide: 'max-w-[clamp(1100px,90vw,1700px)]',
   full: 'max-w-none',
 };
 

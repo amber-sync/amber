@@ -13,11 +13,12 @@
     "windows": [
       {
         "title": "",
-        "width": 1200,
-        "height": 800,
+        "width": 1060,
+        "height": 740,
         "resizable": true,
         "fullscreen": false,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "zoomHotkeysEnabled": true
       }
     ],
     "security": {
