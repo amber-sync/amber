@@ -142,7 +142,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           {/* Heatmap grid */}
           <div className="flex-1 overflow-x-auto overflow-y-visible">
             {/* Month labels */}
-            <div className="flex mb-1 relative h-[14px]">
+            <div className="flex mb-2 relative h-[14px]">
               {monthLabels.map(({ month, weekIndex }) => (
                 <div
                   key={`${month}-${weekIndex}`}
@@ -157,7 +157,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
             </div>
 
             {/* Contribution grid: 52 columns x 7 rows */}
-            <div className="flex gap-[3px]">
+            <div className="flex gap-[3px] pb-1">
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-[3px]">
                   {week.map(day => {
