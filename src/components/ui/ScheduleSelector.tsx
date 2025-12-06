@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Icons } from '../IconComponents';
+import { cn } from '../../utils';
 
 export interface ScheduleOption {
   /** Display label */
@@ -93,17 +94,15 @@ export const ScheduleSelector: React.FC<ScheduleSelectorProps> = ({
             aria-checked={isSelected}
             onClick={() => !disabled && onChange(option.value)}
             disabled={disabled}
-            className={`
-              ${sizeClasses[size]}
-              rounded-lg font-medium transition-all flex items-center gap-2
-              ${
-                isSelected
-                  ? 'bg-accent-primary text-accent-text'
-                  : 'bg-layer-2 text-text-secondary hover:bg-layer-3'
-              }
-              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              ${!isHorizontal ? 'w-full justify-start' : ''}
-            `}
+            className={cn(
+              sizeClasses[size],
+              'rounded-lg font-medium transition-all flex items-center gap-2',
+              isSelected
+                ? 'bg-accent-primary text-accent-text'
+                : 'bg-layer-2 text-text-secondary hover:bg-layer-3',
+              disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+              !isHorizontal && 'w-full justify-start'
+            )}
           >
             {option.icon}
             <span>{option.label}</span>
