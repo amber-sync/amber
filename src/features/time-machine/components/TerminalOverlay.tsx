@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { LogEntry, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
+import { Title, Body, Caption, Code } from '../../../components/ui';
 
 interface TerminalOverlayProps {
   isOpen: boolean;
@@ -86,11 +87,13 @@ function TerminalOverlayComponent({
         {/* Header */}
         <div className="tm-overlay-header">
           <div className="flex items-center gap-3">
-            <h2 className="tm-overlay-title">Sync Output</h2>
+            <Title level={3} className="tm-overlay-title">
+              Sync Output
+            </Title>
             {isRunning && (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--color-accent-secondary)] rounded-full text-xs text-[var(--color-accent-primary)]">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--color-accent-secondary)] rounded-full">
                 <span className="w-1.5 h-1.5 bg-[var(--color-accent-primary)] rounded-full animate-pulse" />
-                Live
+                <Caption color="primary">Live</Caption>
               </span>
             )}
           </div>
@@ -108,12 +111,12 @@ function TerminalOverlayComponent({
                   size={14}
                   className="text-[var(--color-accent-primary)] animate-spin"
                 />
-                <span className="text-sm text-[var(--tm-text-bright)]">
+                <Body size="sm" className="text-[var(--tm-text-bright)]">
                   {progress.percentage}% complete
-                </span>
+                </Body>
               </div>
               {progress.eta && (
-                <span className="text-xs text-[var(--tm-text-dim)]">ETA {progress.eta}</span>
+                <Caption className="text-[var(--tm-text-dim)]">ETA {progress.eta}</Caption>
               )}
             </div>
             <div className="h-1.5 bg-[var(--tm-dust)] rounded-full overflow-hidden">
@@ -123,8 +126,10 @@ function TerminalOverlayComponent({
               />
             </div>
             {progress.currentFile && (
-              <div className="mt-2 text-xs text-[var(--tm-text-dim)] font-mono truncate">
-                {progress.currentFile}
+              <div className="mt-2">
+                <Code size="sm" truncate className="text-[var(--tm-text-dim)]">
+                  {progress.currentFile}
+                </Code>
               </div>
             )}
           </div>
@@ -138,7 +143,7 @@ function TerminalOverlayComponent({
               <button
                 key={level}
                 onClick={() => setFilter(level)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
+                className={`px-2 py-1 rounded transition-colors ${
                   filter === level
                     ? level === 'error'
                       ? 'bg-[var(--tm-error)]/20 text-[var(--tm-error)]'
@@ -148,8 +153,10 @@ function TerminalOverlayComponent({
                     : 'text-[var(--tm-text-dim)] hover:text-[var(--tm-text-soft)]'
                 }`}
               >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-                <span className="ml-1 opacity-60">({logCounts[level]})</span>
+                <Caption>
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                  <span className="ml-1 opacity-60">({logCounts[level]})</span>
+                </Caption>
               </button>
             ))}
           </div>
@@ -165,7 +172,7 @@ function TerminalOverlayComponent({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search logs..."
-              className="w-full pl-7 pr-3 py-1.5 bg-[var(--tm-void)] border border-[var(--tm-dust)] rounded text-xs text-[var(--tm-text-bright)] placeholder:text-[var(--tm-text-muted)] focus:outline-none focus:border-[var(--color-accent-primary)]"
+              className="w-full pl-7 pr-3 py-1.5 bg-[var(--tm-void)] border border-[var(--tm-dust)] rounded text-[var(--tm-text-bright)] placeholder:text-[var(--tm-text-muted)] focus:outline-none focus:border-[var(--color-accent-primary)] font-body text-xs"
             />
           </div>
 
@@ -187,13 +194,15 @@ function TerminalOverlayComponent({
         <div
           ref={logContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto p-4 bg-[var(--tm-void)] font-mono text-xs"
+          className="flex-1 overflow-auto p-4 bg-[var(--tm-void)]"
           style={{ maxHeight: 'calc(100vh - 280px)' }}
         >
           {filteredLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-[var(--tm-text-dim)]">
               <Icons.Terminal size={32} className="mb-3 opacity-50" />
-              <p>{logs.length === 0 ? 'No logs yet' : 'No matching logs'}</p>
+              <Body size="sm" className="text-[var(--tm-text-dim)]">
+                {logs.length === 0 ? 'No logs yet' : 'No matching logs'}
+              </Body>
             </div>
           ) : (
             <div className="space-y-0.5">
@@ -206,23 +215,23 @@ function TerminalOverlayComponent({
 
         {/* Footer actions */}
         <div className="px-4 py-3 border-t border-[var(--tm-dust)] bg-[var(--tm-nebula)] flex items-center justify-between">
-          <span className="text-xs text-[var(--tm-text-dim)]">
+          <Caption className="text-[var(--tm-text-dim)]">
             {filteredLogs.length} of {logs.length} entries
-          </span>
+          </Caption>
           <div className="flex gap-2">
             {isRunning && onStop && (
               <button
                 onClick={onStop}
-                className="px-3 py-1.5 bg-[var(--tm-error)]/20 text-[var(--tm-error)] text-sm rounded-lg hover:bg-[var(--tm-error)]/30 transition-colors"
+                className="px-3 py-1.5 bg-[var(--tm-error)]/20 text-[var(--tm-error)] rounded-lg hover:bg-[var(--tm-error)]/30 transition-colors"
               >
-                Stop Sync
+                <Body size="sm">Stop Sync</Body>
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-3 py-1.5 bg-[var(--tm-dust)] text-[var(--tm-text-soft)] text-sm rounded-lg hover:bg-[var(--tm-mist)] transition-colors"
+              className="px-3 py-1.5 bg-[var(--tm-dust)] text-[var(--tm-text-soft)] rounded-lg hover:bg-[var(--tm-mist)] transition-colors"
             >
-              Close
+              <Body size="sm">Close</Body>
             </button>
           </div>
         </div>
@@ -253,9 +262,11 @@ function LogLine({ log }: { log: LogEntry }) {
 
   return (
     <div className="flex items-start gap-2 py-0.5 hover:bg-[var(--tm-nebula)] rounded px-1 -mx-1">
-      <span className="text-[var(--tm-text-muted)] shrink-0">{timestamp}</span>
+      <Caption className="shrink-0 text-[var(--tm-text-muted)]">{timestamp}</Caption>
       <span className={`shrink-0 ${levelColor}`}>{levelIcon}</span>
-      <span className="text-[var(--tm-text-soft)] break-all">{log.message}</span>
+      <Code size="sm" className="break-all text-[var(--tm-text-soft)]">
+        {log.message}
+      </Code>
     </div>
   );
 }

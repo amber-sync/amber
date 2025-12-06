@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from './IconComponents';
+import { Caption } from './ui';
 
 interface ConnectionStatusProps {
   mounted: boolean;
@@ -63,10 +64,10 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         <span className={`relative inline-flex rounded-full h-2 w-2 ${config.dotColor}`} />
       </div>
       {showLabel && (
-        <span className="text-xs text-text-secondary flex items-center gap-1">
+        <Caption color="secondary" className="flex items-center gap-1">
           {config.icon}
           {config.label}
-        </span>
+        </Caption>
       )}
     </div>
   );
@@ -77,10 +78,12 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
  */
 export const OfflineBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span
-    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-surface-elevated text-text-secondary ${className}`}
+    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-elevated text-text-secondary ${className}`}
   >
     <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary" />
-    Offline
+    <Caption size="sm" className="font-bold uppercase tracking-wide">
+      Offline
+    </Caption>
   </span>
 );
 

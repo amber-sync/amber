@@ -11,6 +11,7 @@
 import { memo } from 'react';
 import { LogEntry, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
+import { Body, Caption, Code } from '../../../components/ui';
 
 interface LiveActivityBarProps {
   isRunning: boolean;
@@ -41,14 +42,20 @@ function LiveActivityBarComponent({ isRunning, progress, logs, onExpand }: LiveA
 
       {/* Status info */}
       <div className="tm-live-info">
-        <div className="tm-live-status">
+        <Body size="sm" weight="medium" className="tm-live-status">
           {percentage > 0 ? `Syncing... ${percentage}%` : 'Starting sync...'}
-        </div>
-        <div className="tm-live-file font-mono">{currentFile}</div>
+        </Body>
+        <Code size="sm" truncate className="tm-live-file">
+          {currentFile}
+        </Code>
       </div>
 
       {/* ETA */}
-      {eta && <div className="tm-live-eta">ETA {eta}</div>}
+      {eta && (
+        <Caption color="secondary" className="tm-live-eta">
+          ETA {eta}
+        </Caption>
+      )}
 
       {/* Expand button */}
       <button onClick={onExpand} className="tm-live-expand" title="View logs">

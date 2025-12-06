@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from '../IconComponents';
+import { Title, Body, Caption } from '../ui';
 
 type View =
   | 'DASHBOARD'
@@ -24,13 +25,16 @@ interface SidebarButtonProps {
 const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-150 font-body ${
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
       active
         ? 'bg-accent-secondary text-text-primary border-l-2 border-accent-primary'
         : 'text-text-secondary hover:bg-layer-3 hover:text-text-primary'
     }`}
   >
-    {icon} {label}
+    {icon}{' '}
+    <Body size="sm" weight="medium">
+      {label}
+    </Body>
   </button>
 );
 
@@ -40,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
       <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-accent-text shadow-[var(--shadow-card)]">
         <Icons.Activity size={20} />
       </div>
-      <span className="font-bold text-xl tracking-tight text-text-primary font-display">Amber</span>
+      <Title level={3}>Amber</Title>
     </div>
 
     <nav className="flex-1 px-4 py-4 space-y-1">
@@ -70,8 +74,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
       />
     </nav>
 
-    <div className="p-4 border-t border-border-base">
-      <div className="text-xs text-text-tertiary text-center font-mono">v0.0.1-beta</div>
+    <div className="p-4 border-t border-border-base flex justify-center">
+      <Caption color="tertiary">v0.0.1-beta</Caption>
     </div>
   </aside>
 );

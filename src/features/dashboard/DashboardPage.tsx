@@ -4,7 +4,7 @@ import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
 import { BackupCalendar } from '../../components/analytics';
 import { format } from 'date-fns';
-import { Button, Card, StatusDot, IconButton } from '../../components/ui';
+import { Button, Card, StatusDot, IconButton, Title, Body, Caption } from '../../components/ui';
 import { PageContainer, PageSection } from '../../components/layout';
 import { JobCard } from './components/JobCard';
 
@@ -110,7 +110,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Jobs List - Primary Content */}
       <PageSection
         title="Backup Jobs"
-        headerRight={<span className="text-xs text-text-quaternary">Click to expand details</span>}
+        headerRight={<Caption color="quaternary">Click to expand details</Caption>}
       >
         <div className="space-y-3">
           {jobs.map(job => (
@@ -127,7 +127,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {jobs.length === 0 && (
             <div className="page-empty">
               <Icons.HardDrive className="page-empty-icon" size={48} />
-              <p className="page-empty-text">No sync jobs configured yet.</p>
+              <Body size="sm" as="p" color="tertiary">
+                No sync jobs configured yet.
+              </Body>
             </div>
           )}
         </div>
@@ -144,9 +146,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {selectedDay && (
             <Card className="mt-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-text-primary">
-                  Backups on {format(selectedDay.date, 'MMMM d, yyyy')}
-                </h3>
+                <Title level={3}>Backups on {format(selectedDay.date, 'MMMM d, yyyy')}</Title>
                 <IconButton
                   label="Close"
                   variant="ghost"
@@ -165,11 +165,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   >
                     <div className="flex items-center gap-2">
                       <StatusDot status={backup.status === 'success' ? 'success' : 'error'} />
-                      <span className="text-sm text-text-primary">{backup.jobName}</span>
+                      <Body size="sm">{backup.jobName}</Body>
                     </div>
-                    <span className="text-xs text-text-tertiary">
+                    <Caption color="tertiary">
                       {format(new Date(backup.timestamp), 'h:mm a')}
-                    </span>
+                    </Caption>
                   </div>
                 ))}
               </div>

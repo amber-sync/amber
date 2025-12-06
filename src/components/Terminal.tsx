@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { LogEntry } from '../types';
+import { Caption } from './ui';
 
 interface TerminalProps {
   logs: LogEntry[];
@@ -30,7 +31,9 @@ export const Terminal: React.FC<TerminalProps> = ({
       >
         {logs.map((log, i) => (
           <div key={i} className="break-all whitespace-pre-wrap">
-            <span
+            <Caption
+              as="span"
+              size="sm"
               className={`mr-2 select-none ${
                 log.level === 'error'
                   ? 'text-[var(--color-error)]'
@@ -40,8 +43,10 @@ export const Terminal: React.FC<TerminalProps> = ({
               }`}
             >
               [{new Date(log.timestamp).toLocaleTimeString()}]
-            </span>
-            <span
+            </Caption>
+            <Caption
+              as="span"
+              size="sm"
               className={
                 log.level === 'error'
                   ? 'text-[var(--color-error)]'
@@ -51,7 +56,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               }
             >
               {log.message}
-            </span>
+            </Caption>
           </div>
         ))}
         {isRunning && <div className="animate-pulse text-[var(--color-success)]">_</div>}
@@ -67,7 +72,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         <div className="w-3 h-3 rounded-full bg-[var(--color-error)]" />
         <div className="w-3 h-3 rounded-full bg-[var(--color-warning)]" />
         <div className="w-3 h-3 rounded-full bg-[var(--color-success)]" />
-        <span className="text-text-tertiary ml-2">sync_process — -zsh</span>
+        <Caption color="tertiary" className="ml-2">
+          sync_process — -zsh
+        </Caption>
       </div>
       <div
         className="flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-text-tertiary"
@@ -75,7 +82,9 @@ export const Terminal: React.FC<TerminalProps> = ({
       >
         {logs.map((log, i) => (
           <div key={i} className="break-all whitespace-pre-wrap">
-            <span
+            <Caption
+              as="span"
+              size="sm"
               className={`mr-2 select-none ${
                 log.level === 'error'
                   ? 'text-[var(--color-error)]'
@@ -85,8 +94,10 @@ export const Terminal: React.FC<TerminalProps> = ({
               }`}
             >
               [{new Date(log.timestamp).toLocaleTimeString()}]
-            </span>
-            <span
+            </Caption>
+            <Caption
+              as="span"
+              size="sm"
               className={
                 log.level === 'error'
                   ? 'text-[var(--color-error)]'
@@ -96,7 +107,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               }
             >
               {log.message}
-            </span>
+            </Caption>
           </div>
         ))}
         {isRunning && <div className="animate-pulse text-[var(--color-success)]">_</div>}

@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { SyncJob } from '../../types';
 import { formatBytes } from '../../utils/formatters';
 import api from '../../api';
+import { Title, Caption, Body } from '../ui';
 
 interface FileTypeBreakdownProps {
   jobs: SyncJob[];
@@ -225,11 +226,13 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
 
     return (
       <div className="bg-layer-2 border border-border-base rounded-lg p-2 shadow-lg">
-        <div className="font-medium text-text-primary text-sm">{data.name}</div>
-        <div className="text-text-secondary text-xs mt-1">
+        <Body size="sm" weight="medium">
+          {data.name}
+        </Body>
+        <Body size="sm" color="secondary" className="mt-1">
           {formatBytes(data.value)} ({percentage}%)
-        </div>
-        <div className="text-text-tertiary text-xs">{data.count.toLocaleString()} files</div>
+        </Body>
+        <Caption color="tertiary">{data.count.toLocaleString()} files</Caption>
       </div>
     );
   };
@@ -238,15 +241,15 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
     <div className="bg-layer-1 rounded-xl border border-border-base p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-text-primary">File Types</h3>
-        {hasData && (
-          <span className="text-xs text-text-tertiary">{formatBytes(totalSize)} total</span>
-        )}
+        <Title level={3}>File Types</Title>
+        {hasData && <Caption color="tertiary">{formatBytes(totalSize)} total</Caption>}
       </div>
 
       {loading ? (
-        <div className="h-32 flex items-center justify-center text-text-tertiary text-sm">
-          Loading...
+        <div className="h-32 flex items-center justify-center">
+          <Body size="sm" color="tertiary">
+            Loading...
+          </Body>
         </div>
       ) : hasData ? (
         <div className="flex items-center gap-4">
@@ -286,13 +289,17 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
                       className="w-2.5 h-2.5 rounded-sm"
                       style={{ backgroundColor: category.color }}
                     />
-                    <span className="text-xs text-text-secondary">{category.name}</span>
+                    <Body size="sm" color="secondary">
+                      {category.name}
+                    </Body>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-text-primary">
+                    <Body size="sm" weight="medium">
                       {formatBytes(category.value)}
-                    </span>
-                    <span className="text-xs text-text-tertiary w-8 text-right">{percentage}%</span>
+                    </Body>
+                    <Caption color="tertiary" className="w-8 text-right">
+                      {percentage}%
+                    </Caption>
                   </div>
                 </div>
               );
@@ -300,8 +307,10 @@ export const FileTypeBreakdown: React.FC<FileTypeBreakdownProps> = ({ jobs }) =>
           </div>
         </div>
       ) : (
-        <div className="h-32 flex items-center justify-center text-text-tertiary text-sm">
-          No file data available
+        <div className="h-32 flex items-center justify-center">
+          <Body size="sm" color="tertiary">
+            No file data available
+          </Body>
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ import {
   isSameDay,
 } from 'date-fns';
 import { SyncJob } from '../../types';
+import { Title, Caption, Body } from '../ui';
 
 interface BackupCalendarProps {
   jobs: SyncJob[];
@@ -120,18 +121,20 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
       <div className="bg-layer-1 rounded-xl border border-border-base p-4 overflow-visible">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-text-primary">Backup Activity</h3>
-          <span className="text-xs text-text-tertiary">
+          <Title level={3}>Backup Activity</Title>
+          <Caption color="tertiary">
             {jobs.reduce((acc, job) => acc + (job.snapshots ?? []).length, 0)} backups in past year
-          </span>
+          </Caption>
         </div>
 
         <div className="flex overflow-visible">
           {/* Day labels (left axis) */}
           <div className="flex flex-col gap-[3px] mr-2 mt-[18px]">
             {dayLabels.map((label, i) => (
-              <div key={i} className="h-[11px] text-[9px] text-text-tertiary flex items-center">
-                {label}
+              <div key={i} className="h-[11px] flex items-center">
+                <Caption size="sm" color="tertiary">
+                  {label}
+                </Caption>
               </div>
             ))}
           </div>
@@ -143,10 +146,12 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
               {monthLabels.map(({ month, weekIndex }) => (
                 <div
                   key={`${month}-${weekIndex}`}
-                  className="absolute text-[9px] text-text-tertiary"
+                  className="absolute"
                   style={{ left: weekIndex * 14 }}
                 >
-                  {month}
+                  <Caption size="sm" color="tertiary">
+                    {month}
+                  </Caption>
                 </div>
               ))}
             </div>
@@ -178,12 +183,12 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
                         {isHovered && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
                             <div className="bg-layer-3 border border-border-base rounded-lg px-2 py-1 shadow-lg whitespace-nowrap">
-                              <div className="text-[10px] font-medium text-text-primary">
+                              <Caption className="font-medium">
                                 {count} backup{count !== 1 ? 's' : ''}
-                              </div>
-                              <div className="text-[9px] text-text-tertiary">
+                              </Caption>
+                              <Caption size="sm" color="tertiary">
                                 {format(day, 'EEE, MMM d, yyyy')}
-                              </div>
+                              </Caption>
                             </div>
                             {/* Arrow */}
                             <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-[1px]">
@@ -202,7 +207,9 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
 
         {/* Legend */}
         <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border-base">
-          <span className="text-[9px] text-text-tertiary">Less</span>
+          <Caption size="sm" color="tertiary">
+            Less
+          </Caption>
           <div className="flex gap-[2px]">
             <div className="w-[10px] h-[10px] rounded-[2px] bg-layer-2" />
             <div className="w-[10px] h-[10px] rounded-[2px] bg-zinc-200 dark:bg-zinc-700" />
@@ -210,7 +217,9 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
             <div className="w-[10px] h-[10px] rounded-[2px] bg-zinc-600 dark:bg-zinc-400" />
             <div className="w-[10px] h-[10px] rounded-[2px] bg-accent-primary" />
           </div>
-          <span className="text-[9px] text-text-tertiary">More</span>
+          <Caption size="sm" color="tertiary">
+            More
+          </Caption>
         </div>
       </div>
     );

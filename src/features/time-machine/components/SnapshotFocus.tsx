@@ -10,6 +10,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
 import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Icons } from '../../../components/IconComponents';
+import { Title, Body, Caption, Code } from '../../../components/ui';
 import { formatBytes } from '../../../utils';
 import { api } from '../../../api';
 
@@ -123,8 +124,12 @@ function SnapshotFocusComponent({
         <div className="tm-empty-icon">
           <Icons.Clock size={32} />
         </div>
-        <h2 className="tm-empty-title">Select a Snapshot</h2>
-        <p className="tm-empty-desc">Click on a marker in the timeline to view snapshot details</p>
+        <Title level={2} className="tm-empty-title">
+          Select a Snapshot
+        </Title>
+        <Body size="sm" color="secondary" className="tm-empty-desc">
+          Click on a marker in the timeline to view snapshot details
+        </Body>
       </div>
     );
   }
@@ -133,13 +138,15 @@ function SnapshotFocusComponent({
     <div className="tm-focus">
       {/* Date display - prominent typography */}
       <div>
-        <h1 className="tm-focus-date font-display">
+        <Title level={1} className="tm-focus-date">
           {dateParts.month} {dateParts.day}, {dateParts.year}
-        </h1>
-        <p className="tm-focus-time font-body">
+        </Title>
+        <Body size="lg" className="tm-focus-time">
           {dateParts.weekday}, {dateParts.time}
-        </p>
-        <p className="tm-focus-relative">{dateParts.relative}</p>
+        </Body>
+        <Caption color="secondary" className="tm-focus-relative">
+          {dateParts.relative}
+        </Caption>
       </div>
 
       {/* Stats grid */}
@@ -171,22 +178,30 @@ function SnapshotFocusComponent({
       <div className="tm-actions">
         <button onClick={onBrowseFiles} className="tm-action-btn tm-action-btn--primary">
           <Icons.FolderOpen size={18} />
-          <span>Browse Files</span>
+          <Body size="sm" weight="medium">
+            Browse Files
+          </Body>
         </button>
         <button onClick={onRestore} className="tm-action-btn tm-action-btn--secondary">
           <Icons.RotateCcw size={18} />
-          <span>Restore</span>
+          <Body size="sm" weight="medium">
+            Restore
+          </Body>
         </button>
         <button onClick={onCompare} className="tm-action-btn tm-action-btn--secondary">
           <Icons.GitCompare size={18} />
-          <span>Compare</span>
+          <Body size="sm" weight="medium">
+            Compare
+          </Body>
         </button>
         <button
           onClick={() => snapshot.path && api.openPath(snapshot.path)}
           className="tm-action-btn tm-action-btn--secondary"
         >
           <Icons.ExternalLink size={18} />
-          <span>Open in Finder</span>
+          <Body size="sm" weight="medium">
+            Open in Finder
+          </Body>
         </button>
       </div>
 
@@ -195,9 +210,9 @@ function SnapshotFocusComponent({
         {analyticsLoading ? (
           <>
             <div className="tm-analytics-header">
-              <span className="tm-analytics-title">File Types</span>
+              <Caption className="tm-analytics-title font-weight-medium">File Types</Caption>
               <button onClick={onViewAnalytics} className="tm-analytics-expand">
-                View all →
+                <Caption color="secondary">View all →</Caption>
               </button>
             </div>
             <div className="flex gap-2">
@@ -209,16 +224,20 @@ function SnapshotFocusComponent({
         ) : analytics?.fileTypes && analytics.fileTypes.length > 0 ? (
           <>
             <div className="tm-analytics-header">
-              <span className="tm-analytics-title">File Types</span>
+              <Caption className="tm-analytics-title font-weight-medium">File Types</Caption>
               <button onClick={onViewAnalytics} className="tm-analytics-expand">
-                View all →
+                <Caption color="secondary">View all →</Caption>
               </button>
             </div>
             <div className="tm-file-types">
               {analytics.fileTypes.slice(0, 6).map((ft, i) => (
                 <div key={i} className="tm-file-type">
-                  <span className="tm-file-type-ext">.{ft.extension || 'other'}</span>
-                  <span className="tm-file-type-count">({ft.count})</span>
+                  <Code size="sm" className="tm-file-type-ext">
+                    .{ft.extension || 'other'}
+                  </Code>
+                  <Caption size="sm" className="tm-file-type-count">
+                    ({ft.count})
+                  </Caption>
                 </div>
               ))}
             </div>
@@ -226,15 +245,17 @@ function SnapshotFocusComponent({
         ) : (
           <>
             <div className="tm-analytics-header">
-              <span className="tm-analytics-title">File Types</span>
+              <Caption className="tm-analytics-title font-weight-medium">File Types</Caption>
             </div>
-            <p className="text-sm text-[var(--tm-text-dim)]">No file type data available</p>
+            <Body size="sm" className="text-[var(--tm-text-dim)]">
+              No file type data available
+            </Body>
           </>
         )}
       </div>
 
       {/* Status indicator */}
-      <div className="mt-6 flex items-center gap-2 text-xs">
+      <div className="mt-6 flex items-center gap-2">
         <div
           className={`w-2 h-2 rounded-full ${
             snapshot.status === 'Complete'
@@ -244,13 +265,15 @@ function SnapshotFocusComponent({
                 : 'bg-[var(--tm-error)]'
           }`}
         />
-        <span className="text-[var(--tm-text-dim)]">{snapshot.status || 'Complete'} backup</span>
+        <Caption className="text-[var(--tm-text-dim)]">
+          {snapshot.status || 'Complete'} backup
+        </Caption>
         {snapshot.path && (
           <>
-            <span className="text-[var(--tm-text-muted)]">•</span>
-            <span className="text-[var(--tm-text-dim)] font-mono truncate max-w-xs">
+            <Caption className="text-[var(--tm-text-muted)]">•</Caption>
+            <Code size="sm" truncate className="max-w-xs text-[var(--tm-text-dim)]">
               {snapshot.path.split('/').pop()}
-            </span>
+            </Code>
           </>
         )}
       </div>
@@ -273,12 +296,16 @@ function StatCard({
   return (
     <div className="tm-stat">
       <div className="tm-stat-label">
-        <span className="inline-flex items-center gap-1.5">
+        <Caption color="secondary" className="inline-flex items-center gap-1.5">
           {icon}
           {label}
-        </span>
+        </Caption>
       </div>
-      <div className={`tm-stat-value ${highlight ? 'tm-stat-value--amber' : ''}`}>{value}</div>
+      <div className={`tm-stat-value ${highlight ? 'tm-stat-value--amber' : ''}`}>
+        <Body size="lg" weight="semibold">
+          {value}
+        </Body>
+      </div>
     </div>
   );
 }

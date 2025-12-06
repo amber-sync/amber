@@ -14,6 +14,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { cn } from '../../utils';
+import { Title, Caption } from '../ui';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -187,8 +188,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
           </div>
         )}
         <div>
-          <h2 className="text-lg font-bold text-text-primary">{title}</h2>
-          {subtitle && <p className="text-xs text-text-secondary">{subtitle}</p>}
+          <Title level={4}>{title}</Title>
+          {subtitle && <Caption color="secondary">{subtitle}</Caption>}
         </div>
       </div>
       {onClose && (

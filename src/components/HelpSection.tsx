@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Icons from 'lucide-react';
 import { SidecarBenchmark } from './SidecarBenchmark';
+import { Title, Body, Caption } from './ui';
 
 export const HelpSection: React.FC = () => {
   const openDocs = () => {
@@ -23,13 +24,13 @@ export const HelpSection: React.FC = () => {
             <Icons.Globe size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-text-primary mb-1 flex items-center gap-2">
+            <Title level={4} className="mb-1 flex items-center gap-2">
               Online Documentation
               <Icons.ExternalLink size={12} className="opacity-50" />
-            </h3>
-            <p className="text-sm text-text-secondary leading-relaxed">
+            </Title>
+            <Body size="sm" color="secondary" className="leading-relaxed">
               Comprehensive guides on Time Machine mode, backup strategies, and troubleshooting.
-            </p>
+            </Body>
           </div>
         </button>
 
@@ -42,20 +43,20 @@ export const HelpSection: React.FC = () => {
             <Icons.Terminal size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-text-primary mb-1 flex items-center gap-2">
+            <Title level={4} className="mb-1 flex items-center gap-2">
               Rsync Manual
               <Icons.ExternalLink size={12} className="opacity-50" />
-            </h3>
-            <p className="text-sm text-text-secondary leading-relaxed">
+            </Title>
+            <Body size="sm" color="secondary" className="leading-relaxed">
               Official technical documentation for rsync flags and advanced configuration options.
-            </p>
+            </Body>
           </div>
         </button>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-border-subtle flex justify-between items-center text-xs text-text-tertiary">
-        <span>Version 1.0.0</span>
-        <span>Built with ❤️ for macOS</span>
+      <div className="mt-8 pt-6 border-t border-border-subtle flex justify-between items-center">
+        <Caption color="tertiary">Version 1.0.0</Caption>
+        <Caption color="tertiary">Built with ❤️ for macOS</Caption>
       </div>
 
       <div className="mt-8">

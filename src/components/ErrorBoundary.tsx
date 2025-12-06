@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '../utils/logger';
+import { Title, Body, Code } from './ui';
 
 interface Props {
   children: ReactNode;
@@ -46,15 +47,17 @@ export class ErrorBoundary extends Component<Props, State> {
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-text-primary mb-2">Something went wrong</h1>
-            <p className="text-sm text-text-secondary mb-6">
+            <Title level={3} className="mb-2">
+              Something went wrong
+            </Title>
+            <Body size="sm" color="secondary" className="mb-6">
               The application encountered an unexpected error. Please try restarting or resetting
               the app.
-            </p>
+            </Body>
             <div className="bg-layer-2 p-3 rounded-lg text-left mb-6 overflow-auto max-h-32">
-              <code className="text-xs text-[var(--color-error)] font-mono break-all">
+              <Code size="sm" className="text-[var(--color-error)] break-all">
                 {this.state.error?.message}
-              </code>
+              </Code>
             </div>
             <button
               onClick={() => window.location.reload()}

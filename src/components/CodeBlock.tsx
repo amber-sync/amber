@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import * as Icons from 'lucide-react';
+import { Caption, Code } from './ui';
 
 interface CodeBlockProps {
   code: string;
@@ -80,7 +81,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         <div className="bg-layer-1 px-4 py-2 border-b border-default flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Icons.Terminal size={14} className="text-tertiary" />
-            <span className="text-xs font-semibold text-secondary">{title}</span>
+            <Caption color="secondary" className="font-semibold">
+              {title}
+            </Caption>
           </div>
           <button
             onClick={handleCopy}
@@ -105,7 +108,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
       </div>
       {explanation && (
         <div className="bg-layer-1 px-4 py-3 border-t border-default">
-          <p className="text-xs text-tertiary leading-relaxed">{explanation}</p>
+          <Caption color="tertiary" className="leading-relaxed">
+            {explanation}
+          </Caption>
         </div>
       )}
     </div>

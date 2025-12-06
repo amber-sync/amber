@@ -8,7 +8,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
-import { Button, IconButton } from '../../../components/ui';
+import { Button, IconButton, Body, Caption } from '../../../components/ui';
 import { DateFilter } from '../TimeMachinePage';
 
 interface TimeMachineHeaderProps {
@@ -81,7 +81,9 @@ function TimeMachineHeaderComponent({
         <div className="relative" ref={dropdownRef}>
           <button onClick={() => setDropdownOpen(!dropdownOpen)} className="tm-job-selector">
             <Icons.Folder size={16} className="text-text-secondary" />
-            <span>{job?.name || 'Select Job'}</span>
+            <Body size="sm" weight="medium">
+              {job?.name || 'Select Job'}
+            </Body>
             <Icons.ChevronDown
               size={14}
               className={`text-text-tertiary transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
@@ -110,8 +112,12 @@ function TimeMachineHeaderComponent({
                       className={j.id === job?.id ? 'text-accent-primary' : 'text-text-tertiary'}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate text-sm">{j.name}</div>
-                      <div className="text-xs text-text-tertiary truncate">{j.sourcePath}</div>
+                      <Body size="sm" weight="medium" className="truncate">
+                        {j.name}
+                      </Body>
+                      <Caption size="sm" color="tertiary" className="truncate">
+                        {j.sourcePath}
+                      </Caption>
                     </div>
                     {j.status === 'RUNNING' && (
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse" />
@@ -121,7 +127,11 @@ function TimeMachineHeaderComponent({
               </div>
 
               {jobs.length === 0 && (
-                <div className="p-4 text-center text-sm text-text-tertiary">No jobs configured</div>
+                <div className="p-4 text-center">
+                  <Body size="sm" color="tertiary">
+                    No jobs configured
+                  </Body>
+                </div>
               )}
             </div>
           )}
@@ -135,9 +145,11 @@ function TimeMachineHeaderComponent({
             <div className="relative">
               <button
                 onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-layer-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-layer-2 rounded-lg transition-colors"
               >
-                <span className="font-medium">{dateFilterLabels[dateFilter]}</span>
+                <Body size="sm" weight="medium">
+                  {dateFilterLabels[dateFilter]}
+                </Body>
                 <Icons.ChevronDown
                   size={14}
                   className={`opacity-50 transition-transform ${dateDropdownOpen ? 'rotate-180' : ''}`}
@@ -153,13 +165,15 @@ function TimeMachineHeaderComponent({
                         onDateFilterChange(key);
                         setDateDropdownOpen(false);
                       }}
-                      className={`w-full px-3 py-1.5 text-left text-sm transition-colors ${
+                      className={`w-full px-3 py-1.5 text-left transition-colors ${
                         key === dateFilter
-                          ? 'text-text-primary font-medium bg-layer-2'
+                          ? 'text-text-primary bg-layer-2'
                           : 'text-text-secondary hover:text-text-primary hover:bg-layer-2'
                       }`}
                     >
-                      {dateFilterLabels[key]}
+                      <Body size="sm" weight={key === dateFilter ? 'medium' : 'normal'}>
+                        {dateFilterLabels[key]}
+                      </Body>
                     </button>
                   ))}
                 </div>
@@ -169,9 +183,9 @@ function TimeMachineHeaderComponent({
             {dateFilter !== 'all' &&
               snapshotCount !== undefined &&
               totalSnapshotCount !== undefined && (
-                <span className="text-xs text-text-tertiary tabular-nums">
+                <Caption color="tertiary" className="tabular-nums">
                   {snapshotCount}/{totalSnapshotCount}
-                </span>
+                </Caption>
               )}
           </div>
         )}
@@ -180,11 +194,11 @@ function TimeMachineHeaderComponent({
         {isRunning && progress && (
           <div className="flex items-center gap-3 px-3 py-1.5 bg-[var(--tm-amber-wash)] rounded-lg">
             <div className="tm-live-status-dot" />
-            <span className="text-xs font-medium text-[var(--tm-amber)]">
+            <Caption className="font-weight-medium text-[var(--tm-amber)]">
               {progress.percentage}%
-            </span>
+            </Caption>
             {progress.eta && (
-              <span className="text-xs text-[var(--tm-text-dim)]">ETA {progress.eta}</span>
+              <Caption className="text-[var(--tm-text-dim)]">ETA {progress.eta}</Caption>
             )}
           </div>
         )}

@@ -12,6 +12,7 @@ import { Icons } from './IconComponents';
 import { api } from '../api';
 import { formatBytes } from '../utils/formatters';
 import type { DevSeedResult, DevBenchmarkResult, DevDbStats } from '../types';
+import { Title, Body, Caption, Code } from './ui';
 
 interface DevToolsProps {
   onClose?: () => void;
@@ -104,8 +105,8 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
               <Icons.Code size={20} className="text-accent-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Dev Tools</h2>
-              <p className="text-xs text-text-tertiary">Testing & Performance</p>
+              <Title level={4}>Dev Tools</Title>
+              <Caption color="tertiary">Testing & Performance</Caption>
             </div>
           </div>
           {onClose && (
@@ -142,7 +143,9 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
 
           {/* Actions */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-text-secondary">Data Generation</h3>
+            <Body size="sm" weight="medium" color="secondary">
+              Data Generation
+            </Body>
             <div className="flex gap-3">
               <button
                 onClick={handleSeedData}
@@ -184,64 +187,73 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                 {seedResult.jobs_created === 0 ? (
                   <>
                     <Icons.Info size={18} className="text-[var(--color-info)]" />
-                    <span className="font-medium text-[var(--color-info)]">
+                    <Body weight="medium" className="text-[var(--color-info)]">
                       Data Already Exists
-                    </span>
+                    </Body>
                   </>
                 ) : (
                   <>
                     <Icons.Check size={18} className="text-[var(--color-success)]" />
-                    <span className="font-medium text-[var(--color-success)]">
+                    <Body weight="medium" className="text-[var(--color-success)]">
                       Seeding Complete
-                    </span>
+                    </Body>
                   </>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
                 {seedResult.jobs_created > 0 && (
-                  <div className="text-text-tertiary">
+                  <Body size="sm" color="tertiary">
                     Jobs:{' '}
-                    <span className="text-text-primary font-medium">{seedResult.jobs_created}</span>
-                  </div>
+                    <Body as="span" size="sm" weight="medium">
+                      {seedResult.jobs_created}
+                    </Body>
+                  </Body>
                 )}
-                <div className="text-text-tertiary">
+                <Body size="sm" color="tertiary">
                   Snapshots:{' '}
-                  <span className="text-text-primary font-medium">
+                  <Body as="span" size="sm" weight="medium">
                     {seedResult.snapshots_created}
-                  </span>
-                </div>
-                <div className="text-text-tertiary">
+                  </Body>
+                </Body>
+                <Body size="sm" color="tertiary">
                   Files:{' '}
-                  <span className="text-text-primary font-medium">
+                  <Body as="span" size="sm" weight="medium">
                     {seedResult.files_created.toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-text-tertiary">
+                  </Body>
+                </Body>
+                <Body size="sm" color="tertiary">
                   Size:{' '}
-                  <span className="text-text-primary font-medium">
+                  <Body as="span" size="sm" weight="medium">
                     {formatBytes(seedResult.total_size_bytes)}
-                  </span>
-                </div>
+                  </Body>
+                </Body>
                 {seedResult.duration_ms > 0 && (
-                  <div className="col-span-2 text-text-tertiary">
+                  <Body size="sm" color="tertiary" className="col-span-2">
                     Duration:{' '}
-                    <span className="text-[var(--color-success)] font-medium">
+                    <Body
+                      as="span"
+                      size="sm"
+                      weight="medium"
+                      className="text-[var(--color-success)]"
+                    >
                       {(seedResult.duration_ms / 1000).toFixed(2)}s
-                    </span>
-                  </div>
+                    </Body>
+                  </Body>
                 )}
               </div>
               {seedResult.jobs_created === 0 && (
-                <p className="text-xs text-text-tertiary mt-3">
+                <Caption color="tertiary" className="mt-3">
                   Click "Clear" first if you want to regenerate the data.
-                </p>
+                </Caption>
               )}
             </div>
           )}
 
           {/* Benchmarks */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-text-secondary">Performance Benchmarks</h3>
+            <Body size="sm" weight="medium" color="secondary">
+              Performance Benchmarks
+            </Body>
             <button
               onClick={handleRunBenchmarks}
               disabled={isBenchmarking || !dbStats || dbStats.file_count === 0}
@@ -264,29 +276,44 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
           {/* Benchmark Results */}
           {benchmarkResults && (
             <div className="space-y-2 animate-fade-in">
-              <h4 className="text-xs font-medium text-text-tertiary uppercase tracking-wide">
+              <Caption color="tertiary" className="font-medium uppercase tracking-wide">
                 Results (100 iterations each)
-              </h4>
+              </Caption>
               <div className="bg-layer-2 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border-base">
-                      <th className="px-4 py-2 text-left text-text-tertiary font-medium">
-                        Operation
+                      <th className="px-4 py-2 text-left">
+                        <Caption color="tertiary" className="font-medium">
+                          Operation
+                        </Caption>
                       </th>
-                      <th className="px-4 py-2 text-right text-text-tertiary font-medium">Avg</th>
-                      <th className="px-4 py-2 text-right text-text-tertiary font-medium">Min</th>
-                      <th className="px-4 py-2 text-right text-text-tertiary font-medium">Max</th>
+                      <th className="px-4 py-2 text-right">
+                        <Caption color="tertiary" className="font-medium">
+                          Avg
+                        </Caption>
+                      </th>
+                      <th className="px-4 py-2 text-right">
+                        <Caption color="tertiary" className="font-medium">
+                          Min
+                        </Caption>
+                      </th>
+                      <th className="px-4 py-2 text-right">
+                        <Caption color="tertiary" className="font-medium">
+                          Max
+                        </Caption>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {benchmarkResults.map((result, i) => (
                       <tr key={result.operation} className={i % 2 === 0 ? 'bg-layer-1/50' : ''}>
-                        <td className="px-4 py-2 text-text-primary font-mono text-xs">
-                          {result.operation}
+                        <td className="px-4 py-2">
+                          <Code size="sm">{result.operation}</Code>
                         </td>
                         <td className="px-4 py-2 text-right tabular-nums">
-                          <span
+                          <Body
+                            size="sm"
                             className={
                               result.avg_ms < 1
                                 ? 'text-[var(--color-success)]'
@@ -296,13 +323,17 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                             }
                           >
                             {result.avg_ms.toFixed(3)}ms
-                          </span>
+                          </Body>
                         </td>
-                        <td className="px-4 py-2 text-right text-text-tertiary tabular-nums">
-                          {result.min_ms.toFixed(3)}ms
+                        <td className="px-4 py-2 text-right tabular-nums">
+                          <Body size="sm" color="tertiary">
+                            {result.min_ms.toFixed(3)}ms
+                          </Body>
                         </td>
-                        <td className="px-4 py-2 text-right text-text-tertiary tabular-nums">
-                          {result.max_ms.toFixed(3)}ms
+                        <td className="px-4 py-2 text-right tabular-nums">
+                          <Body size="sm" color="tertiary">
+                            {result.max_ms.toFixed(3)}ms
+                          </Body>
                         </td>
                       </tr>
                     ))}
@@ -317,30 +348,37 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
             <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 rounded-xl animate-fade-in">
               <div className="flex items-center gap-2">
                 <Icons.AlertCircle size={18} className="text-[var(--color-error)]" />
-                <span className="text-[var(--color-error)] text-sm">{error}</span>
+                <Body size="sm" className="text-[var(--color-error)]">
+                  {error}
+                </Body>
               </div>
             </div>
           )}
 
           {/* Info */}
-          <div className="p-4 bg-layer-2 rounded-xl text-xs text-text-tertiary space-y-2">
-            <p>
+          <div className="p-4 bg-layer-2 rounded-xl space-y-2">
+            <Caption color="tertiary">
               <strong>Seed Mock Data</strong> creates 2 backup jobs with 85 snapshots total spanning
               2 years, containing 40K-60K files each (~3.7M file entries, ~1GB database).
-            </p>
-            <p>
+            </Caption>
+            <Caption color="tertiary">
               <strong>Caching</strong>: First seed generates data and saves to{' '}
-              <code className="bg-layer-3 px-1 py-0.5 rounded">mock-data/</code>. Subsequent seeds
-              import from cache (much faster).
-            </p>
-            <p>
+              <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
+                mock-data/
+              </Code>
+              . Subsequent seeds import from cache (much faster).
+            </Caption>
+            <Caption color="tertiary">
               <strong>Benchmarks</strong> run 100 iterations of each operation to measure query
               performance.
-            </p>
-            <p>
-              Dev data is prefixed with <code className="bg-layer-3 px-1 py-0.5 rounded">dev-</code>{' '}
+            </Caption>
+            <Caption color="tertiary">
+              Dev data is prefixed with{' '}
+              <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
+                dev-
+              </Code>{' '}
               and won't affect real backups.
-            </p>
+            </Caption>
           </div>
         </div>
       </div>
@@ -356,9 +394,11 @@ const StatCard: React.FC<{ label: string; value: string; icon: React.ReactNode }
   <div className="p-4 bg-layer-2 rounded-xl">
     <div className="flex items-center gap-2 text-text-tertiary mb-1">
       {icon}
-      <span className="text-xs">{label}</span>
+      <Caption>{label}</Caption>
     </div>
-    <div className="text-lg font-semibold text-text-primary tabular-nums">{value}</div>
+    <Title level={4} className="tabular-nums">
+      {value}
+    </Title>
   </div>
 );
 

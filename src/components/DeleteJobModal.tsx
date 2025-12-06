@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from './IconComponents';
 import { Panel } from './ui';
+import { Title, Body, Caption } from './ui';
 import { formatBytes } from '../utils/formatters';
 
 interface DeleteJobModalProps {
@@ -44,12 +45,12 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
           <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-4">
             <Icons.Trash2 size={24} />
           </div>
-          <h3 className="text-lg font-bold text-text-primary mb-2">
+          <Title level={4} className="mb-2">
             Delete {jobName ? `"${jobName}"` : 'Job'}?
-          </h3>
-          <p className="text-sm text-text-secondary mb-4">
+          </Title>
+          <Body size="sm" color="secondary" className="mb-4">
             This will remove the job configuration from Amber.
-          </p>
+          </Body>
 
           {/* Delete backup data option */}
           <div
@@ -70,19 +71,19 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
                 className="mt-1 w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 disabled:opacity-50"
               />
               <div className="flex-1">
-                <span className="text-sm font-medium text-text-primary">
+                <Body size="sm" weight="medium" className="inline">
                   Also delete backup data
-                </span>
+                </Body>
                 {backupSize > 0 && (
-                  <span className="text-sm text-text-tertiary ml-1">
+                  <Body size="sm" color="tertiary" className="inline ml-1">
                     ({formatBytes(backupSize)})
-                  </span>
+                  </Body>
                 )}
-                <p className="text-xs text-text-secondary mt-1">
+                <Caption color="secondary" className="block mt-1">
                   {mounted
                     ? 'This will permanently delete all snapshots from the backup drive.'
                     : 'Backup drive is offline. Connect it to delete backup data.'}
-                </p>
+                </Caption>
               </div>
             </label>
           </div>
@@ -91,10 +92,10 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
             <div className="w-full p-3 bg-red-50 dark:bg-red-900/20 rounded-xl mb-4 text-left">
               <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
                 <Icons.AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                <p className="text-xs">
+                <Caption className="text-red-600 dark:text-red-400">
                   Warning: This will permanently delete {formatBytes(backupSize)} of backup data.
                   This action cannot be undone.
-                </p>
+                </Caption>
               </div>
             </div>
           )}

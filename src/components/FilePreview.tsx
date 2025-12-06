@@ -3,6 +3,7 @@ import { formatBytes } from '../utils/formatters';
 import { api } from '../api';
 import { getErrorMessage } from '../types';
 import { logger } from '../utils/logger';
+import { Body, Caption, Code } from './ui';
 
 interface FilePreviewProps {
   filePath: string;
@@ -115,7 +116,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     if (loading) {
       return (
         <div className="flex items-center justify-center h-full">
-          <div className="text-gray-500 dark:text-gray-400">Loading preview...</div>
+          <Body color="secondary">Loading preview...</Body>
         </div>
       );
     }
@@ -123,11 +124,11 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="text-red-500 dark:text-red-400 mb-2">⚠️ {error}</div>
-          <div className="text-sm text-gray-400 dark:text-gray-500">File: {fileName}</div>
-          <div className="text-sm text-gray-400 dark:text-gray-500">
-            Size: {formatBytes(fileSize)}
-          </div>
+          <Body className="mb-2 text-red-500 dark:text-red-400">⚠️ {error}</Body>
+          <Caption color="tertiary" className="mb-1">
+            File: {fileName}
+          </Caption>
+          <Caption color="tertiary">Size: {formatBytes(fileSize)}</Caption>
         </div>
       );
     }
@@ -151,12 +152,16 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
       case 'json':
         return (
           <div className="h-full overflow-auto bg-white dark:bg-gray-900">
-            <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-300 whitespace-pre-wrap">
-              {content}
+            <pre className="p-4">
+              <Code size="sm" className="whitespace-pre-wrap">
+                {content}
+              </Code>
             </pre>
             {fileSize > MAX_TEXT_SIZE && (
-              <div className="p-4 text-sm text-yellow-600 dark:text-yellow-500 border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/10">
-                ⚠️ Preview truncated - file is larger than {formatBytes(MAX_TEXT_SIZE)}
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/10">
+                <Caption className="text-yellow-600 dark:text-yellow-500">
+                  ⚠️ Preview truncated - file is larger than {formatBytes(MAX_TEXT_SIZE)}
+                </Caption>
               </div>
             )}
           </div>
@@ -167,9 +172,11 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
         return (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
             <div className="text-6xl mb-4">📄</div>
-            <div className="text-lg mb-2 text-gray-700 dark:text-gray-300">{fileName}</div>
-            <div className="text-sm mb-1">Size: {formatBytes(fileSize)}</div>
-            <div className="text-sm">Preview not available for this file type</div>
+            <Body size="lg" className="mb-2 text-gray-700 dark:text-gray-300">
+              {fileName}
+            </Body>
+            <Caption className="mb-1">Size: {formatBytes(fileSize)}</Caption>
+            <Caption>Preview not available for this file type</Caption>
           </div>
         );
     }
@@ -178,9 +185,9 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName, fi
   return (
     <div className="h-full w-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
       <div className="h-12 px-4 flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+        <Body size="sm" weight="medium" className="truncate text-gray-700 dark:text-gray-300">
           {fileName}
-        </div>
+        </Body>
       </div>
       <div className="h-[calc(100%-3rem)] overflow-hidden">{renderPreview()}</div>
     </div>

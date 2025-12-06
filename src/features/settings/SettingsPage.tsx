@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
 import { logger } from '../../utils/logger';
 import { PageContainer } from '../../components/layout';
+import { Title, Body, Caption } from '../../components/ui';
 
 const APP_VERSION = '0.0.1-beta';
 
@@ -37,9 +38,9 @@ export const SettingsPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           {/* Appearance */}
           <section className="space-y-4">
-            <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+            <Title level={4} className="flex items-center gap-2">
               <Icons.Sun size={18} /> Appearance
-            </h3>
+            </Title>
             <div className="grid grid-cols-3 gap-3">
               {themes.map(t => (
                 <button
@@ -55,11 +56,12 @@ export const SettingsPage: React.FC = () => {
                     className="w-full aspect-video rounded-lg shadow-sm border border-border-highlight"
                     style={{ background: t.color }}
                   />
-                  <span
-                    className={`text-xs font-medium ${theme === t.id ? 'text-text-primary' : 'text-text-secondary'}`}
+                  <Caption
+                    color={theme === t.id ? 'primary' : 'secondary'}
+                    className="font-weight-medium"
                   >
                     {t.label}
-                  </span>
+                  </Caption>
                 </button>
               ))}
             </div>
@@ -67,16 +69,16 @@ export const SettingsPage: React.FC = () => {
 
           {/* System */}
           <section className="space-y-4">
-            <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+            <Title level={4} className="flex items-center gap-2">
               <Icons.Cpu size={18} /> System
-            </h3>
+            </Title>
             <div className="space-y-3">
               <label className="flex items-center justify-between p-4 rounded-xl bg-layer-2 border border-border-base cursor-pointer hover:bg-layer-3 transition-colors">
                 <div>
-                  <div className="font-medium text-text-primary">Run in Background</div>
-                  <div className="text-sm text-text-secondary">
+                  <Body weight="medium">Run in Background</Body>
+                  <Body size="sm" color="secondary">
                     Keep Amber running in the macOS menu bar when closed
-                  </div>
+                  </Body>
                 </div>
                 <input
                   type="checkbox"
@@ -87,8 +89,10 @@ export const SettingsPage: React.FC = () => {
               </label>
               <label className="flex items-center justify-between p-4 rounded-xl bg-layer-2 border border-border-base cursor-pointer hover:bg-layer-3 transition-colors">
                 <div>
-                  <div className="font-medium text-text-primary">Start on Boot</div>
-                  <div className="text-sm text-text-secondary">Launch Amber automatically</div>
+                  <Body weight="medium">Start on Boot</Body>
+                  <Body size="sm" color="secondary">
+                    Launch Amber automatically
+                  </Body>
                 </div>
                 <input
                   type="checkbox"
@@ -99,10 +103,10 @@ export const SettingsPage: React.FC = () => {
               </label>
               <label className="flex items-center justify-between p-4 rounded-xl bg-layer-2 border border-border-base cursor-pointer hover:bg-layer-3 transition-colors">
                 <div>
-                  <div className="font-medium text-text-primary">Notifications</div>
-                  <div className="text-sm text-text-secondary">
+                  <Body weight="medium">Notifications</Body>
+                  <Body size="sm" color="secondary">
                     Show desktop alerts for finished jobs
-                  </div>
+                  </Body>
                 </div>
                 <input
                   type="checkbox"
@@ -134,10 +138,12 @@ export const SettingsPage: React.FC = () => {
                         });
                       }
                     }}
-                    className="px-4 py-2 text-sm font-medium text-accent-primary bg-accent-secondary/20 hover:bg-accent-secondary/30 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-accent-secondary/20 hover:bg-accent-secondary/30 rounded-lg transition-colors flex items-center gap-2"
                   >
                     <Icons.Bell size={16} />
-                    Test Notification
+                    <Body size="sm" weight="medium" className="text-accent-primary">
+                      Test Notification
+                    </Body>
                   </button>
                 </div>
               )}
@@ -147,41 +153,58 @@ export const SettingsPage: React.FC = () => {
 
         {/* System Health Sidebar */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+          <Title level={4} className="flex items-center gap-2">
             <Icons.Shield size={18} /> System Health
-          </h3>
+          </Title>
           <div className="p-4 rounded-xl bg-success-subtle border border-[var(--color-success)]/20">
-            <div className="flex items-center gap-2 text-[var(--color-success)] font-medium mb-1">
+            <Body
+              weight="medium"
+              className="flex items-center gap-2 text-[var(--color-success)] mb-1"
+            >
               <Icons.CheckCircle size={16} /> Environment Ready
-            </div>
-            <p className="text-xs text-[var(--color-success)]/80">
+            </Body>
+            <Caption className="text-[var(--color-success)]/80">
               All necessary binary dependencies detected.
-            </p>
+            </Caption>
           </div>
 
           <div className="space-y-3 py-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">Rsync Version</span>
-              <span className="font-mono text-text-primary">3.2.7</span>
+            <div className="flex justify-between">
+              <Body size="sm" color="secondary">
+                Rsync Version
+              </Body>
+              <Body size="sm" className="font-mono">
+                3.2.7
+              </Body>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">SSH Client</span>
-              <span className="font-mono text-text-primary">OpenSSH_9.0p1</span>
+            <div className="flex justify-between">
+              <Body size="sm" color="secondary">
+                SSH Client
+              </Body>
+              <Body size="sm" className="font-mono">
+                OpenSSH_9.0p1
+              </Body>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">App Version</span>
-              <span className="font-mono text-text-primary">{APP_VERSION}</span>
+            <div className="flex justify-between">
+              <Body size="sm" color="secondary">
+                App Version
+              </Body>
+              <Body size="sm" className="font-mono">
+                {APP_VERSION}
+              </Body>
             </div>
           </div>
 
           <hr className="border-border-base" />
 
-          <button className="w-full py-2.5 rounded-xl bg-layer-2 hover:bg-layer-3 text-sm font-medium text-text-primary transition-colors border border-border-base">
-            Check for Updates
+          <button className="w-full py-2.5 rounded-xl bg-layer-2 hover:bg-layer-3 transition-colors border border-border-base">
+            <Body size="sm" weight="medium">
+              Check for Updates
+            </Body>
           </button>
 
           <div className="text-center pt-2">
-            <p className="text-xs text-text-tertiary">© 2025 Florian P. Mahner</p>
+            <Caption color="tertiary">© 2025 Florian P. Mahner</Caption>
           </div>
         </div>
       </div>

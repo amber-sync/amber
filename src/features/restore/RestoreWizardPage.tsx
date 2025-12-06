@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Icons } from '../../components/IconComponents';
 import { FileBrowser } from '../../components/shared/FileBrowser';
+import { Title, Body, Caption } from '../../components/ui';
 import { SyncJob, Snapshot } from '../../types';
 import { formatBytes } from '../../utils/formatters';
 import { api } from '../../api';
@@ -141,42 +142,62 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
             <Icons.ArrowRight className="rotate-180 text-text-tertiary" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Title level={2} className="flex items-center gap-2">
               <Icons.RotateCcw className="text-[var(--color-info)]" /> Restore Files
-            </h2>
-            <p className="text-sm text-text-secondary">Select a snapshot and files to restore</p>
+            </Title>
+            <Body size="sm" color="secondary">
+              Select a snapshot and files to restore
+            </Body>
           </div>
         </div>
         <div className="flex items-center gap-3 no-drag">
           <button
             onClick={onBack}
-            className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-layer-2 rounded-lg transition-colors"
+            className="px-4 py-2 hover:bg-layer-2 rounded-lg transition-colors"
           >
-            Cancel
+            <Body size="sm" weight="medium" color="secondary" className="hover:text-text-primary">
+              Cancel
+            </Body>
           </button>
 
           <button
             onClick={handleRestoreFull}
             disabled={isRestoring || !activeSnapshot}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               isRestoring || !activeSnapshot
-                ? 'text-text-tertiary bg-layer-2 cursor-not-allowed'
-                : 'text-[var(--color-info)] hover:bg-[var(--color-info-subtle)]'
+                ? 'bg-layer-2 cursor-not-allowed'
+                : 'hover:bg-[var(--color-info-subtle)]'
             }`}
           >
-            Restore Full Snapshot
+            <Body
+              size="sm"
+              weight="medium"
+              className={
+                isRestoring || !activeSnapshot ? 'text-text-tertiary' : 'text-[var(--color-info)]'
+              }
+            >
+              Restore Full Snapshot
+            </Body>
           </button>
 
           <button
             onClick={handleRestore}
             disabled={selectedFiles.size === 0 || isRestoring}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-lg shadow-lg shadow-[var(--color-info)]/20 transition-all ${
+            className={`px-6 py-2 rounded-lg shadow-lg shadow-[var(--color-info)]/20 transition-all ${
               selectedFiles.size === 0 || isRestoring
-                ? 'bg-layer-2 text-text-tertiary cursor-not-allowed shadow-none'
+                ? 'bg-layer-2 cursor-not-allowed shadow-none'
                 : 'bg-[var(--color-info)] hover:bg-[var(--color-info)]/90 hover:scale-[1.02] active:scale-[0.98]'
             }`}
           >
-            {isRestoring ? 'Restoring...' : `Restore ${selectedFiles.size} Items`}
+            <Body
+              size="sm"
+              weight="medium"
+              className={
+                selectedFiles.size === 0 || isRestoring ? 'text-text-tertiary' : 'text-white'
+              }
+            >
+              {isRestoring ? 'Restoring...' : `Restore ${selectedFiles.size} Items`}
+            </Body>
           </button>
         </div>
       </div>
@@ -185,31 +206,35 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
         {/* Sidebar: Snapshots Timeline */}
         <div className="w-80 bg-layer-1 border-r border-border-base flex flex-col overflow-hidden">
           <div className="p-4 border-b border-border-base flex justify-between items-center">
-            <span className="font-medium text-sm text-text-secondary">
+            <Body size="sm" weight="medium" color="secondary">
               Snapshots ({sortedSnapshots.length})
-            </span>
+            </Body>
             <div className="flex bg-layer-2 rounded-lg p-0.5">
               <button
                 onClick={() => setSortBy('date')}
-                className={`px-2 py-1 text-xs font-medium rounded-md transition-all ${
-                  sortBy === 'date'
-                    ? 'bg-layer-1 text-[var(--color-info)] shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
+                className={`px-2 py-1 rounded-md transition-all ${
+                  sortBy === 'date' ? 'bg-layer-1 shadow-sm' : 'hover:text-text-primary'
                 }`}
                 title="Sort by Date"
               >
-                Date
+                <Caption
+                  className={`font-weight-medium ${sortBy === 'date' ? 'text-[var(--color-info)]' : 'text-text-secondary'}`}
+                >
+                  Date
+                </Caption>
               </button>
               <button
                 onClick={() => setSortBy('size')}
-                className={`px-2 py-1 text-xs font-medium rounded-md transition-all ${
-                  sortBy === 'size'
-                    ? 'bg-layer-1 text-[var(--color-info)] shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
+                className={`px-2 py-1 rounded-md transition-all ${
+                  sortBy === 'size' ? 'bg-layer-1 shadow-sm' : 'hover:text-text-primary'
                 }`}
                 title="Sort by Size"
               >
-                Size
+                <Caption
+                  className={`font-weight-medium ${sortBy === 'size' ? 'text-[var(--color-info)]' : 'text-text-secondary'}`}
+                >
+                  Size
+                </Caption>
               </button>
             </div>
           </div>
@@ -230,19 +255,25 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
                   <Icons.Clock size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div
-                    className={`text-sm font-medium ${selectedSnapshotId === snap.id ? 'text-[var(--color-info)]' : 'text-text-primary'}`}
+                  <Body
+                    size="sm"
+                    weight="medium"
+                    className={
+                      selectedSnapshotId === snap.id
+                        ? 'text-[var(--color-info)]'
+                        : 'text-text-primary'
+                    }
                   >
                     {new Date(snap.timestamp).toLocaleString(undefined, {
                       dateStyle: 'medium',
                       timeStyle: 'short',
                     })}
-                  </div>
-                  <div className="text-xs text-text-secondary flex gap-2">
+                  </Body>
+                  <Caption color="secondary" className="flex gap-2">
                     <span>{snap.fileCount} files</span>
                     <span>•</span>
                     <span>{formatBytes(snap.sizeBytes)}</span>
-                  </div>
+                  </Caption>
                 </div>
               </div>
             ))}
@@ -253,13 +284,13 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
         <div className="flex-1 flex flex-col overflow-hidden bg-layer-2 p-6">
           {activeSnapshot && snapshotPath ? (
             <div className="h-full flex flex-col gap-4">
-              <div className="bg-[var(--color-info-subtle)] border border-[var(--color-info)]/20 rounded-lg p-3 flex items-start gap-3 text-sm text-[var(--color-info)]">
-                <Icons.Info size={18} className="shrink-0 mt-0.5" />
-                <div>
+              <div className="bg-[var(--color-info-subtle)] border border-[var(--color-info)]/20 rounded-lg p-3 flex items-start gap-3">
+                <Icons.Info size={18} className="shrink-0 mt-0.5 text-[var(--color-info)]" />
+                <Body size="sm" className="text-[var(--color-info)]">
                   Viewing snapshot from{' '}
                   <strong>{new Date(activeSnapshot.timestamp).toLocaleString()}</strong>. Select
                   files to restore them to the original location.
-                </div>
+                </Body>
               </div>
 
               <div className="flex-1 bg-layer-1 rounded-xl border border-border-base shadow-sm overflow-hidden">
@@ -275,8 +306,8 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-text-tertiary">
-              Select a snapshot to view files
+            <div className="flex-1 flex items-center justify-center">
+              <Body color="tertiary">Select a snapshot to view files</Body>
             </div>
           )}
         </div>

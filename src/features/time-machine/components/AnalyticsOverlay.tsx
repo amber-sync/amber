@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo, memo } from 'react';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
 import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Icons } from '../../../components/IconComponents';
+import { Title, Body, Caption, Code } from '../../../components/ui';
 import { formatBytes } from '../../../utils';
 import { api } from '../../../api';
 
@@ -83,7 +84,9 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
       <div className="tm-overlay-panel" style={{ width: '600px' }}>
         {/* Header */}
         <div className="tm-overlay-header">
-          <h2 className="tm-overlay-title">Snapshot Analytics</h2>
+          <Title level={3} className="tm-overlay-title">
+            Snapshot Analytics
+          </Title>
           <button onClick={onClose} className="tm-overlay-close">
             <Icons.X size={18} />
           </button>
@@ -97,28 +100,32 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
                 size={32}
                 className="text-[var(--color-accent-primary)] animate-spin mb-4"
               />
-              <p className="text-sm text-[var(--tm-text-dim)]">Loading analytics...</p>
+              <Body size="sm" className="text-[var(--tm-text-dim)]">
+                Loading analytics...
+              </Body>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Icons.AlertCircle size={32} className="text-[var(--tm-error)] mb-4" />
-              <p className="text-sm text-[var(--tm-error)]">{error}</p>
+              <Body size="sm" className="text-[var(--tm-error)]">
+                {error}
+              </Body>
             </div>
           ) : data ? (
             <div className="space-y-6">
               {/* Summary stats */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg">
-                  <div className="text-xs text-[var(--tm-text-dim)] mb-1">Total Files</div>
-                  <div className="text-2xl font-semibold text-[var(--tm-text-bright)]">
+                  <Caption className="mb-1 text-[var(--tm-text-dim)]">Total Files</Caption>
+                  <Title level={3} className="text-[var(--tm-text-bright)]">
                     {data.totalFiles.toLocaleString()}
-                  </div>
+                  </Title>
                 </div>
                 <div className="p-4 bg-[var(--tm-nebula)] border border-[var(--tm-dust)] rounded-lg">
-                  <div className="text-xs text-[var(--tm-text-dim)] mb-1">Total Size</div>
-                  <div className="text-2xl font-semibold text-[var(--tm-text-bright)]">
+                  <Caption className="mb-1 text-[var(--tm-text-dim)]">Total Size</Caption>
+                  <Title level={3} className="text-[var(--tm-text-bright)]">
                     {formatBytes(data.totalSize)}
-                  </div>
+                  </Title>
                 </div>
               </div>
 
@@ -126,23 +133,23 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
               <div className="flex gap-1 p-1 bg-[var(--tm-void)] rounded-lg">
                 <button
                   onClick={() => setActiveTab('types')}
-                  className={`flex-1 px-4 py-2 text-sm rounded-md transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md transition-colors ${
                     activeTab === 'types'
                       ? 'bg-[var(--tm-nebula)] text-[var(--tm-text-bright)]'
                       : 'text-[var(--tm-text-dim)] hover:text-[var(--tm-text-soft)]'
                   }`}
                 >
-                  File Types
+                  <Body size="sm">File Types</Body>
                 </button>
                 <button
                   onClick={() => setActiveTab('largest')}
-                  className={`flex-1 px-4 py-2 text-sm rounded-md transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md transition-colors ${
                     activeTab === 'largest'
                       ? 'bg-[var(--tm-nebula)] text-[var(--tm-text-bright)]'
                       : 'text-[var(--tm-text-dim)] hover:text-[var(--tm-text-soft)]'
                   }`}
                 >
-                  Largest Files
+                  <Body size="sm">Largest Files</Body>
                 </button>
               </div>
 
@@ -160,9 +167,9 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
                       />
                     ))
                   ) : (
-                    <p className="text-sm text-[var(--tm-text-dim)] text-center py-8">
+                    <Body size="sm" className="text-center py-8 text-[var(--tm-text-dim)]">
                       No file type data available
-                    </p>
+                    </Body>
                   )
                 ) : data.largestFiles.length > 0 ? (
                   data.largestFiles.map((file, i) => (
@@ -175,9 +182,9 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-[var(--tm-text-dim)] text-center py-8">
+                  <Body size="sm" className="text-center py-8 text-[var(--tm-text-dim)]">
                     No file data available
-                  </p>
+                  </Body>
                 )}
               </div>
             </div>
@@ -211,14 +218,19 @@ function FileTypeRow({
       {/* Content */}
       <div className="relative flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="px-2 py-0.5 bg-[var(--tm-dust)] rounded text-xs font-mono text-[var(--tm-text-bright)]">
+          <Code
+            size="sm"
+            className="px-2 py-0.5 bg-[var(--tm-dust)] rounded text-[var(--tm-text-bright)]"
+          >
             .{extension}
-          </span>
-          <span className="text-sm text-[var(--tm-text-dim)]">{count.toLocaleString()} files</span>
+          </Code>
+          <Body size="sm" className="text-[var(--tm-text-dim)]">
+            {count.toLocaleString()} files
+          </Body>
         </div>
-        <span className="text-sm font-medium text-[var(--tm-text-bright)]">
+        <Body size="sm" weight="medium" className="text-[var(--tm-text-bright)]">
           {formatBytes(size)}
-        </span>
+        </Body>
       </div>
     </div>
   );
@@ -250,15 +262,17 @@ function LargestFileRow({
       {/* Content */}
       <div className="relative flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-[var(--tm-text-bright)] truncate">
+          <Body size="sm" weight="medium" className="text-[var(--tm-text-bright)] truncate">
             {fileName}
-          </div>
-          <div className="text-xs text-[var(--tm-text-dim)] font-mono truncate">{dirPath}</div>
+          </Body>
+          <Code size="sm" truncate className="text-[var(--tm-text-dim)]">
+            {dirPath}
+          </Code>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-[var(--tm-text-bright)]">
+          <Body size="sm" weight="medium" className="text-[var(--tm-text-bright)]">
             {formatBytes(size)}
-          </span>
+          </Body>
           <button
             onClick={onOpen}
             className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-[var(--tm-dust)] hover:bg-[var(--tm-mist)] text-[var(--tm-text-dim)] hover:text-[var(--tm-text-bright)] transition-all"

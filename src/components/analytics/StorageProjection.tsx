@@ -12,6 +12,7 @@ import { format, addDays } from 'date-fns';
 import { SyncJob, DiskStats } from '../../types';
 import { formatBytes } from '../../utils/formatters';
 import { Icons } from '../IconComponents';
+import { Title, Caption, Body } from '../ui';
 
 interface StorageProjectionProps {
   jobs: SyncJob[];
@@ -175,18 +176,25 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
     <div className="bg-layer-1 rounded-xl border border-border-base p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-text-primary">Storage Projection</h3>
+        <Title level={3}>Storage Projection</Title>
         {daysUntilFull !== null && (
           <div
             className={`
-              flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
-              ${isCritical ? 'bg-[var(--color-error)]/10 text-[var(--color-error)]' : ''}
-              ${isWarning && !isCritical ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : ''}
-              ${!isWarning ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' : ''}
+              flex items-center gap-1.5 px-2.5 py-1 rounded-full
+              ${isCritical ? 'bg-[var(--color-error)]/10' : ''}
+              ${isWarning && !isCritical ? 'bg-[var(--color-warning)]/10' : ''}
+              ${!isWarning ? 'bg-[var(--color-success)]/10' : ''}
             `}
           >
             {isCritical && <Icons.AlertTriangle size={12} />}
-            {daysUntilFull} days until full
+            <Body
+              size="sm"
+              weight="medium"
+              color={isCritical ? 'error' : isWarning ? 'warning' : 'success'}
+              as="span"
+            >
+              {daysUntilFull} days until full
+            </Body>
           </div>
         )}
       </div>
@@ -194,20 +202,16 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-layer-2 rounded-lg p-3">
-          <div className="text-[10px] text-text-tertiary uppercase tracking-wider mb-1">
+          <Caption color="tertiary" className="uppercase tracking-wider mb-1">
             Daily Growth
-          </div>
-          <div className="text-lg font-bold text-text-primary">
-            {dailyGrowthRate > 0 ? `+${formatBytes(dailyGrowthRate)}` : '—'}
-          </div>
+          </Caption>
+          <Title level={4}>{dailyGrowthRate > 0 ? `+${formatBytes(dailyGrowthRate)}` : '—'}</Title>
         </div>
         <div className="bg-layer-2 rounded-lg p-3">
-          <div className="text-[10px] text-text-tertiary uppercase tracking-wider mb-1">
+          <Caption color="tertiary" className="uppercase tracking-wider mb-1">
             Total Capacity
-          </div>
-          <div className="text-lg font-bold text-text-primary">
-            {totalCapacity > 0 ? formatBytes(totalCapacity) : '—'}
-          </div>
+          </Caption>
+          <Title level={4}>{totalCapacity > 0 ? formatBytes(totalCapacity) : '—'}</Title>
         </div>
       </div>
 
@@ -276,8 +280,10 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="h-40 flex items-center justify-center text-text-tertiary text-sm">
-          No backup data available for projection
+        <div className="h-40 flex items-center justify-center">
+          <Body size="sm" color="tertiary">
+            No backup data available for projection
+          </Body>
         </div>
       )}
 
@@ -285,17 +291,17 @@ export const StorageProjection: React.FC<StorageProjectionProps> = ({ jobs, disk
       {isWarning && (
         <div
           className={`
-            mt-3 p-3 rounded-lg text-xs
-            ${isCritical ? 'bg-[var(--color-error)]/10 text-[var(--color-error)]' : 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'}
+            mt-3 p-3 rounded-lg
+            ${isCritical ? 'bg-[var(--color-error)]/10' : 'bg-[var(--color-warning)]/10'}
           `}
         >
           <div className="flex items-center gap-2">
             <Icons.AlertTriangle size={14} />
-            <span className="font-medium">
+            <Body size="sm" weight="medium" color={isCritical ? 'error' : 'warning'}>
               {isCritical
                 ? 'Critical: Storage running out soon!'
                 : 'Warning: Consider adding storage capacity'}
-            </span>
+            </Body>
           </div>
         </div>
       )}
