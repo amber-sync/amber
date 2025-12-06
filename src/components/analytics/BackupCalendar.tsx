@@ -177,7 +177,6 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
                         ${today_ ? 'ring-1 ring-accent-primary' : ''}
                         hover:ring-1 hover:ring-text-secondary
                       `}
-                        title={`${format(day, 'MMM d, yyyy')}: ${count} backup${count !== 1 ? 's' : ''}`}
                       >
                         {/* Tooltip on hover */}
                         {isHovered && (
