@@ -1,6 +1,7 @@
 // Base components
 export { Button, type ButtonVariant, type ButtonSize } from './Button';
 export { Badge, type BadgeStatus, type BadgeVariant, type BadgeSize } from './Badge';
+export { ModeBadge, type BackupMode } from './ModeBadge';
 export { Card, type CardVariant } from './Card';
 export { StatusDot, type StatusDotStatus, type StatusDotSize } from './StatusDot';
 export { IconButton, type IconButtonVariant, type IconButtonSize } from './IconButton';
