@@ -1,13 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import {
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  format,
-  subWeeks,
-  isToday,
-  isSameDay,
-} from 'date-fns';
+import React, { useMemo } from 'react';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format, subWeeks, isToday } from 'date-fns';
 import { SyncJob } from '../../types';
 import { Title, Caption, Body } from '../ui';
 
@@ -26,8 +18,6 @@ interface DayBackup {
 // GitHub-style contribution heatmap - shows full year (52 weeks)
 export const BackupCalendar = React.memo<BackupCalendarProps>(
   function BackupCalendar({ jobs, onDayClick }) {
-    const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
-
     // Aggregate backups by date
     const backupsByDate = useMemo(() => {
       const map = new Map<string, DayBackup[]>();
@@ -118,7 +108,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
     const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 
     return (
-      <div className="bg-layer-1 rounded-xl border border-border-base p-4 overflow-visible">
+      <div className="bg-layer-1 rounded-xl border border-border-base p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <Title level={3}>Backup Activity</Title>
@@ -127,7 +117,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           </Caption>
         </div>
 
-        <div className="flex overflow-visible">
+        <div className="flex">
           {/* Day labels (left axis) */}
           <div className="flex flex-col gap-[3px] mr-2 mt-[18px]">
             {dayLabels.map((label, i) => (
@@ -140,7 +130,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           </div>
 
           {/* Heatmap grid */}
-          <div className="flex-1 overflow-x-auto overflow-y-visible">
+          <div className="flex-1 overflow-x-auto">
             {/* Month labels */}
             <div className="flex mb-2 relative h-[14px]">
               {monthLabels.map(({ month, weekIndex }) => (
@@ -157,42 +147,24 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
             </div>
 
             {/* Contribution grid: 52 columns x 7 rows */}
-            <div className="flex gap-[3px] p-2">
+            <div className="flex gap-[3px] pb-1">
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-[3px]">
                   {week.map(day => {
                     const count = getBackupCount(day);
                     const today_ = isToday(day);
-                    const isHovered = hoveredDay && isSameDay(day, hoveredDay);
 
                     return (
                       <button
                         key={day.toISOString()}
                         onClick={() => handleDayClick(day)}
-                        onMouseEnter={() => setHoveredDay(day)}
-                        onMouseLeave={() => setHoveredDay(null)}
                         className={`
-                        w-[11px] h-[11px] rounded-[2px] transition-all relative
-                        ${getIntensityClass(count)}
-                        ${today_ ? 'ring-1 ring-accent-primary' : ''}
-                        hover:ring-1 hover:ring-text-secondary
-                      `}
-                      >
-                        {/* Tooltip on hover */}
-                        {isHovered && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
-                            <div className="bg-layer-3 border border-border-base rounded-lg px-2 py-1 shadow-lg whitespace-nowrap">
-                              <Caption className="font-medium">
-                                {count} backup{count !== 1 ? 's' : ''}
-                              </Caption>
-                            </div>
-                            {/* Arrow */}
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-[1px]">
-                              <div className="border-4 border-transparent border-t-layer-3" />
-                            </div>
-                          </div>
-                        )}
-                      </button>
+                          w-[11px] h-[11px] rounded-[2px] transition-all
+                          ${getIntensityClass(count)}
+                          ${today_ ? 'ring-1 ring-accent-primary' : ''}
+                          hover:ring-1 hover:ring-text-secondary
+                        `}
+                      />
                     );
                   })}
                 </div>
