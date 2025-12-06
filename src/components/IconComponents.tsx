@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   HardDrive,
   Server,
@@ -64,6 +63,10 @@ import {
   Pencil,
   ExternalLink,
   GitCompare,
+  Home,
+  HelpCircle,
+  Edit,
+  Palette,
 } from 'lucide-react';
 
 export const Icons = {
@@ -131,4 +134,8 @@ export const Icons = {
   Pencil,
   ExternalLink,
   GitCompare,
+  Home,
+  HelpCircle,
+  Edit,
+  Palette,
 };
