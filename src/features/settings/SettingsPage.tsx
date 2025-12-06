@@ -1,13 +1,13 @@
 import React from 'react';
-import { Icons } from '../components/IconComponents';
-import { useTheme, Theme } from '../context/ThemeContext';
-import { useApp } from '../context/AppContext';
-import { api } from '../api';
-import { logger } from '../utils/logger';
+import { Icons } from '../../components/IconComponents';
+import { useTheme, Theme } from '../../context/ThemeContext';
+import { useApp } from '../../context/AppContext';
+import { api } from '../../api';
+import { logger } from '../../utils/logger';
 
 const APP_VERSION = '0.0.1-beta';
 
-export const AppSettings: React.FC = () => {
+export const SettingsPage: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const {
     runInBackground,
