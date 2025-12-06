@@ -14,6 +14,7 @@ import {
   SectionHeader,
   ExclusionPatternEditor,
   COMMON_PATTERNS,
+  ScheduleSelector,
 } from '../../components/ui';
 
 export interface JobEditorProps {
@@ -64,13 +65,6 @@ export interface JobEditorProps {
   // Other props
   isEditing: boolean;
 }
-
-const SCHEDULE_OPTIONS = [
-  { label: 'Manual', value: null, icon: <Icons.Hand size={16} /> },
-  { label: 'Hourly', value: 60, icon: <Icons.Clock size={16} /> },
-  { label: 'Daily', value: 1440, icon: <Icons.Calendar size={16} /> },
-  { label: 'Weekly', value: 10080, icon: <Icons.CalendarDays size={16} /> },
-];
 
 const SYNC_MODES = [
   {
@@ -301,23 +295,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               {/* Schedule */}
               <div>
                 <SectionHeader variant="form-label">Schedule</SectionHeader>
-                <div className="flex flex-wrap gap-2">
-                  {SCHEDULE_OPTIONS.map(opt => (
-                    <button
-                      key={opt.label}
-                      type="button"
-                      onClick={() => setJobSchedule(opt.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                        jobSchedule === opt.value
-                          ? 'bg-accent-primary text-accent-text'
-                          : 'bg-layer-2 text-text-secondary hover:bg-layer-3'
-                      }`}
-                    >
-                      {opt.icon}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <ScheduleSelector value={jobSchedule} onChange={setJobSchedule} />
               </div>
 
               {/* Exclusions */}
