@@ -23,6 +23,26 @@ pub struct SnapshotInfo {
     pub path: Option<String>,
 }
 
+impl SnapshotInfo {
+    /// Create SnapshotInfo with a full path (dest_path + folder_name)
+    pub fn from_manifest_with_path(s: ManifestSnapshot, full_path: String) -> Self {
+        Self {
+            id: s.id,
+            timestamp: s.timestamp,
+            size_bytes: s.total_size,
+            file_count: s.file_count,
+            changes_count: s.changes_count.unwrap_or(0),
+            status: match s.status {
+                crate::types::manifest::ManifestSnapshotStatus::Complete => "Complete".to_string(),
+                crate::types::manifest::ManifestSnapshotStatus::Partial => "Partial".to_string(),
+                crate::types::manifest::ManifestSnapshotStatus::Failed => "Failed".to_string(),
+            },
+            duration: s.duration_ms,
+            path: Some(full_path),
+        }
+    }
+}
+
 impl From<ManifestSnapshot> for SnapshotInfo {
     fn from(s: ManifestSnapshot) -> Self {
         Self {
@@ -112,10 +132,17 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                                 );
                             }
 
+                            // Build full paths for snapshots using dest_path + folder_name
                             let snaps: Vec<SnapshotInfo> = manifest
                                 .snapshots
                                 .into_iter()
-                                .map(SnapshotInfo::from)
+                                .map(|s| {
+                                    let full_path = Path::new(&dest_path)
+                                        .join(&s.folder_name)
+                                        .to_string_lossy()
+                                        .to_string();
+                                    SnapshotInfo::from_manifest_with_path(s, full_path)
+                                })
                                 .collect();
                             (snaps, "manifest".to_string(), None)
                         }
@@ -129,10 +156,17 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                     // Not mounted - try to load from cache
                     match cache_service::read_snapshot_cache(&job_id).await {
                         Ok(Some(cache)) => {
+                            // Build full paths for cached snapshots using dest_path + folder_name
                             let snaps: Vec<SnapshotInfo> = cache
                                 .snapshots
                                 .into_iter()
-                                .map(SnapshotInfo::from)
+                                .map(|s| {
+                                    let full_path = Path::new(&dest_path)
+                                        .join(&s.folder_name)
+                                        .to_string_lossy()
+                                        .to_string();
+                                    SnapshotInfo::from_manifest_with_path(s, full_path)
+                                })
                                 .collect();
                             (snaps, "cache".to_string(), Some(cache.cached_at))
                         }

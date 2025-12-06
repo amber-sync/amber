@@ -24,6 +24,8 @@ interface RestoreOverlayProps {
   snapshot: TimeMachineSnapshot | null;
   snapshots: TimeMachineSnapshot[];
   onClose: () => void;
+  /** Enable immersive full-screen mode with depth layers */
+  immersive?: boolean;
 }
 
 function RestoreOverlayComponent({
@@ -32,6 +34,7 @@ function RestoreOverlayComponent({
   snapshot,
   snapshots,
   onClose,
+  immersive = false,
 }: RestoreOverlayProps) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<TimeMachineSnapshot | null>(snapshot);
   const [targetPath, setTargetPath] = useState('');
@@ -111,13 +114,21 @@ function RestoreOverlayComponent({
     }
   };
 
+  const overlayClasses = [
+    'tm-overlay',
+    isOpen && 'tm-overlay--visible',
+    immersive && 'tm-overlay--immersive',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={`tm-overlay ${isOpen ? 'tm-overlay--visible' : ''}`}>
-      {/* Backdrop */}
-      <div className="flex-1" onClick={onClose} />
+    <div className={overlayClasses}>
+      {/* Backdrop - absolute in immersive mode, flex in standard */}
+      <div className={immersive ? 'absolute inset-0 z-0' : 'flex-1'} onClick={onClose} />
 
       {/* Panel */}
-      <div className="tm-overlay-panel" style={{ width: '480px' }}>
+      <div className="tm-overlay-panel" style={immersive ? undefined : { width: '480px' }}>
         {/* Header */}
         <div className="tm-overlay-header">
           <Title level={3} className="tm-overlay-title">

@@ -492,6 +492,7 @@ export function TimeMachinePage({
           snapshotTimestamp={selectedTimestamp}
           destPath={currentJob.destPath}
           onClose={handleCloseOverlay}
+          immersive
         />
 
         <RestoreOverlay

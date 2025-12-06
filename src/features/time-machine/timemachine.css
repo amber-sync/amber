@@ -842,6 +842,183 @@
 }
 
 /* ============================================
+ * Immersive Overlay Mode
+ * Enhances the existing tm-overlay pattern with full-screen
+ * centered panel and depth ghost layers behind
+ * ============================================ */
+
+/* Immersive mode - enables 3D perspective on existing overlay */
+.tm-overlay--immersive {
+  perspective: 1800px;
+  perspective-origin: 50% 45%;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ghost layers - positioned behind panel via pseudo-elements */
+.tm-overlay--immersive::before,
+.tm-overlay--immersive::after {
+  content: '';
+  position: absolute;
+  width: 88%;
+  max-width: 1200px;
+  height: 82%;
+  background: var(--tm-space);
+  border: 1px solid var(--tm-dust);
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 400ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Far ghost - deeper layer */
+.tm-overlay--immersive::before {
+  z-index: 1;
+  transform: translateZ(-120px) scale(0.88);
+}
+
+/* Near ghost - closer layer */
+.tm-overlay--immersive::after {
+  z-index: 2;
+  transform: translateZ(-60px) scale(0.94);
+}
+
+/* Ghost silhouette lines (purely decorative) */
+.tm-overlay--immersive::before {
+  background: linear-gradient(
+    to bottom,
+    var(--tm-space) 0%,
+    var(--tm-space) 56px,
+    var(--tm-dust) 56px,
+    var(--tm-dust) 57px,
+    var(--tm-space) 57px
+  );
+}
+
+.tm-overlay--immersive::after {
+  background: linear-gradient(
+    to bottom,
+    var(--tm-space) 0%,
+    var(--tm-space) 56px,
+    var(--tm-dust) 56px,
+    var(--tm-dust) 57px,
+    var(--tm-space) 57px
+  );
+}
+
+/* Visible state - ghosts fade in with staggered timing */
+.tm-overlay--immersive.tm-overlay--visible::before {
+  opacity: 0.12;
+  transform: translateZ(-120px) scale(0.92);
+  transition-delay: 80ms;
+}
+
+.tm-overlay--immersive.tm-overlay--visible::after {
+  opacity: 0.2;
+  transform: translateZ(-60px) scale(0.96);
+  transition-delay: 40ms;
+}
+
+/* Dark mode ghost adjustments */
+.dark .tm-overlay--immersive::before,
+.dark .tm-overlay--immersive::after {
+  background: var(--tm-void);
+  border-color: var(--tm-mist);
+}
+
+.dark .tm-overlay--immersive.tm-overlay--visible::before {
+  opacity: 0.08;
+}
+
+.dark .tm-overlay--immersive.tm-overlay--visible::after {
+  opacity: 0.14;
+}
+
+/* Transform panel from slide-in to centered full-screen */
+.tm-overlay--immersive .tm-overlay-panel {
+  position: relative;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  width: 92%;
+  max-width: 1400px;
+  height: 88%;
+  max-height: 90vh;
+  border-radius: 16px;
+  border: 1px solid var(--tm-mist);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px var(--tm-dust);
+  transform: scale(0.96);
+  opacity: 0;
+  z-index: 3;
+  transition:
+    transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tm-overlay--immersive.tm-overlay--visible .tm-overlay-panel {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Dark mode panel */
+.dark .tm-overlay--immersive .tm-overlay-panel {
+  background: var(--tm-void);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--tm-mist);
+}
+
+/* Larger header for immersive mode */
+.tm-overlay--immersive .tm-overlay-header {
+  height: 64px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--tm-dust);
+}
+
+/* Enhanced close button */
+.tm-overlay--immersive .tm-overlay-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+/* Content area adjustments */
+.tm-overlay--immersive .tm-overlay-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .tm-overlay--immersive .tm-overlay-panel {
+    width: 96%;
+    height: 92%;
+  }
+
+  .tm-overlay--immersive::before {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .tm-overlay--immersive .tm-overlay-panel {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .tm-overlay--immersive::before,
+  .tm-overlay--immersive::after {
+    display: none;
+  }
+}
+
+/* ============================================
  * Analytics Preview
  * ============================================ */
 .tm-analytics {
