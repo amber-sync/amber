@@ -589,7 +589,20 @@ function AppContent() {
             setSshProxyJump={setSshProxyJump}
             setSshCustomOptions={setSshCustomOptions}
             onSave={handleSaveJob}
-            onCancel={() => setView(activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')}
+            onCancel={() => {
+              // TIM-211/212: Use tracked source view for proper return navigation
+              type ViewType =
+                | 'DASHBOARD'
+                | 'TIME_MACHINE'
+                | 'JOB_EDITOR'
+                | 'APP_SETTINGS'
+                | 'HELP'
+                | 'RESTORE_WIZARD';
+              const returnView = (jobEditorSourceView ||
+                (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
+              setView(returnView);
+              setJobEditorSourceView(null);
+            }}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
             onJobModeChange={handleJobModeChange}

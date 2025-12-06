@@ -135,7 +135,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Analytics Section */}
       {jobs.length > 0 && (
-        <PageSection title="Analytics" className="pt-6 border-t border-border-base">
+        <PageSection title="Analytics" className="pt-6 pb-8 border-t border-border-base">
           <div className="grid grid-cols-1 gap-5">
             <BackupCalendar jobs={jobs} onDayClick={handleDayClick} />
           </div>

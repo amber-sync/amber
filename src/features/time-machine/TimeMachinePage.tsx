@@ -59,7 +59,7 @@ export function TimeMachinePage({
   logs = [],
 }: TimeMachineProps) {
   const { jobs, runSync, stopSync, persistJob, deleteJob } = useJobs();
-  const { activeJobId, setActiveJobId, setView, navigateBack } = useUI();
+  const { activeJobId, setActiveJobId, setView } = useUI();
 
   // Current job
   const [currentJobId, setCurrentJobId] = useState<string | null>(
@@ -285,9 +285,10 @@ export function TimeMachinePage({
     setDateFilter('all'); // Reset filter when switching jobs
   }, []);
 
+  // TIM-214: TimeMachine is a top-level view, back always returns to Dashboard
   const handleBack = useCallback(() => {
-    navigateBack();
-  }, [navigateBack]);
+    setView('DASHBOARD');
+  }, [setView]);
 
   const handleSelectSnapshot = useCallback((timestamp: number) => {
     setSelectedTimestamp(timestamp);
