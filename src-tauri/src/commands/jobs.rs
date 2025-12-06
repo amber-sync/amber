@@ -120,7 +120,10 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                             (snaps, "manifest".to_string(), None)
                         }
                         Ok(None) => (Vec::new(), "none".to_string(), None),
-                        Err(_) => (Vec::new(), "none".to_string(), None),
+                        Err(e) => {
+                            log::warn!("Failed to read manifest for job {}: {}", job_id, e);
+                            (Vec::new(), "none".to_string(), None)
+                        }
                     }
                 } else {
                     // Not mounted - try to load from cache
@@ -134,7 +137,10 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                             (snaps, "cache".to_string(), Some(cache.cached_at))
                         }
                         Ok(None) => (Vec::new(), "none".to_string(), None),
-                        Err(_) => (Vec::new(), "none".to_string(), None),
+                        Err(e) => {
+                            log::warn!("Failed to read snapshot cache for job {}: {}", job_id, e);
+                            (Vec::new(), "none".to_string(), None)
+                        }
                     }
                 }
             }
@@ -219,27 +225,49 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
         )));
     }
 
+    // Security hardening: Canonicalize path to resolve symlinks and relative paths
+    // This prevents attacks like /Volumes/Drive/../../system or symlink-based traversal
+    let canonical = std::fs::canonicalize(path).map_err(|e| {
+        crate::error::AmberError::InvalidPath(format!(
+            "Failed to resolve path {}: {}",
+            dest_path, e
+        ))
+    })?;
+
+    let canonical_str = canonical.to_string_lossy();
+
     // Only allow deleting paths on external volumes (not system drive)
     // This is a critical safety check to prevent accidental data loss
-    let path_str = dest_path.trim_end_matches('/');
 
     // Must be under /Volumes/ but NOT on Macintosh HD (system drive)
-    if !path_str.starts_with("/Volumes/") {
+    if !canonical_str.starts_with("/Volumes/") {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Can only delete backup data on external volumes: {}",
             dest_path
         )));
     }
 
-    if path_str.starts_with("/Volumes/Macintosh HD") {
+    if canonical_str.starts_with("/Volumes/Macintosh HD") {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Cannot delete data on system volume: {}",
             dest_path
         )));
     }
 
-    // Don't allow deleting the volume root itself
-    let path_after_volumes = path_str.strip_prefix("/Volumes/").unwrap_or("");
+    // Security: Check path component depth to prevent deleting entire volumes
+    // Must have at least: / + Volumes + DriveName + BackupDir
+    // This prevents attacks like /Volumes/Drive/. or /Volumes/Drive/..
+    let components: Vec<_> = canonical.components().collect();
+    if components.len() < 4 {
+        return Err(crate::error::AmberError::InvalidPath(format!(
+            "Cannot delete entire volume or root directory: {}",
+            dest_path
+        )));
+    }
+
+    // Additional check: ensure we're not at the volume root
+    // by verifying there's at least one directory after /Volumes/DriveName/
+    let path_after_volumes = canonical_str.strip_prefix("/Volumes/").unwrap_or("");
     if !path_after_volumes.contains('/') {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Cannot delete entire volume: {}",
@@ -248,13 +276,13 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
     }
 
     // Remove the directory and all contents
-    fs::remove_dir_all(path).await.map_err(|e| {
+    fs::remove_dir_all(&canonical).await.map_err(|e| {
         crate::error::AmberError::Io(std::io::Error::other(format!(
             "Failed to delete backup data: {}",
             e
         )))
     })?;
 
-    log::info!("Deleted backup data at: {}", dest_path);
+    log::info!("Deleted backup data at: {}", canonical_str);
     Ok(())
 }

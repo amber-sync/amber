@@ -11,6 +11,7 @@ use serde::Serialize;
 use std::io::{BufRead, BufReader};
 use std::sync::OnceLock;
 use tauri::Emitter;
+use tokio::time::{timeout, Duration};
 use walkdir::WalkDir;
 
 static RSYNC_SERVICE: OnceLock<RsyncService> = OnceLock::new();
@@ -82,8 +83,12 @@ async fn calculate_snapshot_stats(path: std::path::PathBuf) -> (u64, u64) {
     .unwrap_or((0, 0))
 }
 
-#[tauri::command]
-pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
+/// Spawn the rsync process and emit initial log messages
+fn spawn_rsync_process(
+    service: &RsyncService,
+    job: &SyncJob,
+    app: &tauri::AppHandle,
+) -> Result<std::process::Child> {
     log::info!(
         "[run_rsync] Command invoked for job '{}' (id: {})",
         job.name,
@@ -105,8 +110,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
         },
     );
 
-    let service = get_rsync_service();
-    let mut child = service.spawn_rsync(&job)?;
+    let child = service.spawn_rsync(job)?;
 
     // Emit the actual command being run
     let _ = app.emit(
@@ -117,22 +121,27 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
         },
     );
 
-    // Get backup info before waiting
-    let backup_info = service.get_backup_info(&job.id);
+    Ok(child)
+}
 
+/// Set up output stream handlers for stdout and stderr
+fn setup_output_streams(
+    child: &mut std::process::Child,
+    job: &SyncJob,
+    app: &tauri::AppHandle,
+) -> (Option<std::thread::JoinHandle<()>>, Option<std::thread::JoinHandle<()>>) {
     // Take stdout for streaming (must be done before wait)
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
 
-    // Clone job_id for the streaming thread
     let job_id = job.id.clone();
     let app_handle = app.clone();
 
     // Spawn thread to read stdout and emit events
-    let stdout_handle = if let Some(stdout) = stdout {
+    let stdout_handle = stdout.map(|stdout| {
         let job_id = job_id.clone();
         let app = app_handle.clone();
-        Some(std::thread::spawn(move || {
+        std::thread::spawn(move || {
             let reader = BufReader::new(stdout);
             let mut current_file: Option<String> = None;
 
@@ -176,16 +185,14 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                     );
                 }
             }
-        }))
-    } else {
-        None
-    };
+        })
+    });
 
     // Spawn thread to read stderr
-    let stderr_handle = if let Some(stderr) = stderr {
+    let stderr_handle = stderr.map(|stderr| {
         let job_id = job_id.clone();
         let app = app_handle.clone();
-        Some(std::thread::spawn(move || {
+        std::thread::spawn(move || {
             let reader = BufReader::new(stderr);
             for line in reader.lines().flatten() {
                 if !line.trim().is_empty() {
@@ -198,128 +205,263 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                     );
                 }
             }
-        }))
-    } else {
-        None
-    };
+        })
+    });
 
-    // Wait for completion
-    let status = child.wait()?;
+    (stdout_handle, stderr_handle)
+}
 
-    // Wait for reader threads
+/// Wait for child threads to complete
+fn wait_for_threads(
+    stdout_handle: Option<std::thread::JoinHandle<()>>,
+    stderr_handle: Option<std::thread::JoinHandle<()>>,
+) {
     if let Some(h) = stdout_handle {
         let _ = h.join();
     }
     if let Some(h) = stderr_handle {
         let _ = h.join();
     }
+}
+
+/// Handle successful backup completion (manifest, indexing, symlinks)
+async fn handle_backup_success(
+    service: &RsyncService,
+    job: &SyncJob,
+    backup_info: Option<crate::services::rsync_service::BackupInfo>,
+    app: &tauri::AppHandle,
+) -> Result<()> {
+    // Write manifest for Time Machine mode backups
+    if job.mode == SyncMode::TimeMachine {
+        if let Some(info) = backup_info {
+            let end_time = chrono::Utc::now().timestamp_millis();
+            let duration_ms = (end_time - info.start_time) as u64;
+
+            // Calculate snapshot stats
+            let (file_count, total_size) =
+                calculate_snapshot_stats(info.snapshot_path.clone()).await;
+
+            // Create snapshot entry
+            let snapshot = ManifestSnapshot::new(
+                info.folder_name.clone(),
+                file_count,
+                total_size,
+                ManifestSnapshotStatus::Complete,
+                Some(duration_ms),
+            );
+
+            // Get or create manifest and add snapshot
+            let dest_path = job.dest_path.clone();
+            match manifest_service::get_or_create_manifest(
+                &dest_path,
+                &job.id,
+                &job.name,
+                &job.source_path,
+            )
+            .await
+            {
+                Ok(_) => {
+                    if let Err(e) =
+                        manifest_service::add_snapshot_to_manifest(&dest_path, snapshot).await
+                    {
+                        log::warn!("Failed to add snapshot to manifest: {}", e);
+                    }
+                }
+                Err(e) => {
+                    log::warn!("Failed to create manifest: {}", e);
+                }
+            }
+
+            // Update latest symlink
+            if let Err(e) = service.update_latest_symlink(
+                info.target_base.to_str().unwrap_or(""),
+                &info.folder_name,
+            ) {
+                log::warn!("Failed to update latest symlink: {}", e);
+            }
+
+            // TIM-127: Index snapshot on destination drive
+            // Store index at <dest>/.amber-meta/index.db for portability
+            let snapshot_path_str = info.snapshot_path.to_string_lossy().to_string();
+            let timestamp = chrono::Utc::now().timestamp_millis();
+
+            log::info!("Indexing snapshot on destination: {}", dest_path);
+            match IndexService::for_destination(&dest_path) {
+                Ok(index) => {
+                    if let Err(e) = index.index_snapshot(&job.id, timestamp, &snapshot_path_str) {
+                        log::warn!("Failed to index snapshot on destination: {}", e);
+                    } else {
+                        log::info!("Snapshot indexed successfully on destination");
+                    }
+                }
+                Err(e) => {
+                    log::warn!("Failed to open destination index: {}", e);
+                }
+            }
+        }
+    }
+
+    // Clean up backup info
+    service.clear_backup_info(&job.id);
+
+    // Emit success event
+    let _ = app.emit(
+        "rsync-complete",
+        RsyncCompletePayload {
+            job_id: job.id.clone(),
+            success: true,
+            error: None,
+        },
+    );
+
+    Ok(())
+}
+
+/// Handle backup failure
+fn handle_backup_failure(
+    service: &RsyncService,
+    job: &SyncJob,
+    status: std::process::ExitStatus,
+    app: &tauri::AppHandle,
+) -> Result<()> {
+    // Clean up backup info even on failure
+    service.clear_backup_info(&job.id);
+
+    let error_msg = format!("rsync exited with code {:?}", status.code());
+
+    // Emit failure event
+    let _ = app.emit(
+        "rsync-complete",
+        RsyncCompletePayload {
+            job_id: job.id.clone(),
+            success: false,
+            error: Some(error_msg.clone()),
+        },
+    );
+
+    Err(crate::error::AmberError::Rsync(error_msg))
+}
+
+#[tauri::command]
+pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
+    let service = get_rsync_service();
+
+    // Spawn rsync process
+    let mut child = spawn_rsync_process(service, &job, &app)?;
+
+    // Get backup info before waiting
+    let backup_info = service.get_backup_info(&job.id);
+
+    // Set up output stream handlers
+    let (stdout_handle, stderr_handle) = setup_output_streams(&mut child, &job, &app);
+
+    // Wait for completion with timeout enforcement
+    let timeout_duration = Duration::from_secs(job.config.timeout_seconds);
+    let wait_result = timeout(timeout_duration, async {
+        // Convert blocking wait to async
+        tokio::task::spawn_blocking(move || child.wait()).await
+    })
+    .await;
+
+    // Handle timeout and process result
+    let status = match wait_result {
+        Ok(Ok(Ok(status))) => {
+            // Normal completion
+            status
+        }
+        Ok(Ok(Err(e))) => {
+            // Process wait error
+            wait_for_threads(stdout_handle, stderr_handle);
+            service.mark_completed(&job.id);
+            service.clear_backup_info(&job.id);
+
+            let error_msg = format!("Failed to wait for rsync process: {}", e);
+            let _ = app.emit(
+                "rsync-complete",
+                RsyncCompletePayload {
+                    job_id: job.id.clone(),
+                    success: false,
+                    error: Some(error_msg.clone()),
+                },
+            );
+
+            return Err(crate::error::AmberError::Rsync(error_msg));
+        }
+        Ok(Err(e)) => {
+            // Task join error (shouldn't happen)
+            wait_for_threads(stdout_handle, stderr_handle);
+            service.mark_completed(&job.id);
+            service.clear_backup_info(&job.id);
+
+            let error_msg = format!("Task error while waiting for rsync: {}", e);
+            let _ = app.emit(
+                "rsync-complete",
+                RsyncCompletePayload {
+                    job_id: job.id.clone(),
+                    success: false,
+                    error: Some(error_msg.clone()),
+                },
+            );
+
+            return Err(crate::error::AmberError::Rsync(error_msg));
+        }
+        Err(_) => {
+            // Timeout expired - kill the process
+            log::warn!(
+                "[run_rsync] Backup timed out after {} seconds for job '{}' (id: {})",
+                job.config.timeout_seconds,
+                job.name,
+                job.id
+            );
+
+            // Attempt to kill the rsync process
+            if let Err(e) = service.kill_job(&job.id) {
+                log::error!("Failed to kill timed-out rsync process: {}", e);
+            }
+
+            // Wait for reader threads to finish processing output
+            wait_for_threads(stdout_handle, stderr_handle);
+
+            service.mark_completed(&job.id);
+            service.clear_backup_info(&job.id);
+
+            let error_msg = format!(
+                "Backup timed out after {} seconds",
+                job.config.timeout_seconds
+            );
+
+            let _ = app.emit(
+                "rsync-complete",
+                RsyncCompletePayload {
+                    job_id: job.id.clone(),
+                    success: false,
+                    error: Some(error_msg.clone()),
+                },
+            );
+
+            return Err(crate::error::AmberError::Rsync(error_msg));
+        }
+    };
+
+    // Wait for reader threads
+    wait_for_threads(stdout_handle, stderr_handle);
 
     // Mark completed
     service.mark_completed(&job.id);
 
+    // TODO: Implement stall timeout detection
+    // The stall_timeout_seconds config field should detect when no progress is made
+    // for a certain duration. This requires tracking the last progress event timestamp
+    // and comparing it against the stall timeout. Implementation would involve:
+    // 1. Shared atomic timestamp updated by the stdout reader thread on progress events
+    // 2. Periodic check in a separate task to compare current time vs last progress
+    // 3. Kill process if (current_time - last_progress) > stall_timeout_seconds
+
+    // Handle success or failure
     if status.success() {
-        // Write manifest for Time Machine mode backups
-        if job.mode == SyncMode::TimeMachine {
-            if let Some(info) = backup_info {
-                let end_time = chrono::Utc::now().timestamp_millis();
-                let duration_ms = (end_time - info.start_time) as u64;
-
-                // Calculate snapshot stats
-                let (file_count, total_size) =
-                    calculate_snapshot_stats(info.snapshot_path.clone()).await;
-
-                // Create snapshot entry
-                let snapshot = ManifestSnapshot::new(
-                    info.folder_name.clone(),
-                    file_count,
-                    total_size,
-                    ManifestSnapshotStatus::Complete,
-                    Some(duration_ms),
-                );
-
-                // Get or create manifest and add snapshot
-                let dest_path = job.dest_path.clone();
-                match manifest_service::get_or_create_manifest(
-                    &dest_path,
-                    &job.id,
-                    &job.name,
-                    &job.source_path,
-                )
-                .await
-                {
-                    Ok(_) => {
-                        if let Err(e) =
-                            manifest_service::add_snapshot_to_manifest(&dest_path, snapshot).await
-                        {
-                            log::warn!("Failed to add snapshot to manifest: {}", e);
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!("Failed to create manifest: {}", e);
-                    }
-                }
-
-                // Update latest symlink
-                if let Err(e) = service.update_latest_symlink(
-                    info.target_base.to_str().unwrap_or(""),
-                    &info.folder_name,
-                ) {
-                    log::warn!("Failed to update latest symlink: {}", e);
-                }
-
-                // TIM-127: Index snapshot on destination drive
-                // Store index at <dest>/.amber-meta/index.db for portability
-                let snapshot_path_str = info.snapshot_path.to_string_lossy().to_string();
-                let timestamp = chrono::Utc::now().timestamp_millis();
-
-                log::info!("Indexing snapshot on destination: {}", dest_path);
-                match IndexService::for_destination(&dest_path) {
-                    Ok(index) => {
-                        if let Err(e) = index.index_snapshot(&job.id, timestamp, &snapshot_path_str)
-                        {
-                            log::warn!("Failed to index snapshot on destination: {}", e);
-                        } else {
-                            log::info!("Snapshot indexed successfully on destination");
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!("Failed to open destination index: {}", e);
-                    }
-                }
-            }
-        }
-
-        // Clean up backup info
-        service.clear_backup_info(&job.id);
-
-        // Emit success event
-        let _ = app.emit(
-            "rsync-complete",
-            RsyncCompletePayload {
-                job_id: job.id.clone(),
-                success: true,
-                error: None,
-            },
-        );
-
-        Ok(())
+        handle_backup_success(service, &job, backup_info, &app).await
     } else {
-        // Clean up backup info even on failure
-        service.clear_backup_info(&job.id);
-
-        let error_msg = format!("rsync exited with code {:?}", status.code());
-
-        // Emit failure event
-        let _ = app.emit(
-            "rsync-complete",
-            RsyncCompletePayload {
-                job_id: job.id.clone(),
-                success: false,
-                error: Some(error_msg.clone()),
-            },
-        );
-
-        Err(crate::error::AmberError::Rsync(error_msg))
+        handle_backup_failure(service, &job, status, &app)
     }
 }
 

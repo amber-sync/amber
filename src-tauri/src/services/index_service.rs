@@ -831,34 +831,40 @@ impl IndexService {
             .lock()
             .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
 
-        // Format string for grouping based on period
-        // timestamp is in milliseconds, so divide by 1000 for strftime
-        let group_format = match period {
-            "day" => "%Y-%m-%d",
-            "week" => "%Y-W%W",
-            "month" => "%Y-%m",
-            "year" => "%Y",
-            _ => "%Y-%m", // Default to month
+        // Validate period input (security: prevent SQL injection via match arm)
+        let period_code = match period {
+            "day" => 1,
+            "week" => 2,
+            "month" => 3,
+            "year" => 4,
+            _ => 3, // Default to month
         };
 
-        let query = format!(
-            "SELECT
-                strftime('{}', timestamp / 1000, 'unixepoch') as period,
+        // Use CASE expression instead of format! to avoid SQL injection risk
+        // Even though the input is validated, this pattern is safer and prevents
+        // future refactoring from introducing vulnerabilities
+        let query = r#"
+            SELECT
+                CASE ?1
+                    WHEN 1 THEN strftime('%Y-%m-%d', timestamp / 1000, 'unixepoch')
+                    WHEN 2 THEN strftime('%Y-W%W', timestamp / 1000, 'unixepoch')
+                    WHEN 3 THEN strftime('%Y-%m', timestamp / 1000, 'unixepoch')
+                    ELSE strftime('%Y', timestamp / 1000, 'unixepoch')
+                END as period,
                 COUNT(*) as count,
                 SUM(total_size) as total_size
              FROM snapshots
-             WHERE job_id = ?
+             WHERE job_id = ?2
              GROUP BY period
-             ORDER BY period DESC",
-            group_format
-        );
+             ORDER BY period DESC
+        "#;
 
         let mut stmt = conn
-            .prepare(&query)
+            .prepare(query)
             .map_err(|e| AmberError::Index(format!("Failed to prepare query: {}", e)))?;
 
         let density = stmt
-            .query_map(params![job_id], |row| {
+            .query_map(params![period_code, job_id], |row| {
                 Ok(SnapshotDensity {
                     period: row.get(0)?,
                     count: row.get(1)?,
