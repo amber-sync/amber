@@ -48,7 +48,7 @@ uuid = { version = "1", features = ["v4"] }
 # TIM-46: SQLite metadata index for fast snapshot browsing
 rusqlite = { version = "0.32", features = ["bundled"] }
 # Dev seeding random data generation
-rand = "0.8"
+rand = "0.9"
 # Machine hostname for manifest
 hostname = "0.4"
 # Parallel manifest loading
