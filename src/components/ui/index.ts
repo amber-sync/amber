@@ -18,6 +18,11 @@ export { Toggle } from './Toggle';
 export { Select, type SelectVariant, type SelectSize, type SelectOption } from './Select';
 export { FormField } from './FormField';
 export { Checkbox } from './Checkbox';
+export {
+  ExclusionPatternEditor,
+  COMMON_PATTERNS,
+  type ExclusionPatternEditorProps,
+} from './ExclusionPatternEditor';
 
 // Layout components
 export { GlassPanel, type GlassPanelVariant } from './GlassPanel';

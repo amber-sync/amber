@@ -66,9 +66,6 @@ function AppContent() {
   const [sshProxyJump, setSshProxyJump] = useState('');
   const [sshCustomOptions, setSshCustomOptions] = useState('');
 
-  // UI Helper State for Form
-  const [tempExcludePattern, setTempExcludePattern] = useState('');
-
   // Delete Modal State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
@@ -214,7 +211,6 @@ function AppContent() {
     setSshConfigPath('');
     setSshProxyJump('');
     setSshCustomOptions('');
-    setTempExcludePattern('');
   };
 
   const handleJobModeChange = (mode: SyncMode) => {
@@ -271,7 +267,6 @@ function AppContent() {
       setSshCustomOptions('');
     }
 
-    setTempExcludePattern('');
     setView('JOB_EDITOR');
   };
 
@@ -379,19 +374,6 @@ function AppContent() {
       setShowDeleteConfirm(false);
       setJobToDelete(null);
     }
-  };
-
-  const handleAddPattern = () => {
-    if (!tempExcludePattern.trim()) return;
-    if (newJobConfig.excludePatterns.includes(tempExcludePattern.trim())) {
-      setTempExcludePattern('');
-      return;
-    }
-    setNewJobConfig(prev => ({
-      ...prev,
-      excludePatterns: [...prev.excludePatterns, tempExcludePattern.trim()],
-    }));
-    setTempExcludePattern('');
   };
 
   const handleSelectDirectory = async (target: 'SOURCE' | 'DEST') => {
@@ -590,7 +572,6 @@ function AppContent() {
             sshConfigPath={sshConfigPath}
             sshProxyJump={sshProxyJump}
             sshCustomOptions={sshCustomOptions}
-            tempExcludePattern={tempExcludePattern}
             setJobName={setNewJobName}
             setJobSource={setNewJobSource}
             setJobDest={setNewJobDest}
@@ -607,13 +588,11 @@ function AppContent() {
             setSshConfigPath={setSshConfigPath}
             setSshProxyJump={setSshProxyJump}
             setSshCustomOptions={setSshCustomOptions}
-            setTempExcludePattern={setTempExcludePattern}
             onSave={handleSaveJob}
             onCancel={() => setView(activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
             onJobModeChange={handleJobModeChange}
-            onAddPattern={handleAddPattern}
             isEditing={Boolean(activeJobId)}
           />
         )}
