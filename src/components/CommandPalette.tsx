@@ -1,10 +1,12 @@
 /**
  * TIM-202: Refactored to use Palette base component
  * TIM-203: Uses Icons from IconComponents
+ * TIM-205: Uses specific context hooks for better performance
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useApp } from '../context/AppContext';
+import { useJobs } from '../context/JobsContext';
+import { useUI } from '../context/UIContext';
 import { useTheme } from '../context/ThemeContext';
 import { Icons } from './IconComponents';
 import { Palette, PaletteSection, PaletteItem, PaletteEmpty } from './ui/Palette';
@@ -57,7 +59,8 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { jobs, setView, setActiveJobId, runSync } = useApp();
+  const { jobs, runSync } = useJobs();
+  const { setView, setActiveJobId } = useUI();
   const { theme, setTheme, isDark } = useTheme();
 
   // Build command list

@@ -1,10 +1,12 @@
 /**
  * TIM-202: Refactored to use Palette base component
  * TIM-203: Uses Icons from IconComponents
+ * TIM-205: Uses specific context hooks for better performance
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { useJobs } from '../context/JobsContext';
+import { useUI } from '../context/UIContext';
 import { api } from '../api';
 import { FILE_TYPE, type FileNode } from '../types';
 import { logger } from '../utils/logger';
@@ -63,7 +65,8 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<number | null>(null);
 
-  const { jobs, activeJobId, setView, setActiveJobId } = useApp();
+  const { jobs } = useJobs();
+  const { activeJobId, setView, setActiveJobId } = useUI();
 
   // Get active job snapshot info
   const activeJob = useMemo(() => {

@@ -7,8 +7,12 @@
  * @see docs/UNIFIED_TIME_MACHINE_DESIGN.md
  */
 
+/**
+ * TIM-205: Uses specific context hooks for better performance
+ */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useJobs } from '../../context/JobsContext';
+import { useUI } from '../../context/UIContext';
 import { api } from '../../api';
 import { Snapshot, SyncJob, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
@@ -53,17 +57,8 @@ export function TimeMachinePage({
   progress = null,
   logs = [],
 }: TimeMachineProps) {
-  const {
-    jobs,
-    activeJobId,
-    setActiveJobId,
-    setView,
-    navigateBack,
-    runSync,
-    stopSync,
-    persistJob,
-    deleteJob,
-  } = useApp();
+  const { jobs, runSync, stopSync, persistJob, deleteJob } = useJobs();
+  const { activeJobId, setActiveJobId, setView, navigateBack } = useUI();
 
   // Current job
   const [currentJobId, setCurrentJobId] = useState<string | null>(

@@ -18,8 +18,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 };
 
 /**
- * Backwards-compatible hook that combines all contexts
- * Prefer using specific hooks (useJobs, useUI, useSettings) for better performance
+ * Backwards-compatible hook that combines all contexts.
+ *
+ * IMPORTANT: Prefer using specific hooks for better performance:
+ * - useJobs() for jobs, runSync, stopSync, persistJob, deleteJob
+ * - useUI() for activeJobId, setActiveJobId, setView, navigateBack
+ * - useSettings() for app settings
+ * - useTheme() for theme (from ThemeContext)
+ *
+ * Using useApp() causes re-renders when ANY context changes,
+ * while specific hooks only re-render when their data changes.
+ *
+ * @deprecated Use specific hooks (useJobs, useUI, useSettings, useTheme) instead
  */
 export const useApp = () => {
   const jobs = useJobs();
