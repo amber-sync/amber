@@ -78,7 +78,9 @@ impl AppState {
     /// Validate a path against allowed roots
     /// Returns the validated path string on success
     pub fn validate_path(&self, path: &str) -> crate::error::Result<String> {
-        let validator = self.path_validator.read()
+        let validator = self
+            .path_validator
+            .read()
             .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
         validator.validate_str(path)
     }

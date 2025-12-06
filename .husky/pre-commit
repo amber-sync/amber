@@ -1,12 +1,29 @@
 #!/bin/sh
 
-# Run lint-staged for frontend (JS/TS) and Rust formatting
+# Run lint-staged for frontend (JS/TS)
 npx lint-staged
 
 # Check if any Rust files were staged
 if git diff --cached --name-only | grep -q "src-tauri/.*\.rs$"; then
+  echo "Formatting Rust files..."
+  cd src-tauri && cargo fmt
+  if [ $? -ne 0 ]; then
+    echo "cargo fmt failed."
+    exit 1
+  fi
+
+  # Re-add formatted files to staging
+  cd .. && git diff --cached --name-only | grep "src-tauri/.*\.rs$" | xargs git add
+
+  echo "Running cargo fmt --check..."
+  cd src-tauri && cargo fmt --check
+  if [ $? -ne 0 ]; then
+    echo "Rust formatting check failed. This should not happen after auto-format."
+    exit 1
+  fi
+
   echo "Running Clippy on Rust files..."
-  cd src-tauri && cargo clippy -- -D warnings
+  cargo clippy -- -D warnings
   if [ $? -ne 0 ]; then
     echo "Clippy found errors. Please fix them before committing."
     exit 1

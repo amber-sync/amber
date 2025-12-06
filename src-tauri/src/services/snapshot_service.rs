@@ -552,7 +552,8 @@ mod tests {
         std::fs::create_dir_all(&dest_dir).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
         assert!(snapshots.is_empty());
     }
@@ -572,7 +573,8 @@ mod tests {
         std::fs::create_dir_all(dest_dir.join("latest")).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 2);
@@ -589,7 +591,8 @@ mod tests {
         std::fs::create_dir_all(dest_dir.join("2024-03-10-180000")).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 3);
@@ -619,7 +622,10 @@ mod tests {
         std::fs::create_dir_all(test_dir.join("subdir")).unwrap();
         std::fs::write(test_dir.join("subdir/nested.txt"), "nested").unwrap();
 
-        let entries = service.scan_directory(test_dir.to_str().unwrap()).await.unwrap();
+        let entries = service
+            .scan_directory(test_dir.to_str().unwrap())
+            .await
+            .unwrap();
 
         assert_eq!(entries.len(), 4); // file1, file2, subdir, nested
         assert!(entries.iter().any(|e| e.name == "file1.txt" && !e.is_dir));
@@ -676,7 +682,8 @@ mod tests {
 
         // List snapshots
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         // Verify stats are loaded from manifest (not zeros!)
@@ -738,7 +745,8 @@ mod tests {
 
         // List snapshots - should use manifest, not cache
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -759,7 +767,8 @@ mod tests {
 
         // No manifest, no cache - should return zeros but still find snapshots
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 2);
@@ -803,7 +812,8 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -831,7 +841,8 @@ mod tests {
 
         // Should fall back to filesystem scan
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         // Should find snapshot via filesystem fallback
@@ -878,7 +889,8 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -940,7 +952,8 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
+            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .await
             .unwrap();
 
         // Sorted newest first

@@ -63,9 +63,6 @@
     ],
     "*.{json,css,md}": [
       "prettier --write"
-    ],
-    "src-tauri/**/*.rs": [
-      "bash -c 'cd src-tauri && cargo fmt --'"
     ]
   },
   "devDependencies": {

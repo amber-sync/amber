@@ -129,7 +129,10 @@ fn setup_output_streams(
     child: &mut std::process::Child,
     job: &SyncJob,
     app: &tauri::AppHandle,
-) -> (Option<std::thread::JoinHandle<()>>, Option<std::thread::JoinHandle<()>>) {
+) -> (
+    Option<std::thread::JoinHandle<()>>,
+    Option<std::thread::JoinHandle<()>>,
+) {
     // Take stdout for streaming (must be done before wait)
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
@@ -273,10 +276,9 @@ async fn handle_backup_success(
             }
 
             // Update latest symlink
-            if let Err(e) = service.update_latest_symlink(
-                info.target_base.to_str().unwrap_or(""),
-                &info.folder_name,
-            ) {
+            if let Err(e) = service
+                .update_latest_symlink(info.target_base.to_str().unwrap_or(""), &info.folder_name)
+            {
                 log::warn!("Failed to update latest symlink: {}", e);
             }
 
