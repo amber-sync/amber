@@ -6,10 +6,10 @@ import { OfflineBadge } from '../../../components/ConnectionStatus';
 import {
   IconButton,
   ProgressRing,
-  Text,
-  BodySmall,
+  Title,
+  Body,
   Caption,
-  CodeSmall,
+  Code,
   ModeBadge,
 } from '../../../components/ui';
 
@@ -95,9 +95,9 @@ export const JobCard = React.memo<JobCardProps>(
 
           {/* Job Name & Mode */}
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <Text variant="heading-4" as="h3" truncate>
+            <Title level={4} truncate>
               {job.name}
-            </Text>
+            </Title>
             <ModeBadge mode={job.mode} />
             {!mounted && <OfflineBadge />}
           </div>
@@ -105,9 +105,9 @@ export const JobCard = React.memo<JobCardProps>(
           {/* Relative Time */}
           <div className="shrink-0">
             {isRunning ? (
-              <BodySmall className="text-accent-primary font-medium animate-pulse">
+              <Body size="sm" as="span" className="text-accent-primary font-medium animate-pulse">
                 Syncing...
-              </BodySmall>
+              </Body>
             ) : (
               <Caption color="secondary">{getRelativeTime()}</Caption>
             )}
@@ -159,9 +159,9 @@ export const JobCard = React.memo<JobCardProps>(
                   <Icons.FolderOpen size={12} />
                   Source
                 </Caption>
-                <CodeSmall className="break-all" title={job.sourcePath}>
+                <Code size="sm" className="break-all" title={job.sourcePath}>
                   {job.sourcePath}
-                </CodeSmall>
+                </Code>
               </div>
 
               {/* Destination Path */}
@@ -170,9 +170,9 @@ export const JobCard = React.memo<JobCardProps>(
                   <Icons.HardDrive size={12} />
                   Destination
                 </Caption>
-                <CodeSmall className="break-all" title={job.destPath}>
+                <Code size="sm" className="break-all" title={job.destPath}>
                   {job.destPath}
-                </CodeSmall>
+                </Code>
               </div>
 
               {/* Schedule */}
@@ -181,7 +181,9 @@ export const JobCard = React.memo<JobCardProps>(
                   <Icons.Clock size={12} />
                   Schedule
                 </Caption>
-                <BodySmall>{formatSchedule(job.scheduleInterval)}</BodySmall>
+                <Body size="sm" as="span">
+                  {formatSchedule(job.scheduleInterval)}
+                </Body>
               </div>
 
               {/* Last Run */}
@@ -190,7 +192,7 @@ export const JobCard = React.memo<JobCardProps>(
                   <Icons.Activity size={12} />
                   Last Backup
                 </Caption>
-                <BodySmall>
+                <Body size="sm" as="span">
                   {job.lastRun ? (
                     <>
                       {new Date(job.lastRun).toLocaleDateString()} at{' '}
@@ -202,7 +204,7 @@ export const JobCard = React.memo<JobCardProps>(
                   ) : (
                     <span className="text-text-tertiary">Never</span>
                   )}
-                </BodySmall>
+                </Body>
               </div>
             </div>
 
@@ -216,9 +218,9 @@ export const JobCard = React.memo<JobCardProps>(
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-primary text-accent-text rounded-xl hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]"
               >
                 <Icons.Clock size={16} />
-                <Text variant="ui" as="span">
+                <Body size="sm" as="span">
                   View History
-                </Text>
+                </Body>
               </button>
               {onRunBackup && (
                 <button
@@ -230,9 +232,9 @@ export const JobCard = React.memo<JobCardProps>(
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-layer-3 text-text-primary rounded-xl hover:bg-layer-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icons.Play size={16} />
-                  <Text variant="ui" as="span">
+                  <Body size="sm" as="span">
                     {isRunning ? 'Running...' : 'Run Now'}
-                  </Text>
+                  </Body>
                 </button>
               )}
             </div>

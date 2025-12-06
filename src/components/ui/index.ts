@@ -40,37 +40,14 @@ export { ProgressRing } from './ProgressRing';
 export { ProgressBar, type ProgressBarVariant, type ProgressBarSize } from './ProgressBar';
 export { PageHeader } from './PageHeader';
 
-// Typography components
+// Typography components - Simplified system (4 components)
 export {
-  Text,
-  Display,
-  Heading1,
-  Heading2,
-  Heading3,
-  Heading4,
+  Title,
   Body,
-  BodyLarge,
-  BodySmall,
-  Label,
-  LabelNormal,
   Caption,
-  CaptionSmall,
   Code,
-  CodeSmall,
-  UIText,
-  UITextSmall,
-  BadgeText,
-  // Semantic aliases
-  PageTitle,
-  SectionTitle,
-  CardTitle,
-  FormLabel,
-  HelpText,
-  ErrorMessage,
-  SuccessMessage,
-  Timestamp,
-  FilePath,
-  type TypographyVariant,
-  type TextColor,
-  type TextWeight,
+  type TitleProps,
+  type BodyProps,
+  type CaptionProps,
+  type CodeProps,
 } from './Text';

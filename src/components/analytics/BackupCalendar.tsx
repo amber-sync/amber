@@ -117,7 +117,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
     const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 
     return (
-      <div className="bg-layer-1 rounded-xl border border-border-base p-4">
+      <div className="bg-layer-1 rounded-xl border border-border-base p-4 overflow-visible">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-text-primary">Backup Activity</h3>
@@ -126,7 +126,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           </span>
         </div>
 
-        <div className="flex">
+        <div className="flex overflow-visible">
           {/* Day labels (left axis) */}
           <div className="flex flex-col gap-[3px] mr-2 mt-[18px]">
             {dayLabels.map((label, i) => (
@@ -137,7 +137,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           </div>
 
           {/* Heatmap grid */}
-          <div className="flex-1 overflow-x-auto">
+          <div className="flex-1 overflow-x-auto overflow-y-visible">
             {/* Month labels */}
             <div className="flex mb-1 relative h-[14px]">
               {monthLabels.map(({ month, weekIndex }) => (
