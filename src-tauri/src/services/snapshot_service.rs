@@ -466,7 +466,7 @@ mod tests {
         let (service, _temp) = create_test_service();
         let nodes: Vec<FileNode> = vec![];
 
-        let (size, count) = service.calculate_stats(&nodes);
+        let (size, count) = SnapshotService::calculate_stats(&nodes);
         assert_eq!(size, 0);
         assert_eq!(count, 0);
     }
@@ -495,7 +495,7 @@ mod tests {
             },
         ];
 
-        let (size, count) = service.calculate_stats(&nodes);
+        let (size, count) = SnapshotService::calculate_stats(&nodes);
         assert_eq!(size, 300);
         assert_eq!(count, 2);
     }
@@ -540,25 +540,25 @@ mod tests {
             ]),
         }];
 
-        let (size, count) = service.calculate_stats(&nodes);
+        let (size, count) = SnapshotService::calculate_stats(&nodes);
         assert_eq!(size, 600);
         assert_eq!(count, 2);
     }
 
-    #[test]
-    fn test_list_snapshots_empty_dir() {
+    #[tokio::test]
+    async fn test_list_snapshots_empty_dir() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
             .unwrap();
         assert!(snapshots.is_empty());
     }
 
-    #[test]
-    fn test_list_snapshots_filters_non_matching() {
+    #[tokio::test]
+    async fn test_list_snapshots_filters_non_matching() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -572,14 +572,14 @@ mod tests {
         std::fs::create_dir_all(dest_dir.join("latest")).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 2);
     }
 
-    #[test]
-    fn test_list_snapshots_sorted_newest_first() {
+    #[tokio::test]
+    async fn test_list_snapshots_sorted_newest_first() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -589,7 +589,7 @@ mod tests {
         std::fs::create_dir_all(dest_dir.join("2024-03-10-180000")).unwrap();
 
         let snapshots = service
-            .list_snapshots("job1", dest_dir.to_str().unwrap())
+            .list_snapshots("job1", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 3);
@@ -607,8 +607,8 @@ mod tests {
             .contains("job-123-1700000000000.json"));
     }
 
-    #[test]
-    fn test_scan_directory_with_real_files() {
+    #[tokio::test]
+    async fn test_scan_directory_with_real_files() {
         let (service, temp) = create_test_service();
         let test_dir = temp.path().join("scan-test");
         std::fs::create_dir_all(&test_dir).unwrap();
@@ -619,7 +619,7 @@ mod tests {
         std::fs::create_dir_all(test_dir.join("subdir")).unwrap();
         std::fs::write(test_dir.join("subdir/nested.txt"), "nested").unwrap();
 
-        let entries = service.scan_directory(test_dir.to_str().unwrap()).unwrap();
+        let entries = service.scan_directory(test_dir.to_str().unwrap()).await.unwrap();
 
         assert_eq!(entries.len(), 4); // file1, file2, subdir, nested
         assert!(entries.iter().any(|e| e.name == "file1.txt" && !e.is_dir));
@@ -630,8 +630,8 @@ mod tests {
     // Integration tests for manifest-based snapshot loading (TIM-SIM-001)
     // =========================================================================
 
-    #[test]
-    fn test_list_snapshots_from_manifest_returns_correct_stats() {
+    #[tokio::test]
+    async fn test_list_snapshots_from_manifest_returns_correct_stats() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -676,7 +676,7 @@ mod tests {
 
         // List snapshots
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         // Verify stats are loaded from manifest (not zeros!)
@@ -690,8 +690,8 @@ mod tests {
         assert_eq!(snapshots[1].size_bytes, 1048576);
     }
 
-    #[test]
-    fn test_list_snapshots_manifest_takes_priority_over_cache() {
+    #[tokio::test]
+    async fn test_list_snapshots_manifest_takes_priority_over_cache() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -738,7 +738,7 @@ mod tests {
 
         // List snapshots - should use manifest, not cache
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -747,8 +747,8 @@ mod tests {
         assert_eq!(snapshots[0].size_bytes, 5000000);
     }
 
-    #[test]
-    fn test_list_snapshots_falls_back_to_filesystem_without_manifest() {
+    #[tokio::test]
+    async fn test_list_snapshots_falls_back_to_filesystem_without_manifest() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -759,7 +759,7 @@ mod tests {
 
         // No manifest, no cache - should return zeros but still find snapshots
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 2);
@@ -768,8 +768,8 @@ mod tests {
         assert_eq!(snapshots[0].size_bytes, 0);
     }
 
-    #[test]
-    fn test_list_snapshots_from_manifest_constructs_correct_paths() {
+    #[tokio::test]
+    async fn test_list_snapshots_from_manifest_constructs_correct_paths() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -803,7 +803,7 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -815,8 +815,8 @@ mod tests {
         assert_eq!(snapshots[0].path, expected_path);
     }
 
-    #[test]
-    fn test_list_snapshots_handles_malformed_manifest_gracefully() {
+    #[tokio::test]
+    async fn test_list_snapshots_handles_malformed_manifest_gracefully() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -831,15 +831,15 @@ mod tests {
 
         // Should fall back to filesystem scan
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         // Should find snapshot via filesystem fallback
         assert_eq!(snapshots.len(), 1);
     }
 
-    #[test]
-    fn test_list_snapshots_manifest_generates_correct_date_format() {
+    #[tokio::test]
+    async fn test_list_snapshots_manifest_generates_correct_date_format() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -878,7 +878,7 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         assert_eq!(snapshots.len(), 1);
@@ -886,8 +886,8 @@ mod tests {
         assert!(snapshots[0].date.contains("2024-01-15"));
     }
 
-    #[test]
-    fn test_list_snapshots_from_manifest_populates_status_duration_changes() {
+    #[tokio::test]
+    async fn test_list_snapshots_from_manifest_populates_status_duration_changes() {
         let (service, temp) = create_test_service();
         let dest_dir = temp.path().join("dest");
         std::fs::create_dir_all(&dest_dir).unwrap();
@@ -940,7 +940,7 @@ mod tests {
         std::fs::write(meta_dir.join("manifest.json"), manifest_json).unwrap();
 
         let snapshots = service
-            .list_snapshots("job-123", dest_dir.to_str().unwrap())
+            .list_snapshots("job-123", dest_dir.to_str().unwrap()).await
             .unwrap();
 
         // Sorted newest first

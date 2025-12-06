@@ -75,6 +75,14 @@ impl AppState {
         })
     }
 
+    /// Validate a path against allowed roots
+    /// Returns the validated path string on success
+    pub fn validate_path(&self, path: &str) -> crate::error::Result<String> {
+        let validator = self.path_validator.read()
+            .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+        validator.validate_str(path)
+    }
+
     /// Update path validator with job-specific roots
     /// This should be called whenever jobs are loaded or modified
     pub fn update_job_roots(&self) -> Result<(), String> {

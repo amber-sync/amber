@@ -29,14 +29,7 @@ impl From<FileEntry> for DirEntry {
 
 #[tauri::command]
 pub async fn read_dir(state: State<'_, AppState>, path: String) -> Result<Vec<DirEntry>> {
-    // Validate path before accessing
-    let validator = state
-        .path_validator
-        .read()
-        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
-    let validated_path = validator.validate_str(&path)?;
-    drop(validator); // Release lock early
-
+    let validated_path = state.validate_path(&path)?;
     let entries = state.file_service.scan_directory(&validated_path)?;
     Ok(entries.into_iter().map(DirEntry::from).collect())
 }
@@ -47,14 +40,7 @@ pub async fn read_file_preview(
     file_path: String,
     max_lines: Option<usize>,
 ) -> Result<String> {
-    // Validate path before accessing
-    let validator = state
-        .path_validator
-        .read()
-        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
-    let validated_path = validator.validate_str(&file_path)?;
-    drop(validator);
-
+    let validated_path = state.validate_path(&file_path)?;
     state
         .file_service
         .read_file_preview(&validated_path, max_lines.unwrap_or(100))
@@ -62,40 +48,19 @@ pub async fn read_file_preview(
 
 #[tauri::command]
 pub async fn read_file_as_base64(state: State<'_, AppState>, file_path: String) -> Result<String> {
-    // Validate path before accessing
-    let validator = state
-        .path_validator
-        .read()
-        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
-    let validated_path = validator.validate_str(&file_path)?;
-    drop(validator);
-
+    let validated_path = state.validate_path(&file_path)?;
     state.file_service.read_file_base64(&validated_path)
 }
 
 #[tauri::command]
 pub async fn open_path(state: State<'_, AppState>, path: String) -> Result<()> {
-    // Validate path before accessing
-    let validator = state
-        .path_validator
-        .read()
-        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
-    let validated_path = validator.validate_str(&path)?;
-    drop(validator);
-
+    let validated_path = state.validate_path(&path)?;
     state.file_service.open_path(&validated_path)
 }
 
 #[tauri::command]
 pub async fn show_item_in_folder(state: State<'_, AppState>, path: String) -> Result<()> {
-    // Validate path before accessing
-    let validator = state
-        .path_validator
-        .read()
-        .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
-    let validated_path = validator.validate_str(&path)?;
-    drop(validator);
-
+    let validated_path = state.validate_path(&path)?;
     state.file_service.show_in_folder(&validated_path)
 }
 

@@ -130,7 +130,10 @@ impl RcloneService {
         remote_name: &str,
         remote_path: Option<&str>,
         bandwidth: Option<&str>,
-        _encrypt: bool, // TODO: Implement encryption support
+        _encrypt: bool, // TODO: Implement rclone encryption (crypt remote wrapper)
+                        // See: https://rclone.org/crypt/
+                        // Need to create encrypted remote wrapper and pass through here
+                        // Related: TIM-XXX (create ticket for cloud encryption)
     ) -> Command {
         let mut cmd = Command::new("rclone");
 
