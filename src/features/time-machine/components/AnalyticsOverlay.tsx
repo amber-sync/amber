@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo, memo } from 'react';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
-import { TimeMachineSnapshot } from '../TimeMachine';
+import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Icons } from '../../../components/IconComponents';
 import { formatBytes } from '../../../utils';
 import { api } from '../../../api';

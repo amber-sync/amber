@@ -8,7 +8,7 @@
 import { useMemo, useEffect, useState, useRef, memo } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { SyncJob, FileTypeStats, LargestFile } from '../../../types';
-import { TimeMachineSnapshot } from '../TimeMachine';
+import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Icons } from '../../../components/IconComponents';
 import { formatBytes } from '../../../utils';
 import { api } from '../../../api';

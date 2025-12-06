@@ -9,7 +9,7 @@ import { useState, useRef, useEffect, memo } from 'react';
 import { SyncJob, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 import { Button, IconButton } from '../../../components/ui';
-import { DateFilter } from '../TimeMachine';
+import { DateFilter } from '../TimeMachinePage';
 
 interface TimeMachineHeaderProps {
   job: SyncJob | null;

@@ -47,7 +47,7 @@ interface TimeMachineProps {
   logs?: LogEntry[];
 }
 
-export function TimeMachine({
+export function TimeMachinePage({
   initialJobId,
   isRunning = false,
   progress = null,
@@ -668,4 +668,4 @@ export function TimeMachine({
   );
 }
 
-export default TimeMachine;
+export default TimeMachinePage;

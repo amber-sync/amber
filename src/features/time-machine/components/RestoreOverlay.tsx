@@ -9,7 +9,7 @@ import { SyncJob, Snapshot } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../../components/IconComponents';
 import { formatBytes } from '../../../utils';
-import { TimeMachineSnapshot } from '../TimeMachine';
+import { TimeMachineSnapshot } from '../TimeMachinePage';
 import { Select } from '../../../components/ui/Select';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
