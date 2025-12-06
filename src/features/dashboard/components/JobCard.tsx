@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { SyncJob, JobStatus, JobMountInfo } from '../types';
-import { Icons } from './IconComponents';
-import { formatSchedule, formatRelativeTime } from '../utils';
-import { OfflineBadge } from './ConnectionStatus';
-import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall, ModeBadge } from './ui';
+import { SyncJob, JobStatus, JobMountInfo } from '../../../types';
+import { Icons } from '../../../components/IconComponents';
+import { formatSchedule, formatRelativeTime } from '../../../utils';
+import { OfflineBadge } from '../../../components/ConnectionStatus';
+import { IconButton, ProgressRing, Text, BodySmall, Caption, CodeSmall, ModeBadge } from '../../../components/ui';
 
 interface JobCardProps {
   job: SyncJob;

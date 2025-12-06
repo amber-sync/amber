@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { DashboardPage } from './features/dashboard';
-import { RestoreWizard } from './views/RestoreWizard';
+import { RestoreWizard } from './features/restore';
 import { JobEditor } from './features/job-editor';
 import { TimeMachinePage } from './features/time-machine';
 import { SettingsPage } from './features/settings';

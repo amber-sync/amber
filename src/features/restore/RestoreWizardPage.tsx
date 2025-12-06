@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Icons } from '../components/IconComponents';
-import { FileBrowser } from '../components/FileBrowser';
-import { SyncJob, Snapshot } from '../types';
-import { formatBytes } from '../utils/formatters';
-import { api } from '../api';
-import { logger } from '../utils/logger';
+import { Icons } from '../../components/IconComponents';
+import { FileBrowser } from '../../components/shared/FileBrowser';
+import { SyncJob, Snapshot } from '../../types';
+import { formatBytes } from '../../utils/formatters';
+import { api } from '../../api';
+import { logger } from '../../utils/logger';
 
 interface RestoreWizardProps {
   job: SyncJob;

@@ -5,7 +5,7 @@
  */
 
 import { memo } from 'react';
-import { FileBrowser } from '../../../components/FileBrowser';
+import { FileBrowser } from '../../../components/shared/FileBrowser';
 import { Icons } from '../../../components/IconComponents';
 
 interface FileExplorerOverlayProps {

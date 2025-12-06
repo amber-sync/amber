@@ -5,7 +5,7 @@ import { formatBytes } from '../../utils';
 import { BackupCalendar } from '../../components/analytics';
 import { format } from 'date-fns';
 import { Button, Card, StatusDot, IconButton } from '../../components/ui';
-import { JobCard } from '../../components/JobCard';
+import { JobCard } from './components/JobCard';
 
 interface JobMountInfo {
   mounted: boolean;
