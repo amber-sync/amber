@@ -48,20 +48,11 @@ export interface CloudConfig {
 }
 
 /**
- * Centralized file type constants - use these everywhere instead of string literals.
- * These match the Rust file_type module in src-tauri/src/types/snapshot.rs
+ * TIM-185: File type constants moved to config/constants.ts
+ * Re-exported here for backwards compatibility.
  */
-export const FILE_TYPE = {
-  DIR: 'dir',
-  FILE: 'file',
-} as const;
-
-export type FileType = (typeof FILE_TYPE)[keyof typeof FILE_TYPE];
-
-/** Check if a type string represents a directory */
-export function isDirectory(type: string): boolean {
-  return type === FILE_TYPE.DIR;
-}
+import { FILE_TYPE, isDirectory, isFile, type FileType } from './config/constants';
+export { FILE_TYPE, isDirectory, isFile, type FileType };
 
 export interface FileNode {
   id: string;
@@ -138,7 +129,7 @@ export interface GlobalSearchResult {
   file: {
     id: string;
     name: string;
-    type: 'file' | 'dir'; // Matches FileType::as_str() in Rust
+    type: FileType; // TIM-185: Uses centralized FileType from config/constants.ts
     size: number;
     modified: number;
     path: string;

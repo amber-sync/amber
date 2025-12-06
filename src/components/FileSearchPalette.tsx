@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
-import type { FileNode } from '../types';
+import { FILE_TYPE, type FileNode } from '../types';
 import { logger } from '../utils/logger';
 import { joinPaths } from '../utils/paths';
 import { formatBytes, formatRelativeTime } from '../utils';
@@ -188,7 +188,7 @@ export const FileSearchPalette: React.FC<FileSearchPaletteProps> = ({
         }
       } else {
         // Enter: Open file or navigate
-        if (result.file.type === 'dir') {
+        if (result.file.type === FILE_TYPE.DIR) {
           // For folders in snapshots, navigate to them in the file browser
           if (result.scope === 'snapshot' && activeJob) {
             setActiveJobId(activeJob.id);
@@ -474,7 +474,7 @@ const ResultItem: React.FC<{
   onSelect: () => void;
   onMouseEnter: () => void;
 }> = ({ result, isSelected, onSelect, onMouseEnter }) => {
-  const isFolder = result.file.type === 'dir';
+  const isFolder = result.file.type === FILE_TYPE.DIR;
 
   return (
     <button
