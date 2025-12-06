@@ -7,16 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-dist-electron
-dist_electron_build
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+dist-electron/
+dist_electron_build/
+build/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -29,10 +33,6 @@ benchmark-results.json
 *.generated.ts
 src/generated/bindings.ts
 
-# Build outputs
-build/
-dist/
-
 # Coverage
 coverage/
 .nyc_output/
@@ -43,47 +43,49 @@ test-results/
 
 # Rust
 src-tauri/target/
-target/llvm-cov/
-
-# Environment
-.env.local
-.env*.local
-
-# Local development
-tickets/
-mock-data/
-
-
-# Removed Windows wrapper files per user request
-hive-mind-prompt-*.txt
-
-
-# Removed Windows wrapper files per user request
-hive-mind-prompt-*.txt
-
-# Claude Flow generated files
-.claude/settings.local.json
-.mcp.json
-claude-flow.config.json
-.swarm/
-.hive-mind/
-.claude-flow/
-memory/
-coordination/
-memory/claude-flow-data.json
-memory/sessions/*
-!memory/sessions/README.md
-memory/agents/*
-!memory/agents/README.md
-coordination/memory_bank/*
-coordination/subtasks/*
-coordination/orchestration/*
+target/
 *.db
 *.db-journal
 *.db-wal
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# ================================
+# LOCAL DEVELOPMENT FILES
+# (keep locally, not on GitHub)
+# ================================
+
+# Claude Code configuration
+.claude/
+.claude-plugins/
+.claude-flow/
+.mcp.json
 claude-flow
-# Removed Windows wrapper files per user request
+claude-flow.config.json
+CLAUDE.md
+
+# Swarm/coordination data
+.swarm/
+.hive-mind/
+memory/
+coordination/
+
+# Local planning/tickets
+tickets/
+mock-data/
+
+# Skills documentation (local)
+SKILLS.md
+SKILL.md.zip
+
+# Branding source files (keep in assets/branding/ locally)
+assets/branding/
+
+# Session/cache data
 hive-mind-prompt-*.txt
