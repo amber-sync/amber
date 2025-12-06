@@ -6,7 +6,6 @@
 import React, { useState, useCallback } from 'react';
 import { Icons } from '../IconComponents';
 import { TextInput } from './TextInput';
-import { cn } from '../../utils';
 
 export interface ExclusionPatternEditorProps {
   /** Current list of patterns */
