@@ -185,9 +185,6 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
                               <Caption className="font-medium">
                                 {count} backup{count !== 1 ? 's' : ''}
                               </Caption>
-                              <Caption size="sm" color="tertiary">
-                                {format(day, 'EEE, MMM d, yyyy')}
-                              </Caption>
                             </div>
                             {/* Arrow */}
                             <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-[1px]">
