@@ -492,10 +492,10 @@ function AppContent() {
 
       {isTopLevel && <Sidebar activeView={view} onNavigate={setView} />}
 
-      <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
+      <main className="flex-1 min-h-0 relative z-10 overflow-hidden flex flex-col">
         {/* Dashboard and TimeMachine kept mounted for instant switching */}
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden flex"
           style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}
         >
           <DashboardPage
@@ -516,7 +516,7 @@ function AppContent() {
         </div>
 
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}
         >
           <TimeMachinePage
@@ -528,7 +528,7 @@ function AppContent() {
         </div>
 
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}
         >
           <SettingsPage />

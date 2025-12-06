@@ -133,7 +133,7 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
   }, [activeSnapshot, job.destPath]);
 
   return (
-    <div className="h-screen flex flex-col bg-app text-text-primary">
+    <div className="h-full flex flex-col bg-app text-text-primary">
       {/* Header */}
       <div className="px-8 py-6 pt-10 border-b border-border-base flex justify-between items-center bg-layer-1/95 backdrop-blur-sm z-10 titlebar-drag">
         <div className="flex items-center gap-4 no-drag">

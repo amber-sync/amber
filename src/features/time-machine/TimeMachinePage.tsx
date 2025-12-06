@@ -30,6 +30,7 @@ import { TerminalOverlay } from './components/TerminalOverlay';
 import { EmptyState } from './components/EmptyState';
 import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
 import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
+import { PageContainer } from '../../components/layout';
 
 // Styles
 import './timemachine.css';
@@ -381,27 +382,61 @@ export function TimeMachinePage({
   // No job selected state
   if (!currentJob) {
     return (
-      <div className="tm-container flex flex-col h-full">
-        <TimeMachineHeader
-          job={null}
-          jobs={jobs}
-          isRunning={false}
-          progress={null}
-          onJobSwitch={handleJobSwitch}
-          onBack={handleBack}
-          onRunBackup={handleRunBackup}
-          onStopBackup={handleStopBackup}
-          onEditJob={handleEditJob}
-        />
-        <EmptyState type="no-job" onAction={handleBack} actionLabel="Go to Dashboard" />
-      </div>
+      <PageContainer width="full" noPadding scrollable>
+        <div className="tm-container flex flex-col min-h-full">
+          <TimeMachineHeader
+            job={null}
+            jobs={jobs}
+            isRunning={false}
+            progress={null}
+            onJobSwitch={handleJobSwitch}
+            onBack={handleBack}
+            onRunBackup={handleRunBackup}
+            onStopBackup={handleStopBackup}
+            onEditJob={handleEditJob}
+          />
+          <EmptyState type="no-job" onAction={handleBack} actionLabel="Go to Dashboard" />
+        </div>
+      </PageContainer>
     );
   }
 
   // No snapshots state
   if (!loading && snapshots.length === 0) {
     return (
-      <div className="tm-container flex flex-col h-full">
+      <PageContainer width="full" noPadding scrollable>
+        <div className="tm-container flex flex-col min-h-full">
+          <TimeMachineHeader
+            job={currentJob}
+            jobs={jobs}
+            isRunning={isRunning}
+            progress={progress}
+            onJobSwitch={handleJobSwitch}
+            onBack={handleBack}
+            onRunBackup={handleRunBackup}
+            onStopBackup={handleStopBackup}
+            onEditJob={handleEditJob}
+          />
+          <EmptyState
+            type="no-snapshots"
+            onAction={handleRunBackup}
+            actionLabel="Run First Backup"
+          />
+          <LiveActivityBar
+            isRunning={isRunning}
+            progress={progress}
+            logs={logs}
+            onExpand={handleExpandTerminal}
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer width="full" noPadding scrollable>
+      <div className="tm-container flex flex-col min-h-full">
+        {/* Header with job switcher and controls (TIM-138, TIM-151) */}
         <TimeMachineHeader
           job={currentJob}
           jobs={jobs}
@@ -412,262 +447,240 @@ export function TimeMachinePage({
           onRunBackup={handleRunBackup}
           onStopBackup={handleStopBackup}
           onEditJob={handleEditJob}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          snapshotCount={filteredSnapshots.length}
+          totalSnapshotCount={snapshots.length}
         />
-        <EmptyState type="no-snapshots" onAction={handleRunBackup} actionLabel="Run First Backup" />
+
+        {/* Timeline - THE primary navigation (TIM-151: uses filtered snapshots) */}
+        <TimelineRuler
+          snapshots={filteredSnapshots}
+          selectedTimestamp={selectedTimestamp}
+          timeRange={timeRange}
+          onSelectSnapshot={handleSelectSnapshot}
+          loading={loading}
+        />
+
+        {/* Snapshot Focus - Central content */}
+        <SnapshotFocus
+          snapshot={selectedSnapshot}
+          job={currentJob}
+          onBrowseFiles={handleBrowseFiles}
+          onRestore={handleRestore}
+          onViewAnalytics={handleViewAnalytics}
+          onRunBackup={handleRunBackup}
+          onCompare={handleCompare}
+          isRunning={isRunning}
+        />
+
+        {/* Live Activity Bar - Fixed at bottom during sync */}
         <LiveActivityBar
           isRunning={isRunning}
           progress={progress}
           logs={logs}
           onExpand={handleExpandTerminal}
         />
-      </div>
-    );
-  }
 
-  return (
-    <div className="tm-container flex flex-col h-full">
-      {/* Header with job switcher and controls (TIM-138, TIM-151) */}
-      <TimeMachineHeader
-        job={currentJob}
-        jobs={jobs}
-        isRunning={isRunning}
-        progress={progress}
-        onJobSwitch={handleJobSwitch}
-        onBack={handleBack}
-        onRunBackup={handleRunBackup}
-        onStopBackup={handleStopBackup}
-        onEditJob={handleEditJob}
-        dateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-        snapshotCount={filteredSnapshots.length}
-        totalSnapshotCount={snapshots.length}
-      />
+        {/* Overlays */}
+        <FileExplorerOverlay
+          isOpen={activeOverlay === 'files'}
+          path={fileBrowserPath}
+          jobId={currentJobId}
+          snapshotTimestamp={selectedTimestamp}
+          destPath={currentJob.destPath}
+          onClose={handleCloseOverlay}
+        />
 
-      {/* Timeline - THE primary navigation (TIM-151: uses filtered snapshots) */}
-      <TimelineRuler
-        snapshots={filteredSnapshots}
-        selectedTimestamp={selectedTimestamp}
-        timeRange={timeRange}
-        onSelectSnapshot={handleSelectSnapshot}
-        loading={loading}
-      />
+        <RestoreOverlay
+          isOpen={activeOverlay === 'restore'}
+          job={currentJob}
+          snapshot={selectedSnapshot}
+          snapshots={filteredSnapshots}
+          onClose={handleCloseOverlay}
+        />
 
-      {/* Snapshot Focus - Central content */}
-      <SnapshotFocus
-        snapshot={selectedSnapshot}
-        job={currentJob}
-        onBrowseFiles={handleBrowseFiles}
-        onRestore={handleRestore}
-        onViewAnalytics={handleViewAnalytics}
-        onRunBackup={handleRunBackup}
-        onCompare={handleCompare}
-        isRunning={isRunning}
-      />
+        <AnalyticsOverlay
+          isOpen={activeOverlay === 'analytics'}
+          job={currentJob}
+          snapshot={selectedSnapshot}
+          onClose={handleCloseOverlay}
+        />
 
-      {/* Live Activity Bar - Fixed at bottom during sync */}
-      <LiveActivityBar
-        isRunning={isRunning}
-        progress={progress}
-        logs={logs}
-        onExpand={handleExpandTerminal}
-      />
+        <TerminalOverlay
+          isOpen={activeOverlay === 'terminal'}
+          logs={logs}
+          progress={progress}
+          isRunning={isRunning}
+          onClose={handleCloseOverlay}
+          onStop={handleStopBackup}
+        />
 
-      {/* Overlays */}
-      <FileExplorerOverlay
-        isOpen={activeOverlay === 'files'}
-        path={fileBrowserPath}
-        jobId={currentJobId}
-        snapshotTimestamp={selectedTimestamp}
-        destPath={currentJob.destPath}
-        onClose={handleCloseOverlay}
-      />
-
-      <RestoreOverlay
-        isOpen={activeOverlay === 'restore'}
-        job={currentJob}
-        snapshot={selectedSnapshot}
-        snapshots={filteredSnapshots}
-        onClose={handleCloseOverlay}
-      />
-
-      <AnalyticsOverlay
-        isOpen={activeOverlay === 'analytics'}
-        job={currentJob}
-        snapshot={selectedSnapshot}
-        onClose={handleCloseOverlay}
-      />
-
-      <TerminalOverlay
-        isOpen={activeOverlay === 'terminal'}
-        logs={logs}
-        progress={progress}
-        isRunning={isRunning}
-        onClose={handleCloseOverlay}
-        onStop={handleStopBackup}
-      />
-
-      {/* Edit Job Panel */}
-      <SlidePanel
-        isOpen={showEditPanel}
-        onClose={() => setShowEditPanel(false)}
-        title="Edit Job Settings"
-        width="lg"
-      >
-        {currentJob && (
-          <EditJobPanel
-            job={currentJob}
-            onSave={handleSaveJobEdit}
-            onDelete={handleDeleteJob}
-            onClose={() => setShowEditPanel(false)}
-          />
-        )}
-      </SlidePanel>
-
-      {/* Compare Snapshots Panel (TIM-150) */}
-      <SlidePanel
-        isOpen={compareMode}
-        onClose={handleCloseCompare}
-        title="Compare Snapshots"
-        width="lg"
-      >
-        <div className="p-4">
-          <h3 className="text-sm font-medium text-text-primary mb-4">
-            Select a snapshot to compare with{' '}
-            {selectedSnapshot?.timestamp
-              ? new Date(selectedSnapshot.timestamp).toLocaleDateString()
-              : 'current'}
-          </h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {filteredSnapshots
-              .filter(s => s.id !== selectedSnapshot?.id)
-              .map(snapshot => (
-                <button
-                  key={snapshot.id}
-                  onClick={() => setCompareSnapshot(snapshot)}
-                  className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                    compareSnapshot?.id === snapshot.id
-                      ? 'border-accent-primary bg-accent-primary/10'
-                      : 'border-border-base hover:bg-layer-2'
-                  }`}
-                >
-                  <div className="font-medium text-text-primary">
-                    {new Date(snapshot.timestamp).toLocaleDateString()}
-                  </div>
-                  <div className="text-sm text-text-secondary">
-                    {new Date(snapshot.timestamp).toLocaleTimeString()}
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-text-tertiary">
-                    <span className="flex items-center gap-1">
-                      <Icons.File size={12} />
-                      {snapshot.fileCount?.toLocaleString() ?? '—'} files
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Icons.HardDrive size={12} />
-                      {formatBytes(snapshot.sizeBytes ?? 0)}
-                    </span>
-                  </div>
-                </button>
-              ))}
-          </div>
-
-          {compareSnapshot && selectedSnapshot && (
-            <div className="mt-6 p-4 bg-layer-2 rounded-lg">
-              <h4 className="font-medium text-text-primary mb-4">Comparison Summary</h4>
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-text-secondary">Original</div>
-                    <div className="text-xs text-text-tertiary">
-                      {new Date(selectedSnapshot.timestamp).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                  <Icons.ArrowRight className="text-text-tertiary mt-1" size={16} />
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-text-secondary">Compared</div>
-                    <div className="text-xs text-text-tertiary">
-                      {new Date(compareSnapshot.timestamp).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-border-base pt-3 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">File count difference</span>
-                    <span
-                      className={`font-mono ${
-                        (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
-                          ? 'text-[var(--color-success)]'
-                          : (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) < 0
-                            ? 'text-[var(--color-error)]'
-                            : 'text-text-tertiary'
-                      }`}
-                    >
-                      {(compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
-                        ? '+'
-                        : ''}
-                      {(
-                        (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0)
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">Size difference</span>
-                    <span
-                      className={`font-mono ${
-                        (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
-                          ? 'text-[var(--color-success)]'
-                          : (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) < 0
-                            ? 'text-[var(--color-error)]'
-                            : 'text-text-tertiary'
-                      }`}
-                    >
-                      {(compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
-                        ? '+'
-                        : ''}
-                      {formatBytes(
-                        Math.abs(
-                          (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0)
-                        )
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">Time elapsed</span>
-                    <span className="font-mono text-text-primary">
-                      {Math.abs(
-                        Math.round(
-                          (compareSnapshot.timestamp - selectedSnapshot.timestamp) /
-                            (1000 * 60 * 60 * 24)
-                        )
-                      )}{' '}
-                      day(s)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-text-tertiary mt-4 pt-4 border-t border-border-base">
-                Detailed file-by-file comparison coming soon...
-              </p>
-            </div>
+        {/* Edit Job Panel */}
+        <SlidePanel
+          isOpen={showEditPanel}
+          onClose={() => setShowEditPanel(false)}
+          title="Edit Job Settings"
+          width="lg"
+        >
+          {currentJob && (
+            <EditJobPanel
+              job={currentJob}
+              onSave={handleSaveJobEdit}
+              onDelete={handleDeleteJob}
+              onClose={() => setShowEditPanel(false)}
+            />
           )}
-        </div>
-      </SlidePanel>
-    </div>
+        </SlidePanel>
+
+        {/* Compare Snapshots Panel (TIM-150) */}
+        <SlidePanel
+          isOpen={compareMode}
+          onClose={handleCloseCompare}
+          title="Compare Snapshots"
+          width="lg"
+        >
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-text-primary mb-4">
+              Select a snapshot to compare with{' '}
+              {selectedSnapshot?.timestamp
+                ? new Date(selectedSnapshot.timestamp).toLocaleDateString()
+                : 'current'}
+            </h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredSnapshots
+                .filter(s => s.id !== selectedSnapshot?.id)
+                .map(snapshot => (
+                  <button
+                    key={snapshot.id}
+                    onClick={() => setCompareSnapshot(snapshot)}
+                    className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                      compareSnapshot?.id === snapshot.id
+                        ? 'border-accent-primary bg-accent-primary/10'
+                        : 'border-border-base hover:bg-layer-2'
+                    }`}
+                  >
+                    <div className="font-medium text-text-primary">
+                      {new Date(snapshot.timestamp).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-text-secondary">
+                      {new Date(snapshot.timestamp).toLocaleTimeString()}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-text-tertiary">
+                      <span className="flex items-center gap-1">
+                        <Icons.File size={12} />
+                        {snapshot.fileCount?.toLocaleString() ?? '—'} files
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icons.HardDrive size={12} />
+                        {formatBytes(snapshot.sizeBytes ?? 0)}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+            </div>
+
+            {compareSnapshot && selectedSnapshot && (
+              <div className="mt-6 p-4 bg-layer-2 rounded-lg">
+                <h4 className="font-medium text-text-primary mb-4">Comparison Summary</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-text-secondary">Original</div>
+                      <div className="text-xs text-text-tertiary">
+                        {new Date(selectedSnapshot.timestamp).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                    <Icons.ArrowRight className="text-text-tertiary mt-1" size={16} />
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-text-secondary">Compared</div>
+                      <div className="text-xs text-text-tertiary">
+                        {new Date(compareSnapshot.timestamp).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border-base pt-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-secondary">File count difference</span>
+                      <span
+                        className={`font-mono ${
+                          (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
+                            ? 'text-[var(--color-success)]'
+                            : (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) <
+                                0
+                              ? 'text-[var(--color-error)]'
+                              : 'text-text-tertiary'
+                        }`}
+                      >
+                        {(compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0) > 0
+                          ? '+'
+                          : ''}
+                        {(
+                          (compareSnapshot.fileCount ?? 0) - (selectedSnapshot.fileCount ?? 0)
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-secondary">Size difference</span>
+                      <span
+                        className={`font-mono ${
+                          (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
+                            ? 'text-[var(--color-success)]'
+                            : (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) <
+                                0
+                              ? 'text-[var(--color-error)]'
+                              : 'text-text-tertiary'
+                        }`}
+                      >
+                        {(compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0) > 0
+                          ? '+'
+                          : ''}
+                        {formatBytes(
+                          Math.abs(
+                            (compareSnapshot.sizeBytes ?? 0) - (selectedSnapshot.sizeBytes ?? 0)
+                          )
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-secondary">Time elapsed</span>
+                      <span className="font-mono text-text-primary">
+                        {Math.abs(
+                          Math.round(
+                            (compareSnapshot.timestamp - selectedSnapshot.timestamp) /
+                              (1000 * 60 * 60 * 24)
+                          )
+                        )}{' '}
+                        day(s)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-text-tertiary mt-4 pt-4 border-t border-border-base">
+                  Detailed file-by-file comparison coming soon...
+                </p>
+              </div>
+            )}
+          </div>
+        </SlidePanel>
+      </div>
+    </PageContainer>
   );
 }
 
