@@ -42,6 +42,8 @@ export interface RsyncCompletePayload {
   jobId: string;
   success: boolean;
   error?: string;
+  /** Snapshot data returned on successful backup */
+  snapshot?: Partial<Snapshot>;
 }
 
 // Type guards

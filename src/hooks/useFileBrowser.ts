@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api';
 import { logger } from '../utils/logger';
-import { isDirectory } from '../types';
+import { isDirectory, getErrorMessage, type IndexedDirEntry, type ReadDirEntry } from '../types';
 
 export interface FileEntry {
   name: string;
@@ -133,7 +133,7 @@ export function useFileBrowser({
         const relativePath = path === initPath ? '' : path.replace(initPath + '/', '');
         const result = await api.getDirectoryFromDestination(dest, job, timestamp, relativePath);
 
-        formatted = result.map((item: any) => ({
+        formatted = result.map((item: IndexedDirEntry) => ({
           name: item.name,
           // SQLite stores RELATIVE paths (e.g., "Projects/webapp")
           // Convert to absolute path for navigation by prepending initialPath
@@ -146,7 +146,7 @@ export function useFileBrowser({
       } else {
         // Fallback to filesystem read
         const result = await api.readDir(path);
-        formatted = result.map((item: any) => ({
+        formatted = result.map((item: ReadDirEntry) => ({
           name: item.name,
           path: item.path,
           isDirectory: item.isDirectory,
@@ -164,8 +164,8 @@ export function useFileBrowser({
       });
 
       setEntries(formatted);
-    } catch (err: any) {
-      setError(err.message || String(err));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -207,7 +207,7 @@ export function useFileBrowser({
           query,
           100
         );
-        const formatted: FileEntry[] = results.map((item: any) => ({
+        const formatted: FileEntry[] = results.map((item: IndexedDirEntry) => ({
           name: item.name,
           // SQLite stores RELATIVE paths - convert to absolute for navigation
           path: `${initialPath}/${item.path}`,

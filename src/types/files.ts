@@ -25,6 +25,24 @@ export interface DirEntry {
   modified: number;
 }
 
+/** Directory entry from SQLite destination index */
+export interface IndexedDirEntry {
+  name: string;
+  path: string;
+  type: FileType;
+  size: number;
+  modified: number;
+}
+
+/** Directory entry from readDir API (camelCase from JS) */
+export interface ReadDirEntry {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  size: number;
+  modified: number;
+}
+
 /** TIM-101: File type stats from SQLite index */
 export interface FileTypeStats {
   extension: string;

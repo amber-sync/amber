@@ -17,7 +17,16 @@ import { ToastProvider } from './context/ToastContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
-import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
+import {
+  JobStatus,
+  RsyncConfig,
+  SyncJob,
+  SyncMode,
+  SshConfig,
+  DestinationType,
+  Snapshot,
+  getErrorMessage,
+} from './types';
 import { api } from './api';
 import { MODE_PRESETS, DEFAULT_JOB_CONFIG } from './config';
 import { logger } from './utils/logger';
@@ -56,9 +65,6 @@ function AppContent() {
   const [sshConfigPath, setSshConfigPath] = useState('');
   const [sshProxyJump, setSshProxyJump] = useState('');
   const [sshCustomOptions, setSshCustomOptions] = useState('');
-
-  // UI Helper State for Form
-  const [tempExcludePattern, setTempExcludePattern] = useState('');
 
   // Delete Modal State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -134,18 +140,23 @@ function AppContent() {
           prev.map(j => {
             if (j.id === data.jobId) {
               const snapshots = j.snapshots || [];
-              let newSnapshot = (data as any).snapshot;
+              const partialSnapshot = data.snapshot;
+              let completeSnapshot: Snapshot | null = null;
 
-              if (newSnapshot) {
-                newSnapshot = {
+              if (partialSnapshot) {
+                // Ensure required Snapshot fields are set
+                completeSnapshot = {
                   id: generateUniqueId('snap'),
                   status: 'Complete',
                   changesCount: 0,
-                  ...newSnapshot,
-                };
+                  timestamp: partialSnapshot.timestamp ?? Date.now(),
+                  sizeBytes: partialSnapshot.sizeBytes ?? 0,
+                  fileCount: partialSnapshot.fileCount ?? 0,
+                  ...partialSnapshot,
+                } as Snapshot;
               }
 
-              const newSnapshots = newSnapshot ? [...snapshots, newSnapshot] : snapshots;
+              const newSnapshots = completeSnapshot ? [...snapshots, completeSnapshot] : snapshots;
 
               const updatedJob = {
                 ...j,
@@ -161,7 +172,7 @@ function AppContent() {
         );
 
         // TIM-46: Index the new snapshot for fast browsing
-        const snapshot = (data as any).snapshot;
+        const snapshot = data.snapshot;
         if (snapshot?.path && snapshot?.timestamp) {
           try {
             await api.indexSnapshot(data.jobId, snapshot.timestamp, snapshot.path);
@@ -200,7 +211,6 @@ function AppContent() {
     setSshConfigPath('');
     setSshProxyJump('');
     setSshCustomOptions('');
-    setTempExcludePattern('');
   };
 
   const handleJobModeChange = (mode: SyncMode) => {
@@ -257,7 +267,6 @@ function AppContent() {
       setSshCustomOptions('');
     }
 
-    setTempExcludePattern('');
     setView('JOB_EDITOR');
   };
 
@@ -367,19 +376,6 @@ function AppContent() {
     }
   };
 
-  const handleAddPattern = () => {
-    if (!tempExcludePattern.trim()) return;
-    if (newJobConfig.excludePatterns.includes(tempExcludePattern.trim())) {
-      setTempExcludePattern('');
-      return;
-    }
-    setNewJobConfig(prev => ({
-      ...prev,
-      excludePatterns: [...prev.excludePatterns, tempExcludePattern.trim()],
-    }));
-    setTempExcludePattern('');
-  };
-
   const handleSelectDirectory = async (target: 'SOURCE' | 'DEST') => {
     const path = await api.selectDirectory();
     if (path) {
@@ -432,10 +428,15 @@ function AppContent() {
     setView('RESTORE_WIZARD');
   };
 
-  const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: any) => {
+  const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: Snapshot) => {
     if (!restoreJobId) return;
     const job = jobs.find(j => j.id === restoreJobId);
     if (!job) return;
+
+    if (!snapshot.path) {
+      addLog('Error: Snapshot has no path');
+      return;
+    }
 
     addLog(`Starting restore for ${files.length} files to ${targetPath}...`);
 
@@ -457,8 +458,8 @@ function AppContent() {
       } else {
         addLog(`Restore failed: ${result.error}`, 'error');
       }
-    } catch (e: any) {
-      addLog(`Restore failed: ${e.message}`, 'error');
+    } catch (e: unknown) {
+      addLog(`Restore failed: ${getErrorMessage(e)}`, 'error');
     }
 
     setView('TIME_MACHINE');
@@ -491,10 +492,10 @@ function AppContent() {
 
       {isTopLevel && <Sidebar activeView={view} onNavigate={setView} />}
 
-      <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
+      <main className="flex-1 min-h-0 relative z-10 overflow-hidden flex flex-col">
         {/* Dashboard and TimeMachine kept mounted for instant switching */}
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden flex"
           style={{ display: view === 'DASHBOARD' ? 'flex' : 'none' }}
         >
           <DashboardPage
@@ -515,7 +516,7 @@ function AppContent() {
         </div>
 
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{ display: view === 'TIME_MACHINE' ? 'flex' : 'none' }}
         >
           <TimeMachinePage
@@ -527,7 +528,7 @@ function AppContent() {
         </div>
 
         <div
-          className="flex-1 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{ display: view === 'APP_SETTINGS' ? 'flex' : 'none' }}
         >
           <SettingsPage />
@@ -571,7 +572,6 @@ function AppContent() {
             sshConfigPath={sshConfigPath}
             sshProxyJump={sshProxyJump}
             sshCustomOptions={sshCustomOptions}
-            tempExcludePattern={tempExcludePattern}
             setJobName={setNewJobName}
             setJobSource={setNewJobSource}
             setJobDest={setNewJobDest}
@@ -588,13 +588,11 @@ function AppContent() {
             setSshConfigPath={setSshConfigPath}
             setSshProxyJump={setSshProxyJump}
             setSshCustomOptions={setSshCustomOptions}
-            setTempExcludePattern={setTempExcludePattern}
             onSave={handleSaveJob}
             onCancel={() => setView(activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
             onJobModeChange={handleJobModeChange}
-            onAddPattern={handleAddPattern}
             isEditing={Boolean(activeJobId)}
           />
         )}

@@ -8,7 +8,12 @@ import { FilePreview } from '../../FilePreview';
 import { VirtualFileList, type FileEntry } from '../../data-display';
 import { api } from '../../../api';
 import { logger } from '../../../utils/logger';
-import { isDirectory } from '../../../types';
+import {
+  isDirectory,
+  getErrorMessage,
+  type IndexedDirEntry,
+  type ReadDirEntry,
+} from '../../../types';
 
 interface FileBrowserProps {
   initialPath: string;
@@ -108,7 +113,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         const relativePath = path === initPath ? '' : path.replace(initPath + '/', '');
         const result = await api.getDirectoryFromDestination(dest, job, timestamp, relativePath);
 
-        formatted = result.map((item: any) => ({
+        formatted = result.map((item: IndexedDirEntry) => ({
           name: item.name,
           path: `${initPath}/${item.path}`,
           isDirectory: isDirectory(item.type),
@@ -118,7 +123,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
       } else {
         // Fallback to filesystem read
         const result = await api.readDir(path);
-        formatted = result.map((item: any) => ({
+        formatted = result.map((item: ReadDirEntry) => ({
           name: item.name,
           path: item.path,
           isDirectory: item.isDirectory,
@@ -136,8 +141,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
       });
 
       setEntries(formatted);
-    } catch (err: any) {
-      setError(err.message || String(err));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -179,7 +184,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           query,
           100
         );
-        const formatted: FileEntry[] = results.map((item: any) => ({
+        const formatted: FileEntry[] = results.map((item: IndexedDirEntry) => ({
           name: item.name,
           path: `${initialPath}/${item.path}`,
           isDirectory: isDirectory(item.type),

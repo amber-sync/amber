@@ -6,12 +6,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { desktopDir } from '@tauri-apps/api/path';
-import type { DirEntry, FileNode, VolumeInfo, MountStatus } from '../types';
+import type { ReadDirEntry, FileNode, VolumeInfo, MountStatus } from '../types';
 import { getErrorMessage } from '../types';
 
 // ===== Filesystem =====
 
-export async function readDir(path: string): Promise<DirEntry[]> {
+export async function readDir(path: string): Promise<ReadDirEntry[]> {
   return invoke('read_dir', { path });
 }
 

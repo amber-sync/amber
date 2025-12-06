@@ -9,6 +9,7 @@ import type {
   Snapshot,
   IndexedSnapshot,
   FileNode,
+  IndexedDirEntry,
   GlobalSearchResult,
   FileTypeStats,
   LargestFile,
@@ -298,7 +299,7 @@ export async function getDirectoryFromDestination(
   jobId: string,
   timestamp: number,
   parentPath: string
-): Promise<FileNode[]> {
+): Promise<IndexedDirEntry[]> {
   return invoke('get_directory_from_destination', { destPath, jobId, timestamp, parentPath });
 }
 
@@ -322,7 +323,7 @@ export async function searchFilesOnDestination(
   timestamp: number,
   pattern: string,
   limit?: number
-): Promise<FileNode[]> {
+): Promise<IndexedDirEntry[]> {
   return invoke('search_files_on_destination', { destPath, jobId, timestamp, pattern, limit });
 }
 

@@ -43,3 +43,6 @@ export {
   getParentPath,
   getFileName,
 } from './paths';
+
+// CSS utilities
+export { cn, createVariants, type VariantConfig } from './cn';

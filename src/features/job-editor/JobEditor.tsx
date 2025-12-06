@@ -6,7 +6,16 @@
 import React from 'react';
 import { SyncMode, RsyncConfig, DestinationType } from '../../types';
 import { Icons } from '../../components/IconComponents';
-import { GlassPanel, TextInput, Toggle, PathInput, SectionHeader } from '../../components/ui';
+import {
+  GlassPanel,
+  TextInput,
+  Toggle,
+  PathInput,
+  SectionHeader,
+  ExclusionPatternEditor,
+  COMMON_PATTERNS,
+  ScheduleSelector,
+} from '../../components/ui';
 
 export interface JobEditorProps {
   // Form state
@@ -27,7 +36,6 @@ export interface JobEditorProps {
   sshConfigPath: string;
   sshProxyJump: string;
   sshCustomOptions: string;
-  tempExcludePattern: string;
 
   // State setters
   setJobName: (val: string) => void;
@@ -46,7 +54,6 @@ export interface JobEditorProps {
   setSshConfigPath: (val: string) => void;
   setSshProxyJump: (val: string) => void;
   setSshCustomOptions: (val: string) => void;
-  setTempExcludePattern: (val: string) => void;
 
   // Handlers
   onSave: () => void;
@@ -54,18 +61,10 @@ export interface JobEditorProps {
   onDelete?: () => void;
   onSelectDirectory: (target: 'SOURCE' | 'DEST') => void;
   onJobModeChange: (mode: SyncMode) => void;
-  onAddPattern: () => void;
 
   // Other props
   isEditing: boolean;
 }
-
-const SCHEDULE_OPTIONS = [
-  { label: 'Manual', value: null, icon: <Icons.Hand size={16} /> },
-  { label: 'Hourly', value: 60, icon: <Icons.Clock size={16} /> },
-  { label: 'Daily', value: 1440, icon: <Icons.Calendar size={16} /> },
-  { label: 'Weekly', value: 10080, icon: <Icons.CalendarDays size={16} /> },
-];
 
 const SYNC_MODES = [
   {
@@ -106,7 +105,6 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   sshConfigPath,
   sshProxyJump,
   sshCustomOptions,
-  tempExcludePattern,
   setJobName,
   setJobSource,
   setJobDest,
@@ -123,25 +121,13 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   setSshConfigPath,
   setSshProxyJump,
   setSshCustomOptions,
-  setTempExcludePattern,
   onSave,
   onCancel,
   onDelete,
   onSelectDirectory,
   onJobModeChange,
-  onAddPattern,
   isEditing,
 }) => {
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      onAddPattern();
-    }
-    if (e.key === 'Backspace' && !tempExcludePattern && jobConfig.excludePatterns.length > 0) {
-      setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.slice(0, -1) }));
-    }
-  };
-
   const canSave = !!jobName.trim() && !!jobSource.trim() && !!jobDest.trim();
 
   return (
@@ -309,69 +295,19 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               {/* Schedule */}
               <div>
                 <SectionHeader variant="form-label">Schedule</SectionHeader>
-                <div className="flex flex-wrap gap-2">
-                  {SCHEDULE_OPTIONS.map(opt => (
-                    <button
-                      key={opt.label}
-                      type="button"
-                      onClick={() => setJobSchedule(opt.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                        jobSchedule === opt.value
-                          ? 'bg-accent-primary text-accent-text'
-                          : 'bg-layer-2 text-text-secondary hover:bg-layer-3'
-                      }`}
-                    >
-                      {opt.icon}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <ScheduleSelector value={jobSchedule} onChange={setJobSchedule} />
               </div>
 
               {/* Exclusions */}
               <div>
                 <SectionHeader variant="form-label">Exclusions</SectionHeader>
-                <div className="flex gap-2 mb-3">
-                  <TextInput
-                    value={tempExcludePattern}
-                    onChange={e => setTempExcludePattern(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Add pattern (e.g. *.log)"
-                    className="flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={onAddPattern}
-                    className="px-3 bg-layer-2 hover:bg-layer-3 rounded-xl text-text-secondary transition-colors"
-                  >
-                    <Icons.Plus size={18} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 min-h-[32px]">
-                  {jobConfig.excludePatterns.map((p, i) => (
-                    <span
-                      key={i}
-                      className="bg-layer-1 px-2.5 py-1 rounded-md text-sm font-medium text-text-secondary flex items-center gap-1.5 border border-border-base"
-                    >
-                      {p}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setJobConfig(prev => ({
-                            ...prev,
-                            excludePatterns: prev.excludePatterns.filter((_, idx) => idx !== i),
-                          }))
-                        }
-                        className="hover:text-error text-text-tertiary"
-                      >
-                        <Icons.X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                  {jobConfig.excludePatterns.length === 0 && (
-                    <span className="text-sm text-text-tertiary italic">No patterns</span>
-                  )}
-                </div>
+                <ExclusionPatternEditor
+                  patterns={jobConfig.excludePatterns}
+                  onChange={patterns =>
+                    setJobConfig(prev => ({ ...prev, excludePatterns: patterns }))
+                  }
+                  suggestions={[...COMMON_PATTERNS.system, ...COMMON_PATTERNS.logs]}
+                />
               </div>
 
               {/* Options */}
