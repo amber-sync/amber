@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { SyncJob, DiskStats } from '../types';
-import { Icons } from '../components/IconComponents';
-import { formatBytes } from '../utils';
-import { BackupCalendar } from '../components/analytics';
+import { SyncJob, DiskStats } from '../../types';
+import { Icons } from '../../components/IconComponents';
+import { formatBytes } from '../../utils';
+import { BackupCalendar } from '../../components/analytics';
 import { format } from 'date-fns';
-import { Button, Card, StatusDot, IconButton } from '../components/ui';
-import { JobCard } from '../components/JobCard';
+import { Button, Card, StatusDot, IconButton } from '../../components/ui';
+import { JobCard } from '../../components/JobCard';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -13,7 +13,14 @@ interface JobMountInfo {
   volumeName?: string;
 }
 
-interface DashboardProps {
+interface DayBackup {
+  jobId: string;
+  jobName: string;
+  status: 'success' | 'failed';
+  timestamp: number;
+}
+
+export interface DashboardPageProps {
   jobs: SyncJob[];
   diskStats: Record<string, DiskStats>;
   /** Mount status for each job, keyed by job ID */
@@ -24,14 +31,7 @@ interface DashboardProps {
   onEditSettings?: (jobId: string) => void;
 }
 
-interface DayBackup {
-  jobId: string;
-  jobName: string;
-  status: 'success' | 'failed';
-  timestamp: number;
-}
-
-export const Dashboard: React.FC<DashboardProps> = ({
+export const DashboardPage: React.FC<DashboardPageProps> = ({
   jobs,
   diskStats,
   mountStatus,
