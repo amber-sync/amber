@@ -157,7 +157,7 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
             </div>
 
             {/* Contribution grid: 52 columns x 7 rows */}
-            <div className="flex gap-[3px] pb-1">
+            <div className="flex gap-[3px] p-2">
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-[3px]">
                   {week.map(day => {
