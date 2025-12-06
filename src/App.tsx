@@ -261,20 +261,23 @@ function AppContent() {
     setView('JOB_EDITOR');
   };
 
-  const handleSaveJob = () => {
+  // TIM-201: Updated to accept form data from JobEditor
+  const handleSaveJob = (formData: import('./hooks/useJobForm').JobFormState) => {
     const sshConfig: SshConfig = {
-      enabled: sshEnabled,
-      port: sshPort,
-      identityFile: sshKeyPath,
-      configFile: sshConfigPath,
-      proxyJump: sshProxyJump,
-      customSshOptions: sshCustomOptions,
+      enabled: formData.sshEnabled,
+      port: formData.sshPort,
+      identityFile: formData.sshKeyPath,
+      configFile: formData.sshConfigPath,
+      proxyJump: formData.sshProxyJump,
+      customSshOptions: formData.sshCustomOptions,
     };
 
     const jobConfig: RsyncConfig = {
-      ...newJobConfig,
-      excludePatterns: [...newJobConfig.excludePatterns],
-      customCommand: newJobConfig.customCommand ? newJobConfig.customCommand.trim() : undefined,
+      ...formData.config,
+      excludePatterns: [...formData.config.excludePatterns],
+      customCommand: formData.config.customCommand
+        ? formData.config.customCommand.trim()
+        : undefined,
       customFlags: '',
     };
 
@@ -287,11 +290,11 @@ function AppContent() {
       return undefined;
     };
 
-    const scheduleConfig = newJobSchedule
+    const scheduleConfig = formData.schedule
       ? {
           enabled: true,
-          cron: getCronFromInterval(newJobSchedule),
-          runOnMount: newJobSchedule === -1 || true,
+          cron: getCronFromInterval(formData.schedule),
+          runOnMount: formData.schedule === -1 || true,
         }
       : { enabled: false };
 
@@ -311,11 +314,11 @@ function AppContent() {
       if (job) {
         const updatedJob = {
           ...job,
-          name: newJobName,
-          sourcePath: newJobSource,
-          destPath: newJobDest,
-          mode: newJobMode,
-          scheduleInterval: newJobSchedule,
+          name: formData.name,
+          sourcePath: formData.source,
+          destPath: formData.dest,
+          mode: formData.mode,
+          scheduleInterval: formData.schedule,
           schedule: scheduleConfig,
           config: jobConfig,
           sshConfig,
@@ -327,12 +330,12 @@ function AppContent() {
     } else {
       const job: SyncJob = {
         id: generateUniqueId('job'),
-        name: newJobName || 'Untitled Job',
-        sourcePath: newJobSource,
-        destPath: newJobDest,
-        mode: newJobMode,
-        destinationType: DestinationType.LOCAL, // Default to local, can be changed to cloud later
-        scheduleInterval: newJobSchedule,
+        name: formData.name || 'Untitled Job',
+        sourcePath: formData.source,
+        destPath: formData.dest,
+        mode: formData.mode,
+        destinationType: formData.destinationType,
+        scheduleInterval: formData.schedule,
         schedule: scheduleConfig,
         config: jobConfig,
         sshConfig,
@@ -345,7 +348,6 @@ function AppContent() {
       persistJob(job);
       setView(returnView);
     }
-    resetForm();
     setJobEditorSourceView(null);
   };
 
@@ -552,50 +554,14 @@ function AppContent() {
             );
           })()}
 
+        {/* TIM-201: JobEditor now uses internal state via useJobForm hook */}
         {view === 'JOB_EDITOR' && (
           <JobEditor
-            jobName={newJobName}
-            jobSource={newJobSource}
-            jobDest={newJobDest}
-            jobMode={newJobMode}
-            jobSchedule={newJobSchedule}
-            jobConfig={newJobConfig}
-            destinationType={destinationType}
-            cloudRemoteName={cloudRemoteName}
-            cloudRemotePath={cloudRemotePath}
-            cloudEncrypt={cloudEncrypt}
-            cloudBandwidth={cloudBandwidth}
-            sshEnabled={sshEnabled}
-            sshPort={sshPort}
-            sshKeyPath={sshKeyPath}
-            sshConfigPath={sshConfigPath}
-            sshProxyJump={sshProxyJump}
-            sshCustomOptions={sshCustomOptions}
-            tempExcludePattern={tempExcludePattern}
-            setJobName={setNewJobName}
-            setJobSource={setNewJobSource}
-            setJobDest={setNewJobDest}
-            setJobSchedule={setNewJobSchedule}
-            setJobConfig={setNewJobConfig}
-            setDestinationType={setDestinationType}
-            setCloudRemoteName={setCloudRemoteName}
-            setCloudRemotePath={setCloudRemotePath}
-            setCloudEncrypt={setCloudEncrypt}
-            setCloudBandwidth={setCloudBandwidth}
-            setSshEnabled={setSshEnabled}
-            setSshPort={setSshPort}
-            setSshKeyPath={setSshKeyPath}
-            setSshConfigPath={setSshConfigPath}
-            setSshProxyJump={setSshProxyJump}
-            setSshCustomOptions={setSshCustomOptions}
-            setTempExcludePattern={setTempExcludePattern}
+            job={activeJobId ? jobs.find(j => j.id === activeJobId) : null}
             onSave={handleSaveJob}
             onCancel={() => setView(activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
-            onJobModeChange={handleJobModeChange}
-            onAddPattern={handleAddPattern}
-            isEditing={Boolean(activeJobId)}
           />
         )}
       </main>

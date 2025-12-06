@@ -1,14 +1,37 @@
 /**
  * TIM-190: Unified Job Editor component
+ * TIM-201: Refactored to use internal state via useJobForm hook
  * Consolidated from JobEditorTwoPanel - other variants removed
  */
 
-import React from 'react';
-import { SyncMode, RsyncConfig, DestinationType } from '../../types';
+import React, { useEffect } from 'react';
+import { SyncMode, RsyncConfig, DestinationType, SyncJob } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { GlassPanel, TextInput, Toggle, PathInput, SectionHeader } from '../../components/ui';
+import { useJobForm, JobFormState } from '../../hooks/useJobForm';
 
+/**
+ * TIM-201: Simplified JobEditor props interface
+ * Reduced from 42 props to 5 by using internal state management
+ */
 export interface JobEditorProps {
+  /** Optional job to edit (null for new job) */
+  job?: SyncJob | null;
+  /** Callback when save is clicked with form data */
+  onSave: (formData: JobFormState) => void;
+  /** Callback when cancel is clicked */
+  onCancel: () => void;
+  /** Optional callback for delete action (only shown when editing) */
+  onDelete?: () => void;
+  /** Callback to open directory picker */
+  onSelectDirectory: (target: 'SOURCE' | 'DEST') => void;
+}
+
+/**
+ * @deprecated Use JobEditorProps instead
+ * Legacy props interface for backwards compatibility during migration
+ */
+export interface LegacyJobEditorProps {
   // Form state
   jobName: string;
   jobSource: string;
@@ -88,61 +111,89 @@ const SYNC_MODES = [
   },
 ];
 
+/**
+ * TIM-201: New JobEditor with internal state management
+ * Uses useJobForm hook to manage form state internally
+ */
 export const JobEditor: React.FC<JobEditorProps> = ({
-  jobName,
-  jobSource,
-  jobDest,
-  jobMode,
-  jobSchedule,
-  jobConfig,
-  destinationType,
-  cloudRemoteName,
-  cloudRemotePath,
-  cloudEncrypt,
-  cloudBandwidth,
-  sshEnabled,
-  sshPort,
-  sshKeyPath,
-  sshConfigPath,
-  sshProxyJump,
-  sshCustomOptions,
-  tempExcludePattern,
-  setJobName,
-  setJobSource,
-  setJobDest,
-  setJobSchedule,
-  setJobConfig,
-  setDestinationType,
-  setCloudRemoteName,
-  setCloudRemotePath,
-  setCloudEncrypt,
-  setCloudBandwidth,
-  setSshEnabled,
-  setSshPort,
-  setSshKeyPath,
-  setSshConfigPath,
-  setSshProxyJump,
-  setSshCustomOptions,
-  setTempExcludePattern,
+  job,
   onSave,
   onCancel,
   onDelete,
   onSelectDirectory,
-  onJobModeChange,
-  onAddPattern,
-  isEditing,
 }) => {
+  const { formState, setters, populateFromJob, handleModeChange, handleAddPattern, canSave } =
+    useJobForm();
+
+  const isEditing = !!job;
+
+  // Populate form when editing an existing job
+  useEffect(() => {
+    if (job) {
+      populateFromJob(job);
+    }
+  }, [job, populateFromJob]);
+
+  const handleSave = () => {
+    onSave(formState);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      onAddPattern();
+      handleAddPattern();
     }
-    if (e.key === 'Backspace' && !tempExcludePattern && jobConfig.excludePatterns.length > 0) {
-      setJobConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.slice(0, -1) }));
+    if (
+      e.key === 'Backspace' &&
+      !formState.tempExcludePattern &&
+      formState.config.excludePatterns.length > 0
+    ) {
+      setters.setConfig(prev => ({ ...prev, excludePatterns: prev.excludePatterns.slice(0, -1) }));
     }
   };
 
-  const canSave = !!jobName.trim() && !!jobSource.trim() && !!jobDest.trim();
+  // Destructure form state for cleaner JSX
+  const {
+    name: jobName,
+    source: jobSource,
+    dest: jobDest,
+    mode: jobMode,
+    schedule: jobSchedule,
+    config: jobConfig,
+    destinationType,
+    cloudRemoteName,
+    cloudRemotePath,
+    cloudEncrypt,
+    cloudBandwidth,
+    sshEnabled,
+    sshPort,
+    sshKeyPath,
+    sshConfigPath,
+    sshProxyJump,
+    sshCustomOptions,
+    tempExcludePattern,
+  } = formState;
+
+  // Destructure setters for cleaner JSX
+  const {
+    setName: setJobName,
+    setSource: setJobSource,
+    setDest: setJobDest,
+    setSchedule: setJobSchedule,
+    setConfig: setJobConfig,
+    setDestinationType,
+    setCloudRemoteName,
+    setCloudRemotePath,
+    setCloudEncrypt,
+    setCloudBandwidth,
+    setSshEnabled,
+    setSshPort,
+    setSshKeyPath,
+    setSshConfigPath,
+    setSshProxyJump,
+    setSshCustomOptions,
+    setTempExcludePattern,
+  } = setters;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-app/80 backdrop-blur-md animate-fade-in">
@@ -278,7 +329,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     <button
                       key={mode}
                       type="button"
-                      onClick={() => onJobModeChange(mode)}
+                      onClick={() => handleModeChange(mode)}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         jobMode === mode
                           ? 'border-accent-primary bg-accent-secondary/20'
@@ -341,7 +392,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                   />
                   <button
                     type="button"
-                    onClick={onAddPattern}
+                    onClick={handleAddPattern}
                     className="px-3 bg-layer-2 hover:bg-layer-3 rounded-xl text-text-secondary transition-colors"
                   >
                     <Icons.Plus size={18} />
@@ -470,7 +521,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             </button>
             <button
               type="button"
-              onClick={onSave}
+              onClick={handleSave}
               disabled={!canSave}
               className="px-5 py-2 rounded-xl font-medium text-white bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
