@@ -37,6 +37,8 @@ export {
   isFile,
   type FileNode,
   type DirEntry,
+  type IndexedDirEntry,
+  type ReadDirEntry,
   type FileTypeStats,
   type LargestFile,
   type GlobalSearchResult,

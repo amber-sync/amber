@@ -17,7 +17,16 @@ import { ToastProvider } from './context/ToastContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
 import { useDiskStats } from './hooks/useDiskStats';
 import { generateUniqueId } from './utils/idGenerator';
-import { JobStatus, RsyncConfig, SyncJob, SyncMode, SshConfig, DestinationType } from './types';
+import {
+  JobStatus,
+  RsyncConfig,
+  SyncJob,
+  SyncMode,
+  SshConfig,
+  DestinationType,
+  Snapshot,
+  getErrorMessage,
+} from './types';
 import { api } from './api';
 import { MODE_PRESETS, DEFAULT_JOB_CONFIG } from './config';
 import { logger } from './utils/logger';
@@ -134,18 +143,23 @@ function AppContent() {
           prev.map(j => {
             if (j.id === data.jobId) {
               const snapshots = j.snapshots || [];
-              let newSnapshot = (data as any).snapshot;
+              const partialSnapshot = data.snapshot;
+              let completeSnapshot: Snapshot | null = null;
 
-              if (newSnapshot) {
-                newSnapshot = {
+              if (partialSnapshot) {
+                // Ensure required Snapshot fields are set
+                completeSnapshot = {
                   id: generateUniqueId('snap'),
                   status: 'Complete',
                   changesCount: 0,
-                  ...newSnapshot,
-                };
+                  timestamp: partialSnapshot.timestamp ?? Date.now(),
+                  sizeBytes: partialSnapshot.sizeBytes ?? 0,
+                  fileCount: partialSnapshot.fileCount ?? 0,
+                  ...partialSnapshot,
+                } as Snapshot;
               }
 
-              const newSnapshots = newSnapshot ? [...snapshots, newSnapshot] : snapshots;
+              const newSnapshots = completeSnapshot ? [...snapshots, completeSnapshot] : snapshots;
 
               const updatedJob = {
                 ...j,
@@ -161,7 +175,7 @@ function AppContent() {
         );
 
         // TIM-46: Index the new snapshot for fast browsing
-        const snapshot = (data as any).snapshot;
+        const snapshot = data.snapshot;
         if (snapshot?.path && snapshot?.timestamp) {
           try {
             await api.indexSnapshot(data.jobId, snapshot.timestamp, snapshot.path);
@@ -432,10 +446,15 @@ function AppContent() {
     setView('RESTORE_WIZARD');
   };
 
-  const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: any) => {
+  const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: Snapshot) => {
     if (!restoreJobId) return;
     const job = jobs.find(j => j.id === restoreJobId);
     if (!job) return;
+
+    if (!snapshot.path) {
+      addLog('Error: Snapshot has no path');
+      return;
+    }
 
     addLog(`Starting restore for ${files.length} files to ${targetPath}...`);
 
@@ -457,8 +476,8 @@ function AppContent() {
       } else {
         addLog(`Restore failed: ${result.error}`, 'error');
       }
-    } catch (e: any) {
-      addLog(`Restore failed: ${e.message}`, 'error');
+    } catch (e: unknown) {
+      addLog(`Restore failed: ${getErrorMessage(e)}`, 'error');
     }
 
     setView('TIME_MACHINE');
