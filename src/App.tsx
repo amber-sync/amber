@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { DashboardPage } from './features/dashboard';
 import { RestoreWizard } from './views/RestoreWizard';
-import { JobEditorWrapper, JobEditorVariant } from './views/JobEditorWrapper';
+import { JobEditor } from './features/job-editor';
 import { TimeMachinePage } from './features/time-machine';
 import { SettingsPage } from './features/settings';
 import { HelpSection } from './components/HelpSection';
@@ -63,10 +63,6 @@ function AppContent() {
   // Delete Modal State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
-
-  // Job Editor Variant (for testing different designs)
-  // Options: 'classic' | 'stepper' | 'accordion' | 'twopanel'
-  const [jobEditorVariant] = useState<JobEditorVariant>('twopanel');
 
   // TIM-141: Track source view for proper navigation after job save
   const [jobEditorSourceView, setJobEditorSourceView] = useState<string | null>(null);
@@ -541,8 +537,7 @@ function AppContent() {
           })()}
 
         {view === 'JOB_EDITOR' && (
-          <JobEditorWrapper
-            variant={jobEditorVariant}
+          <JobEditor
             jobName={newJobName}
             jobSource={newJobSource}
             jobDest={newJobDest}
