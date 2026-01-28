@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useJobs } from '../context/JobsContext';
+import { useJobs } from '@/features/jobs/context/JobsContext';
 import { useUI } from '../context/UIContext';
 import { api } from '../api';
 import { FILE_TYPE, type FileNode } from '../types';

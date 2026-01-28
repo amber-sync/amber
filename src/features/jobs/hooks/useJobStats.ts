@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { JobAggregateStats, SnapshotDensity } from '../types';
-import { api } from '../api';
+import { JobAggregateStats, SnapshotDensity } from '@/types';
+import { api } from '@/api';
 
 interface UseJobStatsResult {
   stats: JobAggregateStats | null;

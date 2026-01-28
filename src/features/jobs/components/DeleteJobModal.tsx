@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Icons } from './IconComponents';
-import { Panel } from './ui';
-import { Title, Body, Caption } from './ui';
-import { formatBytes } from '../utils/formatters';
+import { Icons } from '@/components/IconComponents';
+import { Panel } from '@/components/ui';
+import { Title, Body, Caption } from '@/components/ui';
+import { formatBytes } from '@/utils/formatters';
 
 interface DeleteJobModalProps {
   isOpen: boolean;

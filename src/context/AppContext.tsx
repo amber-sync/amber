@@ -1,5 +1,5 @@
 import React from 'react';
-import { JobsProvider, useJobs } from './JobsContext';
+import { JobsProvider, useJobs } from '@/features/jobs/context/JobsContext';
 import { UIProvider, useUI } from './UIContext';
 import { SettingsProvider, useSettings } from './SettingsContext';
 

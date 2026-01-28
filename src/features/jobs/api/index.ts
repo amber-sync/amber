@@ -4,7 +4,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { SyncJob, JobWithStatus, DiscoveredBackup } from '../types';
+import type { SyncJob, JobWithStatus, DiscoveredBackup } from '@/types';
 
 // ===== Job CRUD =====
 

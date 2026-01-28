@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icons } from '../../components/IconComponents';
 import { useTheme, Theme } from '../../context/ThemeContext';
-import { useApp } from '../../context/AppContext';
+import { useSettings } from '../../context';
 import { api } from '../../api';
 import { logger } from '../../utils/logger';
 import { PageContainer } from '../../components/layout';
@@ -11,6 +11,7 @@ const APP_VERSION = '0.0.1-beta';
 
 export const SettingsPage: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  // TIM-205: Use specific context hook for better performance
   const {
     runInBackground,
     startOnBoot,
@@ -18,7 +19,7 @@ export const SettingsPage: React.FC = () => {
     setRunInBackground,
     setStartOnBoot,
     setNotificationsEnabled,
-  } = useApp();
+  } = useSettings();
 
   const themes: { id: Theme; label: string; color: string; description?: string }[] = [
     {

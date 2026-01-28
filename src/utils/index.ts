@@ -45,4 +45,4 @@ export {
 } from './paths';
 
 // CSS utilities
-export { cn, createVariants, type VariantConfig } from './cn';
+export { cn } from './cn';

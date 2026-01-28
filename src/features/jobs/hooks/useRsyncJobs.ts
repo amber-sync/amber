@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { SyncJob, JobStatus, Snapshot } from '../types';
-import { generateUniqueId } from '../utils/idGenerator';
-import { DEFAULT_JOB_CONFIG } from '../config';
+import { SyncJob, JobStatus, Snapshot } from '@/types';
+import { generateUniqueId } from '@/utils/idGenerator';
+import { DEFAULT_JOB_CONFIG } from '@/config';
 
 export function useRsyncJobs(initialJobs: SyncJob[] = []) {
   const [jobs, setJobs] = useState<SyncJob[]>(initialJobs);

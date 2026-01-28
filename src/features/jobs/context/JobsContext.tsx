@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { SyncJob, JobStatus, DestinationType } from '../types';
-import { api } from '../api';
-import { BASE_RSYNC_CONFIG } from '../config';
-import { logger } from '../utils/logger';
+import { SyncJob, JobStatus, DestinationType } from '@/types';
+import { api } from '@/api';
+import { BASE_RSYNC_CONFIG } from '@/config';
+import { logger } from '@/utils/logger';
 
 interface JobsContextType {
   jobs: SyncJob[];

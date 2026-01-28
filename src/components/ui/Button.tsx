@@ -1,67 +1,48 @@
 import React, { forwardRef } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/utils/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98] transform',
+  {
+    variants: {
+      variant: {
+        primary:
+          'bg-accent-primary text-accent-text hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] focus:ring-accent-primary/30',
+        secondary:
+          'bg-layer-3 text-text-secondary border border-border-base hover:bg-layer-2 hover:border-border-highlight hover:text-text-primary active:bg-layer-3 focus:ring-accent-primary/30',
+        ghost:
+          'bg-transparent text-text-secondary hover:bg-layer-3 hover:text-text-primary active:bg-layer-2 focus:ring-accent-primary/30',
+        danger: 'bg-error text-white hover:bg-error/90 active:bg-error/80 focus:ring-error/30',
+      },
+      size: {
+        sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
+        md: 'h-10 px-4 text-sm gap-2 rounded-xl',
+        lg: 'h-12 px-6 text-base gap-2.5 rounded-xl',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+    },
+  }
+);
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   icon?: React.ReactNode;
   loading?: boolean;
 }
 
-const baseStyles =
-  'inline-flex items-center justify-center font-semibold transition-all duration-150 ' +
-  'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ' +
-  'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none ' +
-  'active:scale-[0.98] transform';
-
-const variantStyles: Record<ButtonVariant, string> = {
-  primary:
-    'bg-accent-primary text-accent-text ' +
-    'hover:bg-[var(--accent-hover)] ' +
-    'active:bg-[var(--accent-active)] ' +
-    'focus:ring-accent-primary/30',
-  secondary:
-    'bg-layer-3 text-text-secondary ' +
-    'border border-border-base ' +
-    'hover:bg-layer-2 hover:border-border-highlight hover:text-text-primary ' +
-    'active:bg-layer-3 ' +
-    'focus:ring-accent-primary/30',
-  ghost:
-    'bg-transparent text-text-secondary ' +
-    'hover:bg-layer-3 hover:text-text-primary ' +
-    'active:bg-layer-2 ' +
-    'focus:ring-accent-primary/30',
-  danger:
-    'bg-error text-white ' + 'hover:bg-error/90 ' + 'active:bg-error/80 ' + 'focus:ring-error/30',
-};
-
-const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
-  md: 'h-10 px-4 text-sm gap-2 rounded-xl',
-  lg: 'h-12 px-6 text-base gap-2.5 rounded-xl',
-};
-
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      variant = 'primary',
-      size = 'md',
-      icon,
-      loading,
-      className = '',
-      children,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const buttonStyles =
-      `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`.trim();
-
+  ({ variant, size, icon, loading, className, children, disabled, ...props }, ref) => {
     return (
-      <button ref={ref} className={buttonStyles} disabled={disabled || loading} {...props}>
+      <button
+        ref={ref}
+        className={cn(buttonVariants({ variant, size, className }))}
+        disabled={disabled || loading}
+        {...props}
+      >
         {loading ? (
           <svg
             className="animate-spin h-4 w-4"

@@ -6,14 +6,14 @@
  */
 
 // Re-export all functions from domain modules
-export * from './jobs';
+export * from '../features/jobs/api';
 export * from './snapshots';
 export * from './filesystem';
 export * from './rsync';
 export * from './system';
 
 // Import for building the backward-compatible api object
-import * as jobs from './jobs';
+import * as jobs from '../features/jobs/api';
 import * as snapshots from './snapshots';
 import * as filesystem from './filesystem';
 import * as rsync from './rsync';

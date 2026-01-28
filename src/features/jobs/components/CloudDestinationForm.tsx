@@ -1,6 +1,6 @@
 import React from 'react';
-import { Icons } from './IconComponents';
-import { Title, Body, Caption } from './ui';
+import { Icons } from '@/components/IconComponents';
+import { Title, Body, Caption } from '@/components/ui';
 
 interface CloudDestinationFormProps {
   remoteName: string;

@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useJobs } from '../context/JobsContext';
+import { useJobs } from '@/features/jobs/context/JobsContext';
 import { useUI } from '../context/UIContext';
 import { useTheme } from '../context/ThemeContext';
 import { Icons } from './IconComponents';

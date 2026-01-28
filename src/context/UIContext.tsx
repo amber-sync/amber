@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useJobs } from './JobsContext';
+import { useJobs } from '@/features/jobs/context/JobsContext';
 
 type ViewType =
   | 'DASHBOARD'

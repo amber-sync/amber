@@ -11,7 +11,7 @@
  * TIM-205: Uses specific context hooks for better performance
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useJobs } from '../../context/JobsContext';
+import { useJobs } from '@/features/jobs/context/JobsContext';
 import { useUI } from '../../context/UIContext';
 import { api } from '../../api';
 import { Snapshot, SyncJob, LogEntry, RsyncProgressData } from '../../types';
