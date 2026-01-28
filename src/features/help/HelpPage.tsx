@@ -1,7 +1,7 @@
 import React from 'react';
-import { Icons } from './IconComponents';
-import { PageContainer } from './layout';
-import { Title, Body, Card } from './ui';
+import { Icons } from '../../components/IconComponents';
+import { PageContainer } from '../../components/layout';
+import { Title, Body, Card } from '../../components/ui';
 
 interface DocLinkProps {
   icon: React.ReactNode;
@@ -52,7 +52,7 @@ const ShortcutRow: React.FC<ShortcutRowProps> = ({ keys, description }) => (
   </div>
 );
 
-export const HelpSection: React.FC = () => {
+export const HelpPage: React.FC = () => {
   const openDocs = () => {
     window.open('https://amber-sync.vercel.app/docs', '_blank');
   };

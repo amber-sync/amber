@@ -4,7 +4,7 @@ import { RestoreWizard } from './features/restore';
 import { JobEditor } from './features/job-editor';
 import { TimeMachinePage } from './features/time-machine';
 import { SettingsPage } from './features/settings';
-import { HelpSection } from './components/HelpSection';
+import { HelpPage } from './features/help';
 import { Sidebar } from './components/layout';
 // AmbientBackground removed - using clean page backgrounds
 import { DeleteJobModal } from '@/features/jobs/components/DeleteJobModal';
@@ -423,7 +423,7 @@ function AppContent() {
           <SettingsPage />
         </div>
 
-        {view === 'HELP' && <HelpSection />}
+        {view === 'HELP' && <HelpPage />}
 
         {view === 'RESTORE_WIZARD' &&
           restoreJobId &&
