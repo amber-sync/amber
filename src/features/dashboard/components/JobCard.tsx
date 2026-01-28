@@ -8,9 +8,9 @@ import {
   ProgressRing,
   Title,
   Body,
-  Caption,
   Code,
   ModeBadge,
+  Button,
 } from '../../../components/ui';
 
 interface JobCardProps {
@@ -21,6 +21,22 @@ interface JobCardProps {
   onEditSettings?: (jobId: string) => void;
 }
 
+interface DetailRowProps {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}
+
+const DetailRow: React.FC<DetailRowProps> = ({ icon, label, children }) => (
+  <div className="space-y-1">
+    <Body size="sm" color="secondary" className="flex items-center gap-1.5">
+      {icon}
+      {label}
+    </Body>
+    {children}
+  </div>
+);
+
 export const JobCard = React.memo<JobCardProps>(
   function JobCard({ job, mountInfo, onSelect, onRunBackup, onEditSettings }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -28,18 +44,15 @@ export const JobCard = React.memo<JobCardProps>(
     const isRunning = job.status === JobStatus.RUNNING;
     const mounted = mountInfo?.mounted ?? true;
 
-    // Format relative time
     const getRelativeTime = () => {
       if (!job.lastRun) return 'Never run';
       return formatRelativeTime(job.lastRun);
     };
 
-    // Handle card click - toggle expand
     const handleCardClick = () => {
       setIsExpanded(!isExpanded);
     };
 
-    // Handle keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -58,17 +71,17 @@ export const JobCard = React.memo<JobCardProps>(
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
         className={`
-        bg-layer-1 rounded-xl border cursor-pointer
-        ${
-          isExpanded
-            ? 'border-border-highlight shadow-[var(--shadow-elevated)]'
-            : 'border-border-base shadow-[var(--shadow-card)] hover:border-border-highlight hover:shadow-[var(--shadow-elevated)]'
-        }
-      `}
+          bg-layer-1 rounded-xl border cursor-pointer transition-all
+          ${
+            isExpanded
+              ? 'border-border-highlight shadow-elevated'
+              : 'border-border-base shadow-card hover:border-border-highlight hover:shadow-elevated'
+          }
+        `}
       >
-        {/* Collapsed Header - Always Visible */}
+        {/* Collapsed Header */}
         <div className="flex items-center gap-3 p-4">
-          {/* Job Icon - colored by availability status */}
+          {/* Job Icon */}
           <div className="shrink-0">
             {isRunning ? (
               <ProgressRing
@@ -88,7 +101,7 @@ export const JobCard = React.memo<JobCardProps>(
               >
                 <Icons.Archive
                   size={18}
-                  className={!mounted ? 'text-warning-primary' : 'text-text-secondary'}
+                  className={!mounted ? 'text-warning' : 'text-text-secondary'}
                 />
               </div>
             )}
@@ -115,11 +128,13 @@ export const JobCard = React.memo<JobCardProps>(
                 Syncing...
               </Body>
             ) : (
-              <Caption color="secondary">{getRelativeTime()}</Caption>
+              <Body size="sm" color="secondary">
+                {getRelativeTime()}
+              </Body>
             )}
           </div>
 
-          {/* Always-Visible Actions */}
+          {/* Quick Actions */}
           <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
             {onRunBackup && (
               <IconButton
@@ -147,58 +162,35 @@ export const JobCard = React.memo<JobCardProps>(
           {/* Expand Indicator */}
           <Icons.ChevronDown
             size={18}
-            className={`text-text-tertiary shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`text-text-tertiary shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
           />
         </div>
 
         {/* Expanded Content */}
         {isExpanded && (
-          <div className="px-4 pb-4">
-            {/* Divider */}
+          <div className="px-4 pb-4 animate-fade-in">
             <div className="border-t border-border-base mb-4" />
 
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Source Path */}
-              <div className="space-y-1">
-                <Caption color="tertiary" className="flex items-center gap-1.5">
-                  <Icons.FolderOpen size={12} />
-                  Source
-                </Caption>
+              <DetailRow icon={<Icons.FolderOpen size={14} />} label="Source">
                 <Code size="sm" className="break-all" title={job.sourcePath}>
                   {job.sourcePath}
                 </Code>
-              </div>
+              </DetailRow>
 
-              {/* Destination Path */}
-              <div className="space-y-1">
-                <Caption color="tertiary" className="flex items-center gap-1.5">
-                  <Icons.HardDrive size={12} />
-                  Destination
-                </Caption>
+              <DetailRow icon={<Icons.HardDrive size={14} />} label="Destination">
                 <Code size="sm" className="break-all" title={job.destPath}>
                   {job.destPath}
                 </Code>
-              </div>
+              </DetailRow>
 
-              {/* Schedule */}
-              <div className="space-y-1">
-                <Caption color="tertiary" className="flex items-center gap-1.5">
-                  <Icons.Clock size={12} />
-                  Schedule
-                </Caption>
-                <Body size="sm" as="span">
-                  {formatSchedule(job.scheduleInterval)}
-                </Body>
-              </div>
+              <DetailRow icon={<Icons.Clock size={14} />} label="Schedule">
+                <Body size="sm">{formatSchedule(job.scheduleInterval)}</Body>
+              </DetailRow>
 
-              {/* Last Run */}
-              <div className="space-y-1">
-                <Caption color="tertiary" className="flex items-center gap-1.5">
-                  <Icons.Activity size={12} />
-                  Last Backup
-                </Caption>
-                <Body size="sm" as="span">
+              <DetailRow icon={<Icons.Activity size={14} />} label="Last Backup">
+                <Body size="sm">
                   {job.lastRun ? (
                     <>
                       {new Date(job.lastRun).toLocaleDateString()} at{' '}
@@ -213,37 +205,36 @@ export const JobCard = React.memo<JobCardProps>(
                     </Body>
                   )}
                 </Body>
-              </div>
+              </DetailRow>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border-base">
-              <button
+              <Button
+                variant="primary"
+                size="md"
+                icon={<Icons.Clock size={16} />}
+                className="flex-1"
                 onClick={e => {
                   e.stopPropagation();
                   onSelect();
                 }}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-primary rounded-xl hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]"
               >
-                <Icons.Clock size={16} className="text-accent-text" />
-                <Body size="sm" as="span" className="text-accent-text">
-                  View History
-                </Body>
-              </button>
+                View History
+              </Button>
               {onRunBackup && (
-                <button
+                <Button
+                  variant="secondary"
+                  size="md"
+                  icon={<Icons.Play size={16} />}
+                  disabled={isRunning}
                   onClick={e => {
                     e.stopPropagation();
                     onRunBackup(job.id);
                   }}
-                  disabled={isRunning}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-layer-3 rounded-xl hover:bg-layer-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icons.Play size={16} className="text-text-primary" />
-                  <Body size="sm" as="span" color="primary">
-                    {isRunning ? 'Running...' : 'Run Now'}
-                  </Body>
-                </button>
+                  {isRunning ? 'Running...' : 'Run Now'}
+                </Button>
               )}
             </div>
           </div>
@@ -252,7 +243,6 @@ export const JobCard = React.memo<JobCardProps>(
     );
   },
   (prevProps, nextProps) => {
-    // Custom comparison - return true if props are equal (skip re-render)
     return (
       prevProps.job.id === nextProps.job.id &&
       prevProps.job.status === nextProps.job.status &&
