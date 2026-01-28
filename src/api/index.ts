@@ -96,6 +96,7 @@ export const api = {
   getFileTypeStatsOnDestination: snapshots.getFileTypeStatsOnDestination,
   getLargestFilesOnDestination: snapshots.getLargestFilesOnDestination,
   deleteSnapshotFromDestination: snapshots.deleteSnapshotFromDestination,
+  compareSnapshots: snapshots.compareSnapshots,
 
   // ===== System & Preferences =====
   getPreferences: system.getPreferences,

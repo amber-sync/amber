@@ -16,6 +16,7 @@ import type {
   JobAggregateStats,
   SnapshotDensity,
   DirectoryContents,
+  SnapshotDiff,
 } from '../types';
 import { getErrorMessage } from '../types';
 
@@ -360,4 +361,16 @@ export async function deleteSnapshotFromDestination(
   timestamp: number
 ): Promise<void> {
   return invoke('delete_snapshot_from_destination', { destPath, jobId, timestamp });
+}
+
+/**
+ * TIM-221: Compare two snapshots and return file differences
+ */
+export async function compareSnapshots(
+  jobId: string,
+  timestampA: number,
+  timestampB: number,
+  limit?: number
+): Promise<SnapshotDiff> {
+  return invoke('compare_snapshots', { jobId, timestampA, timestampB, limit });
 }
