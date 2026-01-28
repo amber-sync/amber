@@ -41,7 +41,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   return (
     <div
-      className={`bg-layer-1 border border-border-base rounded-2xl overflow-hidden transition-all duration-normal ${isOpen ? 'shadow-card' : ''} ${className}`}
+      className={`bg-layer-1 border border-border-base rounded-xl overflow-hidden transition-all duration-normal ${isOpen ? 'shadow-card' : ''} ${className}`}
     >
       <button
         type="button"
