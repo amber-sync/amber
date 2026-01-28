@@ -42,6 +42,7 @@ export { StepIndicator } from './StepIndicator';
 export { ProgressRing } from './ProgressRing';
 export { ProgressBar, type ProgressBarVariant, type ProgressBarSize } from './ProgressBar';
 export { PageHeader } from './PageHeader';
+export { Skeleton, SkeletonCard, SkeletonListItem, type SkeletonVariant } from './Skeleton';
 
 // Typography components - Simplified semantic system
 export {
