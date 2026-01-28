@@ -6,6 +6,7 @@ use crate::services::manifest_service;
 use crate::services::rsync_service::RsyncService;
 use crate::types::job::{SyncJob, SyncMode};
 use crate::types::manifest::{ManifestSnapshot, ManifestSnapshotStatus};
+use crate::utils::validation::validate_job_id;
 use regex::Regex;
 use serde::Serialize;
 use std::io::{BufRead, BufReader};
@@ -400,6 +401,8 @@ async fn handle_backup_failure(
 #[tauri::command]
 pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
     let service = get_rsync_service();
+
+    validate_job_id(&job.id)?;
 
     if service.is_job_running(&job.id) {
         return Err(crate::error::AmberError::JobAlreadyRunning(job.id));

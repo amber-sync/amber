@@ -4,6 +4,7 @@ use crate::services::manifest_service;
 use crate::state::AppState;
 use crate::types::job::SyncJob;
 use crate::types::manifest::ManifestSnapshot;
+use crate::utils::validation::validate_job_id;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -207,6 +208,8 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
 
 #[tauri::command]
 pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
+    validate_job_id(&job.id)?;
+
     // Save to local store first
     state.store.save_job(job.clone())?;
 
@@ -228,6 +231,8 @@ pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
 
 #[tauri::command]
 pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()> {
+    validate_job_id(&job_id)?;
+
     // Clear the snapshot cache for this job
     if let Err(e) = cache_service::delete_snapshot_cache(&job_id).await {
         log::warn!("Failed to delete snapshot cache for job {}: {}", job_id, e);
@@ -246,6 +251,8 @@ pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()
 /// This removes the entire backup directory including all snapshots
 #[tauri::command]
 pub async fn delete_job_data(job_id: String, dest_path: String) -> Result<()> {
+    validate_job_id(&job_id)?;
+
     use tokio::fs;
 
     let path = Path::new(&dest_path);

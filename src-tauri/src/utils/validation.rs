@@ -66,6 +66,48 @@ pub fn validate_ssh_port(port: &str) -> Result<u16> {
     Ok(port_num)
 }
 
+/// Validates job identifiers used for cache files and manifests
+///
+/// # Security
+/// - No path separators
+/// - No control characters
+/// - No leading or trailing whitespace
+/// - Length limit to prevent abuse
+pub fn validate_job_id(job_id: &str) -> Result<&str> {
+    let trimmed = job_id.trim();
+    if trimmed.is_empty() {
+        return Err(AmberError::ValidationError(
+            "Job id cannot be empty".to_string(),
+        ));
+    }
+
+    if trimmed != job_id {
+        return Err(AmberError::ValidationError(
+            "Job id cannot contain leading or trailing whitespace".to_string(),
+        ));
+    }
+
+    if trimmed.len() > 128 {
+        return Err(AmberError::ValidationError(
+            "Job id is too long".to_string(),
+        ));
+    }
+
+    if trimmed.contains('\0') || trimmed.contains('/') || trimmed.contains('\\') {
+        return Err(AmberError::ValidationError(
+            "Job id contains invalid characters".to_string(),
+        ));
+    }
+
+    if trimmed.chars().any(|c| c.is_control()) {
+        return Err(AmberError::ValidationError(
+            "Job id contains control characters".to_string(),
+        ));
+    }
+
+    Ok(trimmed)
+}
+
 /// Validates file path for SSH identity files and config files
 ///
 /// # Security
@@ -679,5 +721,21 @@ mod tests {
 
         // Edge case: Null byte injection
         assert!(validate_file_path("/path/\0/file").is_err());
+    }
+
+    #[test]
+    fn test_validate_job_id() {
+        assert!(validate_job_id("job-123").is_ok());
+        assert!(validate_job_id("dev-documents-backup").is_ok());
+        assert!(validate_job_id("job_123").is_ok());
+        assert!(validate_job_id("job.123").is_ok());
+
+        assert!(validate_job_id("").is_err());
+        assert!(validate_job_id("  ").is_err());
+        assert!(validate_job_id(" job").is_err());
+        assert!(validate_job_id("job ").is_err());
+        assert!(validate_job_id("job/123").is_err());
+        assert!(validate_job_id("job\\123").is_err());
+        assert!(validate_job_id("job\0id").is_err());
     }
 }

@@ -151,6 +151,13 @@ impl IndexService {
     /// Path: <dest_path>/.amber-meta/index.db
     pub fn for_destination(dest_path: &str) -> Result<Self> {
         use crate::services::manifest_service;
+        let dest_root = Path::new(dest_path);
+        if !dest_root.is_dir() {
+            return Err(AmberError::InvalidPath(format!(
+                "Destination path is not accessible: {}",
+                dest_path
+            )));
+        }
         let db_path = manifest_service::get_index_path(dest_path);
         Self::open_at_path(db_path)
     }
