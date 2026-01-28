@@ -14,7 +14,7 @@ interface UseImportBackupReturn {
   error: string | null;
 
   // Actions
-  scanForBackups: () => Promise<void>;
+  scanFolder: (folderPath: string) => Promise<void>;
   importBackup: (backupPath: string) => Promise<SyncJob | null>;
   clearResults: () => void;
 }
@@ -25,21 +25,24 @@ export function useImportBackup(knownJobIds: string[]): UseImportBackupReturn {
   const [discoveredBackups, setDiscoveredBackups] = useState<DiscoveredBackup[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const scanForBackups = useCallback(async () => {
-    setIsScanning(true);
-    setError(null);
-    setDiscoveredBackups([]);
+  const scanFolder = useCallback(
+    async (folderPath: string) => {
+      setIsScanning(true);
+      setError(null);
+      setDiscoveredBackups([]);
 
-    try {
-      // Find orphan backups on all mounted volumes
-      const backups = await api.findOrphanBackups(knownJobIds);
-      setDiscoveredBackups(backups);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsScanning(false);
-    }
-  }, [knownJobIds]);
+      try {
+        // Scan the specified folder for Amber backups
+        const backups = await api.scanForBackups(folderPath, knownJobIds);
+        setDiscoveredBackups(backups);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsScanning(false);
+      }
+    },
+    [knownJobIds]
+  );
 
   const importBackup = useCallback(async (backupPath: string): Promise<SyncJob | null> => {
     setIsImporting(true);
@@ -68,7 +71,7 @@ export function useImportBackup(knownJobIds: string[]): UseImportBackupReturn {
     isImporting,
     discoveredBackups,
     error,
-    scanForBackups,
+    scanFolder,
     importBackup,
     clearResults,
   };

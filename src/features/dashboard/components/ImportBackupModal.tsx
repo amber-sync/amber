@@ -1,13 +1,14 @@
 /**
  * TIM-220: Modal for discovering and importing orphan backups
+ * Allows browsing any folder (local or mounted drive) to find Amber backups
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Button, Title, Body, Caption, Code } from '@/components/ui';
 import { Icons } from '@/components/IconComponents';
 import { useImportBackup } from '../hooks/useImportBackup';
-import { formatBytes } from '@/utils/formatters';
 import type { DiscoveredBackup, SyncJob } from '@/types';
+import { open } from '@tauri-apps/plugin-dialog';
 
 interface ImportBackupModalProps {
   knownJobIds: string[];
@@ -16,8 +17,16 @@ interface ImportBackupModalProps {
 }
 
 export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBackupModalProps) {
-  const { isScanning, isImporting, discoveredBackups, error, scanForBackups, importBackup } =
-    useImportBackup(knownJobIds);
+  const {
+    isScanning,
+    isImporting,
+    discoveredBackups,
+    error,
+    scanFolder,
+    importBackup,
+    clearResults,
+  } = useImportBackup(knownJobIds);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   const handleImport = async (backup: DiscoveredBackup) => {
     const job = await importBackup(backup.backupPath);
@@ -26,10 +35,18 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
     }
   };
 
-  // Auto-scan on mount
-  React.useEffect(() => {
-    scanForBackups();
-  }, [scanForBackups]);
+  const handleBrowse = async () => {
+    const path = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select folder containing Amber backup',
+    });
+    if (path && typeof path === 'string') {
+      setSelectedPath(path);
+      clearResults();
+      scanFolder(path);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
@@ -45,7 +62,7 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
             </div>
             <div>
               <Title level={4}>Import Backup</Title>
-              <Caption color="tertiary">Discover backups on connected drives</Caption>
+              <Caption color="tertiary">Import from any folder or drive</Caption>
             </div>
           </div>
           <button
@@ -58,11 +75,38 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+          {/* Initial State - Browse for folder */}
+          {!isScanning && !selectedPath && discoveredBackups.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-layer-2 flex items-center justify-center">
+                <Icons.FolderOpen size={28} className="text-text-quaternary" />
+              </div>
+              <div>
+                <Title level={4} color="secondary">
+                  Select a folder to scan
+                </Title>
+                <Body size="sm" color="tertiary" className="mt-1 max-w-sm">
+                  Choose a folder containing an Amber backup. This can be on your Mac or an external
+                  drive.
+                </Body>
+              </div>
+              <Button onClick={handleBrowse}>
+                <Icons.Folder size={16} />
+                Browse...
+              </Button>
+            </div>
+          )}
+
           {/* Scanning State */}
           {isScanning && (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
               <div className="w-10 h-10 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
-              <Body color="secondary">Scanning connected drives...</Body>
+              <Body color="secondary">Scanning folder for backups...</Body>
+              {selectedPath && (
+                <Code size="sm" className="max-w-md truncate">
+                  {selectedPath}
+                </Code>
+              )}
             </div>
           )}
 
@@ -78,24 +122,26 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
             </div>
           )}
 
-          {/* No Results */}
-          {!isScanning && !error && discoveredBackups.length === 0 && (
+          {/* No Results after scanning */}
+          {!isScanning && selectedPath && discoveredBackups.length === 0 && !error && (
             <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-layer-2 flex items-center justify-center">
                 <Icons.Search size={28} className="text-text-quaternary" />
               </div>
               <div>
                 <Title level={4} color="secondary">
-                  No orphan backups found
+                  No backups found
                 </Title>
                 <Body size="sm" color="tertiary" className="mt-1 max-w-sm">
-                  All backups on connected drives are already linked to jobs, or no Amber backups
-                  were found.
+                  No Amber backups found in this folder. Try selecting a different location.
                 </Body>
+                <Code size="sm" className="mt-2 block max-w-md truncate">
+                  {selectedPath}
+                </Code>
               </div>
-              <Button variant="secondary" onClick={scanForBackups}>
-                <Icons.RefreshCw size={16} />
-                Scan Again
+              <Button variant="secondary" onClick={handleBrowse}>
+                <Icons.Folder size={16} />
+                Browse Different Folder
               </Button>
             </div>
           )}
@@ -105,12 +151,11 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-4">
                 <Body size="sm" color="secondary">
-                  Found {discoveredBackups.length} orphan backup
-                  {discoveredBackups.length !== 1 ? 's' : ''}
+                  Found {discoveredBackups.length} backup{discoveredBackups.length !== 1 ? 's' : ''}
                 </Body>
-                <Button variant="ghost" size="sm" onClick={scanForBackups}>
-                  <Icons.RefreshCw size={14} />
-                  Rescan
+                <Button variant="ghost" size="sm" onClick={handleBrowse}>
+                  <Icons.Folder size={14} />
+                  Browse Different
                 </Button>
               </div>
 
