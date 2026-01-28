@@ -31,15 +31,15 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onCl
         : 'text-text-secondary hover:bg-layer-3 hover:text-text-primary'
     }`}
   >
-    {icon}{' '}
-    <Body size="sm" weight="medium">
+    {icon}
+    <Body size="sm" weight="medium" className="whitespace-nowrap">
       {label}
     </Body>
   </button>
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
-  <aside className="w-44 bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
+  <aside className="w-[184px] bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
     <div className="p-6 flex items-center gap-3">
       <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-accent-text shadow-[var(--shadow-card)]">
         <Icons.Activity size={20} />
