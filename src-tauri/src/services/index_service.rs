@@ -140,6 +140,35 @@ pub struct SnapshotDensity {
     pub total_size: i64,
 }
 
+/// TIM-221: Single file change entry in snapshot diff
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffEntry {
+    pub path: String,
+    pub size_a: Option<i64>, // size in snapshot A (None if added)
+    pub size_b: Option<i64>, // size in snapshot B (None if deleted)
+}
+
+/// TIM-221: Summary statistics for snapshot diff
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffSummary {
+    pub total_added: u32,
+    pub total_deleted: u32,
+    pub total_modified: u32,
+    pub size_delta: i64,
+}
+
+/// TIM-221: Complete snapshot diff result
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnapshotDiff {
+    pub added: Vec<DiffEntry>,
+    pub deleted: Vec<DiffEntry>,
+    pub modified: Vec<DiffEntry>,
+    pub summary: DiffSummary,
+}
+
 impl IndexService {
     /// Create or open the index database at the default app data location
     pub fn new(app_data_dir: &Path) -> Result<Self> {
