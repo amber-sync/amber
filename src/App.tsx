@@ -416,6 +416,9 @@ function AppContent() {
               setActiveJobId(id);
               openSettings('DASHBOARD', id);
             }}
+            onImportJob={async job => {
+              await persistJob(job);
+            }}
           />
         </div>
 

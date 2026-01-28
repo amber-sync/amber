@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Button, Card, StatusDot, IconButton, Title, Body, Caption } from '../../components/ui';
 import { PageContainer, PageSection } from '../../components/layout';
 import { JobCard } from './components/JobCard';
+import { ImportBackupModal } from './components/ImportBackupModal';
 
 interface JobMountInfo {
   mounted: boolean;
@@ -30,6 +31,7 @@ export interface DashboardPageProps {
   onCreateJob: () => void;
   onRunBackup?: (jobId: string) => void;
   onEditSettings?: (jobId: string) => void;
+  onImportJob?: (job: SyncJob) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -40,8 +42,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onCreateJob,
   onRunBackup,
   onEditSettings,
+  onImportJob,
 }) => {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; backups: DayBackup[] } | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const knownJobIds = useMemo(() => jobs.map(j => j.id), [jobs]);
+
+  const handleImportJob = useCallback(
+    (job: SyncJob) => {
+      onImportJob?.(job);
+      setShowImportModal(false);
+    },
+    [onImportJob]
+  );
 
   // Memoize expensive calculations
   const totalProtectedSize = useMemo(() => {
@@ -102,9 +116,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
 
-        <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />} className="no-drag">
-          New Job
-        </Button>
+        <div className="flex items-center gap-2 no-drag">
+          <Button
+            variant="secondary"
+            onClick={() => setShowImportModal(true)}
+            icon={<Icons.DownloadCloud size={18} />}
+          >
+            Import
+          </Button>
+          <Button onClick={onCreateJob} icon={<Icons.Plus size={18} />}>
+            New Job
+          </Button>
+        </div>
       </div>
 
       {/* Jobs List - Primary Content */}
@@ -176,6 +199,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </Card>
           )}
         </PageSection>
+      )}
+
+      {/* Import Backup Modal */}
+      {showImportModal && (
+        <ImportBackupModal
+          knownJobIds={knownJobIds}
+          onImport={handleImportJob}
+          onClose={() => setShowImportModal(false)}
+        />
       )}
     </PageContainer>
   );
