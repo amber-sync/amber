@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Download, Loader2 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
 import { useEffect, useState } from "react";
+import { AppPreview } from "./AppPreview";
 
 interface ReleaseInfo {
   version: string;
@@ -80,7 +81,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
         >
           {isExternalLink ? (
             <a
@@ -126,6 +127,11 @@ export function Hero() {
             Learn more <ArrowRight size={16} />
           </Link>
         </motion.div>
+
+        {/* App Preview */}
+        <div className="w-full px-4">
+          <AppPreview />
+        </div>
       </div>
 
       {/* Background Gradients */}

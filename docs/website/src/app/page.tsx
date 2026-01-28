@@ -2,6 +2,8 @@ import Link from "next/link";
 import { HardDrive, Clock, Zap, Shield } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { FeatureCard } from "@/components/FeatureCard";
+import { ComparisonTable } from "@/components/ComparisonTable";
+import { FAQ } from "@/components/FAQ";
 import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
@@ -64,6 +66,12 @@ export default function Home() {
             />
           </div>
         </section>
+
+        {/* Comparison Table */}
+        <ComparisonTable />
+
+        {/* FAQ */}
+        <FAQ />
       </main>
 
       {/* Footer */}
