@@ -10,7 +10,7 @@
 use crate::error::{AmberError, Result};
 use crate::types::job::SyncJob;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 /// Path validator that maintains a list of allowed root directories
 pub struct PathValidator {
@@ -94,42 +94,104 @@ impl PathValidator {
     /// - The path cannot be canonicalized
     /// - The path is outside all allowed roots
     pub fn validate(&self, path: &str) -> Result<PathBuf> {
-        // Check for null bytes (common injection technique)
+        let decoded = Self::decode_path(path)?;
+        let path_obj = Path::new(decoded.as_ref());
+        Self::ensure_absolute_and_clean(path_obj)?;
+
+        let canonical = path_obj
+            .canonicalize()
+            .map_err(|e| AmberError::InvalidPath(format!("Cannot access path: {}", e)))?;
+
+        self.ensure_allowed(&canonical)?;
+        Ok(canonical)
+    }
+
+    /// Validate a target path that may not exist yet
+    /// Ensures the nearest existing parent is within allowed roots
+    pub fn validate_for_create(&self, path: &str) -> Result<PathBuf> {
+        let decoded = Self::decode_path(path)?;
+        let path_obj = Path::new(decoded.as_ref());
+        Self::ensure_absolute_and_clean(path_obj)?;
+
+        if path_obj.exists() {
+            return self.validate(path);
+        }
+
+        let mut current = path_obj.to_path_buf();
+        let mut missing_parts: Vec<String> = Vec::new();
+
+        while !current.exists() {
+            if let Some(name) = current.file_name() {
+                missing_parts.push(name.to_string_lossy().to_string());
+            }
+            if !current.pop() {
+                return Err(AmberError::InvalidPath(
+                    "No existing parent directory for path".to_string(),
+                ));
+            }
+        }
+
+        let canonical_parent = current
+            .canonicalize()
+            .map_err(|e| AmberError::InvalidPath(format!("Cannot access parent path: {}", e)))?;
+        self.ensure_allowed(&canonical_parent)?;
+
+        let mut rebuilt = canonical_parent;
+        for part in missing_parts.iter().rev() {
+            rebuilt = rebuilt.join(part);
+        }
+
+        Ok(rebuilt)
+    }
+
+    /// Validate a path and return it as a string
+    pub fn validate_str(&self, path: &str) -> Result<String> {
+        self.validate(path).map(|p| p.to_string_lossy().to_string())
+    }
+
+    /// Validate a path for creation and return it as a string
+    pub fn validate_str_for_create(&self, path: &str) -> Result<String> {
+        self.validate_for_create(path)
+            .map(|p| p.to_string_lossy().to_string())
+    }
+
+    fn decode_path(path: &str) -> Result<std::borrow::Cow<'_, str>> {
         if path.contains('\0') {
             return Err(AmberError::InvalidPath(
                 "Path contains null byte".to_string(),
             ));
         }
 
-        // Decode URL encoding (prevents %2e%2e traversal)
-        let decoded = urlencoding::decode(path)
-            .map_err(|e| AmberError::InvalidPath(format!("Invalid URL encoding: {}", e)))?;
+        urlencoding::decode(path)
+            .map_err(|e| AmberError::InvalidPath(format!("Invalid URL encoding: {}", e)))
+    }
 
-        // Check for suspicious patterns before canonicalization
-        if decoded.contains("..") || decoded.contains("....") {
-            // Allow it through to canonicalization, but be aware
-            log::warn!("Path contains traversal patterns: {}", decoded);
+    fn ensure_absolute_and_clean(path: &Path) -> Result<()> {
+        if !path.is_absolute() {
+            return Err(AmberError::InvalidPath("Path must be absolute".to_string()));
         }
 
-        let path_obj = Path::new(decoded.as_ref());
+        for component in path.components() {
+            match component {
+                Component::ParentDir | Component::CurDir => {
+                    return Err(AmberError::InvalidPath(
+                        "Path contains relative components".to_string(),
+                    ));
+                }
+                _ => {}
+            }
+        }
 
-        // Canonicalize the path - this resolves:
-        // - Relative paths (../, ./)
-        // - Symlinks (follows them to real location)
-        // - Multiple slashes
-        // - Normalizes the path
-        let canonical = path_obj
-            .canonicalize()
-            .map_err(|e| AmberError::InvalidPath(format!("Cannot access path: {}", e)))?;
+        Ok(())
+    }
 
-        // Check if the canonical path starts with any allowed root
+    fn ensure_allowed(&self, canonical: &Path) -> Result<()> {
         let is_allowed = self
             .allowed_roots
             .iter()
             .any(|root| canonical.starts_with(root));
 
         if !is_allowed {
-            // Build helpful error message showing allowed roots
             let allowed_list: Vec<String> = self
                 .allowed_roots
                 .iter()
@@ -143,12 +205,7 @@ impl PathValidator {
             )));
         }
 
-        Ok(canonical)
-    }
-
-    /// Validate a path and return it as a string
-    pub fn validate_str(&self, path: &str) -> Result<String> {
-        self.validate(path).map(|p| p.to_string_lossy().to_string())
+        Ok(())
     }
 }
 
@@ -170,6 +227,17 @@ pub fn validate_path(path: &str, allowed_roots: &[&Path]) -> Result<PathBuf> {
     }
 
     validator.validate(path)
+}
+
+/// Validate a target path against allowed roots (path may not exist yet)
+pub fn validate_path_for_create(path: &str, allowed_roots: &[&Path]) -> Result<PathBuf> {
+    let mut validator = PathValidator::new();
+
+    for root in allowed_roots {
+        validator.add_root(root)?;
+    }
+
+    validator.validate_for_create(path)
 }
 
 #[cfg(test)]
@@ -254,6 +322,38 @@ mod tests {
         let result = validator.validate(nonexistent.to_str().unwrap());
 
         // Should fail because path doesn't exist (can't canonicalize)
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_for_create_allows_missing_path() {
+        let test_dir = setup_test_dir();
+        let mut validator = PathValidator::new();
+        validator.add_root(&test_dir).unwrap();
+
+        let new_path = test_dir.join("new-folder/child");
+        let result = validator.validate_for_create(new_path.to_str().unwrap());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_rejects_relative_path() {
+        let test_dir = setup_test_dir();
+        let mut validator = PathValidator::new();
+        validator.add_root(&test_dir).unwrap();
+
+        let result = validator.validate("relative/path");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_rejects_parent_components() {
+        let test_dir = setup_test_dir();
+        let mut validator = PathValidator::new();
+        validator.add_root(&test_dir).unwrap();
+
+        let path = format!("{}/../secret", test_dir.display());
+        let result = validator.validate(&path);
         assert!(result.is_err());
     }
 

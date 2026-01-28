@@ -9,7 +9,8 @@ use crate::types::manifest::{ManifestSnapshot, ManifestSnapshotStatus};
 use regex::Regex;
 use serde::Serialize;
 use std::io::{BufRead, BufReader};
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::sync::{Arc, OnceLock};
 use tauri::Emitter;
 use tokio::time::{timeout, Duration};
 use walkdir::WalkDir;
@@ -129,6 +130,7 @@ fn setup_output_streams(
     child: &mut std::process::Child,
     job: &SyncJob,
     app: &tauri::AppHandle,
+    last_activity: Arc<AtomicI64>,
 ) -> (
     Option<std::thread::JoinHandle<()>>,
     Option<std::thread::JoinHandle<()>>,
@@ -144,6 +146,7 @@ fn setup_output_streams(
     let stdout_handle = stdout.map(|stdout| {
         let job_id = job_id.clone();
         let app = app_handle.clone();
+        let last_activity = last_activity.clone();
         std::thread::spawn(move || {
             let reader = BufReader::new(stdout);
             let mut current_file: Option<String> = None;
@@ -153,6 +156,8 @@ fn setup_output_streams(
                 if line.trim().is_empty() {
                     continue;
                 }
+
+                last_activity.store(chrono::Utc::now().timestamp_millis(), Ordering::Relaxed);
 
                 // Try to parse as progress line
                 if let Some((transferred, percentage, speed, eta)) = parse_rsync_progress(&line) {
@@ -195,10 +200,12 @@ fn setup_output_streams(
     let stderr_handle = stderr.map(|stderr| {
         let job_id = job_id.clone();
         let app = app_handle.clone();
+        let last_activity = last_activity.clone();
         std::thread::spawn(move || {
             let reader = BufReader::new(stderr);
             for line in reader.lines().flatten() {
                 if !line.trim().is_empty() {
+                    last_activity.store(chrono::Utc::now().timestamp_millis(), Ordering::Relaxed);
                     let _ = app.emit(
                         "rsync-log",
                         RsyncLogPayload {
@@ -320,16 +327,62 @@ async fn handle_backup_success(
 }
 
 /// Handle backup failure
-fn handle_backup_failure(
+async fn handle_backup_failure(
     service: &RsyncService,
     job: &SyncJob,
     status: std::process::ExitStatus,
+    backup_info: Option<crate::services::rsync_service::BackupInfo>,
+    stalled: bool,
     app: &tauri::AppHandle,
 ) -> Result<()> {
     // Clean up backup info even on failure
     service.clear_backup_info(&job.id);
 
-    let error_msg = format!("rsync exited with code {:?}", status.code());
+    let error_msg = if stalled {
+        format!(
+            "Backup stalled after {} seconds",
+            job.config.stall_timeout_seconds
+        )
+    } else {
+        format!("rsync exited with code {:?}", status.code())
+    };
+
+    if job.mode == SyncMode::TimeMachine {
+        if let Some(info) = backup_info {
+            let end_time = chrono::Utc::now().timestamp_millis();
+            let duration_ms = (end_time - info.start_time) as u64;
+
+            let mut snapshot = ManifestSnapshot::from_timestamp(
+                info.start_time,
+                info.folder_name.clone(),
+                0,
+                0,
+                ManifestSnapshotStatus::Failed,
+            );
+            snapshot.duration_ms = Some(duration_ms);
+
+            let dest_path = job.dest_path.clone();
+            match manifest_service::get_or_create_manifest(
+                &dest_path,
+                &job.id,
+                &job.name,
+                &job.source_path,
+            )
+            .await
+            {
+                Ok(_) => {
+                    if let Err(e) =
+                        manifest_service::add_snapshot_to_manifest(&dest_path, snapshot).await
+                    {
+                        log::warn!("Failed to add failed snapshot to manifest: {}", e);
+                    }
+                }
+                Err(e) => {
+                    log::warn!("Failed to load manifest for failed snapshot: {}", e);
+                }
+            }
+        }
+    }
 
     // Emit failure event
     let _ = app.emit(
@@ -348,6 +401,14 @@ fn handle_backup_failure(
 pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
     let service = get_rsync_service();
 
+    if service.is_job_running(&job.id) {
+        return Err(crate::error::AmberError::JobAlreadyRunning(job.id));
+    }
+
+    let last_activity = Arc::new(AtomicI64::new(chrono::Utc::now().timestamp_millis()));
+    let completed = Arc::new(AtomicBool::new(false));
+    let stall_killed = Arc::new(AtomicBool::new(false));
+
     // Spawn rsync process
     let mut child = spawn_rsync_process(service, &job, &app)?;
 
@@ -355,7 +416,47 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
     let backup_info = service.get_backup_info(&job.id);
 
     // Set up output stream handlers
-    let (stdout_handle, stderr_handle) = setup_output_streams(&mut child, &job, &app);
+    let (stdout_handle, stderr_handle) =
+        setup_output_streams(&mut child, &job, &app, last_activity.clone());
+
+    let stall_timeout = job.config.stall_timeout_seconds;
+    let job_id = job.id.clone();
+    let job_name = job.name.clone();
+    let completed_flag = completed.clone();
+    let last_activity_flag = last_activity.clone();
+    let stall_killed_flag = stall_killed.clone();
+
+    let stall_handle = if stall_timeout > 0 {
+        Some(tokio::spawn(async move {
+            let check_interval = Duration::from_secs(stall_timeout.clamp(1, 5));
+            loop {
+                if completed_flag.load(Ordering::Relaxed) {
+                    break;
+                }
+
+                let last = last_activity_flag.load(Ordering::Relaxed);
+                let now = chrono::Utc::now().timestamp_millis();
+                let elapsed_ms = now.saturating_sub(last);
+
+                if elapsed_ms >= (stall_timeout as i64 * 1000) {
+                    if !stall_killed_flag.swap(true, Ordering::SeqCst) {
+                        log::warn!(
+                            "[run_rsync] Backup stalled for {} seconds (job '{}', id: {})",
+                            stall_timeout,
+                            job_name,
+                            job_id
+                        );
+                        let _ = service.kill_job(&job_id);
+                    }
+                    break;
+                }
+
+                tokio::time::sleep(check_interval).await;
+            }
+        }))
+    } else {
+        None
+    };
 
     // Wait for completion with timeout enforcement
     let timeout_duration = Duration::from_secs(job.config.timeout_seconds);
@@ -376,6 +477,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
             wait_for_threads(stdout_handle, stderr_handle);
             service.mark_completed(&job.id);
             service.clear_backup_info(&job.id);
+            completed.store(true, Ordering::Relaxed);
 
             let error_msg = format!("Failed to wait for rsync process: {}", e);
             let _ = app.emit(
@@ -394,6 +496,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
             wait_for_threads(stdout_handle, stderr_handle);
             service.mark_completed(&job.id);
             service.clear_backup_info(&job.id);
+            completed.store(true, Ordering::Relaxed);
 
             let error_msg = format!("Task error while waiting for rsync: {}", e);
             let _ = app.emit(
@@ -426,6 +529,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
 
             service.mark_completed(&job.id);
             service.clear_backup_info(&job.id);
+            completed.store(true, Ordering::Relaxed);
 
             let error_msg = format!(
                 "Backup timed out after {} seconds",
@@ -450,20 +554,25 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
 
     // Mark completed
     service.mark_completed(&job.id);
+    completed.store(true, Ordering::Relaxed);
 
-    // TODO: Implement stall timeout detection
-    // The stall_timeout_seconds config field should detect when no progress is made
-    // for a certain duration. This requires tracking the last progress event timestamp
-    // and comparing it against the stall timeout. Implementation would involve:
-    // 1. Shared atomic timestamp updated by the stdout reader thread on progress events
-    // 2. Periodic check in a separate task to compare current time vs last progress
-    // 3. Kill process if (current_time - last_progress) > stall_timeout_seconds
+    if let Some(handle) = stall_handle {
+        let _ = handle.await;
+    }
 
     // Handle success or failure
     if status.success() {
         handle_backup_success(service, &job, backup_info, &app).await
     } else {
-        handle_backup_failure(service, &job, status, &app)
+        handle_backup_failure(
+            service,
+            &job,
+            status,
+            backup_info,
+            stall_killed.load(Ordering::Relaxed),
+            &app,
+        )
+        .await
     }
 }
 

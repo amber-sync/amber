@@ -2,6 +2,8 @@ use crate::error::Result;
 use crate::services::index_service::IndexService;
 use crate::services::manifest_service;
 use crate::types::snapshot::{file_type, FileNode, SnapshotMetadata};
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -32,9 +34,9 @@ impl SnapshotService {
         Self { cache_dir }
     }
 
-    fn get_cache_path(&self, job_id: &str, timestamp: i64) -> PathBuf {
-        self.cache_dir
-            .join(format!("{}-{}.json", job_id, timestamp))
+    fn get_cache_path(&self, job_id: &str, timestamp: i64) -> Result<PathBuf> {
+        let key = self.cache_key(job_id)?;
+        Ok(self.cache_dir.join(format!("{}-{}.json", key, timestamp)))
     }
 
     /// List all snapshots for a job
@@ -116,10 +118,18 @@ impl SnapshotService {
 
     /// Read snapshots from manifest.json (preferred method)
     async fn list_snapshots_from_manifest(&self, dest_path: &str) -> Option<Vec<SnapshotMetadata>> {
-        let manifest_path = manifest_service::get_manifest_path(dest_path);
-
-        let data = tokio::fs::read_to_string(&manifest_path).await.ok()?;
-        let manifest: crate::types::manifest::BackupManifest = serde_json::from_str(&data).ok()?;
+        let manifest = match manifest_service::read_manifest(dest_path).await {
+            Ok(Some(manifest)) => manifest,
+            Ok(None) => return None,
+            Err(e) => {
+                log::warn!(
+                    "[snapshot_service] Failed to read manifest at {}: {}",
+                    dest_path,
+                    e
+                );
+                return None;
+            }
+        };
 
         let mut snapshots: Vec<SnapshotMetadata> = manifest
             .snapshots
@@ -237,10 +247,26 @@ impl SnapshotService {
     }
 
     async fn load_cached_stats(&self, job_id: &str, timestamp: i64) -> Option<(u64, u64)> {
-        let cache_path = self.get_cache_path(job_id, timestamp);
+        let cache_path = self.get_cache_path(job_id, timestamp).ok()?;
         let data = tokio::fs::read_to_string(&cache_path).await.ok()?;
         let cached: CachedSnapshot = serde_json::from_str(&data).ok()?;
         Some((cached.stats.size_bytes, cached.stats.file_count))
+    }
+
+    fn cache_key(&self, job_id: &str) -> Result<String> {
+        let trimmed = job_id.trim();
+        if trimmed.is_empty() {
+            return Err(crate::error::AmberError::ValidationError(
+                "Job id cannot be empty".to_string(),
+            ));
+        }
+        if trimmed.contains('\0') {
+            return Err(crate::error::AmberError::ValidationError(
+                "Job id contains null byte".to_string(),
+            ));
+        }
+
+        Ok(URL_SAFE_NO_PAD.encode(trimmed.as_bytes()))
     }
 
     /// Get the file tree for a snapshot
@@ -250,7 +276,7 @@ impl SnapshotService {
         timestamp: i64,
         snapshot_path: &str,
     ) -> Result<Vec<FileNode>> {
-        let cache_path = self.get_cache_path(job_id, timestamp);
+        let cache_path = self.get_cache_path(job_id, timestamp)?;
 
         if let Ok(data) = tokio::fs::read_to_string(&cache_path).await {
             if let Ok(cached) = serde_json::from_str::<CachedSnapshot>(&data) {
@@ -281,7 +307,7 @@ impl SnapshotService {
             tree: tree.clone(),
         };
 
-        let cache_path = self.get_cache_path(job_id, timestamp);
+        let cache_path = self.get_cache_path(job_id, timestamp)?;
         if let Ok(json) = serde_json::to_string(&cached) {
             let _ = tokio::fs::write(&cache_path, json).await;
         }
@@ -356,7 +382,11 @@ impl SnapshotService {
             map.insert(entry.path.clone(), node);
         }
 
-        for entry in entries {
+        let mut sorted_entries: Vec<&ScanEntry> = entries.iter().collect();
+        sorted_entries
+            .sort_by_key(|entry| std::cmp::Reverse(Path::new(&entry.path).components().count()));
+
+        for entry in sorted_entries {
             if entry.path == normalized_root {
                 continue;
             }
@@ -415,6 +445,8 @@ struct ScanEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
     use tempfile::TempDir;
 
     fn create_test_service() -> (SnapshotService, TempDir) {
@@ -463,7 +495,7 @@ mod tests {
 
     #[test]
     fn test_calculate_stats_empty() {
-        let (service, _temp) = create_test_service();
+        let (_service, _temp) = create_test_service();
         let nodes: Vec<FileNode> = vec![];
 
         let (size, count) = SnapshotService::calculate_stats(&nodes);
@@ -473,7 +505,7 @@ mod tests {
 
     #[test]
     fn test_calculate_stats_files_only() {
-        let (service, _temp) = create_test_service();
+        let (_service, _temp) = create_test_service();
         let nodes = vec![
             FileNode {
                 id: "file1".to_string(),
@@ -502,7 +534,7 @@ mod tests {
 
     #[test]
     fn test_calculate_stats_nested_folders() {
-        let (service, _temp) = create_test_service();
+        let (_service, _temp) = create_test_service();
         let nodes = vec![FileNode {
             id: "folder1".to_string(),
             name: "folder1".to_string(),
@@ -603,11 +635,12 @@ mod tests {
     #[test]
     fn test_cache_path_format() {
         let (service, _temp) = create_test_service();
-        let path = service.get_cache_path("job-123", 1700000000000);
+        let path = service.get_cache_path("job-123", 1700000000000).unwrap();
 
+        let encoded = URL_SAFE_NO_PAD.encode("job-123".as_bytes());
         assert!(path
             .to_string_lossy()
-            .contains("job-123-1700000000000.json"));
+            .contains(&format!("{}-1700000000000.json", encoded)));
     }
 
     #[tokio::test]
@@ -707,7 +740,7 @@ mod tests {
         std::fs::create_dir_all(dest_dir.join("2024-01-15-120000")).unwrap();
 
         // Create a cache file with WRONG stats
-        let cache_path = service.get_cache_path("job-123", 1705320000000);
+        let cache_path = service.get_cache_path("job-123", 1705320000000).unwrap();
         let wrong_cache = r#"{
             "timestamp": 1705320000000,
             "stats": {"size_bytes": 999, "file_count": 1},

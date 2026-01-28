@@ -65,14 +65,20 @@ impl AppState {
         let path_validator = PathValidator::with_standard_roots(&data_dir_path)
             .map_err(|e| format!("Failed to initialize path validator: {}", e))?;
 
-        Ok(Self {
+        let app_state = Self {
             file_service,
             index_service,
             snapshot_service,
             store,
             data_dir: data_dir_path,
             path_validator: Arc::new(RwLock::new(path_validator)),
-        })
+        };
+
+        if let Err(e) = app_state.update_job_roots() {
+            log::warn!("Failed to initialize job roots: {}", e);
+        }
+
+        Ok(app_state)
     }
 
     /// Validate a path against allowed roots
@@ -83,6 +89,15 @@ impl AppState {
             .read()
             .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
         validator.validate_str(path)
+    }
+
+    /// Validate a path that may not exist yet (for creation targets)
+    pub fn validate_path_for_create(&self, path: &str) -> crate::error::Result<String> {
+        let validator = self
+            .path_validator
+            .read()
+            .map_err(|e| crate::error::AmberError::Filesystem(format!("Lock error: {}", e)))?;
+        validator.validate_str_for_create(path)
     }
 
     /// Update path validator with job-specific roots

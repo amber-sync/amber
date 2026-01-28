@@ -344,6 +344,14 @@ pub fn sanitize_ssh_option(value: &str) -> Result<String> {
         ));
     }
 
+    let lowered = value.to_ascii_lowercase();
+    let banned = ["proxycommand", "localcommand", "permitlocalcommand"];
+    if banned.iter().any(|k| lowered.contains(k)) {
+        return Err(AmberError::ValidationError(
+            "SSH option contains forbidden directives".to_string(),
+        ));
+    }
+
     // Check for whitespace (except single spaces between words)
     if value.contains('\t') || value.contains(char::is_control) {
         return Err(AmberError::ValidationError(
@@ -635,6 +643,9 @@ mod tests {
         assert!(sanitize_ssh_option("value'malicious'").is_err());
         assert!(sanitize_ssh_option("value\"malicious\"").is_err());
         assert!(sanitize_ssh_option("value\\malicious").is_err());
+        assert!(sanitize_ssh_option("-o ProxyCommand=evil").is_err());
+        assert!(sanitize_ssh_option("ProxyCommand=evil").is_err());
+        assert!(sanitize_ssh_option("LocalCommand=evil").is_err());
 
         // Empty
         assert!(sanitize_ssh_option("").is_err());

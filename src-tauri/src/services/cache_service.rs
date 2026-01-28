@@ -7,6 +7,8 @@
 
 use crate::services::data_dir;
 use crate::types::manifest::ManifestSnapshot;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tokio::fs;
@@ -55,8 +57,9 @@ fn get_snapshots_cache_dir() -> PathBuf {
 }
 
 /// Get the cache file path for a specific job
-fn get_job_cache_path(job_id: &str) -> PathBuf {
-    get_snapshots_cache_dir().join(format!("{}.json", job_id))
+fn get_job_cache_path(job_id: &str) -> Result<PathBuf, CacheError> {
+    let file_name = cache_file_name(job_id)?;
+    Ok(get_snapshots_cache_dir().join(file_name))
 }
 
 /// Write snapshot cache for a job
@@ -79,7 +82,7 @@ pub async fn write_snapshot_cache(
         .map_err(|e| CacheError::IoError(format!("Failed to create cache directory: {}", e)))?;
 
     let cache = SnapshotCache::new(job_id.to_string(), snapshots);
-    let cache_path = get_job_cache_path(job_id);
+    let cache_path = get_job_cache_path(job_id)?;
 
     // Serialize cache
     let contents = serde_json::to_string_pretty(&cache)
@@ -130,7 +133,7 @@ pub async fn write_snapshot_cache(
 /// Read snapshot cache for a job
 /// Returns None if no cache exists
 pub async fn read_snapshot_cache(job_id: &str) -> Result<Option<SnapshotCache>, CacheError> {
-    let cache_path = get_job_cache_path(job_id);
+    let cache_path = get_job_cache_path(job_id)?;
 
     if !cache_path.exists() {
         return Ok(None);
@@ -153,7 +156,7 @@ pub async fn read_snapshot_cache(job_id: &str) -> Result<Option<SnapshotCache>, 
 
 /// Delete snapshot cache for a job
 pub async fn delete_snapshot_cache(job_id: &str) -> Result<(), CacheError> {
-    let cache_path = get_job_cache_path(job_id);
+    let cache_path = get_job_cache_path(job_id)?;
 
     if cache_path.exists() {
         fs::remove_file(&cache_path)
@@ -190,12 +193,32 @@ pub enum CacheError {
 
     #[error("Failed to parse cache: {0}")]
     ParseError(String),
+
+    #[error("Invalid job id: {0}")]
+    InvalidJobId(String),
 }
 
 impl From<CacheError> for String {
     fn from(error: CacheError) -> Self {
         error.to_string()
     }
+}
+
+fn cache_file_name(job_id: &str) -> Result<String, CacheError> {
+    let trimmed = job_id.trim();
+    if trimmed.is_empty() {
+        return Err(CacheError::InvalidJobId(
+            "Job id cannot be empty".to_string(),
+        ));
+    }
+    if trimmed.contains('\0') {
+        return Err(CacheError::InvalidJobId(
+            "Job id contains null byte".to_string(),
+        ));
+    }
+
+    let encoded = URL_SAFE_NO_PAD.encode(trimmed.as_bytes());
+    Ok(format!("{}.json", encoded))
 }
 
 #[cfg(test)]

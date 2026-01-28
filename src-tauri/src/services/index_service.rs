@@ -11,6 +11,7 @@ use rayon::prelude::*;
 use rusqlite::{params, Connection, Transaction};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::Duration;
 
 /// Database version for migrations
 const DB_VERSION: i32 = 2;
@@ -165,6 +166,9 @@ impl IndexService {
 
         let conn = Connection::open(&db_path)
             .map_err(|e| AmberError::Index(format!("Failed to open index database: {}", e)))?;
+
+        conn.busy_timeout(Duration::from_secs(5))
+            .map_err(|e| AmberError::Index(format!("Failed to set busy timeout: {}", e)))?;
 
         let service = Self {
             db_path,

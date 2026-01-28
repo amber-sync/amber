@@ -42,7 +42,7 @@ pub async fn add_manifest_snapshot(
         "Complete" => ManifestSnapshotStatus::Complete,
         "Partial" => ManifestSnapshotStatus::Partial,
         "Failed" => ManifestSnapshotStatus::Failed,
-        _ => ManifestSnapshotStatus::Complete,
+        _ => return Err("Invalid snapshot status".to_string()),
     };
 
     let snapshot = ManifestSnapshot::new(folder_name, file_count, total_size, status, duration_ms);

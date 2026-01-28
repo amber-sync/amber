@@ -2,6 +2,8 @@ use crate::error::Result;
 use crate::services::manifest_service;
 use crate::types::job::SyncJob;
 use crate::types::preferences::AppPreferences;
+use serde::de::DeserializeOwned;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 const JOBS_FILENAME: &str = "jobs.json";
@@ -35,10 +37,7 @@ impl Store {
         let path = self.jobs_path();
 
         match std::fs::read_to_string(&path) {
-            Ok(data) => {
-                let jobs: Vec<SyncJob> = serde_json::from_str(&data).unwrap_or_else(|_| Vec::new());
-                Ok(jobs)
-            }
+            Ok(data) => self.read_json(&path, &data),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
             Err(e) => Err(crate::error::AmberError::Io(e)),
         }
@@ -48,7 +47,7 @@ impl Store {
         let path = self.jobs_path();
         let json = serde_json::to_string_pretty(jobs)
             .map_err(|e| crate::error::AmberError::Store(e.to_string()))?;
-        std::fs::write(&path, json)?;
+        self.write_atomic(&path, json.as_bytes())?;
         Ok(())
     }
 
@@ -81,11 +80,9 @@ impl Store {
         let path = self.prefs_path();
 
         match std::fs::read_to_string(&path) {
-            Ok(data) => {
-                let prefs: AppPreferences = serde_json::from_str(&data).unwrap_or_default();
-                Ok(prefs)
-            }
-            Err(_) => Ok(AppPreferences::default()),
+            Ok(data) => self.read_json(&path, &data),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(AppPreferences::default()),
+            Err(e) => Err(crate::error::AmberError::Io(e)),
         }
     }
 
@@ -93,7 +90,7 @@ impl Store {
         let path = self.prefs_path();
         let json = serde_json::to_string_pretty(prefs)
             .map_err(|e| crate::error::AmberError::Store(e.to_string()))?;
-        std::fs::write(&path, json)?;
+        self.write_atomic(&path, json.as_bytes())?;
         Ok(())
     }
 
@@ -104,6 +101,14 @@ impl Store {
     pub fn write_job_to_destination(&self, job: &SyncJob) -> Result<()> {
         let meta_dir = manifest_service::get_meta_dir(&job.dest_path);
         let job_path = meta_dir.join(JOB_CONFIG_FILENAME);
+        let dest_root = Path::new(&job.dest_path);
+
+        if !dest_root.exists() || !dest_root.is_dir() {
+            return Err(crate::error::AmberError::InvalidPath(format!(
+                "Destination path is not accessible: {}",
+                job.dest_path
+            )));
+        }
 
         // Ensure .amber-meta directory exists
         std::fs::create_dir_all(&meta_dir)?;
@@ -137,5 +142,68 @@ impl Store {
         let meta_dir = manifest_service::get_meta_dir(dest_path);
         let job_path = meta_dir.join(JOB_CONFIG_FILENAME);
         job_path.exists()
+    }
+
+    fn read_json<T: DeserializeOwned>(&self, path: &Path, data: &str) -> Result<T> {
+        match serde_json::from_str::<T>(data) {
+            Ok(parsed) => Ok(parsed),
+            Err(e) => {
+                let backup_path = self.backup_corrupt_file(path)?;
+                Err(crate::error::AmberError::Store(format!(
+                    "Failed to parse {}. Moved corrupt file to {}: {}",
+                    path.display(),
+                    backup_path.display(),
+                    e
+                )))
+            }
+        }
+    }
+
+    fn backup_corrupt_file(&self, path: &Path) -> Result<PathBuf> {
+        let timestamp = chrono::Utc::now().timestamp_millis();
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("data");
+        let backup_name = format!("{}.corrupt-{}", file_name, timestamp);
+        let backup_path = path.with_file_name(backup_name);
+        std::fs::rename(path, &backup_path)?;
+        Ok(backup_path)
+    }
+
+    fn write_atomic(&self, path: &Path, contents: &[u8]) -> Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("data");
+        let unique = format!(
+            "{}.{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        );
+        let temp_path = path.with_file_name(format!("{}.{}.tmp", file_name, unique));
+
+        let mut file = std::fs::File::create(&temp_path)?;
+        file.write_all(contents)?;
+        file.sync_all()?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let perms = std::fs::Permissions::from_mode(0o600);
+            std::fs::set_permissions(&temp_path, perms)?;
+        }
+
+        if let Err(e) = std::fs::rename(&temp_path, path) {
+            if path.exists() {
+                std::fs::remove_file(path)?;
+                std::fs::rename(&temp_path, path)?;
+            } else {
+                return Err(crate::error::AmberError::Io(e));
+            }
+        }
+
+        Ok(())
     }
 }

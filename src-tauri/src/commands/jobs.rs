@@ -233,7 +233,13 @@ pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()
         log::warn!("Failed to delete snapshot cache for job {}: {}", job_id, e);
     }
 
-    state.store.delete_job(&job_id)
+    state.store.delete_job(&job_id)?;
+
+    if let Err(e) = state.update_job_roots() {
+        log::warn!("Failed to update path validator after delete: {}", e);
+    }
+
+    Ok(())
 }
 
 /// Delete backup data from the destination path
@@ -269,6 +275,17 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
     })?;
 
     let canonical_str = canonical.to_string_lossy();
+
+    // Require a valid manifest marker to prevent deleting arbitrary folders
+    let manifest = manifest_service::read_manifest(canonical_str.as_ref())
+        .await
+        .map_err(|e| crate::error::AmberError::Filesystem(e.to_string()))?;
+    if manifest.is_none() {
+        return Err(crate::error::AmberError::NotFound(format!(
+            "No Amber manifest found at: {}",
+            canonical_str
+        )));
+    }
 
     // Only allow deleting paths on external volumes (not system drive)
     // This is a critical safety check to prevent accidental data loss

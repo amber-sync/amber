@@ -4,7 +4,6 @@ use crate::utils::validation::{
     sanitize_ssh_option, validate_file_path, validate_proxy_jump, validate_ssh_port,
 };
 use crate::utils::{is_ssh_remote, ssh_local_part}; // TIM-123: Use centralized path utilities
-use chrono::Local;
 use regex::Regex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -26,6 +25,11 @@ pub struct BackupInfo {
 pub struct RsyncService {
     active_jobs: Arc<Mutex<HashMap<String, u32>>>, // job_id -> pid
     backup_info: Arc<Mutex<HashMap<String, BackupInfo>>>, // job_id -> backup info
+}
+
+struct RsyncCommand {
+    program: String,
+    args: Vec<String>,
 }
 
 impl RsyncService {
@@ -57,13 +61,6 @@ impl RsyncService {
     ) -> Vec<String> {
         let mut args = Vec::new();
         let conf = &job.config;
-
-        // Check for custom command
-        if let Some(ref custom) = conf.custom_command {
-            if !custom.trim().is_empty() {
-                return self.parse_custom_command(custom, &job.source_path, final_dest, link_dest);
-            }
-        }
 
         // Base flags
         args.extend([
@@ -220,6 +217,19 @@ impl RsyncService {
             }
         }
 
+        if !conf.custom_flags.trim().is_empty() {
+            match shell_words::split(conf.custom_flags.trim()) {
+                Ok(extra) => args.extend(extra),
+                Err(e) => {
+                    log::error!(
+                        "[rsync_service] Invalid custom flags '{}': {}",
+                        conf.custom_flags,
+                        e
+                    );
+                }
+            }
+        }
+
         // Source (with trailing slash)
         args.push(self.ensure_trailing_slash(&job.source_path));
         args.push(final_dest.to_string());
@@ -233,13 +243,42 @@ impl RsyncService {
         source: &str,
         dest: &str,
         link_dest: Option<&str>,
-    ) -> Vec<String> {
+    ) -> RsyncCommand {
         let processed = cmd
             .replace("{source}", &self.ensure_trailing_slash(source))
             .replace("{dest}", dest)
             .replace("{linkDest}", link_dest.unwrap_or(""));
 
-        shell_words::split(&processed).unwrap_or_else(|_| vec![processed])
+        let parts = shell_words::split(&processed).unwrap_or_else(|_| vec![processed]);
+        if parts.is_empty() {
+            return RsyncCommand {
+                program: "rsync".to_string(),
+                args: Vec::new(),
+            };
+        }
+
+        RsyncCommand {
+            program: parts[0].clone(),
+            args: parts[1..].to_vec(),
+        }
+    }
+
+    fn build_command(
+        &self,
+        job: &SyncJob,
+        final_dest: &str,
+        link_dest: Option<&str>,
+    ) -> RsyncCommand {
+        if let Some(ref custom) = job.config.custom_command {
+            if !custom.trim().is_empty() {
+                return self.parse_custom_command(custom, &job.source_path, final_dest, link_dest);
+            }
+        }
+
+        RsyncCommand {
+            program: "rsync".to_string(),
+            args: self.build_rsync_args(job, final_dest, link_dest),
+        }
     }
 
     fn ensure_trailing_slash(&self, path: &str) -> String {
@@ -288,7 +327,7 @@ impl RsyncService {
 
     /// Format current time as backup folder name
     pub fn format_backup_folder_name(&self) -> String {
-        Local::now().format("%Y-%m-%d-%H%M%S").to_string()
+        chrono::Utc::now().format("%Y-%m-%d-%H%M%S").to_string()
     }
 
     /// Spawn rsync process
@@ -332,20 +371,21 @@ impl RsyncService {
             (target_base.clone(), None, folder_name)
         };
 
-        let args = self.build_rsync_args(
+        let command = self.build_command(
             job,
             final_dest.to_str().unwrap_or(""),
             link_dest.as_ref().and_then(|p| p.to_str()),
         );
 
         log::info!(
-            "[rsync_service] Spawning rsync with {} args: {:?}",
-            args.len(),
-            args
+            "[rsync_service] Spawning '{}' with {} args: {:?}",
+            command.program,
+            command.args.len(),
+            command.args
         );
 
-        let child = Command::new("rsync")
-            .args(&args)
+        let child = Command::new(&command.program)
+            .args(&command.args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
@@ -680,10 +720,11 @@ mod tests {
         job.config.custom_command =
             Some("rsync -a {source} {dest} --link-dest={linkDest}".to_string());
 
-        let args = service.build_rsync_args(&job, "/dest/new", Some("/dest/old"));
-        assert!(args.contains(&"/src/".to_string()));
-        assert!(args.contains(&"/dest/new".to_string()));
-        assert!(args.contains(&"--link-dest=/dest/old".to_string()));
+        let command = service.build_command(&job, "/dest/new", Some("/dest/old"));
+        assert_eq!(command.program, "rsync");
+        assert!(command.args.contains(&"/src/".to_string()));
+        assert!(command.args.contains(&"/dest/new".to_string()));
+        assert!(command.args.contains(&"--link-dest=/dest/old".to_string()));
     }
 
     #[test]
@@ -692,10 +733,10 @@ mod tests {
         let mut job = create_test_job(SyncMode::Mirror);
         job.config.custom_command = Some("rsync -a {source} {dest}".to_string());
 
-        let args = service.build_rsync_args(&job, "/dest", None);
-        assert_eq!(args[0], "rsync");
-        assert!(args.contains(&"/src/".to_string()));
-        assert!(args.contains(&"/dest".to_string()));
+        let command = service.build_command(&job, "/dest", None);
+        assert_eq!(command.program, "rsync");
+        assert!(command.args.contains(&"/src/".to_string()));
+        assert!(command.args.contains(&"/dest".to_string()));
     }
 
     #[test]

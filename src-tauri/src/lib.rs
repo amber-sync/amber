@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 // Module declarations
 pub mod commands;
 pub mod error;
@@ -49,6 +51,7 @@ pub fn run() {
                     }
 
                     // Initialize MCP plugin for Claude Code integration (dev only)
+                    #[allow(unexpected_cfgs)]
                     #[cfg(feature = "mcp")]
                     {
                         app.handle().plugin(tauri_plugin_mcp::init_with_config(

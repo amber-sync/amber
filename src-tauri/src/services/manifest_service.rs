@@ -73,6 +73,11 @@ pub async fn write_manifest(
 ) -> Result<(), ManifestError> {
     let meta_dir = get_meta_dir(dest_path);
     let manifest_path = get_manifest_path(dest_path);
+    let dest_root = Path::new(dest_path);
+
+    if !dest_root.exists() || !dest_root.is_dir() {
+        return Err(ManifestError::InvalidDestination(dest_path.to_string()));
+    }
 
     // Create .amber-meta directory if needed
     if !meta_dir.exists() {
@@ -196,6 +201,9 @@ pub enum ManifestError {
 
     #[error("Job mismatch: expected {expected}, found {found}")]
     JobMismatch { expected: String, found: String },
+
+    #[error("Destination path is not accessible: {0}")]
+    InvalidDestination(String),
 }
 
 impl From<ManifestError> for String {
