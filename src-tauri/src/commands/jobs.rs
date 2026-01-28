@@ -245,7 +245,7 @@ pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()
 /// Delete backup data from the destination path
 /// This removes the entire backup directory including all snapshots
 #[tauri::command]
-pub async fn delete_job_data(dest_path: String) -> Result<()> {
+pub async fn delete_job_data(job_id: String, dest_path: String) -> Result<()> {
     use tokio::fs;
 
     let path = Path::new(&dest_path);
@@ -284,6 +284,13 @@ pub async fn delete_job_data(dest_path: String) -> Result<()> {
         return Err(crate::error::AmberError::NotFound(format!(
             "No Amber manifest found at: {}",
             canonical_str
+        )));
+    }
+    let manifest = manifest.unwrap();
+    if manifest.job_id != job_id {
+        return Err(crate::error::AmberError::PermissionDenied(format!(
+            "Manifest job id does not match requested job id: {}",
+            manifest.job_id
         )));
     }
 

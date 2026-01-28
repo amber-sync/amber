@@ -77,9 +77,10 @@ pub async fn get_snapshot_tree(
     }
 
     // Fall back to filesystem scan (legacy behavior)
+    let validated_snapshot = state.validate_path(&snapshot_path)?;
     state
         .snapshot_service
-        .get_snapshot_tree(&job_id, timestamp, &snapshot_path)
+        .get_snapshot_tree(&job_id, timestamp, &validated_snapshot)
         .await
 }
 
@@ -120,7 +121,8 @@ pub async fn index_snapshot(
     snapshot_path: String,
 ) -> Result<crate::services::index_service::IndexedSnapshot> {
     let index = resolve_index(&state, &job_id, false)?;
-    index.with(|idx| idx.index_snapshot(&job_id, timestamp, &snapshot_path))
+    let validated_snapshot = state.validate_path(&snapshot_path)?;
+    index.with(|idx| idx.index_snapshot(&job_id, timestamp, &validated_snapshot))
 }
 
 /// Check if a snapshot is indexed
@@ -461,13 +463,16 @@ pub async fn export_index_to_destination(
 /// This is the primary indexing method for destination-centric architecture
 #[tauri::command]
 pub async fn index_snapshot_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
     snapshot_path: String,
 ) -> Result<crate::services::index_service::IndexedSnapshot> {
-    let index = IndexService::for_destination(&dest_path)?;
-    index.index_snapshot(&job_id, timestamp, &snapshot_path)
+    let validated_dest = state.validate_path(&dest_path)?;
+    let validated_snapshot = state.validate_path(&snapshot_path)?;
+    let index = IndexService::for_destination(&validated_dest)?;
+    index.index_snapshot(&job_id, timestamp, &validated_snapshot)
 }
 
 /// Get directory contents from destination's index

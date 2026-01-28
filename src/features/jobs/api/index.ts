@@ -33,8 +33,8 @@ export async function deleteJob(jobId: string): Promise<void> {
  * Delete backup data from the destination path
  * This permanently removes all snapshots from the backup drive
  */
-export async function deleteJobData(destPath: string): Promise<void> {
-  return invoke('delete_job_data', { destPath });
+export async function deleteJobData(jobId: string, destPath: string): Promise<void> {
+  return invoke('delete_job_data', { jobId, destPath });
 }
 
 // ===== Orphan Backup Detection (TIM-118) =====
