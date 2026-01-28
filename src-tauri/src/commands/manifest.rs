@@ -1,5 +1,6 @@
 use crate::services::manifest_service;
 use crate::types::manifest::{BackupManifest, ManifestSnapshot, ManifestSnapshotStatus};
+use crate::utils::validation::validate_job_id;
 
 /// Get manifest from a backup destination
 #[tauri::command]
@@ -17,6 +18,7 @@ pub async fn get_or_create_manifest(
     job_name: String,
     source_path: String,
 ) -> Result<BackupManifest, String> {
+    validate_job_id(&job_id).map_err(|e| e.to_string())?;
     manifest_service::get_or_create_manifest(&dest_path, &job_id, &job_name, &source_path)
         .await
         .map_err(|e| e.to_string())

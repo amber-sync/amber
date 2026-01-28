@@ -3,6 +3,7 @@ use crate::services::index_service::IndexService;
 use crate::services::manifest_service;
 use crate::state::AppState;
 use crate::types::snapshot::{FileNode, SnapshotMetadata};
+use crate::utils::validation::validate_job_id;
 use std::path::Path;
 use tauri::State;
 
@@ -54,12 +55,18 @@ fn validate_destination_path(
     Ok(validated)
 }
 
+fn ensure_job_id(job_id: &str) -> Result<()> {
+    validate_job_id(job_id)?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn list_snapshots(
     state: State<'_, AppState>,
     job_id: String,
     dest_path: String,
 ) -> Result<Vec<SnapshotMetadata>> {
+    ensure_job_id(&job_id)?;
     state
         .snapshot_service
         .list_snapshots(&job_id, &dest_path)
@@ -74,6 +81,7 @@ pub async fn list_snapshots_in_range(
     start_ms: i64,
     end_ms: i64,
 ) -> Result<Vec<crate::services::index_service::IndexedSnapshot>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.list_snapshots_in_range(&job_id, start_ms, end_ms))
 }
@@ -86,6 +94,7 @@ pub async fn get_snapshot_tree(
     timestamp: i64,
     snapshot_path: String,
 ) -> Result<Vec<FileNode>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     if index.with(|idx| idx.is_indexed(&job_id, timestamp))? {
         return index.with(|idx| idx.get_directory_contents(&job_id, timestamp, ""));
@@ -107,6 +116,7 @@ pub async fn get_indexed_directory(
     timestamp: i64,
     parent_path: String,
 ) -> Result<Vec<FileNode>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_directory_contents(&job_id, timestamp, &parent_path))
 }
@@ -121,6 +131,7 @@ pub async fn get_indexed_directory_paginated(
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<crate::services::index_service::DirectoryContents> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| {
         idx.get_directory_contents_paginated(&job_id, timestamp, &parent_path, limit, offset)
@@ -135,6 +146,7 @@ pub async fn index_snapshot(
     timestamp: i64,
     snapshot_path: String,
 ) -> Result<crate::services::index_service::IndexedSnapshot> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, false)?;
     let validated_snapshot = state.validate_path(&snapshot_path)?;
     index.with(|idx| idx.index_snapshot(&job_id, timestamp, &validated_snapshot))
@@ -147,6 +159,7 @@ pub async fn is_snapshot_indexed(
     job_id: String,
     timestamp: i64,
 ) -> Result<bool> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.is_indexed(&job_id, timestamp))
 }
@@ -160,6 +173,7 @@ pub async fn search_snapshot_files(
     pattern: String,
     limit: Option<usize>,
 ) -> Result<Vec<FileNode>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.search_files(&job_id, timestamp, &pattern, limit.unwrap_or(100)))
 }
@@ -174,7 +188,10 @@ pub async fn search_files_global(
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::GlobalSearchResult>> {
     let index = match &job_id {
-        Some(id) => resolve_index(&state, id, true)?,
+        Some(id) => {
+            ensure_job_id(id)?;
+            resolve_index(&state, id, true)?
+        }
         None => IndexHandle::Local(&state.index_service),
     };
     index.with(|idx| idx.search_files_global(&pattern, job_id.as_deref(), limit.unwrap_or(50)))
@@ -187,6 +204,7 @@ pub async fn get_snapshot_stats(
     job_id: String,
     timestamp: i64,
 ) -> Result<(i64, i64)> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_snapshot_stats(&job_id, timestamp))
 }
@@ -199,6 +217,7 @@ pub async fn get_file_type_stats(
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::FileTypeStats>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_file_type_stats(&job_id, timestamp, limit.unwrap_or(20)))
 }
@@ -211,6 +230,7 @@ pub async fn get_largest_files(
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::LargestFile>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_largest_files(&job_id, timestamp, limit.unwrap_or(10)))
 }
@@ -222,6 +242,7 @@ pub async fn delete_snapshot_index(
     job_id: String,
     timestamp: i64,
 ) -> Result<()> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.delete_snapshot(&job_id, timestamp))
 }
@@ -229,6 +250,7 @@ pub async fn delete_snapshot_index(
 /// Delete all indexed snapshots for a job
 #[tauri::command]
 pub async fn delete_job_index(state: State<'_, AppState>, job_id: String) -> Result<()> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.delete_job_snapshots(&job_id))
 }
@@ -241,6 +263,7 @@ pub async fn restore_files(
     files: Vec<String>,
     target_path: String,
 ) -> Result<()> {
+    ensure_job_id(&job_id)?;
     use std::process::Command;
     use std::process::Stdio;
 
@@ -312,6 +335,7 @@ pub async fn restore_snapshot(
     target_path: String,
     mirror: Option<bool>,
 ) -> Result<()> {
+    ensure_job_id(&job_id)?;
     use std::process::Command;
     use std::process::Stdio;
 
@@ -485,6 +509,7 @@ pub async fn index_snapshot_on_destination(
     timestamp: i64,
     snapshot_path: String,
 ) -> Result<crate::services::index_service::IndexedSnapshot> {
+    ensure_job_id(&job_id)?;
     let validated_dest = validate_destination_path(&state, &dest_path, true)?;
     let validated_snapshot = state.validate_path(&snapshot_path)?;
     let index = IndexService::for_destination(&validated_dest)?;
@@ -500,6 +525,7 @@ pub async fn get_directory_from_destination(
     timestamp: i64,
     parent_path: String,
 ) -> Result<Vec<FileNode>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.get_directory_contents(&job_id, timestamp, &parent_path)
@@ -513,6 +539,7 @@ pub async fn is_indexed_on_destination(
     job_id: String,
     timestamp: i64,
 ) -> Result<bool> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.is_indexed(&job_id, timestamp)
@@ -528,6 +555,7 @@ pub async fn search_files_on_destination(
     pattern: String,
     limit: Option<usize>,
 ) -> Result<Vec<FileNode>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.search_files(&job_id, timestamp, &pattern, limit.unwrap_or(100))
@@ -542,6 +570,7 @@ pub async fn get_file_type_stats_on_destination(
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::FileTypeStats>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.get_file_type_stats(&job_id, timestamp, limit.unwrap_or(20))
@@ -556,6 +585,7 @@ pub async fn get_largest_files_on_destination(
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::LargestFile>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.get_largest_files(&job_id, timestamp, limit.unwrap_or(10))
@@ -569,6 +599,7 @@ pub async fn delete_snapshot_from_destination(
     job_id: String,
     timestamp: i64,
 ) -> Result<()> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.delete_snapshot(&job_id, timestamp)
@@ -583,6 +614,7 @@ pub async fn list_snapshots_in_range_on_destination(
     start_ms: i64,
     end_ms: i64,
 ) -> Result<Vec<crate::services::index_service::IndexedSnapshot>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.list_snapshots_in_range(&job_id, start_ms, end_ms)
@@ -594,6 +626,7 @@ pub async fn get_job_aggregate_stats(
     state: State<'_, AppState>,
     job_id: String,
 ) -> Result<crate::services::index_service::JobAggregateStats> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_job_aggregate_stats(&job_id))
 }
@@ -605,6 +638,7 @@ pub async fn get_job_aggregate_stats_on_destination(
     dest_path: String,
     job_id: String,
 ) -> Result<crate::services::index_service::JobAggregateStats> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.get_job_aggregate_stats(&job_id)
@@ -617,6 +651,7 @@ pub async fn get_snapshot_density(
     job_id: String,
     period: String,
 ) -> Result<Vec<crate::services::index_service::SnapshotDensity>> {
+    ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.get_snapshot_density(&job_id, &period))
 }
@@ -629,6 +664,7 @@ pub async fn get_snapshot_density_on_destination(
     job_id: String,
     period: String,
 ) -> Result<Vec<crate::services::index_service::SnapshotDensity>> {
+    ensure_job_id(&job_id)?;
     let validated = validate_destination_path(&state, &dest_path, true)?;
     let index = IndexService::for_destination(&validated)?;
     index.get_snapshot_density(&job_id, &period)

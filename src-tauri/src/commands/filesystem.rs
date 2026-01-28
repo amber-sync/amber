@@ -65,10 +65,13 @@ pub async fn show_item_in_folder(state: State<'_, AppState>, path: String) -> Re
 }
 
 #[tauri::command]
-pub async fn get_disk_stats(path: String) -> Result<String> {
+pub async fn get_disk_stats(state: State<'_, AppState>, path: String) -> Result<String> {
     use std::process::Command;
 
-    let output = Command::new("df").args(["-h", "--", &path]).output()?;
+    let validated_path = state.validate_path(&path)?;
+    let output = Command::new("df")
+        .args(["-h", "--", &validated_path])
+        .output()?;
     if !output.status.success() {
         return Err(crate::error::AmberError::Io(std::io::Error::other(
             String::from_utf8_lossy(&output.stderr).to_string(),
@@ -87,12 +90,15 @@ pub struct VolumeStats {
 }
 
 #[tauri::command]
-pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
+pub async fn get_volume_info(state: State<'_, AppState>, path: String) -> Result<VolumeStats> {
     use std::process::Command;
 
+    let validated_path = state.validate_path(&path)?;
     // Use df -k to get stats in 1K blocks for any path
     // This works for any directory, not just mounted volumes
-    let output = Command::new("df").args(["-k", "--", &path]).output()?;
+    let output = Command::new("df")
+        .args(["-k", "--", &validated_path])
+        .output()?;
 
     if !output.status.success() {
         return Err(crate::error::AmberError::Io(std::io::Error::other(
@@ -217,6 +223,7 @@ fn get_volume_stats(path: &std::path::Path) -> std::io::Result<(u64, u64)> {
 /// Search files in a volume by pattern (fuzzy filename match)
 #[tauri::command]
 pub async fn search_volume(
+    state: State<'_, AppState>,
     volume_path: String,
     pattern: String,
     limit: Option<usize>,
@@ -226,6 +233,7 @@ pub async fn search_volume(
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Mutex;
 
+    let validated_path = state.validate_path(&volume_path)?;
     let limit = limit.unwrap_or(50);
     let pattern_lower = pattern.to_lowercase();
     let count = AtomicUsize::new(0);
@@ -233,7 +241,7 @@ pub async fn search_volume(
 
     // Use jwalk for fast parallel directory walking
     // Limit depth to 5 for performance
-    let walker = WalkDir::new(&volume_path)
+    let walker = WalkDir::new(&validated_path)
         .skip_hidden(true)
         .max_depth(5)
         .parallelism(jwalk::Parallelism::RayonNewPool(4));
