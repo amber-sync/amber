@@ -7,7 +7,6 @@ import React from 'react';
 import { SyncMode, RsyncConfig, DestinationType } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import {
-  GlassPanel,
   TextInput,
   Toggle,
   PathInput,

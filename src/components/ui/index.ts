@@ -9,7 +9,6 @@ export { Spinner, type SpinnerSize } from './Spinner';
 export { Toast, type ToastVariant, type ToastProps } from './Toast';
 
 // Form components
-export { Panel, type PanelVariant } from './Panel';
 export { SectionHeader, type SectionHeaderVariant } from './SectionHeader';
 export { TextInput, type TextInputVariant } from './TextInput';
 export { TextArea, type TextAreaVariant } from './TextArea';
@@ -38,7 +37,6 @@ export {
 } from './ScheduleSelector';
 
 // Layout components
-export { GlassPanel, type GlassPanelVariant } from './GlassPanel';
 export { CollapsibleSection } from './CollapsibleSection';
 export { StepIndicator } from './StepIndicator';
 export { ProgressRing } from './ProgressRing';

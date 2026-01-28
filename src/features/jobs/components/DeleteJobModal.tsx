@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Icons } from '@/components/IconComponents';
-import { Panel } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { Title, Body, Caption } from '@/components/ui';
 import { formatBytes } from '@/utils/formatters';
 
@@ -40,7 +40,11 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in">
-      <Panel variant="modal" className="max-w-md w-full transform transition-all scale-100">
+      <Card
+        variant="modal"
+        padding="lg"
+        className="max-w-md w-full transform transition-all scale-100"
+      >
         <div className="flex flex-col items-center text-center">
           <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-4">
             <Icons.Trash2 size={24} />
@@ -115,7 +119,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
             </button>
           </div>
         </div>
-      </Panel>
+      </Card>
     </div>
   );
 };
