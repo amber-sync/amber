@@ -921,6 +921,174 @@ impl IndexService {
         Ok(result)
     }
 
+    /// TIM-221: Compare two snapshots and return the differences
+    /// Returns added, deleted, and modified files between snapshot A and B
+    pub fn compare_snapshots(
+        &self,
+        job_id: &str,
+        timestamp_a: i64,
+        timestamp_b: i64,
+        limit: Option<usize>,
+    ) -> Result<SnapshotDiff> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AmberError::Index(format!("Failed to acquire database lock: {}", e)))?;
+
+        let limit_val = limit.unwrap_or(5000) as i64;
+
+        // Get snapshot IDs for both timestamps
+        let snapshot_id_a: i64 = conn
+            .query_row(
+                "SELECT id FROM snapshots WHERE job_id = ? AND timestamp = ?",
+                params![job_id, timestamp_a],
+                |row| row.get(0),
+            )
+            .map_err(|_| {
+                AmberError::Index(format!(
+                    "Snapshot A not found: job_id={}, timestamp={}",
+                    job_id, timestamp_a
+                ))
+            })?;
+
+        let snapshot_id_b: i64 = conn
+            .query_row(
+                "SELECT id FROM snapshots WHERE job_id = ? AND timestamp = ?",
+                params![job_id, timestamp_b],
+                |row| row.get(0),
+            )
+            .map_err(|_| {
+                AmberError::Index(format!(
+                    "Snapshot B not found: job_id={}, timestamp={}",
+                    job_id, timestamp_b
+                ))
+            })?;
+
+        // Query for added files (in B but not in A)
+        let mut added_stmt = conn
+            .prepare(
+                r#"
+                SELECT b.path, b.size FROM files b
+                WHERE b.snapshot_id = ?
+                AND b.file_type = 'file'
+                AND NOT EXISTS (
+                    SELECT 1 FROM files a
+                    WHERE a.snapshot_id = ? AND a.path = b.path
+                )
+                LIMIT ?
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare added query: {}", e)))?;
+
+        let added_rows = added_stmt
+            .query_map(params![snapshot_id_b, snapshot_id_a, limit_val], |row| {
+                let path: String = row.get(0)?;
+                let size: i64 = row.get(1)?;
+                Ok(DiffEntry {
+                    path,
+                    size_a: None,
+                    size_b: Some(size),
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query added files: {}", e)))?;
+
+        let mut added: Vec<DiffEntry> = Vec::new();
+        let mut size_added: i64 = 0;
+        for entry in added_rows.flatten() {
+            size_added += entry.size_b.unwrap_or(0);
+            added.push(entry);
+        }
+
+        // Query for deleted files (in A but not in B)
+        let mut deleted_stmt = conn
+            .prepare(
+                r#"
+                SELECT a.path, a.size FROM files a
+                WHERE a.snapshot_id = ?
+                AND a.file_type = 'file'
+                AND NOT EXISTS (
+                    SELECT 1 FROM files b
+                    WHERE b.snapshot_id = ? AND b.path = a.path
+                )
+                LIMIT ?
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare deleted query: {}", e)))?;
+
+        let deleted_rows = deleted_stmt
+            .query_map(params![snapshot_id_a, snapshot_id_b, limit_val], |row| {
+                let path: String = row.get(0)?;
+                let size: i64 = row.get(1)?;
+                Ok(DiffEntry {
+                    path,
+                    size_a: Some(size),
+                    size_b: None,
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query deleted files: {}", e)))?;
+
+        let mut deleted: Vec<DiffEntry> = Vec::new();
+        let mut size_deleted: i64 = 0;
+        for entry in deleted_rows.flatten() {
+            size_deleted += entry.size_a.unwrap_or(0);
+            deleted.push(entry);
+        }
+
+        // Query for modified files (in both but different size)
+        let mut modified_stmt = conn
+            .prepare(
+                r#"
+                SELECT a.path, a.size, b.size FROM files a
+                INNER JOIN files b ON a.path = b.path
+                WHERE a.snapshot_id = ?
+                AND b.snapshot_id = ?
+                AND a.file_type = 'file'
+                AND b.file_type = 'file'
+                AND a.size != b.size
+                LIMIT ?
+                "#,
+            )
+            .map_err(|e| AmberError::Index(format!("Failed to prepare modified query: {}", e)))?;
+
+        let modified_rows = modified_stmt
+            .query_map(params![snapshot_id_a, snapshot_id_b, limit_val], |row| {
+                let path: String = row.get(0)?;
+                let size_a: i64 = row.get(1)?;
+                let size_b: i64 = row.get(2)?;
+                Ok(DiffEntry {
+                    path,
+                    size_a: Some(size_a),
+                    size_b: Some(size_b),
+                })
+            })
+            .map_err(|e| AmberError::Index(format!("Failed to query modified files: {}", e)))?;
+
+        let mut modified: Vec<DiffEntry> = Vec::new();
+        let mut size_modified_delta: i64 = 0;
+        for entry in modified_rows.flatten() {
+            let delta = entry.size_b.unwrap_or(0) - entry.size_a.unwrap_or(0);
+            size_modified_delta += delta;
+            modified.push(entry);
+        }
+
+        // Calculate summary statistics
+        let size_delta = size_added - size_deleted + size_modified_delta;
+
+        let summary = DiffSummary {
+            total_added: added.len() as u32,
+            total_deleted: deleted.len() as u32,
+            total_modified: modified.len() as u32,
+            size_delta,
+        };
+
+        Ok(SnapshotDiff {
+            added,
+            deleted,
+            modified,
+            summary,
+        })
+    }
+
     /// Check if a snapshot is indexed
     pub fn is_indexed(&self, job_id: &str, timestamp: i64) -> Result<bool> {
         let conn = self
