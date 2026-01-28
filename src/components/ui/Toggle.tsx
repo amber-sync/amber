@@ -47,7 +47,7 @@ export const Toggle: React.FC<ToggleProps> = ({
           relative inline-flex shrink-0 ${styles.track}
           items-center rounded-full transition-all duration-200
           focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 focus-visible:ring-offset-2
-          ${checked ? 'bg-accent-primary hover:bg-[var(--accent-hover)]' : 'bg-layer-3 hover:bg-layer-2'}
+          ${checked ? 'bg-accent-primary hover:bg-accent-hover' : 'bg-layer-3 hover:bg-layer-2'}
         `}
       >
         <span
