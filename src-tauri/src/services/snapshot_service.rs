@@ -39,6 +39,20 @@ impl SnapshotService {
         Ok(self.cache_dir.join(format!("{}-{}.json", key, timestamp)))
     }
 
+    fn legacy_cache_path(&self, job_id: &str, timestamp: i64) -> Option<PathBuf> {
+        let trimmed = job_id.trim();
+        if trimmed.is_empty() || trimmed.contains('\0') {
+            return None;
+        }
+        if trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..") {
+            return None;
+        }
+        Some(
+            self.cache_dir
+                .join(format!("{}-{}.json", trimmed, timestamp)),
+        )
+    }
+
     /// List all snapshots for a job
     ///
     /// TIM-191: Unified source of truth with priority order:
@@ -85,6 +99,16 @@ impl SnapshotService {
         job_id: &str,
         dest_path: &str,
     ) -> Option<Vec<SnapshotMetadata>> {
+        let dest_root = Path::new(dest_path);
+        if !dest_root.is_dir() {
+            return None;
+        }
+
+        let index_path = manifest_service::get_index_path(dest_path);
+        if !index_path.exists() {
+            return None;
+        }
+
         // Try to open the destination index
         let index = IndexService::for_destination(dest_path).ok()?;
 
@@ -248,7 +272,14 @@ impl SnapshotService {
 
     async fn load_cached_stats(&self, job_id: &str, timestamp: i64) -> Option<(u64, u64)> {
         let cache_path = self.get_cache_path(job_id, timestamp).ok()?;
-        let data = tokio::fs::read_to_string(&cache_path).await.ok()?;
+        if let Ok(data) = tokio::fs::read_to_string(&cache_path).await {
+            if let Ok(cached) = serde_json::from_str::<CachedSnapshot>(&data) {
+                return Some((cached.stats.size_bytes, cached.stats.file_count));
+            }
+        }
+
+        let legacy_path = self.legacy_cache_path(job_id, timestamp)?;
+        let data = tokio::fs::read_to_string(&legacy_path).await.ok()?;
         let cached: CachedSnapshot = serde_json::from_str(&data).ok()?;
         Some((cached.stats.size_bytes, cached.stats.file_count))
     }
@@ -284,6 +315,14 @@ impl SnapshotService {
             }
         }
 
+        if let Some(legacy_path) = self.legacy_cache_path(job_id, timestamp) {
+            if let Ok(data) = tokio::fs::read_to_string(&legacy_path).await {
+                if let Ok(cached) = serde_json::from_str::<CachedSnapshot>(&data) {
+                    return Ok(cached.tree);
+                }
+            }
+        }
+
         self.index_snapshot(job_id, timestamp, snapshot_path).await
     }
 
@@ -310,6 +349,12 @@ impl SnapshotService {
         let cache_path = self.get_cache_path(job_id, timestamp)?;
         if let Ok(json) = serde_json::to_string(&cached) {
             let _ = tokio::fs::write(&cache_path, json).await;
+        }
+
+        if let Some(legacy_path) = self.legacy_cache_path(job_id, timestamp) {
+            if legacy_path.exists() && legacy_path != cache_path {
+                let _ = tokio::fs::remove_file(&legacy_path).await;
+            }
         }
 
         Ok(tree)

@@ -39,6 +39,21 @@ fn resolve_index<'a>(
     Ok(IndexHandle::Local(&state.index_service))
 }
 
+fn validate_destination_path(
+    state: &AppState,
+    dest_path: &str,
+    require_exists: bool,
+) -> Result<String> {
+    let validated = state.validate_path_for_create(dest_path)?;
+    if require_exists && !Path::new(&validated).is_dir() {
+        return Err(AmberError::NotFound(format!(
+            "Destination path not found: {}",
+            dest_path
+        )));
+    }
+    Ok(validated)
+}
+
 #[tauri::command]
 pub async fn list_snapshots(
     state: State<'_, AppState>,
@@ -408,15 +423,23 @@ fn validate_restore_file_list(files: &[String]) -> Result<Vec<String>> {
 
 /// Get the path to the index database on a destination drive
 #[tauri::command]
-pub async fn get_destination_index_path(dest_path: String) -> Result<String> {
-    let path = manifest_service::get_index_path(&dest_path);
+pub async fn get_destination_index_path(
+    state: State<'_, AppState>,
+    dest_path: String,
+) -> Result<String> {
+    let validated = validate_destination_path(&state, &dest_path, false)?;
+    let path = manifest_service::get_index_path(&validated);
     Ok(path.to_string_lossy().to_string())
 }
 
 /// Check if a destination has an index database
 #[tauri::command]
-pub async fn destination_has_index(dest_path: String) -> Result<bool> {
-    let path = manifest_service::get_index_path(&dest_path);
+pub async fn destination_has_index(state: State<'_, AppState>, dest_path: String) -> Result<bool> {
+    let validated = validate_destination_path(&state, &dest_path, false)?;
+    if !Path::new(&validated).is_dir() {
+        return Ok(false);
+    }
+    let path = manifest_service::get_index_path(&validated);
     Ok(path.exists())
 }
 
@@ -427,24 +450,17 @@ pub async fn export_index_to_destination(
     state: State<'_, AppState>,
     dest_path: String,
 ) -> Result<()> {
-    use std::path::Path;
     use tokio::fs;
 
     // Get source (local) index path
     let local_index = state.index_service.get_db_path();
 
     // Get destination index path
-    let dest_index = manifest_service::get_index_path(&dest_path);
-    let dest_root = Path::new(&dest_path);
-    if !dest_root.exists() || !dest_root.is_dir() {
-        return Err(crate::error::AmberError::InvalidPath(format!(
-            "Destination path is not accessible: {}",
-            dest_path
-        )));
-    }
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let dest_index = manifest_service::get_index_path(&validated);
 
     // Ensure .amber-meta directory exists
-    let meta_dir = manifest_service::get_meta_dir(&dest_path);
+    let meta_dir = manifest_service::get_meta_dir(&validated);
     if !meta_dir.exists() {
         fs::create_dir_all(&meta_dir).await?;
     }
@@ -469,7 +485,7 @@ pub async fn index_snapshot_on_destination(
     timestamp: i64,
     snapshot_path: String,
 ) -> Result<crate::services::index_service::IndexedSnapshot> {
-    let validated_dest = state.validate_path(&dest_path)?;
+    let validated_dest = validate_destination_path(&state, &dest_path, true)?;
     let validated_snapshot = state.validate_path(&snapshot_path)?;
     let index = IndexService::for_destination(&validated_dest)?;
     index.index_snapshot(&job_id, timestamp, &validated_snapshot)
@@ -478,83 +494,97 @@ pub async fn index_snapshot_on_destination(
 /// Get directory contents from destination's index
 #[tauri::command]
 pub async fn get_directory_from_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
     parent_path: String,
 ) -> Result<Vec<FileNode>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.get_directory_contents(&job_id, timestamp, &parent_path)
 }
 
 /// Check if a snapshot is indexed on the destination
 #[tauri::command]
 pub async fn is_indexed_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
 ) -> Result<bool> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.is_indexed(&job_id, timestamp)
 }
 
 /// Search files in destination's index
 #[tauri::command]
 pub async fn search_files_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
     pattern: String,
     limit: Option<usize>,
 ) -> Result<Vec<FileNode>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.search_files(&job_id, timestamp, &pattern, limit.unwrap_or(100))
 }
 
 /// Get file type stats from destination's index
 #[tauri::command]
 pub async fn get_file_type_stats_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::FileTypeStats>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.get_file_type_stats(&job_id, timestamp, limit.unwrap_or(20))
 }
 
 /// Get largest files from destination's index
 #[tauri::command]
 pub async fn get_largest_files_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
     limit: Option<usize>,
 ) -> Result<Vec<crate::services::index_service::LargestFile>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.get_largest_files(&job_id, timestamp, limit.unwrap_or(10))
 }
 
 /// Delete snapshot from destination's index
 #[tauri::command]
 pub async fn delete_snapshot_from_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     timestamp: i64,
 ) -> Result<()> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.delete_snapshot(&job_id, timestamp)
 }
 
 /// List snapshots within a date range from destination's index (for Time Explorer filtering)
 #[tauri::command]
 pub async fn list_snapshots_in_range_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     start_ms: i64,
     end_ms: i64,
 ) -> Result<Vec<crate::services::index_service::IndexedSnapshot>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.list_snapshots_in_range(&job_id, start_ms, end_ms)
 }
 
@@ -571,10 +601,12 @@ pub async fn get_job_aggregate_stats(
 /// Get aggregate statistics for a job from destination's index
 #[tauri::command]
 pub async fn get_job_aggregate_stats_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
 ) -> Result<crate::services::index_service::JobAggregateStats> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.get_job_aggregate_stats(&job_id)
 }
 
@@ -592,10 +624,12 @@ pub async fn get_snapshot_density(
 /// Get snapshot density from destination's index
 #[tauri::command]
 pub async fn get_snapshot_density_on_destination(
+    state: State<'_, AppState>,
     dest_path: String,
     job_id: String,
     period: String,
 ) -> Result<Vec<crate::services::index_service::SnapshotDensity>> {
-    let index = IndexService::for_destination(&dest_path)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+    let index = IndexService::for_destination(&validated)?;
     index.get_snapshot_density(&job_id, &period)
 }

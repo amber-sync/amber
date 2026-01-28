@@ -68,7 +68,12 @@ pub async fn show_item_in_folder(state: State<'_, AppState>, path: String) -> Re
 pub async fn get_disk_stats(path: String) -> Result<String> {
     use std::process::Command;
 
-    let output = Command::new("df").args(["-h", &path]).output()?;
+    let output = Command::new("df").args(["-h", "--", &path]).output()?;
+    if !output.status.success() {
+        return Err(crate::error::AmberError::Io(std::io::Error::other(
+            String::from_utf8_lossy(&output.stderr).to_string(),
+        )));
+    }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -87,7 +92,7 @@ pub async fn get_volume_info(path: String) -> Result<VolumeStats> {
 
     // Use df -k to get stats in 1K blocks for any path
     // This works for any directory, not just mounted volumes
-    let output = Command::new("df").args(["-k", &path]).output()?;
+    let output = Command::new("df").args(["-k", "--", &path]).output()?;
 
     if !output.status.success() {
         return Err(crate::error::AmberError::Io(std::io::Error::other(
@@ -190,7 +195,7 @@ fn get_volume_stats(path: &std::path::Path) -> std::io::Result<(u64, u64)> {
 
     // Use df command to get disk info
     let output = Command::new("df")
-        .args(["-k", path.to_str().unwrap_or("/")])
+        .args(["-k", "--", path.to_str().unwrap_or("/")])
         .output()?;
 
     let output_str = String::from_utf8_lossy(&output.stdout);

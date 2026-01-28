@@ -146,7 +146,7 @@ impl VolumeWatcher {
 
         // Use df command to get volume info on macOS
         let output = Command::new("df")
-            .args(["-k", path])
+            .args(["-k", "--", path])
             .output()
             .map_err(|e| AmberError::Volume(format!("Failed to run df: {}", e)))?;
 

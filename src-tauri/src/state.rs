@@ -145,9 +145,13 @@ impl AppState {
         }
 
         // Production: use standard user data directory
-        dirs::data_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join("amber")
+        if let Some(dir) = dirs::data_dir() {
+            dir.join("amber")
+        } else if let Some(home) = dirs::home_dir() {
+            home.join(".amber")
+        } else {
+            std::env::temp_dir().join("amber")
+        }
     }
 }
 

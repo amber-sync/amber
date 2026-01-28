@@ -62,6 +62,17 @@ fn get_job_cache_path(job_id: &str) -> Result<PathBuf, CacheError> {
     Ok(get_snapshots_cache_dir().join(file_name))
 }
 
+fn legacy_cache_path(job_id: &str) -> Option<PathBuf> {
+    let trimmed = job_id.trim();
+    if trimmed.is_empty() || trimmed.contains('\0') {
+        return None;
+    }
+    if trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..") {
+        return None;
+    }
+    Some(get_snapshots_cache_dir().join(format!("{}.json", trimmed)))
+}
+
 /// Write snapshot cache for a job
 pub async fn write_snapshot_cache(
     job_id: &str,
@@ -95,7 +106,8 @@ pub async fn write_snapshot_cache(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let temp_path = cache_dir.join(format!("{}.json.{}.{}.tmp", job_id, unique_id, timestamp));
+    let file_name = cache_file_name(job_id)?;
+    let temp_path = cache_dir.join(format!("{}.{}.{}.tmp", file_name, unique_id, timestamp));
     log::debug!(
         "write_snapshot_cache: creating temp file at {:?}",
         temp_path
@@ -127,6 +139,12 @@ pub async fn write_snapshot_cache(
         ))
     })?;
 
+    if let Some(legacy_path) = legacy_cache_path(job_id) {
+        if legacy_path.exists() && legacy_path != cache_path {
+            let _ = fs::remove_file(&legacy_path).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -135,23 +153,44 @@ pub async fn write_snapshot_cache(
 pub async fn read_snapshot_cache(job_id: &str) -> Result<Option<SnapshotCache>, CacheError> {
     let cache_path = get_job_cache_path(job_id)?;
 
-    if !cache_path.exists() {
-        return Ok(None);
+    if cache_path.exists() {
+        let mut file = fs::File::open(&cache_path)
+            .await
+            .map_err(|e| CacheError::IoError(format!("Failed to open cache file: {}", e)))?;
+
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)
+            .await
+            .map_err(|e| CacheError::IoError(format!("Failed to read cache: {}", e)))?;
+
+        let cache: SnapshotCache = serde_json::from_str(&contents)
+            .map_err(|e| CacheError::ParseError(format!("Failed to parse cache: {}", e)))?;
+
+        return Ok(Some(cache));
     }
 
-    let mut file = fs::File::open(&cache_path)
-        .await
-        .map_err(|e| CacheError::IoError(format!("Failed to open cache file: {}", e)))?;
+    if let Some(legacy_path) = legacy_cache_path(job_id) {
+        if legacy_path.exists() {
+            let mut file = fs::File::open(&legacy_path)
+                .await
+                .map_err(|e| CacheError::IoError(format!("Failed to open cache file: {}", e)))?;
 
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .await
-        .map_err(|e| CacheError::IoError(format!("Failed to read cache: {}", e)))?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)
+                .await
+                .map_err(|e| CacheError::IoError(format!("Failed to read cache: {}", e)))?;
 
-    let cache: SnapshotCache = serde_json::from_str(&contents)
-        .map_err(|e| CacheError::ParseError(format!("Failed to parse cache: {}", e)))?;
+            let cache: SnapshotCache = serde_json::from_str(&contents)
+                .map_err(|e| CacheError::ParseError(format!("Failed to parse cache: {}", e)))?;
 
-    Ok(Some(cache))
+            let _ = write_snapshot_cache(job_id, cache.snapshots.clone()).await;
+            let _ = fs::remove_file(&legacy_path).await;
+
+            return Ok(Some(cache));
+        }
+    }
+
+    Ok(None)
 }
 
 /// Delete snapshot cache for a job
@@ -162,6 +201,12 @@ pub async fn delete_snapshot_cache(job_id: &str) -> Result<(), CacheError> {
         fs::remove_file(&cache_path)
             .await
             .map_err(|e| CacheError::IoError(format!("Failed to delete cache: {}", e)))?;
+    }
+
+    if let Some(legacy_path) = legacy_cache_path(job_id) {
+        if legacy_path.exists() {
+            let _ = fs::remove_file(&legacy_path).await;
+        }
     }
 
     Ok(())
