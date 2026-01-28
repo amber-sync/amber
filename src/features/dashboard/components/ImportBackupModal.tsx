@@ -75,38 +75,47 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
-          {/* Initial State - Browse for folder */}
+          {/* Initial State - Dropzone style browse */}
           {!isScanning && !selectedPath && discoveredBackups.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-layer-2 flex items-center justify-center">
-                <Icons.FolderOpen size={28} className="text-text-quaternary" />
+            <button
+              onClick={handleBrowse}
+              className="w-full py-12 px-8 border-2 border-dashed border-border-base rounded-2xl hover:border-accent-primary hover:bg-accent-primary/5 transition-all duration-200 cursor-pointer group"
+            >
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-layer-2 group-hover:bg-accent-primary/10 flex items-center justify-center transition-colors">
+                  <Icons.FolderOpen
+                    size={28}
+                    className="text-text-tertiary group-hover:text-accent-primary transition-colors"
+                  />
+                </div>
+                <div className="text-center">
+                  <Title
+                    level={4}
+                    color="secondary"
+                    className="group-hover:text-text-primary transition-colors"
+                  >
+                    Click to browse for backup folder
+                  </Title>
+                  <Body size="sm" color="tertiary" className="mt-1">
+                    Select any folder on your Mac or external drive
+                  </Body>
+                </div>
               </div>
-              <div>
-                <Title level={4} color="secondary">
-                  Select a folder to scan
-                </Title>
-                <Body size="sm" color="tertiary" className="mt-1 max-w-sm">
-                  Choose a folder containing an Amber backup. This can be on your Mac or an external
-                  drive.
-                </Body>
-              </div>
-              <Button onClick={handleBrowse}>
-                <Icons.Folder size={16} />
-                Browse...
-              </Button>
-            </div>
+            </button>
           )}
 
           {/* Scanning State */}
           {isScanning && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="w-10 h-10 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
-              <Body color="secondary">Scanning folder for backups...</Body>
-              {selectedPath && (
-                <Code size="sm" className="max-w-md truncate">
-                  {selectedPath}
-                </Code>
-              )}
+            <div className="flex flex-col items-center justify-center py-16 gap-6">
+              <div className="w-12 h-12 border-3 border-accent-primary border-t-transparent rounded-full animate-spin" />
+              <div className="space-y-2 text-center">
+                <Body color="secondary">Scanning folder for backups...</Body>
+                {selectedPath && (
+                  <Code size="sm" className="max-w-md truncate block">
+                    {selectedPath}
+                  </Code>
+                )}
+              </div>
             </div>
           )}
 
@@ -124,25 +133,36 @@ export function ImportBackupModal({ knownJobIds, onImport, onClose }: ImportBack
 
           {/* No Results after scanning */}
           {!isScanning && selectedPath && discoveredBackups.length === 0 && !error && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-layer-2 flex items-center justify-center">
-                <Icons.Search size={28} className="text-text-quaternary" />
-              </div>
-              <div>
-                <Title level={4} color="secondary">
-                  No backups found
-                </Title>
-                <Body size="sm" color="tertiary" className="mt-1 max-w-sm">
-                  No Amber backups found in this folder. Try selecting a different location.
-                </Body>
-                <Code size="sm" className="mt-2 block max-w-md truncate">
+            <div className="space-y-4">
+              <div className="p-4 bg-layer-2 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 text-text-tertiary">
+                  <Icons.Search size={16} />
+                  <Body size="sm" color="tertiary">
+                    No Amber backups found in:
+                  </Body>
+                </div>
+                <Code size="sm" className="mt-1 block truncate">
                   {selectedPath}
                 </Code>
               </div>
-              <Button variant="secondary" onClick={handleBrowse}>
-                <Icons.Folder size={16} />
-                Browse Different Folder
-              </Button>
+              <button
+                onClick={handleBrowse}
+                className="w-full py-8 px-8 border-2 border-dashed border-border-base rounded-2xl hover:border-accent-primary hover:bg-accent-primary/5 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <Icons.FolderOpen
+                    size={24}
+                    className="text-text-tertiary group-hover:text-accent-primary transition-colors"
+                  />
+                  <Body
+                    size="sm"
+                    color="secondary"
+                    className="group-hover:text-text-primary transition-colors"
+                  >
+                    Try a different folder
+                  </Body>
+                </div>
+              </button>
             </div>
           )}
 
