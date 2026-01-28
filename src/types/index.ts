@@ -27,6 +27,9 @@ export {
   type ManifestSnapshotStatus,
   type ManifestSnapshot,
   type BackupManifest,
+  type DiffEntry,
+  type DiffSummary,
+  type SnapshotDiff,
 } from './snapshots';
 
 // Files

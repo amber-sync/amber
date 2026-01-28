@@ -669,3 +669,17 @@ pub async fn get_snapshot_density_on_destination(
     let index = IndexService::for_destination(&validated)?;
     index.get_snapshot_density(&job_id, &period)
 }
+
+/// TIM-221: Compare two snapshots and return file differences
+#[tauri::command]
+pub async fn compare_snapshots(
+    state: State<'_, AppState>,
+    job_id: String,
+    timestamp_a: i64,
+    timestamp_b: i64,
+    limit: Option<usize>,
+) -> Result<crate::services::index_service::SnapshotDiff> {
+    ensure_job_id(&job_id)?;
+    let index = resolve_index(&state, &job_id, true)?;
+    index.with(|idx| idx.compare_snapshots(&job_id, timestamp_a, timestamp_b, limit))
+}

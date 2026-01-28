@@ -130,6 +130,8 @@ pub fn run() {
             commands::snapshots::get_job_aggregate_stats_on_destination,
             commands::snapshots::get_snapshot_density,
             commands::snapshots::get_snapshot_density_on_destination,
+            // TIM-221: Snapshot comparison
+            commands::snapshots::compare_snapshots,
             // Filesystem commands
             commands::filesystem::read_dir,
             commands::filesystem::read_file_preview,

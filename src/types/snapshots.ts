@@ -78,3 +78,26 @@ export interface BackupManifest {
   updatedAt: number;
   snapshots: ManifestSnapshot[];
 }
+
+/** TIM-221: Single file change entry in snapshot diff */
+export interface DiffEntry {
+  path: string;
+  sizeA: number | null; // size in snapshot A (null if added)
+  sizeB: number | null; // size in snapshot B (null if deleted)
+}
+
+/** TIM-221: Summary statistics for snapshot diff */
+export interface DiffSummary {
+  totalAdded: number;
+  totalDeleted: number;
+  totalModified: number;
+  sizeDelta: number; // positive = grew, negative = shrunk
+}
+
+/** TIM-221: Complete snapshot diff result */
+export interface SnapshotDiff {
+  added: DiffEntry[];
+  deleted: DiffEntry[];
+  modified: DiffEntry[];
+  summary: DiffSummary;
+}
