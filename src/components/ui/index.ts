@@ -19,6 +19,11 @@ export { Select, type SelectVariant, type SelectSize, type SelectOption } from '
 export { FormField } from './FormField';
 export { Checkbox } from './Checkbox';
 export {
+  SegmentedControl,
+  type SegmentOption,
+  type SegmentedControlProps,
+} from './SegmentedControl';
+export {
   ExclusionPatternEditor,
   COMMON_PATTERNS,
   type ExclusionPatternEditorProps,

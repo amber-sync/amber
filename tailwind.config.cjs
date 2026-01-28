@@ -30,6 +30,9 @@ module.exports = {
           primary: 'var(--accent-primary)',
           secondary: 'var(--accent-secondary)',
           text: 'var(--accent-text)',
+          hover: 'var(--accent-hover)',
+          active: 'var(--accent-active)',
+          glow: 'var(--accent-glow)',
         },
         // Semantic colors
         success: {
@@ -260,6 +263,8 @@ module.exports = {
         'modal-sm': 'var(--modal-width-sm)',
         'modal-md': 'var(--modal-width-md)',
         'modal-lg': 'var(--modal-width-lg)',
+        'modal-xl': 'var(--modal-width-xl)',
+        'modal-2xl': 'var(--modal-width-2xl)',
       },
     },
   },

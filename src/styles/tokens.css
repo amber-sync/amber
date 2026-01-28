@@ -188,6 +188,12 @@
   --modal-width-sm: 400px;
   --modal-width-md: 560px;
   --modal-width-lg: 720px;
+  --modal-width-xl: 1024px;
+  --modal-width-2xl: 1280px;
+
+  /* Theme Preview Colors (for settings) */
+  --theme-preview-light: #ffffff;
+  --theme-preview-dark: #1f2937;
 }
 
 /* Dark mode shadow adjustments (neutral) */

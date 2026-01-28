@@ -308,3 +308,33 @@
   color: var(--text-tertiary);
   font-size: 0.875rem;
 }
+
+/* ============================================
+ * Section Dividers
+ * Consistent section separation patterns
+ * ============================================ */
+.section-divider {
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-base);
+}
+
+.section-divider-subtle {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-base);
+}
+
+/* ============================================
+ * Content Spacing Utilities
+ * Semantic spacing for consistent layouts
+ * ============================================ */
+.content-gap-sm {
+  gap: var(--space-3);
+}
+
+.content-gap-md {
+  gap: var(--space-4);
+}
+
+.content-gap-lg {
+  gap: var(--space-6);
+}

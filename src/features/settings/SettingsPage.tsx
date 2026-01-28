@@ -5,7 +5,7 @@ import { useSettings } from '../../context';
 import { api } from '../../api';
 import { logger } from '../../utils/logger';
 import { PageContainer } from '../../components/layout';
-import { Title, Body, Caption, StatusMessage } from '../../components/ui';
+import { Title, Body, Caption, StatusMessage, Button } from '../../components/ui';
 
 const APP_VERSION = '0.0.1-beta';
 
@@ -25,11 +25,12 @@ export const SettingsPage: React.FC = () => {
     {
       id: 'system',
       label: 'System',
-      color: 'linear-gradient(135deg, #ffffff 50%, #1f2937 50%)',
+      color:
+        'linear-gradient(135deg, var(--theme-preview-light) 50%, var(--theme-preview-dark) 50%)',
       description: 'Follow system',
     },
-    { id: 'light', label: 'Light', color: '#ffffff' },
-    { id: 'dark', label: 'Dark', color: '#1f2937' },
+    { id: 'light', label: 'Light', color: 'var(--theme-preview-light)' },
+    { id: 'dark', label: 'Dark', color: 'var(--theme-preview-dark)' },
   ];
 
   return (
@@ -57,10 +58,7 @@ export const SettingsPage: React.FC = () => {
                     className="w-full aspect-video rounded-lg shadow-sm border border-border-highlight"
                     style={{ background: t.color }}
                   />
-                  <Caption
-                    color={theme === t.id ? 'primary' : 'secondary'}
-                    className="font-weight-medium"
-                  >
+                  <Caption color={theme === t.id ? 'primary' : 'secondary'} className="font-medium">
                     {t.label}
                   </Caption>
                 </button>
@@ -120,7 +118,10 @@ export const SettingsPage: React.FC = () => {
               {/* Test Notification Button */}
               {notificationsEnabled && (
                 <div className="flex justify-end animate-fade-in">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<Icons.Bell size={16} />}
                     onClick={async () => {
                       if (Notification.permission !== 'granted') {
                         const permission = await Notification.requestPermission();
@@ -139,13 +140,9 @@ export const SettingsPage: React.FC = () => {
                         });
                       }
                     }}
-                    className="px-4 py-2 bg-accent-secondary/20 hover:bg-accent-secondary/30 rounded-lg transition-colors flex items-center gap-2"
                   >
-                    <Icons.Bell size={16} />
-                    <Body size="sm" weight="medium" className="text-accent-primary">
-                      Test Notification
-                    </Body>
-                  </button>
+                    Test Notification
+                  </Button>
                 </div>
               )}
             </div>
@@ -193,11 +190,9 @@ export const SettingsPage: React.FC = () => {
 
           <hr className="border-border-base" />
 
-          <button className="w-full py-2.5 rounded-xl bg-layer-2 hover:bg-layer-3 transition-colors border border-border-base">
-            <Body size="sm" weight="medium">
-              Check for Updates
-            </Body>
-          </button>
+          <Button variant="secondary" size="md" className="w-full">
+            Check for Updates
+          </Button>
 
           <div className="text-center pt-2">
             <Caption color="tertiary">© 2025 Florian P. Mahner</Caption>

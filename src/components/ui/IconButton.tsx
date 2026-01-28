@@ -26,8 +26,8 @@ const variantStyles: Record<IconButtonVariant, string> = {
     'active:bg-layer-2',
   danger:
     'bg-transparent text-text-tertiary ' +
-    'hover:bg-[var(--color-error-subtle)] hover:text-[var(--color-error)] ' +
-    'active:bg-[var(--color-error-subtle)] active:text-[var(--color-error)]',
+    'hover:bg-error-subtle hover:text-error ' +
+    'active:bg-error-subtle active:text-error',
   secondary:
     'bg-layer-2 text-text-secondary border border-border-base ' +
     'hover:bg-layer-3 hover:text-text-primary ' +

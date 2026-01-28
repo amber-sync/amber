@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { cn } from '../../utils';
+import { Title, Body } from '../ui';
 
 export type PageWidth = 'narrow' | 'default' | 'wide' | 'full';
 
@@ -124,8 +125,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         {leading}
         {title && (
           <div>
-            <h1 className="text-2xl font-bold text-text-primary font-display">{title}</h1>
-            {subtitle && <p className="text-sm text-text-secondary mt-0.5">{subtitle}</p>}
+            <Title level={1}>{title}</Title>
+            {subtitle && (
+              <Body size="sm" color="secondary" className="mt-0.5">
+                {subtitle}
+              </Body>
+            )}
           </div>
         )}
       </div>
@@ -162,9 +167,9 @@ export const PageSection: React.FC<PageSectionProps> = ({
       {(title || headerRight) && (
         <div className="flex items-center justify-between mb-3">
           {title && (
-            <h2 className="text-sm font-semibold text-text-tertiary uppercase tracking-wider font-display">
+            <Title level={4} color="tertiary" className="uppercase tracking-wider">
               {title}
-            </h2>
+            </Title>
           )}
           {headerRight}
         </div>

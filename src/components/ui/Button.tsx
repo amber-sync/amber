@@ -8,12 +8,13 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-accent-primary text-accent-text hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] focus:ring-accent-primary/30',
+          'bg-accent-primary text-accent-text hover:bg-accent-hover active:bg-accent-active focus:ring-accent-primary/30',
         secondary:
           'bg-layer-3 text-text-secondary border border-border-base hover:bg-layer-2 hover:border-border-highlight hover:text-text-primary active:bg-layer-3 focus:ring-accent-primary/30',
         ghost:
           'bg-transparent text-text-secondary hover:bg-layer-3 hover:text-text-primary active:bg-layer-2 focus:ring-accent-primary/30',
         danger: 'bg-error text-white hover:bg-error/90 active:bg-error/80 focus:ring-error/30',
+        text: 'bg-transparent text-text-secondary hover:text-text-primary active:text-text-primary focus:ring-accent-primary/30 p-0 h-auto',
       },
       size: {
         sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',

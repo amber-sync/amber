@@ -18,6 +18,9 @@ import {
   Body,
   Caption,
   FormLabel,
+  Button,
+  IconButton,
+  SegmentedControl,
 } from '../../components/ui';
 
 export interface JobEditorProps {
@@ -149,13 +152,9 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               </Caption>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="p-2 rounded-lg text-text-tertiary hover:text-text-secondary hover:bg-layer-2 transition-colors"
-          >
+          <IconButton label="Close" variant="ghost" size="md" onClick={onCancel}>
             <Icons.X size={22} />
-          </button>
+          </IconButton>
         </div>
 
         {/* Two Panel Content */}
@@ -187,32 +186,22 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <FormLabel className="mb-0">Destination</FormLabel>
-                  <div className="flex bg-layer-2 p-0.5 rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => setDestinationType(DestinationType.LOCAL)}
-                      className={`px-2.5 py-1 rounded-md text-caption-sm font-medium transition-all flex items-center gap-1 ${
-                        destinationType === DestinationType.LOCAL
-                          ? 'bg-layer-1 text-text-primary shadow-sm'
-                          : 'text-text-tertiary hover:text-text-secondary'
-                      }`}
-                    >
-                      <Icons.HardDrive size={12} />
-                      Local
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDestinationType(DestinationType.CLOUD)}
-                      className={`px-2.5 py-1 rounded-md text-caption-sm font-medium transition-all flex items-center gap-1 ${
-                        destinationType === DestinationType.CLOUD
-                          ? 'bg-layer-1 text-text-primary shadow-sm'
-                          : 'text-text-tertiary hover:text-text-secondary'
-                      }`}
-                    >
-                      <Icons.Cloud size={12} />
-                      Cloud
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    value={destinationType}
+                    onChange={setDestinationType}
+                    options={[
+                      {
+                        value: DestinationType.LOCAL,
+                        label: 'Local',
+                        icon: <Icons.HardDrive size={12} />,
+                      },
+                      {
+                        value: DestinationType.CLOUD,
+                        label: 'Cloud',
+                        icon: <Icons.Cloud size={12} />,
+                      },
+                    ]}
+                  />
                 </div>
 
                 {destinationType === DestinationType.LOCAL ? (
@@ -391,32 +380,24 @@ export const JobEditor: React.FC<JobEditorProps> = ({
         <div className="px-8 py-4 border-t border-border-base bg-layer-2 flex items-center justify-between">
           <div>
             {isEditing && onDelete && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="md"
                 onClick={onDelete}
-                className="px-4 py-2 rounded-xl text-button text-error hover:bg-error-subtle transition-colors flex items-center gap-2"
+                icon={<Icons.Trash2 size={16} />}
+                className="bg-transparent hover:bg-error-subtle text-error"
               >
-                <Icons.Trash2 size={16} />
                 Delete Job
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-5 py-2 rounded-xl text-button text-text-secondary hover:bg-layer-3 transition-colors"
-            >
+            <Button variant="ghost" size="md" onClick={onCancel}>
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={!canSave}
-              className="px-5 py-2 rounded-xl text-button text-white bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            </Button>
+            <Button variant="primary" size="md" onClick={onSave} disabled={!canSave}>
               {isEditing ? 'Save Changes' : 'Create Job'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
