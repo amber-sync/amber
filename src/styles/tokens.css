@@ -30,11 +30,10 @@
    * TYPOGRAPHY
    * ======================================== */
 
-  /* Font Families - Distinctive typography for warm industrial aesthetic */
+  /* Font Families */
   --font-display: 'Plus Jakarta Sans', sans-serif; /* Bold, characterful display font */
-  --font-body: 'DM Sans', sans-serif; /* Clean, legible body font */
-  --font-sans:
-    'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', sans-serif; /* Clean, modern body font */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace; /* Technical, for paths */
 
   /* Font Sizes */

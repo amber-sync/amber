@@ -25,7 +25,7 @@ tauri = { version = "2.9.4", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
 # MCP plugin for Claude Code integration (dev only)
-tauri-plugin-mcp = { path = "../../tauri-plugin-mcp", optional = true }
+# tauri-plugin-mcp = { path = "../../tauri-plugin-mcp", optional = true }
 thiserror = "1.0"
 tokio = { version = "1", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }
@@ -62,7 +62,7 @@ futures = "0.3"
 
 [features]
 default = []
-mcp = ["tauri-plugin-mcp"]
+# mcp = ["tauri-plugin-mcp"]
 
 [dev-dependencies]
 tempfile = "3"

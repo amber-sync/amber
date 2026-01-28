@@ -1,6 +1,6 @@
 /**
  * TIM-190: Unified Job Editor component
- * Consolidated from JobEditorTwoPanel - other variants removed
+ * TIM-217: Improved alignment and consistency
  */
 
 import React from 'react';
@@ -16,15 +16,14 @@ import {
   ScheduleSelector,
   Title,
   Body,
-  Caption,
   FormLabel,
   Button,
   IconButton,
   SegmentedControl,
+  Card,
 } from '../../components/ui';
 
 export interface JobEditorProps {
-  // Form state
   jobName: string;
   jobSource: string;
   jobDest: string;
@@ -42,8 +41,6 @@ export interface JobEditorProps {
   sshConfigPath: string;
   sshProxyJump: string;
   sshCustomOptions: string;
-
-  // State setters
   setJobName: (val: string) => void;
   setJobSource: (val: string) => void;
   setJobDest: (val: string) => void;
@@ -60,37 +57,18 @@ export interface JobEditorProps {
   setSshConfigPath: (val: string) => void;
   setSshProxyJump: (val: string) => void;
   setSshCustomOptions: (val: string) => void;
-
-  // Handlers
   onSave: () => void;
   onCancel: () => void;
   onDelete?: () => void;
   onSelectDirectory: (target: 'SOURCE' | 'DEST') => void;
   onJobModeChange: (mode: SyncMode) => void;
-
-  // Other props
   isEditing: boolean;
 }
 
 const SYNC_MODES = [
-  {
-    mode: SyncMode.TIME_MACHINE,
-    label: 'Time Machine',
-    description: 'Incremental',
-    icon: <Icons.Clock size={18} />,
-  },
-  {
-    mode: SyncMode.MIRROR,
-    label: 'Mirror',
-    description: 'Exact replica',
-    icon: <Icons.Copy size={18} />,
-  },
-  {
-    mode: SyncMode.ARCHIVE,
-    label: 'Archive',
-    description: 'Copy only',
-    icon: <Icons.Archive size={18} />,
-  },
+  { mode: SyncMode.TIME_MACHINE, label: 'Time Machine', icon: <Icons.Clock size={16} /> },
+  { mode: SyncMode.MIRROR, label: 'Mirror', icon: <Icons.Copy size={16} /> },
+  { mode: SyncMode.ARCHIVE, label: 'Archive', icon: <Icons.Archive size={16} /> },
 ];
 
 export const JobEditor: React.FC<JobEditorProps> = ({
@@ -140,16 +118,16 @@ export const JobEditor: React.FC<JobEditorProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-app/80 backdrop-blur-md animate-fade-in">
       <div className="bg-layer-1 w-full max-w-5xl max-h-[90vh] rounded-3xl shadow-float border border-border-base flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-8 py-5 border-b border-border-base flex items-center justify-between bg-gradient-surface">
+        <div className="px-8 py-5 border-b border-border-base flex items-center justify-between bg-gradient-surface shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
               <Icons.FolderSync size={20} className="text-white" />
             </div>
             <div>
               <Title level={2}>{isEditing ? 'Edit Backup Job' : 'New Backup Job'}</Title>
-              <Caption size="sm" color="secondary">
+              <Body size="sm" color="secondary">
                 {jobName || 'Configure your backup settings'}
-              </Caption>
+              </Body>
             </div>
           </div>
           <IconButton label="Close" variant="ghost" size="md" onClick={onCancel}>
@@ -157,11 +135,11 @@ export const JobEditor: React.FC<JobEditorProps> = ({
           </IconButton>
         </div>
 
-        {/* Two Panel Content */}
-        <div className="flex-1 overflow-hidden flex">
-          {/* Left Panel - Essential */}
+        {/* Two Panel Content - Both scroll independently */}
+        <div className="flex-1 overflow-hidden flex min-h-0">
+          {/* Left Panel - Essential Settings */}
           <div className="w-1/2 p-6 overflow-y-auto border-r border-border-base">
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Job Name */}
               <div>
                 <FormLabel>Job Name</FormLabel>
@@ -169,18 +147,20 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                   value={jobName}
                   onChange={e => setJobName(e.target.value)}
                   placeholder="e.g. Daily Documents Backup"
-                  icon={<Icons.Tag size={18} />}
+                  icon={<Icons.Tag size={16} />}
                 />
               </div>
 
-              {/* Source Path */}
-              <PathInput
-                label="Source"
-                value={jobSource}
-                onChange={setJobSource}
-                onBrowse={() => onSelectDirectory('SOURCE')}
-                placeholder="/Users/me/Documents"
-              />
+              {/* Source */}
+              <div>
+                <FormLabel>Source Folder</FormLabel>
+                <PathInput
+                  value={jobSource}
+                  onChange={setJobSource}
+                  onBrowse={() => onSelectDirectory('SOURCE')}
+                  placeholder="/Users/me/Documents"
+                />
+              </div>
 
               {/* Destination */}
               <div>
@@ -203,7 +183,6 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                     ]}
                   />
                 </div>
-
                 {destinationType === DestinationType.LOCAL ? (
                   <PathInput
                     value={jobDest}
@@ -214,31 +193,41 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                 ) : (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
-                      <TextInput
-                        value={cloudRemoteName}
-                        onChange={e => setCloudRemoteName(e.target.value)}
-                        placeholder="Remote (e.g. myS3)"
-                        icon={<Icons.Cloud size={18} />}
-                      />
-                      <TextInput
-                        value={cloudRemotePath}
-                        onChange={e => setCloudRemotePath(e.target.value)}
-                        placeholder="/backup/path"
-                      />
+                      <div>
+                        <FormLabel size="sm">Remote Name</FormLabel>
+                        <TextInput
+                          value={cloudRemoteName}
+                          onChange={e => setCloudRemoteName(e.target.value)}
+                          placeholder="e.g. myS3"
+                          icon={<Icons.Cloud size={16} />}
+                        />
+                      </div>
+                      <div>
+                        <FormLabel size="sm">Remote Path</FormLabel>
+                        <TextInput
+                          value={cloudRemotePath}
+                          onChange={e => setCloudRemotePath(e.target.value)}
+                          placeholder="/backup/path"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Toggle
-                        checked={cloudEncrypt}
-                        onChange={setCloudEncrypt}
-                        label="Encrypt"
-                        size="sm"
-                      />
-                      <TextInput
-                        value={cloudBandwidth}
-                        onChange={e => setCloudBandwidth(e.target.value)}
-                        placeholder="Bandwidth (e.g. 10M)"
-                        className="flex-1"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <FormLabel size="sm">Bandwidth Limit</FormLabel>
+                        <TextInput
+                          value={cloudBandwidth}
+                          onChange={e => setCloudBandwidth(e.target.value)}
+                          placeholder="e.g. 10M"
+                        />
+                      </div>
+                      <div className="flex items-end pb-1">
+                        <Toggle
+                          checked={cloudEncrypt}
+                          onChange={setCloudEncrypt}
+                          label="Encrypt transfers"
+                          size="sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -248,18 +237,19 @@ export const JobEditor: React.FC<JobEditorProps> = ({
               <div>
                 <FormLabel>Sync Mode</FormLabel>
                 <div className="grid grid-cols-3 gap-2">
-                  {SYNC_MODES.map(({ mode, label, description, icon }) => (
-                    <button
+                  {SYNC_MODES.map(({ mode, label, icon }) => (
+                    <Card
                       key={mode}
-                      type="button"
-                      onClick={() => onJobModeChange(mode)}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      variant={jobMode === mode ? 'elevated' : 'outlined'}
+                      padding="sm"
+                      className={`cursor-pointer transition-all ${
                         jobMode === mode
-                          ? 'border-accent-primary bg-accent-secondary/20'
-                          : 'border-border-base hover:border-border-highlight bg-layer-2'
+                          ? 'ring-2 ring-accent-primary bg-accent-primary/5'
+                          : 'hover:bg-layer-2'
                       }`}
+                      onClick={() => onJobModeChange(mode)}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2">
                         <span
                           className={
                             jobMode === mode ? 'text-accent-primary' : 'text-text-tertiary'
@@ -267,23 +257,20 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                         >
                           {icon}
                         </span>
-                        <Body size="sm" weight="medium" as="span">
+                        <Body size="sm" weight="medium">
                           {label}
                         </Body>
                       </div>
-                      <Caption size="sm" color="tertiary" as="span">
-                        {description}
-                      </Caption>
-                    </button>
+                    </Card>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Panel - Advanced */}
+          {/* Right Panel - Advanced Settings */}
           <div className="w-1/2 p-6 overflow-y-auto bg-layer-2/30">
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Schedule */}
               <div>
                 <FormLabel>Schedule</FormLabel>
@@ -292,7 +279,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
               {/* Exclusions */}
               <div>
-                <FormLabel>Exclusions</FormLabel>
+                <FormLabel>Exclusion Patterns</FormLabel>
                 <ExclusionPatternEditor
                   patterns={jobConfig.excludePatterns}
                   onChange={patterns =>
@@ -304,88 +291,108 @@ export const JobEditor: React.FC<JobEditorProps> = ({
 
               {/* Options */}
               <div>
-                <FormLabel>Options</FormLabel>
-                <div className="space-y-3">
-                  <Toggle
-                    checked={jobConfig.compress}
-                    onChange={checked => setJobConfig(prev => ({ ...prev, compress: checked }))}
-                    label="Compression"
-                    description="Reduce transfer size"
-                  />
-                  <Toggle
-                    checked={jobConfig.verbose}
-                    onChange={checked => setJobConfig(prev => ({ ...prev, verbose: checked }))}
-                    label="Verbose logging"
-                    description="Detailed output"
-                  />
-                </div>
-              </div>
-
-              {/* SSH */}
-              <GlassPanel
-                variant="subtle"
-                padding="sm"
-                className={sshEnabled ? 'ring-1 ring-accent-primary' : ''}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Icons.Server size={18} className="text-text-tertiary" />
-                    <Body size="sm" weight="medium" as="span">
-                      SSH Connection
-                    </Body>
-                  </div>
-                  <Toggle checked={sshEnabled} onChange={setSshEnabled} size="sm" />
-                </div>
-
-                {sshEnabled && (
-                  <div className="space-y-3 pt-3 border-t border-border-base animate-fade-in">
-                    <div className="grid grid-cols-2 gap-3">
-                      <TextInput
-                        value={sshPort}
-                        onChange={e => setSshPort(e.target.value)}
-                        placeholder="Port (22)"
-                      />
-                      <TextInput
-                        value={sshKeyPath}
-                        onChange={e => setSshKeyPath(e.target.value)}
-                        placeholder="Key path"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <TextInput
-                        value={sshConfigPath}
-                        onChange={e => setSshConfigPath(e.target.value)}
-                        placeholder="SSH config"
-                      />
-                      <TextInput
-                        value={sshProxyJump}
-                        onChange={e => setSshProxyJump(e.target.value)}
-                        placeholder="Proxy jump"
-                      />
-                    </div>
-                    <TextInput
-                      value={sshCustomOptions}
-                      onChange={e => setSshCustomOptions(e.target.value)}
-                      placeholder="Custom SSH options"
-                      variant="mono"
+                <FormLabel>Transfer Options</FormLabel>
+                <Card variant="outlined" padding="md">
+                  <div className="space-y-3">
+                    <Toggle
+                      checked={jobConfig.compress}
+                      onChange={checked => setJobConfig(prev => ({ ...prev, compress: checked }))}
+                      label="Enable compression"
+                      description="Reduce transfer size over network"
+                    />
+                    <Toggle
+                      checked={jobConfig.verbose}
+                      onChange={checked => setJobConfig(prev => ({ ...prev, verbose: checked }))}
+                      label="Verbose logging"
+                      description="Show detailed transfer output"
                     />
                   </div>
-                )}
-              </GlassPanel>
+                </Card>
+              </div>
+
+              {/* SSH Connection */}
+              <div>
+                <FormLabel>SSH Connection</FormLabel>
+                <Card
+                  variant="outlined"
+                  padding="md"
+                  className={sshEnabled ? 'ring-1 ring-accent-primary' : ''}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icons.Server size={16} className="text-text-tertiary" />
+                      <Body size="sm" weight="medium">
+                        Use SSH tunnel
+                      </Body>
+                    </div>
+                    <Toggle checked={sshEnabled} onChange={setSshEnabled} size="sm" />
+                  </div>
+
+                  {sshEnabled && (
+                    <div className="mt-4 pt-4 border-t border-border-base space-y-3 animate-fade-in">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <FormLabel size="sm">Port</FormLabel>
+                          <TextInput
+                            value={sshPort}
+                            onChange={e => setSshPort(e.target.value)}
+                            placeholder="22"
+                          />
+                        </div>
+                        <div>
+                          <FormLabel size="sm">Identity File</FormLabel>
+                          <TextInput
+                            value={sshKeyPath}
+                            onChange={e => setSshKeyPath(e.target.value)}
+                            placeholder="~/.ssh/id_rsa"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <FormLabel size="sm">Config File</FormLabel>
+                          <TextInput
+                            value={sshConfigPath}
+                            onChange={e => setSshConfigPath(e.target.value)}
+                            placeholder="~/.ssh/config"
+                          />
+                        </div>
+                        <div>
+                          <FormLabel size="sm">Proxy Jump</FormLabel>
+                          <TextInput
+                            value={sshProxyJump}
+                            onChange={e => setSshProxyJump(e.target.value)}
+                            placeholder="bastion.example.com"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <FormLabel size="sm">Custom Options</FormLabel>
+                        <TextInput
+                          value={sshCustomOptions}
+                          onChange={e => setSshCustomOptions(e.target.value)}
+                          placeholder="-o StrictHostKeyChecking=no"
+                          variant="mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-4 border-t border-border-base bg-layer-2 flex items-center justify-between">
+        <div className="px-8 py-4 border-t border-border-base bg-layer-2 flex items-center justify-between shrink-0">
           <div>
             {isEditing && onDelete && (
               <Button
-                variant="danger"
+                variant="ghost"
                 size="md"
                 onClick={onDelete}
                 icon={<Icons.Trash2 size={16} />}
-                className="bg-transparent hover:bg-error-subtle text-error"
+                className="text-error hover:bg-error-subtle"
               >
                 Delete Job
               </Button>

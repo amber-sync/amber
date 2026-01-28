@@ -67,6 +67,7 @@ import {
   HelpCircle,
   Palette,
   Edit,
+  Monitor,
 } from 'lucide-react';
 
 export const Icons = {
@@ -138,4 +139,5 @@ export const Icons = {
   HelpCircle,
   Palette,
   Edit,
+  Monitor,
 };
