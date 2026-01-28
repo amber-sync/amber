@@ -1,10 +1,11 @@
 /**
  * TIM-190: Unified Job Editor component
  * TIM-217: Improved alignment and consistency
+ * TIM-218: Simplified props using form object
  */
 
 import React from 'react';
-import { SyncMode, RsyncConfig, DestinationType } from '../../types';
+import { SyncMode, DestinationType } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import {
   TextInput,
@@ -21,46 +22,15 @@ import {
   SegmentedControl,
   Card,
 } from '../../components/ui';
+import { UseJobFormReturn } from '../../hooks/useJobForm';
 
 export interface JobEditorProps {
-  jobName: string;
-  jobSource: string;
-  jobDest: string;
-  jobMode: SyncMode;
-  jobSchedule: number | null;
-  jobConfig: RsyncConfig;
-  destinationType: DestinationType;
-  cloudRemoteName: string;
-  cloudRemotePath: string;
-  cloudEncrypt: boolean;
-  cloudBandwidth: string;
-  sshEnabled: boolean;
-  sshPort: string;
-  sshKeyPath: string;
-  sshConfigPath: string;
-  sshProxyJump: string;
-  sshCustomOptions: string;
-  setJobName: (val: string) => void;
-  setJobSource: (val: string) => void;
-  setJobDest: (val: string) => void;
-  setJobSchedule: (val: number | null) => void;
-  setJobConfig: (val: RsyncConfig | ((prev: RsyncConfig) => RsyncConfig)) => void;
-  setDestinationType: (val: DestinationType) => void;
-  setCloudRemoteName: (val: string) => void;
-  setCloudRemotePath: (val: string) => void;
-  setCloudEncrypt: (val: boolean) => void;
-  setCloudBandwidth: (val: string) => void;
-  setSshEnabled: (val: boolean) => void;
-  setSshPort: (val: string) => void;
-  setSshKeyPath: (val: string) => void;
-  setSshConfigPath: (val: string) => void;
-  setSshProxyJump: (val: string) => void;
-  setSshCustomOptions: (val: string) => void;
+  /** Form state and actions from useJobForm hook */
+  form: UseJobFormReturn;
   onSave: () => void;
   onCancel: () => void;
   onDelete?: () => void;
   onSelectDirectory: (target: 'SOURCE' | 'DEST') => void;
-  onJobModeChange: (mode: SyncMode) => void;
   isEditing: boolean;
 }
 
@@ -71,46 +41,50 @@ const SYNC_MODES = [
 ];
 
 export const JobEditor: React.FC<JobEditorProps> = ({
-  jobName,
-  jobSource,
-  jobDest,
-  jobMode,
-  jobSchedule,
-  jobConfig,
-  destinationType,
-  cloudRemoteName,
-  cloudRemotePath,
-  cloudEncrypt,
-  cloudBandwidth,
-  sshEnabled,
-  sshPort,
-  sshKeyPath,
-  sshConfigPath,
-  sshProxyJump,
-  sshCustomOptions,
-  setJobName,
-  setJobSource,
-  setJobDest,
-  setJobSchedule,
-  setJobConfig,
-  setDestinationType,
-  setCloudRemoteName,
-  setCloudRemotePath,
-  setCloudEncrypt,
-  setCloudBandwidth,
-  setSshEnabled,
-  setSshPort,
-  setSshKeyPath,
-  setSshConfigPath,
-  setSshProxyJump,
-  setSshCustomOptions,
+  form,
   onSave,
   onCancel,
   onDelete,
   onSelectDirectory,
-  onJobModeChange,
   isEditing,
 }) => {
+  // Destructure form state and actions
+  const {
+    jobName,
+    jobSource,
+    jobDest,
+    jobMode,
+    jobSchedule,
+    jobConfig,
+    destinationType,
+    cloudRemoteName,
+    cloudRemotePath,
+    cloudEncrypt,
+    cloudBandwidth,
+    sshEnabled,
+    sshPort,
+    sshKeyPath,
+    sshConfigPath,
+    sshProxyJump,
+    sshCustomOptions,
+    setJobName,
+    setJobSource,
+    setJobDest,
+    setJobSchedule,
+    setJobConfig,
+    setDestinationType,
+    setCloudRemoteName,
+    setCloudRemotePath,
+    setCloudEncrypt,
+    setCloudBandwidth,
+    setSshEnabled,
+    setSshPort,
+    setSshKeyPath,
+    setSshConfigPath,
+    setSshProxyJump,
+    setSshCustomOptions,
+    handleJobModeChange,
+  } = form;
   const canSave = !!jobName.trim() && !!jobSource.trim() && !!jobDest.trim();
 
   return (
@@ -246,7 +220,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                           ? 'ring-2 ring-accent-primary bg-accent-primary/5'
                           : 'hover:bg-layer-2'
                       }`}
-                      onClick={() => onJobModeChange(mode)}
+                      onClick={() => handleJobModeChange(mode)}
                     >
                       <div className="flex items-center gap-2">
                         <span

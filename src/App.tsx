@@ -444,39 +444,7 @@ function AppContent() {
 
         {view === 'JOB_EDITOR' && (
           <JobEditor
-            jobName={jobForm.jobName}
-            jobSource={jobForm.jobSource}
-            jobDest={jobForm.jobDest}
-            jobMode={jobForm.jobMode}
-            jobSchedule={jobForm.jobSchedule}
-            jobConfig={jobForm.jobConfig}
-            destinationType={jobForm.destinationType}
-            cloudRemoteName={jobForm.cloudRemoteName}
-            cloudRemotePath={jobForm.cloudRemotePath}
-            cloudEncrypt={jobForm.cloudEncrypt}
-            cloudBandwidth={jobForm.cloudBandwidth}
-            sshEnabled={jobForm.sshEnabled}
-            sshPort={jobForm.sshPort}
-            sshKeyPath={jobForm.sshKeyPath}
-            sshConfigPath={jobForm.sshConfigPath}
-            sshProxyJump={jobForm.sshProxyJump}
-            sshCustomOptions={jobForm.sshCustomOptions}
-            setJobName={jobForm.setJobName}
-            setJobSource={jobForm.setJobSource}
-            setJobDest={jobForm.setJobDest}
-            setJobSchedule={jobForm.setJobSchedule}
-            setJobConfig={jobForm.setJobConfig}
-            setDestinationType={jobForm.setDestinationType}
-            setCloudRemoteName={jobForm.setCloudRemoteName}
-            setCloudRemotePath={jobForm.setCloudRemotePath}
-            setCloudEncrypt={jobForm.setCloudEncrypt}
-            setCloudBandwidth={jobForm.setCloudBandwidth}
-            setSshEnabled={jobForm.setSshEnabled}
-            setSshPort={jobForm.setSshPort}
-            setSshKeyPath={jobForm.setSshKeyPath}
-            setSshConfigPath={jobForm.setSshConfigPath}
-            setSshProxyJump={jobForm.setSshProxyJump}
-            setSshCustomOptions={jobForm.setSshCustomOptions}
+            form={jobForm}
             onSave={handleSaveJob}
             onCancel={() => {
               // TIM-211/212: Use tracked source view for proper return navigation
@@ -494,7 +462,6 @@ function AppContent() {
             }}
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
-            onJobModeChange={jobForm.handleJobModeChange}
             isEditing={Boolean(activeJobId)}
           />
         )}
