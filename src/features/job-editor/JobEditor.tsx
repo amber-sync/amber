@@ -32,6 +32,8 @@ export interface JobEditorProps {
   onDelete?: () => void;
   onSelectDirectory: (target: 'SOURCE' | 'DEST') => void;
   isEditing: boolean;
+  /** Shows loading state on save button */
+  isSaving?: boolean;
 }
 
 const SYNC_MODES = [
@@ -47,6 +49,7 @@ export const JobEditor: React.FC<JobEditorProps> = ({
   onDelete,
   onSelectDirectory,
   isEditing,
+  isSaving = false,
 }) => {
   // Destructure form state and actions
   const {
@@ -372,10 +375,16 @@ export const JobEditor: React.FC<JobEditorProps> = ({
             )}
           </div>
           <div className="flex gap-3">
-            <Button variant="ghost" size="md" onClick={onCancel}>
+            <Button variant="ghost" size="md" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="primary" size="md" onClick={onSave} disabled={!canSave}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={onSave}
+              disabled={!canSave || isSaving}
+              loading={isSaving}
+            >
               {isEditing ? 'Save Changes' : 'Create Job'}
             </Button>
           </div>

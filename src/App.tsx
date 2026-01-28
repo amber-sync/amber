@@ -44,6 +44,10 @@ function AppContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
+  // Loading states for async operations
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // TIM-141: Track source view for proper navigation after job save
   const [jobEditorSourceView, setJobEditorSourceView] = useState<string | null>(null);
   const [previousView, setPreviousView] = useState<string | null>(null);
@@ -172,79 +176,84 @@ function AppContent() {
     setView('JOB_EDITOR');
   };
 
-  const handleSaveJob = () => {
-    const sshConfig = jobForm.getSshConfig();
-    const jobConfig = jobForm.getJobConfig();
+  const handleSaveJob = async () => {
+    setIsSaving(true);
+    try {
+      const sshConfig = jobForm.getSshConfig();
+      const jobConfig = jobForm.getJobConfig();
 
-    const getCronFromInterval = (interval: number | null): string | undefined => {
-      if (!interval || interval === -1) return undefined;
-      if (interval === 5) return '*/5 * * * *';
-      if (interval === 60) return '0 * * * *';
-      if (interval === 1440) return '0 15 * * *';
-      if (interval === 10080) return '0 0 * * 0';
-      return undefined;
-    };
+      const getCronFromInterval = (interval: number | null): string | undefined => {
+        if (!interval || interval === -1) return undefined;
+        if (interval === 5) return '*/5 * * * *';
+        if (interval === 60) return '0 * * * *';
+        if (interval === 1440) return '0 15 * * *';
+        if (interval === 10080) return '0 0 * * 0';
+        return undefined;
+      };
 
-    const scheduleConfig = jobForm.jobSchedule
-      ? {
-          enabled: true,
-          cron: getCronFromInterval(jobForm.jobSchedule),
-          runOnMount: jobForm.jobSchedule === -1 || true,
+      const scheduleConfig = jobForm.jobSchedule
+        ? {
+            enabled: true,
+            cron: getCronFromInterval(jobForm.jobSchedule),
+            runOnMount: jobForm.jobSchedule === -1 || true,
+          }
+        : { enabled: false };
+
+      // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
+      type ViewType =
+        | 'DASHBOARD'
+        | 'TIME_MACHINE'
+        | 'JOB_EDITOR'
+        | 'APP_SETTINGS'
+        | 'HELP'
+        | 'RESTORE_WIZARD';
+      const returnView = (jobEditorSourceView ||
+        (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
+
+      if (activeJobId) {
+        const job = jobs.find(j => j.id === activeJobId);
+        if (job) {
+          const updatedJob = {
+            ...job,
+            name: jobForm.jobName,
+            sourcePath: jobForm.jobSource,
+            destPath: jobForm.jobDest,
+            mode: jobForm.jobMode,
+            scheduleInterval: jobForm.jobSchedule,
+            schedule: scheduleConfig,
+            config: jobConfig,
+            sshConfig,
+          };
+          setJobs(prev => prev.map(j => (j.id === activeJobId ? updatedJob : j)));
+          await persistJob(updatedJob);
+          setView(returnView);
         }
-      : { enabled: false };
-
-    // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
-    type ViewType =
-      | 'DASHBOARD'
-      | 'TIME_MACHINE'
-      | 'JOB_EDITOR'
-      | 'APP_SETTINGS'
-      | 'HELP'
-      | 'RESTORE_WIZARD';
-    const returnView = (jobEditorSourceView ||
-      (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
-
-    if (activeJobId) {
-      const job = jobs.find(j => j.id === activeJobId);
-      if (job) {
-        const updatedJob = {
-          ...job,
-          name: jobForm.jobName,
+      } else {
+        const job: SyncJob = {
+          id: generateUniqueId('job'),
+          name: jobForm.jobName || 'Untitled Job',
           sourcePath: jobForm.jobSource,
           destPath: jobForm.jobDest,
           mode: jobForm.jobMode,
+          destinationType: DestinationType.LOCAL, // Default to local, can be changed to cloud later
           scheduleInterval: jobForm.jobSchedule,
           schedule: scheduleConfig,
           config: jobConfig,
           sshConfig,
+          lastRun: null,
+          status: JobStatus.IDLE,
+          snapshots: [],
         };
-        setJobs(prev => prev.map(j => (j.id === activeJobId ? updatedJob : j)));
-        persistJob(updatedJob);
+        setJobs(prev => [...prev, job]);
+        setActiveJobId(job.id);
+        await persistJob(job);
         setView(returnView);
       }
-    } else {
-      const job: SyncJob = {
-        id: generateUniqueId('job'),
-        name: jobForm.jobName || 'Untitled Job',
-        sourcePath: jobForm.jobSource,
-        destPath: jobForm.jobDest,
-        mode: jobForm.jobMode,
-        destinationType: DestinationType.LOCAL, // Default to local, can be changed to cloud later
-        scheduleInterval: jobForm.jobSchedule,
-        schedule: scheduleConfig,
-        config: jobConfig,
-        sshConfig,
-        lastRun: null,
-        status: JobStatus.IDLE,
-        snapshots: [],
-      };
-      setJobs(prev => [...prev, job]);
-      setActiveJobId(job.id);
-      persistJob(job);
-      setView(returnView);
+      jobForm.resetForm();
+      setJobEditorSourceView(null);
+    } finally {
+      setIsSaving(false);
     }
-    jobForm.resetForm();
-    setJobEditorSourceView(null);
   };
 
   const promptDelete = (id: string) => {
@@ -252,16 +261,21 @@ function AppContent() {
     setShowDeleteConfirm(true);
   };
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (jobToDelete) {
-      setJobs(prev => prev.filter(j => j.id !== jobToDelete));
-      deleteJob(jobToDelete);
-      if (activeJobId === jobToDelete) {
-        setActiveJobId(null);
-        setView('DASHBOARD');
+      setIsDeleting(true);
+      try {
+        setJobs(prev => prev.filter(j => j.id !== jobToDelete));
+        await deleteJob(jobToDelete);
+        if (activeJobId === jobToDelete) {
+          setActiveJobId(null);
+          setView('DASHBOARD');
+        }
+        setShowDeleteConfirm(false);
+        setJobToDelete(null);
+      } finally {
+        setIsDeleting(false);
       }
-      setShowDeleteConfirm(false);
-      setJobToDelete(null);
     }
   };
 
@@ -377,6 +391,7 @@ function AppContent() {
           setJobToDelete(null);
         }}
         onConfirm={executeDelete}
+        isDeleting={isDeleting}
       />
 
       {isTopLevel && <Sidebar activeView={view} onNavigate={setView} />}
@@ -463,6 +478,7 @@ function AppContent() {
             onDelete={activeJobId ? () => promptDelete(activeJobId) : undefined}
             onSelectDirectory={handleSelectDirectory}
             isEditing={Boolean(activeJobId)}
+            isSaving={isSaving}
           />
         )}
       </main>

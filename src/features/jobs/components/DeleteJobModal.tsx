@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Icons } from '@/components/IconComponents';
-import { Card } from '@/components/ui';
+import { Card, Button } from '@/components/ui';
 import { Title, Body, Caption } from '@/components/ui';
 import { formatBytes } from '@/utils/formatters';
 
@@ -14,6 +14,8 @@ interface DeleteJobModalProps {
   onCancel: () => void;
   /** Called with deleteData flag indicating whether to also delete backup data */
   onConfirm: (deleteData: boolean) => void;
+  /** Shows loading state on delete button */
+  isDeleting?: boolean;
 }
 
 export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
@@ -23,6 +25,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
   mounted = true,
   onCancel,
   onConfirm,
+  isDeleting = false,
 }) => {
   const [deleteData, setDeleteData] = useState(false);
 
@@ -105,18 +108,25 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
           )}
 
           <div className="flex gap-3 w-full">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handleCancel}
-              className="flex-1 px-4 py-2 rounded-xl font-medium text-text-primary bg-layer-2 hover:bg-layer-3 transition-colors"
+              disabled={isDeleting}
+              className="flex-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
               onClick={handleConfirm}
-              className="flex-1 px-4 py-2 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/30 transition-colors"
+              disabled={isDeleting}
+              loading={isDeleting}
+              className="flex-1"
             >
               {deleteData && mounted ? 'Delete All' : 'Delete Job'}
-            </button>
+            </Button>
           </div>
         </div>
       </Card>
