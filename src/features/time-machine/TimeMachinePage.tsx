@@ -28,6 +28,10 @@ import { RestoreOverlay } from './components/RestoreOverlay';
 import { AnalyticsOverlay } from './components/AnalyticsOverlay';
 import { TerminalOverlay } from './components/TerminalOverlay';
 import { EmptyState } from './components/EmptyState';
+import { DiffTree } from './components/DiffTree';
+
+// Hooks
+import { useSnapshotDiff } from './hooks/useSnapshotDiff';
 import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
 import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
 import { PageContainer } from '../../components/layout';
@@ -142,6 +146,13 @@ export function TimeMachinePage({
   // Comparison state (TIM-150)
   const [compareMode, setCompareMode] = useState(false);
   const [compareSnapshot, setCompareSnapshot] = useState<TimeMachineSnapshot | null>(null);
+
+  // TIM-221: Snapshot comparison
+  const {
+    diff,
+    isLoading: isDiffLoading,
+    error: diffError,
+  } = useSnapshotDiff(currentJobId, selectedSnapshot, compareSnapshot);
 
   // Sync snapshots from in-memory job data (instant, no loading state)
   useEffect(() => {
@@ -689,9 +700,22 @@ export function TimeMachinePage({
                   </div>
                 </div>
 
-                <Caption color="tertiary" className="mt-4 pt-4 border-t border-border-base block">
-                  Detailed file-by-file comparison coming soon...
-                </Caption>
+                {/* TIM-221: Detailed file diff */}
+                <div className="mt-4 pt-4 border-t border-border-base">
+                  {isDiffLoading && (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="w-5 h-5 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {diffError && (
+                    <Caption color="tertiary" className="text-center py-4">
+                      {diffError}
+                    </Caption>
+                  )}
+                  {diff && !isDiffLoading && (
+                    <DiffTree added={diff.added} deleted={diff.deleted} modified={diff.modified} />
+                  )}
+                </div>
               </div>
             )}
           </div>
