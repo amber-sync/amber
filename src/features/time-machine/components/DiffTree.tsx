@@ -156,7 +156,7 @@ function FolderGroup({
   type: DiffType;
   onFileClick?: (path: string) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div>
