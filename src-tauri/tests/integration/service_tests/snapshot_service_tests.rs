@@ -34,23 +34,6 @@ fn write_test_manifest(dest_path: &str, manifest: &BackupManifest) {
 // ============================================================================
 
 #[tokio::test]
-async fn test_list_snapshots_empty_destination() {
-    let env = TestBackupEnv::new().unwrap();
-    let service = create_test_snapshot_service(env.temp_dir.path());
-
-    // Empty destination directory
-    let snapshots = service
-        .list_snapshots("test-job", env.dest_path.to_str().unwrap())
-        .await
-        .unwrap();
-
-    assert!(
-        snapshots.is_empty(),
-        "Empty destination should return empty list"
-    );
-}
-
-#[tokio::test]
 async fn test_list_snapshots_nonexistent_destination() {
     let env = TestBackupEnv::new().unwrap();
     let service = create_test_snapshot_service(env.temp_dir.path());

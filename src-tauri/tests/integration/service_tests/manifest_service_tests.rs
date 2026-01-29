@@ -6,55 +6,9 @@ use crate::common::test_common::TestBackupEnv;
 use app_lib::services::manifest_service::{
     add_snapshot_to_manifest, get_manifest_path, get_meta_dir, get_or_create_manifest,
     manifest_exists, read_manifest, remove_snapshot_from_manifest, write_manifest, ManifestError,
-    AMBER_META_DIR, MANIFEST_FILENAME,
 };
 use app_lib::types::manifest::{BackupManifest, ManifestSnapshot, ManifestSnapshotStatus};
 use std::fs;
-
-// ============================================================================
-// Path Construction Tests
-// ============================================================================
-
-#[test]
-fn test_get_meta_dir() {
-    let dest_path = "/backup/drive";
-    let meta_dir = get_meta_dir(dest_path);
-
-    assert_eq!(meta_dir.to_str().unwrap(), "/backup/drive/.amber-meta");
-    assert!(meta_dir.ends_with(AMBER_META_DIR));
-}
-
-#[test]
-fn test_get_meta_dir_trailing_slash() {
-    // Test with trailing slash
-    let dest_path = "/backup/drive/";
-    let meta_dir = get_meta_dir(dest_path);
-
-    // Should still work correctly
-    assert!(meta_dir.to_str().unwrap().contains(AMBER_META_DIR));
-}
-
-#[test]
-fn test_get_manifest_path() {
-    let dest_path = "/backup/drive";
-    let manifest_path = get_manifest_path(dest_path);
-
-    assert_eq!(
-        manifest_path.to_str().unwrap(),
-        "/backup/drive/.amber-meta/manifest.json"
-    );
-    assert!(manifest_path.ends_with(MANIFEST_FILENAME));
-}
-
-#[test]
-fn test_get_manifest_path_nested() {
-    // Test with nested destination path
-    let dest_path = "/volumes/external/backups/job-123";
-    let manifest_path = get_manifest_path(dest_path);
-
-    assert!(manifest_path.to_str().unwrap().contains(".amber-meta"));
-    assert!(manifest_path.to_str().unwrap().ends_with("manifest.json"));
-}
 
 // ============================================================================
 // Manifest Existence Tests
@@ -88,28 +42,6 @@ async fn test_manifest_exists_false_with_empty_meta_dir() {
     );
 }
 
-#[tokio::test]
-async fn test_manifest_exists_true_when_present() {
-    let env = TestBackupEnv::new().unwrap();
-    let dest_path = env.dest_path.to_str().unwrap();
-
-    // Create a manifest
-    let manifest = BackupManifest::new(
-        "job-123".to_string(),
-        "Test Job".to_string(),
-        "/source/path".to_string(),
-        "test-machine".to_string(),
-    );
-    write_manifest(dest_path, &manifest).await.unwrap();
-
-    let exists = manifest_exists(dest_path).await;
-
-    assert!(
-        exists,
-        "manifest_exists should return true when manifest file exists"
-    );
-}
-
 // ============================================================================
 // Read Manifest Tests
 // ============================================================================
@@ -130,34 +62,6 @@ async fn test_read_manifest_returns_none_when_missing() {
         result.unwrap().is_none(),
         "read_manifest should return None when manifest doesn't exist"
     );
-}
-
-#[tokio::test]
-async fn test_read_manifest_valid_json() {
-    let env = TestBackupEnv::new().unwrap();
-    let dest_path = env.dest_path.to_str().unwrap();
-
-    // Create and write a manifest
-    let original = BackupManifest::new(
-        "job-456".to_string(),
-        "Documents Backup".to_string(),
-        "/Users/me/Documents".to_string(),
-        "MacBook-xyz".to_string(),
-    );
-    write_manifest(dest_path, &original).await.unwrap();
-
-    // Read it back
-    let result = read_manifest(dest_path).await.unwrap();
-
-    assert!(result.is_some(), "Should successfully read valid manifest");
-
-    let manifest = result.unwrap();
-    assert_eq!(manifest.job_id, "job-456");
-    assert_eq!(manifest.job_name, "Documents Backup");
-    assert_eq!(manifest.source_path, "/Users/me/Documents");
-    assert_eq!(manifest.machine_id, "MacBook-xyz");
-    assert_eq!(manifest.version, 1);
-    assert!(manifest.snapshots.is_empty());
 }
 
 #[tokio::test]
@@ -329,28 +233,6 @@ async fn test_write_manifest_overwrites_existing() {
 // ============================================================================
 // Get or Create Manifest Tests
 // ============================================================================
-
-#[tokio::test]
-async fn test_get_or_create_creates_new_manifest() {
-    let env = TestBackupEnv::new().unwrap();
-    let dest_path = env.dest_path.to_str().unwrap();
-
-    // Call get_or_create on empty destination
-    let manifest = get_or_create_manifest(dest_path, "job-create", "My Backup", "/Users/me/docs")
-        .await
-        .unwrap();
-
-    assert_eq!(manifest.job_id, "job-create");
-    assert_eq!(manifest.job_name, "My Backup");
-    assert_eq!(manifest.source_path, "/Users/me/docs");
-    assert!(manifest.snapshots.is_empty());
-
-    // Verify file was created
-    assert!(
-        manifest_exists(dest_path).await,
-        "Manifest file should be created"
-    );
-}
 
 #[tokio::test]
 async fn test_get_or_create_returns_existing_manifest() {

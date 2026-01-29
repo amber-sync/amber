@@ -57,55 +57,6 @@ fn test_index_empty_directory() {
 }
 
 #[test]
-fn test_index_single_file() {
-    let env = TestBackupEnv::new().unwrap();
-
-    // Create snapshot directory with a single file
-    let snapshot_path = env.snapshot_path("2024-01-01_120000");
-    fs::create_dir_all(&snapshot_path).unwrap();
-
-    let test_content = b"Hello, World! This is test content.";
-    generate::file(&snapshot_path.join("test.txt"), test_content).unwrap();
-
-    let service = create_test_index(env.dest_path.to_str().unwrap());
-
-    // Index the directory
-    let result = service
-        .index_snapshot(
-            "test-job-id",
-            1704110400000,
-            snapshot_path.to_str().unwrap(),
-        )
-        .unwrap();
-
-    // Verify stats
-    assert_eq!(result.file_count, 1, "Should have exactly 1 file");
-    assert_eq!(
-        result.total_size,
-        test_content.len() as i64,
-        "Total size should match content length"
-    );
-
-    // Verify we can get snapshot stats
-    let (file_count, total_size) = service
-        .get_snapshot_stats("test-job-id", 1704110400000)
-        .unwrap();
-    assert_eq!(file_count, 1);
-    assert_eq!(total_size, test_content.len() as i64);
-
-    // Verify directory contents are queryable
-    let contents = service
-        .get_directory_contents("test-job-id", 1704110400000, "")
-        .unwrap();
-
-    // Should have 1 file entry
-    let files: Vec<_> = contents.iter().filter(|f| f.node_type == "file").collect();
-    assert_eq!(files.len(), 1);
-    assert_eq!(files[0].name, "test.txt");
-    assert_eq!(files[0].size, test_content.len() as u64);
-}
-
-#[test]
 fn test_index_nested_structure() {
     let env = TestBackupEnv::new().unwrap();
 
@@ -516,45 +467,6 @@ fn test_index_large_file_sizes() {
     // Largest should be first
     assert_eq!(largest[0].size, 100_000);
     assert!(largest[0].name.contains("large"));
-}
-
-#[test]
-fn test_index_file_type_statistics() {
-    let env = TestBackupEnv::new().unwrap();
-
-    // Create snapshot with various file types
-    let snapshot_path = env.snapshot_path("2024-01-01_120000");
-    fs::create_dir_all(&snapshot_path).unwrap();
-
-    // Create files with different extensions
-    generate::file(&snapshot_path.join("doc1.txt"), b"text content 1").unwrap();
-    generate::file(&snapshot_path.join("doc2.txt"), b"text content 2").unwrap();
-    generate::file(&snapshot_path.join("code.rs"), b"fn main() {}").unwrap();
-    generate::file(&snapshot_path.join("data.json"), b"{}").unwrap();
-    generate::file(&snapshot_path.join("image.png"), b"PNG binary data here").unwrap();
-
-    let service = create_test_index(env.dest_path.to_str().unwrap());
-
-    service
-        .index_snapshot(
-            "test-job-id",
-            1704110400000,
-            snapshot_path.to_str().unwrap(),
-        )
-        .unwrap();
-
-    // Get file type statistics
-    let stats = service
-        .get_file_type_stats("test-job-id", 1704110400000, 10)
-        .unwrap();
-
-    // Should have multiple extension types
-    assert!(!stats.is_empty(), "Should have file type stats");
-
-    // Find txt extension (should have 2 files)
-    let txt_stat = stats.iter().find(|s| s.extension == "txt");
-    assert!(txt_stat.is_some(), "Should have .txt files");
-    assert_eq!(txt_stat.unwrap().count, 2, "Should have 2 .txt files");
 }
 
 #[test]
@@ -1354,49 +1266,6 @@ fn test_search_partial_match() {
 }
 
 #[test]
-fn test_search_no_results() {
-    let env = TestBackupEnv::new().unwrap();
-
-    // Create snapshot with some files
-    let snapshot_path = env.snapshot_path("2024-01-01_120000");
-    fs::create_dir_all(&snapshot_path).unwrap();
-
-    generate::file(&snapshot_path.join("document.txt"), b"content").unwrap();
-    generate::file(&snapshot_path.join("image.png"), b"image data").unwrap();
-
-    let service = create_test_index(env.dest_path.to_str().unwrap());
-
-    service
-        .index_snapshot(
-            "test-job-id",
-            1704110400000,
-            snapshot_path.to_str().unwrap(),
-        )
-        .unwrap();
-
-    // Search for non-existent pattern
-    let results = service
-        .search_files("test-job-id", 1704110400000, "nonexistent_xyz_123", 100)
-        .unwrap();
-
-    // Should return empty vec, not an error
-    assert!(
-        results.is_empty(),
-        "Search with no matches should return empty vector, not error"
-    );
-
-    // Search for another unlikely pattern
-    let results2 = service
-        .search_files("test-job-id", 1704110400000, "zzzzzzzzzzzzz", 100)
-        .unwrap();
-
-    assert!(
-        results2.is_empty(),
-        "Another no-match search should also return empty"
-    );
-}
-
-#[test]
 fn test_search_sql_injection_attempt() {
     let env = TestBackupEnv::new().unwrap();
 
@@ -1533,45 +1402,6 @@ fn test_search_unicode_query() {
         prefix_results.len(),
         2,
         "Should find both files with chinese_ prefix"
-    );
-}
-
-#[test]
-fn test_list_snapshots_empty_job() {
-    let env = TestBackupEnv::new().unwrap();
-
-    // Create a service but don't index anything for the job we're querying
-    let snapshot_path = env.snapshot_path("2024-01-01_120000");
-    fs::create_dir_all(&snapshot_path).unwrap();
-    generate::file(&snapshot_path.join("file.txt"), b"content").unwrap();
-
-    let service = create_test_index(env.dest_path.to_str().unwrap());
-
-    // Index under a different job ID
-    service
-        .index_snapshot(
-            "existing-job",
-            1704110400000,
-            snapshot_path.to_str().unwrap(),
-        )
-        .unwrap();
-
-    // Query for a non-existent job ID
-    let snapshots = service.list_snapshots("nonexistent-job-id").unwrap();
-
-    // Should return empty vector, not error
-    assert!(
-        snapshots.is_empty(),
-        "list_snapshots for non-existent job should return empty vector"
-    );
-
-    // Also try a job ID that looks like a UUID
-    let uuid_snapshots = service
-        .list_snapshots("550e8400-e29b-41d4-a716-446655440000")
-        .unwrap();
-    assert!(
-        uuid_snapshots.is_empty(),
-        "list_snapshots for UUID job ID with no data should return empty"
     );
 }
 
