@@ -1263,3 +1263,602 @@ fn test_compare_deeply_nested_changes() {
         "Should find root-level deleted file"
     );
 }
+
+// ============================================================================
+// SEARCH TESTS AND EDGE CASES
+// ============================================================================
+
+#[test]
+fn test_search_exact_filename() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshot with distinctly named files
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    generate::file(&snapshot_path.join("unique_target.txt"), b"target content").unwrap();
+    generate::file(&snapshot_path.join("other_file.txt"), b"other content").unwrap();
+    generate::file(&snapshot_path.join("another.rs"), b"rust code").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Search for exact filename
+    let results = service
+        .search_files("test-job-id", 1704110400000, "unique_target", 100)
+        .unwrap();
+
+    assert_eq!(
+        results.len(),
+        1,
+        "Should find exactly one file with exact name match"
+    );
+    assert_eq!(results[0].name, "unique_target.txt");
+}
+
+#[test]
+fn test_search_partial_match() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshot with files that share a common substring
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    generate::file(&snapshot_path.join("config.json"), b"json config").unwrap();
+    generate::file(&snapshot_path.join("config.yaml"), b"yaml config").unwrap();
+    generate::file(&snapshot_path.join("config.toml"), b"toml config").unwrap();
+    generate::file(&snapshot_path.join("settings.json"), b"settings").unwrap();
+    generate::file(&snapshot_path.join("readme.txt"), b"readme").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Search for partial match - "config" should match 3 files
+    let results = service
+        .search_files("test-job-id", 1704110400000, "config", 100)
+        .unwrap();
+
+    assert_eq!(
+        results.len(),
+        3,
+        "Should find all files containing 'config'"
+    );
+    for result in &results {
+        assert!(
+            result.name.contains("config"),
+            "Each result should contain 'config': {}",
+            result.name
+        );
+    }
+
+    // Search for ".json" should match 2 files
+    let json_results = service
+        .search_files("test-job-id", 1704110400000, ".json", 100)
+        .unwrap();
+
+    assert_eq!(json_results.len(), 2, "Should find 2 .json files");
+}
+
+#[test]
+fn test_search_no_results() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshot with some files
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    generate::file(&snapshot_path.join("document.txt"), b"content").unwrap();
+    generate::file(&snapshot_path.join("image.png"), b"image data").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Search for non-existent pattern
+    let results = service
+        .search_files("test-job-id", 1704110400000, "nonexistent_xyz_123", 100)
+        .unwrap();
+
+    // Should return empty vec, not an error
+    assert!(
+        results.is_empty(),
+        "Search with no matches should return empty vector, not error"
+    );
+
+    // Search for another unlikely pattern
+    let results2 = service
+        .search_files("test-job-id", 1704110400000, "zzzzzzzzzzzzz", 100)
+        .unwrap();
+
+    assert!(
+        results2.is_empty(),
+        "Another no-match search should also return empty"
+    );
+}
+
+#[test]
+fn test_search_sql_injection_attempt() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshot with normal files
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    generate::file(&snapshot_path.join("normal_file.txt"), b"normal content").unwrap();
+    generate::file(&snapshot_path.join("another.txt"), b"more content").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // SQL injection attempts - these should NOT crash or corrupt the database
+    let injection_attempts = [
+        "'; DROP TABLE files; --",
+        "\" OR 1=1 --",
+        "file%' UNION SELECT * FROM snapshots --",
+        "'; DELETE FROM snapshots WHERE '1'='1",
+        "Robert'); DROP TABLE files;--",
+        "1; SELECT * FROM snapshots",
+        "' OR ''='",
+        "%'; TRUNCATE TABLE files; --",
+    ];
+
+    for injection in &injection_attempts {
+        // Each injection should return empty results, not error
+        let result = service.search_files("test-job-id", 1704110400000, injection, 100);
+
+        assert!(
+            result.is_ok(),
+            "SQL injection attempt '{}' should not cause an error",
+            injection
+        );
+    }
+
+    // Verify the database is still functional after injection attempts
+    let snapshots = service.list_snapshots("test-job-id").unwrap();
+    assert_eq!(
+        snapshots.len(),
+        1,
+        "Database should still have the snapshot after injection attempts"
+    );
+
+    // Verify files table is intact
+    let files = service
+        .get_directory_contents("test-job-id", 1704110400000, "")
+        .unwrap();
+    assert_eq!(
+        files.len(),
+        2,
+        "Files should still exist after injection attempts"
+    );
+
+    // Verify normal search still works
+    let normal_search = service
+        .search_files("test-job-id", 1704110400000, "normal", 100)
+        .unwrap();
+    assert!(
+        !normal_search.is_empty(),
+        "Normal search should still work after injection attempts"
+    );
+}
+
+#[test]
+fn test_search_unicode_query() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshot with unicode filenames
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    // Files with various unicode characters
+    generate::file(&snapshot_path.join("chinese_文档.txt"), b"chinese doc").unwrap();
+    generate::file(&snapshot_path.join("chinese_报告.txt"), b"chinese report").unwrap();
+    generate::file(
+        &snapshot_path.join("cyrillic_документ.txt"),
+        b"cyrillic doc",
+    )
+    .unwrap();
+    generate::file(&snapshot_path.join("japanese_資料.txt"), b"japanese doc").unwrap();
+    generate::file(&snapshot_path.join("korean_문서.txt"), b"korean doc").unwrap();
+    generate::file(&snapshot_path.join("arabic_وثيقة.txt"), b"arabic doc").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Search with Chinese characters
+    let chinese_results = service
+        .search_files("test-job-id", 1704110400000, "文档", 100)
+        .unwrap();
+    assert!(
+        !chinese_results.is_empty(),
+        "Should find files with Chinese characters in search"
+    );
+
+    // Search with Cyrillic characters
+    let cyrillic_results = service
+        .search_files("test-job-id", 1704110400000, "документ", 100)
+        .unwrap();
+    assert!(
+        !cyrillic_results.is_empty(),
+        "Should find files with Cyrillic characters in search"
+    );
+
+    // Search with Japanese characters
+    let japanese_results = service
+        .search_files("test-job-id", 1704110400000, "資料", 100)
+        .unwrap();
+    assert!(
+        !japanese_results.is_empty(),
+        "Should find files with Japanese characters in search"
+    );
+
+    // Search prefix "chinese_" should find both Chinese files
+    let prefix_results = service
+        .search_files("test-job-id", 1704110400000, "chinese_", 100)
+        .unwrap();
+    assert_eq!(
+        prefix_results.len(),
+        2,
+        "Should find both files with chinese_ prefix"
+    );
+}
+
+#[test]
+fn test_list_snapshots_empty_job() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create a service but don't index anything for the job we're querying
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+    generate::file(&snapshot_path.join("file.txt"), b"content").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    // Index under a different job ID
+    service
+        .index_snapshot(
+            "existing-job",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Query for a non-existent job ID
+    let snapshots = service.list_snapshots("nonexistent-job-id").unwrap();
+
+    // Should return empty vector, not error
+    assert!(
+        snapshots.is_empty(),
+        "list_snapshots for non-existent job should return empty vector"
+    );
+
+    // Also try a job ID that looks like a UUID
+    let uuid_snapshots = service
+        .list_snapshots("550e8400-e29b-41d4-a716-446655440000")
+        .unwrap();
+    assert!(
+        uuid_snapshots.is_empty(),
+        "list_snapshots for UUID job ID with no data should return empty"
+    );
+}
+
+#[test]
+fn test_delete_snapshot_from_index() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create and index two snapshots
+    let snapshot_path1 = env.snapshot_path("2024-01-01_120000");
+    let snapshot_path2 = env.snapshot_path("2024-01-02_120000");
+
+    fs::create_dir_all(&snapshot_path1).unwrap();
+    fs::create_dir_all(&snapshot_path2).unwrap();
+
+    generate::file(&snapshot_path1.join("file1.txt"), b"content 1").unwrap();
+    generate::file(&snapshot_path2.join("file2.txt"), b"content 2").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    let ts1 = 1704110400000_i64;
+    let ts2 = 1704196800000_i64;
+
+    service
+        .index_snapshot("test-job-id", ts1, snapshot_path1.to_str().unwrap())
+        .unwrap();
+    service
+        .index_snapshot("test-job-id", ts2, snapshot_path2.to_str().unwrap())
+        .unwrap();
+
+    // Verify both are indexed
+    assert!(service.is_indexed("test-job-id", ts1).unwrap());
+    assert!(service.is_indexed("test-job-id", ts2).unwrap());
+
+    let snapshots_before = service.list_snapshots("test-job-id").unwrap();
+    assert_eq!(snapshots_before.len(), 2);
+
+    // Delete the first snapshot
+    service.delete_snapshot("test-job-id", ts1).unwrap();
+
+    // Verify it's removed
+    assert!(
+        !service.is_indexed("test-job-id", ts1).unwrap(),
+        "Deleted snapshot should no longer be indexed"
+    );
+
+    // Verify the other snapshot is still there
+    assert!(
+        service.is_indexed("test-job-id", ts2).unwrap(),
+        "Other snapshot should still be indexed"
+    );
+
+    let snapshots_after = service.list_snapshots("test-job-id").unwrap();
+    assert_eq!(snapshots_after.len(), 1, "Should have 1 snapshot remaining");
+    assert_eq!(snapshots_after[0].timestamp, ts2);
+
+    // Verify we can no longer query the deleted snapshot
+    // (cascade delete removes files automatically via foreign key)
+    let result = service.get_directory_contents("test-job-id", ts1, "");
+    assert!(
+        result.is_err(),
+        "get_directory_contents should fail for deleted snapshot"
+    );
+}
+
+#[test]
+fn test_delete_nonexistent_snapshot() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create an existing snapshot
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+    generate::file(&snapshot_path.join("file.txt"), b"content").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Try to delete a snapshot that doesn't exist
+    let nonexistent_ts = 9999999999999_i64;
+
+    // This should NOT error - it's a no-op
+    let result = service.delete_snapshot("test-job-id", nonexistent_ts);
+    assert!(
+        result.is_ok(),
+        "Deleting non-existent snapshot should not error"
+    );
+
+    // Try to delete from a non-existent job
+    let result2 = service.delete_snapshot("nonexistent-job", 1704110400000);
+    assert!(
+        result2.is_ok(),
+        "Deleting from non-existent job should not error"
+    );
+
+    // Verify the existing snapshot is unchanged
+    assert!(service.is_indexed("test-job-id", 1704110400000).unwrap());
+}
+
+#[test]
+fn test_get_directory_contents() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create a nested directory structure
+    let snapshot_path = env.snapshot_path("2024-01-01_120000");
+    fs::create_dir_all(&snapshot_path).unwrap();
+
+    // Root level files
+    generate::file(&snapshot_path.join("root1.txt"), b"root file 1").unwrap();
+    generate::file(&snapshot_path.join("root2.txt"), b"root file 2").unwrap();
+
+    // Subdirectory with files
+    let subdir = snapshot_path.join("subdir");
+    fs::create_dir_all(&subdir).unwrap();
+    generate::file(&subdir.join("sub1.txt"), b"sub file 1").unwrap();
+    generate::file(&subdir.join("sub2.txt"), b"sub file 2").unwrap();
+
+    // Nested subdirectory
+    let nested = subdir.join("nested");
+    fs::create_dir_all(&nested).unwrap();
+    generate::file(&nested.join("nested1.txt"), b"nested file").unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    service
+        .index_snapshot(
+            "test-job-id",
+            1704110400000,
+            snapshot_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+    // Get root directory contents
+    let root_contents = service
+        .get_directory_contents("test-job-id", 1704110400000, "")
+        .unwrap();
+
+    // Should have 2 files and 1 directory at root
+    let root_files: Vec<_> = root_contents
+        .iter()
+        .filter(|f| f.node_type == "file")
+        .collect();
+    let root_dirs: Vec<_> = root_contents
+        .iter()
+        .filter(|f| f.node_type == "dir")
+        .collect();
+
+    assert_eq!(root_files.len(), 2, "Root should have 2 files");
+    assert_eq!(root_dirs.len(), 1, "Root should have 1 directory");
+    assert!(
+        root_dirs.iter().any(|d| d.name == "subdir"),
+        "Root should contain 'subdir' directory"
+    );
+
+    // Get subdirectory contents - need to use the relative path from index
+    // The parent_path is stored as relative path from the snapshot root
+    let subdir_contents = service
+        .get_directory_contents("test-job-id", 1704110400000, "subdir")
+        .unwrap();
+
+    // Should have 2 files and 1 nested directory
+    let sub_files: Vec<_> = subdir_contents
+        .iter()
+        .filter(|f| f.node_type == "file")
+        .collect();
+    let sub_dirs: Vec<_> = subdir_contents
+        .iter()
+        .filter(|f| f.node_type == "dir")
+        .collect();
+
+    assert_eq!(sub_files.len(), 2, "Subdir should have 2 files");
+    assert_eq!(sub_dirs.len(), 1, "Subdir should have 1 nested directory");
+
+    // Verify file metadata is correct
+    for file in &root_files {
+        assert!(!file.name.is_empty(), "File name should not be empty");
+        assert!(file.size > 0, "File size should be > 0");
+        assert!(file.modified > 0, "File mtime should be > 0");
+    }
+}
+
+#[test]
+fn test_multiple_jobs_isolation() {
+    let env = TestBackupEnv::new().unwrap();
+
+    // Create snapshots for two different jobs
+    let snapshot_path1 = env.snapshot_path("job1/2024-01-01_120000");
+    let snapshot_path2 = env.snapshot_path("job2/2024-01-01_120000");
+
+    fs::create_dir_all(&snapshot_path1).unwrap();
+    fs::create_dir_all(&snapshot_path2).unwrap();
+
+    // Job 1 has specific files
+    generate::file(
+        &snapshot_path1.join("job1_secret.txt"),
+        b"job 1 secret data",
+    )
+    .unwrap();
+    generate::file(&snapshot_path1.join("job1_config.json"), b"job 1 config").unwrap();
+
+    // Job 2 has different files
+    generate::file(&snapshot_path2.join("job2_data.txt"), b"job 2 data").unwrap();
+    generate::file(
+        &snapshot_path2.join("job2_settings.yaml"),
+        b"job 2 settings",
+    )
+    .unwrap();
+
+    let service = create_test_index(env.dest_path.to_str().unwrap());
+
+    let ts = 1704110400000_i64;
+
+    // Index both jobs
+    service
+        .index_snapshot("job-alpha", ts, snapshot_path1.to_str().unwrap())
+        .unwrap();
+    service
+        .index_snapshot("job-beta", ts, snapshot_path2.to_str().unwrap())
+        .unwrap();
+
+    // Verify each job only sees its own files
+    let job1_files = service.get_directory_contents("job-alpha", ts, "").unwrap();
+    let job2_files = service.get_directory_contents("job-beta", ts, "").unwrap();
+
+    // Job 1 should only see job1 files
+    assert_eq!(job1_files.len(), 2);
+    assert!(
+        job1_files.iter().all(|f| f.name.starts_with("job1_")),
+        "Job 1 should only see job1 files"
+    );
+
+    // Job 2 should only see job2 files
+    assert_eq!(job2_files.len(), 2);
+    assert!(
+        job2_files.iter().all(|f| f.name.starts_with("job2_")),
+        "Job 2 should only see job2 files"
+    );
+
+    // Search in job 1 should not find job 2 files
+    let search_result = service.search_files("job-alpha", ts, "job2", 100).unwrap();
+    assert!(
+        search_result.is_empty(),
+        "Search in job-alpha should not find job-beta files"
+    );
+
+    // Search in job 2 should not find job 1 files
+    let search_result2 = service.search_files("job-beta", ts, "secret", 100).unwrap();
+    assert!(
+        search_result2.is_empty(),
+        "Search in job-beta should not find job-alpha's secret file"
+    );
+
+    // List snapshots should be isolated by job
+    let job1_snapshots = service.list_snapshots("job-alpha").unwrap();
+    let job2_snapshots = service.list_snapshots("job-beta").unwrap();
+
+    assert_eq!(job1_snapshots.len(), 1);
+    assert_eq!(job2_snapshots.len(), 1);
+    assert_eq!(job1_snapshots[0].job_id, "job-alpha");
+    assert_eq!(job2_snapshots[0].job_id, "job-beta");
+
+    // Aggregate stats should be isolated
+    let job1_stats = service.get_job_aggregate_stats("job-alpha").unwrap();
+    let job2_stats = service.get_job_aggregate_stats("job-beta").unwrap();
+
+    assert_eq!(job1_stats.total_files, 2);
+    assert_eq!(job2_stats.total_files, 2);
+
+    // Deleting one job's snapshot should not affect the other
+    service.delete_snapshot("job-alpha", ts).unwrap();
+
+    assert!(!service.is_indexed("job-alpha", ts).unwrap());
+    assert!(
+        service.is_indexed("job-beta", ts).unwrap(),
+        "Job-beta should still be indexed after deleting job-alpha"
+    );
+
+    // Job 2 files should still be accessible
+    let job2_files_after = service.get_directory_contents("job-beta", ts, "").unwrap();
+    assert_eq!(
+        job2_files_after.len(),
+        2,
+        "Job-beta files should still be accessible"
+    );
+}
