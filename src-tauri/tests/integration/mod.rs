@@ -8,6 +8,7 @@ mod common;
 mod compare_tests;
 mod index_tests;
 mod manifest_tests;
+mod service_tests;
 mod snapshot_tests;
 
 // Re-export common utilities for test modules
