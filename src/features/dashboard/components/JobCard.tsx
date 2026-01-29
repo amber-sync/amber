@@ -8,12 +8,12 @@ import {
   ProgressRing,
   StatusDot,
   Title,
-  Body,
   Code,
   Caption,
   ModeBadge,
   Button,
 } from '../../../components/ui';
+import '../jobcard.css';
 
 interface JobCardProps {
   job: SyncJob;
@@ -25,113 +25,96 @@ interface JobCardProps {
   onEditSettings?: (jobId: string) => void;
 }
 
-interface DetailRowProps {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}
-
-const DetailRow: React.FC<DetailRowProps> = ({ icon, label, children }) => (
-  <div className="space-y-1 min-w-0">
-    <Body size="sm" color="secondary" className="flex items-center gap-1.5">
-      {icon}
-      {label}
-    </Body>
-    {children}
-  </div>
-);
-
-// Activity log display - shows recent logs and progress
-const ActivityLog: React.FC<{
-  logs: LogEntry[];
-  progress: RsyncProgressData | null;
-  isRunning: boolean;
-  isFailed: boolean;
-}> = ({ logs, progress, isRunning, isFailed }) => {
-  // Show last 5 log entries, prioritizing errors/warnings
-  const recentLogs = logs.slice(-5);
-  const hasContent = recentLogs.length > 0 || (isRunning && progress);
-
-  if (!hasContent) return null;
+// Inline path flow: Source → Destination
+const PathFlow: React.FC<{ source: string; dest: string }> = ({ source, dest }) => {
+  const truncatePath = (path: string, maxLen = 28) => {
+    if (path.length <= maxLen) return path;
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length <= 2) return path;
+    return `/${parts[0]}/…/${parts[parts.length - 1]}`;
+  };
 
   return (
-    <div className="mt-4 pt-4 border-t border-border-base">
-      <Body size="sm" color="secondary" className="flex items-center gap-1.5 mb-2">
-        <Icons.Terminal size={14} />
-        {isRunning ? 'Live Activity' : isFailed ? 'Last Error' : 'Recent Activity'}
-      </Body>
-
-      {/* Progress bar when running */}
-      {isRunning && progress && (
-        <div className="mb-3 p-3 bg-layer-2 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <Body size="sm" weight="medium">
-              {progress.percentage}% complete
-            </Body>
-            <Caption color="tertiary">
-              {progress.speed} • ETA: {progress.eta || 'calculating...'}
-            </Caption>
-          </div>
-          <div className="h-1.5 bg-layer-3 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-accent-primary rounded-full transition-all duration-300"
-              style={{ width: `${progress.percentage}%` }}
-            />
-          </div>
-          {progress.currentFile && (
-            <Code size="sm" className="mt-2 block truncate text-text-tertiary">
-              {progress.currentFile}
-            </Code>
-          )}
-        </div>
-      )}
-
-      {/* Log entries */}
-      <div className="space-y-1 max-h-32 overflow-y-auto">
-        {recentLogs.map((log, i) => (
-          <div
-            key={`${log.timestamp}-${i}`}
-            className={`flex items-start gap-2 text-xs font-mono ${
-              log.level === 'error'
-                ? 'text-error'
-                : log.level === 'warning'
-                  ? 'text-warning'
-                  : 'text-text-tertiary'
-            }`}
-          >
-            <span className="shrink-0 opacity-50">
-              {new Date(log.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}
-            </span>
-            <span className="break-all">{log.message}</span>
-          </div>
-        ))}
+    <div className="jc-path-flow">
+      <div className="jc-path">
+        <Icons.FolderOpen size={13} className="jc-path-icon" />
+        <Code size="sm" className="truncate" title={source}>
+          {truncatePath(source)}
+        </Code>
+      </div>
+      <Icons.ArrowRight size={12} className="jc-path-arrow" />
+      <div className="jc-path">
+        <Icons.HardDrive size={13} className="jc-path-icon" />
+        <Code size="sm" className="truncate" title={dest}>
+          {truncatePath(dest)}
+        </Code>
       </div>
     </div>
   );
 };
 
-// Smart path display - truncates middle, shows full on hover
-const PathDisplay: React.FC<{ path: string; className?: string }> = ({ path, className = '' }) => {
-  const parts = path.split('/').filter(Boolean);
-  const isLongPath = parts.length > 3;
-
-  // For long paths, show first part + ... + last 2 parts
-  const displayPath = isLongPath ? `/${parts[0]}/.../${parts.slice(-2).join('/')}` : path;
+// Progress indicator when syncing
+const SyncProgress: React.FC<{
+  progress: RsyncProgressData;
+  logs: LogEntry[];
+}> = ({ progress, logs }) => {
+  const recentLogs = logs.slice(-3);
 
   return (
-    <div className={`group relative ${className}`}>
-      <Code size="sm" className="block truncate cursor-help" title={path}>
-        {displayPath}
-      </Code>
-      {/* Tooltip on hover for full path */}
-      <div className="absolute left-0 bottom-full mb-1 px-2 py-1.5 bg-layer-1 border border-border-highlight rounded-lg shadow-elevated opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 max-w-xs">
-        <Code size="sm" className="break-all whitespace-pre-wrap text-text-secondary">
-          {path}
-        </Code>
+    <div className="jc-progress">
+      <div className="jc-progress-header">
+        <div className="jc-progress-left">
+          <span className="jc-progress-percent">{progress.percentage}%</span>
+          {progress.currentFile && (
+            <span className="jc-progress-file">{progress.currentFile.split('/').pop()}</span>
+          )}
+        </div>
+        <span className="jc-progress-meta">
+          {progress.speed} · {progress.eta || '—'}
+        </span>
+      </div>
+      <div className="jc-progress-bar">
+        <div
+          className="jc-progress-fill"
+          style={{ width: `${Math.max(2, progress.percentage)}%` }}
+        />
+      </div>
+
+      {recentLogs.length > 0 && (
+        <div className="jc-logs">
+          {recentLogs.map((log, i) => (
+            <div
+              key={`${log.timestamp}-${i}`}
+              className={`jc-log ${
+                log.level === 'error'
+                  ? 'jc-log--error'
+                  : log.level === 'warning'
+                    ? 'jc-log--warning'
+                    : ''
+              }`}
+            >
+              {log.message}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Error display for failed jobs
+const FailedInfo: React.FC<{ logs: LogEntry[] }> = ({ logs }) => {
+  const errorLog = [...logs].reverse().find(l => l.level === 'error');
+  if (!errorLog) return null;
+
+  return (
+    <div className="jc-error">
+      <div className="jc-error-panel">
+        <Icons.AlertCircle size={14} className="jc-error-icon" />
+        <div className="jc-error-content">
+          <div className="jc-error-title">Sync Failed</div>
+          <div className="jc-error-message">{errorLog.message}</div>
+        </div>
       </div>
     </div>
   );
@@ -154,7 +137,7 @@ export const JobCard = React.memo<JobCardProps>(
     const isFailed = job.status === JobStatus.FAILED;
     const mounted = mountInfo?.mounted ?? true;
 
-    // Determine the status indicator state
+    // Status indicator state
     const getStatusIndicator = () => {
       if (!mounted) return { status: 'warning' as const, pulse: false };
       if (isRunning) return { status: 'neutral' as const, pulse: true };
@@ -163,26 +146,18 @@ export const JobCard = React.memo<JobCardProps>(
       return { status: 'idle' as const, pulse: false };
     };
 
-    // Get icon background styling based on status
-    const getIconStyle = () => {
-      if (!mounted) return 'bg-warning-subtle';
-      if (isFailed) return 'bg-error-subtle';
-      if (isSuccess) return 'bg-success-subtle';
-      return 'bg-layer-2';
-    };
-
-    // Get icon color based on status
-    const getIconColor = () => {
-      if (!mounted) return 'text-warning';
-      if (isFailed) return 'text-error';
-      if (isSuccess) return 'text-success';
-      return 'text-text-secondary';
+    // Icon styling based on status
+    const getIconClass = () => {
+      if (!mounted) return 'jc-icon jc-icon--warning';
+      if (isFailed) return 'jc-icon jc-icon--error';
+      if (isSuccess) return 'jc-icon jc-icon--success';
+      return 'jc-icon jc-icon--idle';
     };
 
     const statusIndicator = getStatusIndicator();
 
     const getRelativeTime = () => {
-      if (!job.lastRun) return 'Never run';
+      if (!job.lastRun) return 'Never';
       return formatRelativeTime(job.lastRun);
     };
 
@@ -207,40 +182,31 @@ export const JobCard = React.memo<JobCardProps>(
         aria-label={`${job.name} backup job, ${job.status}, ${getRelativeTime()}`}
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
-        className={`
-          bg-layer-1 rounded-xl border cursor-pointer transition-all
-          ${
-            isExpanded
-              ? 'border-border-highlight shadow-elevated'
-              : 'border-border-base shadow-card hover:border-border-highlight hover:shadow-elevated'
-          }
-        `}
+        className={`jc-card ${isExpanded ? 'jc-card--expanded' : ''}`}
       >
-        {/* Collapsed Header */}
-        <div className="flex items-center gap-3 p-4">
-          {/* Job Icon */}
+        {/* Header row */}
+        <div className="jc-header">
+          {/* Status icon */}
           <div className="shrink-0">
             {isRunning ? (
               <ProgressRing
-                progress={0}
+                progress={progress?.percentage ?? 0}
                 size={36}
                 strokeWidth={2.5}
                 showLabel={false}
                 variant="default"
               >
-                <Icons.RefreshCw size={14} className="animate-spin text-accent-primary" />
+                <Icons.RefreshCw size={14} className="animate-spin" />
               </ProgressRing>
             ) : (
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${getIconStyle()}`}
-              >
-                <Icons.Archive size={18} className={getIconColor()} />
+              <div className={getIconClass()}>
+                <Icons.Archive size={18} />
               </div>
             )}
           </div>
 
-          {/* Job Name & Mode */}
-          <div className="flex-1 min-w-0 flex items-center gap-2">
+          {/* Name & badges */}
+          <div className="jc-title-area">
             <Title level={4} truncate>
               {job.name}
             </Title>
@@ -248,26 +214,22 @@ export const JobCard = React.memo<JobCardProps>(
             {!mounted && <OfflineBadge />}
           </div>
 
-          {/* Status & Relative Time */}
-          <div className="shrink-0 flex items-center gap-2">
+          {/* Status */}
+          <div className="jc-status-area">
             <StatusDot status={statusIndicator.status} pulse={statusIndicator.pulse} size="md" />
             {isRunning ? (
-              <Body size="sm" as="span" weight="medium" className="animate-pulse">
-                Syncing...
-              </Body>
+              <span className="jc-status-text jc-status-text--running">
+                {progress?.percentage ?? 0}%
+              </span>
             ) : (
-              <Body
-                size="sm"
-                color={isFailed ? undefined : 'secondary'}
-                className={isFailed ? 'text-error' : ''}
-              >
+              <span className={`jc-status-text ${isFailed ? 'jc-status-text--error' : ''}`}>
                 {isFailed ? 'Failed' : getRelativeTime()}
-              </Body>
+              </span>
             )}
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+          {/* Quick actions */}
+          <div className="jc-actions" onClick={e => e.stopPropagation()}>
             {onRunBackup && (
               <IconButton
                 label={isRunning ? 'Backup running' : 'Run backup now'}
@@ -291,68 +253,57 @@ export const JobCard = React.memo<JobCardProps>(
             )}
           </div>
 
-          {/* Expand Indicator */}
+          {/* Chevron */}
           <Icons.ChevronDown
-            size={18}
-            className={`text-text-tertiary shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            size={16}
+            className={`jc-chevron ${isExpanded ? 'jc-chevron--expanded' : ''}`}
           />
         </div>
 
-        {/* Expanded Content */}
+        {/* Expanded content */}
         {isExpanded && (
-          <div className="px-4 pb-4 animate-fade-in">
-            <div className="border-t border-border-base mb-4" />
+          <div className="jc-content">
+            <div className="jc-divider" />
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <DetailRow icon={<Icons.FolderOpen size={14} />} label="Source">
-                <PathDisplay path={job.sourcePath} />
-              </DetailRow>
+            {/* Path flow */}
+            <PathFlow source={job.sourcePath} dest={job.destPath} />
 
-              <DetailRow icon={<Icons.HardDrive size={14} />} label="Destination">
-                <PathDisplay path={job.destPath} />
-              </DetailRow>
-
-              <DetailRow icon={<Icons.Clock size={14} />} label="Schedule">
-                <Body size="sm">{formatSchedule(job.scheduleInterval)}</Body>
-              </DetailRow>
-
-              <DetailRow icon={<Icons.Activity size={14} />} label="Last Backup">
-                <Body size="sm">
-                  {job.lastRun ? (
-                    <>
-                      {new Date(job.lastRun).toLocaleDateString()} at{' '}
-                      {new Date(job.lastRun).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </>
-                  ) : (
-                    <Body size="sm" as="span" color="tertiary">
-                      Never
-                    </Body>
-                  )}
-                </Body>
-              </DetailRow>
+            {/* Meta row */}
+            <div className="jc-meta">
+              <div className="jc-meta-item">
+                <Icons.Clock size={13} className="jc-meta-icon" />
+                <Caption color="secondary">{formatSchedule(job.scheduleInterval)}</Caption>
+              </div>
+              {job.lastRun && (
+                <div className="jc-meta-item">
+                  <Icons.Check size={13} className="jc-meta-icon" />
+                  <Caption color="secondary">
+                    {new Date(job.lastRun).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}{' '}
+                    at{' '}
+                    {new Date(job.lastRun).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Caption>
+                </div>
+              )}
             </div>
 
-            {/* Activity Log - shows when running or failed */}
-            {(isRunning || isFailed || logs.length > 0) && (
-              <ActivityLog
-                logs={logs}
-                progress={progress}
-                isRunning={isRunning}
-                isFailed={isFailed}
-              />
-            )}
+            {/* Sync progress (only when running with real progress) */}
+            {isRunning && progress && <SyncProgress progress={progress} logs={logs} />}
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border-base">
+            {/* Failed info */}
+            {isFailed && logs.length > 0 && <FailedInfo logs={logs} />}
+
+            {/* Actions - uniform width via grid */}
+            <div className="jc-buttons">
               <Button
-                variant="primary"
+                variant="secondary"
                 size="md"
                 icon={<Icons.Clock size={16} />}
-                className="flex-1"
                 onClick={e => {
                   e.stopPropagation();
                   onSelect();
@@ -360,9 +311,9 @@ export const JobCard = React.memo<JobCardProps>(
               >
                 View History
               </Button>
-              {onRunBackup && (
+              {onRunBackup ? (
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="md"
                   icon={<Icons.Play size={16} />}
                   disabled={isRunning}
@@ -371,8 +322,10 @@ export const JobCard = React.memo<JobCardProps>(
                     onRunBackup(job.id);
                   }}
                 >
-                  {isRunning ? 'Running...' : 'Run Now'}
+                  {isRunning ? 'Syncing…' : 'Run Now'}
                 </Button>
+              ) : (
+                <div /> // Empty grid cell
               )}
             </div>
           </div>

@@ -1,0 +1,321 @@
+/**
+ * JobCard - Dashboard Component Styles
+ *
+ * Object-oriented CSS approach following the TimeMachine pattern.
+ * Uses semantic class names with .jc- prefix.
+ */
+
+/* ============================================
+ * Base Card Container
+ * ============================================ */
+.jc-card {
+  background: var(--layer-1);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.jc-card:hover {
+  border-color: var(--border-highlight);
+  box-shadow: var(--shadow-sm);
+}
+
+.jc-card--expanded {
+  border-color: var(--border-highlight);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+ * Header Row
+ * ============================================ */
+.jc-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+/* Status icon container */
+.jc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.jc-icon--idle {
+  background: var(--layer-2);
+  color: var(--text-secondary);
+}
+
+.jc-icon--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.jc-icon--error {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.jc-icon--warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+/* Title area */
+.jc-title-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Status area */
+.jc-status-area {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.jc-status-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.jc-status-text--error {
+  color: var(--color-error);
+}
+
+.jc-status-text--running {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  font-feature-settings: 'tnum';
+}
+
+/* Quick actions */
+.jc-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Chevron */
+.jc-chevron {
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+  transition: transform var(--duration-normal) var(--ease-in-out);
+}
+
+.jc-chevron--expanded {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+ * Expanded Content
+ * ============================================ */
+.jc-content {
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.jc-divider {
+  border-top: 1px solid var(--border-base);
+  padding-top: var(--space-4);
+}
+
+/* ============================================
+ * Path Flow - Source → Destination
+ * ============================================ */
+.jc-path-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.jc-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.jc-path-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.jc-path-arrow {
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+}
+
+/* ============================================
+ * Meta Row - Schedule & Last Run
+ * ============================================ */
+.jc-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-top: var(--space-3);
+}
+
+.jc-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jc-meta-icon {
+  color: var(--text-tertiary);
+}
+
+/* ============================================
+ * Sync Progress Section
+ * ============================================ */
+.jc-progress {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-base);
+}
+
+.jc-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.jc-progress-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.jc-progress-percent {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  font-feature-settings: 'tnum';
+  color: var(--text-primary);
+}
+
+.jc-progress-file {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jc-progress-meta {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum';
+}
+
+/* Progress bar */
+.jc-progress-bar {
+  height: 4px;
+  background: var(--layer-3);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.jc-progress-fill {
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+/* Log entries */
+.jc-logs {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jc-log {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: var(--leading-relaxed);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-quaternary);
+}
+
+.jc-log--error {
+  color: var(--color-error);
+}
+
+.jc-log--warning {
+  color: var(--color-warning);
+}
+
+/* ============================================
+ * Error Panel
+ * ============================================ */
+.jc-error {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-base);
+}
+
+.jc-error-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-error-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.jc-error-icon {
+  color: var(--color-error);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.jc-error-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.jc-error-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-error);
+}
+
+.jc-error-message {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-error);
+  opacity: 0.8;
+  margin-top: var(--space-1);
+  word-break: break-all;
+}
+
+/* ============================================
+ * Action Buttons
+ * ============================================ */
+.jc-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-base);
+}
