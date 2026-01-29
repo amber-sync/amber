@@ -68,6 +68,11 @@ default = []
 tempfile = "3"
 tokio-test = "0.4"
 criterion = { version = "0.8", features = ["html_reports"] }
+# TIM-222: Testing framework
+rstest = "0.18"
+assert_fs = "1.1"
+predicates = "3.1"
+proptest = "1.4"
 
 [[bench]]
 name = "index_benchmark"
@@ -76,3 +81,12 @@ harness = false
 [[bench]]
 name = "file_service_benchmark"
 harness = false
+
+# TIM-222: Test binaries
+[[test]]
+name = "integration"
+path = "tests/integration/mod.rs"
+
+[[test]]
+name = "e2e"
+path = "tests/e2e/mod.rs"
