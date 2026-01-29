@@ -262,6 +262,22 @@
   color: var(--text-secondary);
 }
 
+/* Semantic icon variants for status communication */
+.page-stat-icon--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.page-stat-icon--warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.page-stat-icon--error {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
 .page-stat-label {
   font-size: 0.625rem;
   font-weight: 500;

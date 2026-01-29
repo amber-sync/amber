@@ -18,7 +18,7 @@ interface JobMountInfo {
 interface DayBackup {
   jobId: string;
   jobName: string;
-  status: 'success' | 'failed';
+  status: 'success' | 'warning' | 'failed';
   timestamp: number;
 }
 
@@ -85,8 +85,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="flex items-center gap-4 no-drag">
           <div className="page-stats">
             <div className="page-stat">
-              <div className="page-stat-icon">
-                <Icons.Database size={18} />
+              <div className="page-stat-icon page-stat-icon--success">
+                <Icons.Shield size={18} />
               </div>
               <div>
                 <div className="page-stat-label">Protected</div>
@@ -187,7 +187,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     className="flex items-center justify-between p-2 hover:bg-layer-2 rounded-lg cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <StatusDot status={backup.status === 'success' ? 'success' : 'error'} />
+                      <StatusDot
+                        status={
+                          backup.status === 'success'
+                            ? 'success'
+                            : backup.status === 'warning'
+                              ? 'warning'
+                              : 'error'
+                        }
+                      />
                       <Body size="sm">{backup.jobName}</Body>
                     </div>
                     <Caption color="tertiary">

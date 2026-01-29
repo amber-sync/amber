@@ -254,20 +254,29 @@ function SnapshotFocusComponent({
         )}
       </div>
 
-      {/* Status indicator */}
+      {/* Status indicator - more prominent */}
       <div className="mt-6 flex items-center gap-2">
         <div
-          className={`w-2 h-2 rounded-full ${
+          className={`w-2.5 h-2.5 rounded-full ${
             snapshot.status === 'Complete'
-              ? 'bg-[var(--tm-success)]'
+              ? 'bg-success'
               : snapshot.status === 'Partial'
-                ? 'bg-[var(--tm-warning)]'
-                : 'bg-[var(--tm-error)]'
+                ? 'bg-warning'
+                : 'bg-error'
           }`}
         />
-        <Caption className="text-[var(--tm-text-dim)]">
-          {snapshot.status || 'Complete'} backup
-        </Caption>
+        <Body
+          size="sm"
+          className={
+            snapshot.status === 'Complete'
+              ? 'text-success'
+              : snapshot.status === 'Partial'
+                ? 'text-warning'
+                : 'text-error'
+          }
+        >
+          {snapshot.status || 'Complete'}
+        </Body>
         {snapshot.path && (
           <>
             <Caption className="text-[var(--tm-text-muted)]">•</Caption>

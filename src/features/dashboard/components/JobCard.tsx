@@ -6,6 +6,7 @@ import { OfflineBadge } from '../../../components/ConnectionStatus';
 import {
   IconButton,
   ProgressRing,
+  StatusDot,
   Title,
   Body,
   Code,
@@ -42,7 +43,36 @@ export const JobCard = React.memo<JobCardProps>(
     const [isExpanded, setIsExpanded] = useState(false);
 
     const isRunning = job.status === JobStatus.RUNNING;
+    const isSuccess = job.status === JobStatus.SUCCESS;
+    const isFailed = job.status === JobStatus.FAILED;
     const mounted = mountInfo?.mounted ?? true;
+
+    // Determine the status indicator state
+    const getStatusIndicator = () => {
+      if (!mounted) return { status: 'warning' as const, pulse: false };
+      if (isRunning) return { status: 'neutral' as const, pulse: true };
+      if (isFailed) return { status: 'error' as const, pulse: false };
+      if (isSuccess) return { status: 'success' as const, pulse: false };
+      return { status: 'idle' as const, pulse: false };
+    };
+
+    // Get icon background styling based on status
+    const getIconStyle = () => {
+      if (!mounted) return 'bg-warning-subtle';
+      if (isFailed) return 'bg-error-subtle';
+      if (isSuccess) return 'bg-success-subtle';
+      return 'bg-layer-2';
+    };
+
+    // Get icon color based on status
+    const getIconColor = () => {
+      if (!mounted) return 'text-warning';
+      if (isFailed) return 'text-error';
+      if (isSuccess) return 'text-success';
+      return 'text-text-secondary';
+    };
+
+    const statusIndicator = getStatusIndicator();
 
     const getRelativeTime = () => {
       if (!job.lastRun) return 'Never run';
@@ -95,14 +125,9 @@ export const JobCard = React.memo<JobCardProps>(
               </ProgressRing>
             ) : (
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  !mounted ? 'bg-warning-subtle' : 'bg-layer-2'
-                }`}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${getIconStyle()}`}
               >
-                <Icons.Archive
-                  size={18}
-                  className={!mounted ? 'text-warning' : 'text-text-secondary'}
-                />
+                <Icons.Archive size={18} className={getIconColor()} />
               </div>
             )}
           </div>
@@ -116,20 +141,20 @@ export const JobCard = React.memo<JobCardProps>(
             {!mounted && <OfflineBadge />}
           </div>
 
-          {/* Relative Time */}
-          <div className="shrink-0">
+          {/* Status & Relative Time */}
+          <div className="shrink-0 flex items-center gap-2">
+            <StatusDot status={statusIndicator.status} pulse={statusIndicator.pulse} size="md" />
             {isRunning ? (
-              <Body
-                size="sm"
-                as="span"
-                weight="medium"
-                className="text-accent-primary animate-pulse"
-              >
+              <Body size="sm" as="span" weight="medium" className="animate-pulse">
                 Syncing...
               </Body>
             ) : (
-              <Body size="sm" color="secondary">
-                {getRelativeTime()}
+              <Body
+                size="sm"
+                color={isFailed ? undefined : 'secondary'}
+                className={isFailed ? 'text-error' : ''}
+              >
+                {isFailed ? 'Failed' : getRelativeTime()}
               </Body>
             )}
           </div>

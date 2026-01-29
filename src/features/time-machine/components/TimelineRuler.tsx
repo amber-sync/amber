@@ -286,6 +286,7 @@ export const TimelineRuler = React.memo<TimelineRulerProps>(
             const isSelected = marker.snapshots.some(s => s.timestamp === selectedTimestamp);
             const hasFailed = marker.snapshots.some(s => s.status === 'Failed');
             const hasPartial = marker.snapshots.some(s => s.status === 'Partial');
+            const allSuccess = marker.snapshots.every(s => s.status === 'Complete');
 
             return (
               <button
@@ -301,6 +302,7 @@ export const TimelineRuler = React.memo<TimelineRulerProps>(
                 ${isSelected ? 'tm-marker--selected' : ''}
                 ${hasFailed ? 'tm-marker--failed' : ''}
                 ${hasPartial && !hasFailed ? 'tm-marker--partial' : ''}
+                ${allSuccess && !hasFailed && !hasPartial ? 'tm-marker--success' : ''}
                 ${marker.isCluster ? 'tm-marker--cluster' : ''}
               `}
                 style={{ left: `${toDisplayPosition(marker.position)}%` }}

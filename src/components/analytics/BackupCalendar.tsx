@@ -11,7 +11,7 @@ interface BackupCalendarProps {
 interface DayBackup {
   jobId: string;
   jobName: string;
-  status: 'success' | 'failed';
+  status: 'success' | 'warning' | 'failed';
   timestamp: number;
 }
 
@@ -30,7 +30,12 @@ export const BackupCalendar = React.memo<BackupCalendarProps>(
           const backup: DayBackup = {
             jobId: job.id,
             jobName: job.name,
-            status: snapshot.status === 'Complete' ? 'success' : 'failed',
+            status:
+              snapshot.status === 'Complete'
+                ? 'success'
+                : snapshot.status === 'Partial'
+                  ? 'warning'
+                  : 'failed',
             timestamp: snapshot.timestamp,
           };
 

@@ -35,10 +35,10 @@
   --tm-text-dim: var(--text-tertiary); /* #71717a zinc-500 */
   --tm-text-muted: var(--text-quaternary); /* #a1a1aa zinc-400 */
 
-  /* Semantic colors - TM editorial variants */
-  --tm-success: #16a34a; /* TM-specific: green-600 */
-  --tm-warning: #ca8a04; /* TM-specific: yellow-600 */
-  --tm-error: #dc2626; /* TM-specific: red-600 */
+  /* Semantic colors - mapped to global tokens */
+  --tm-success: var(--color-success); /* #22c55e */
+  --tm-warning: var(--color-warning); /* #f97316 */
+  --tm-error: var(--color-error); /* #ef4444 */
 
   /* Glass - mapped to global glass tokens */
   --tm-glass: var(--glass-bg-elevated); /* rgba(255, 255, 255, 0.92) */
@@ -67,10 +67,10 @@
   --tm-text-dim: var(--text-tertiary); /* #71717a zinc-500 */
   --tm-text-muted: var(--text-quaternary); /* #52525b zinc-600 */
 
-  /* Semantic colors - TM editorial variants */
-  --tm-success: #22c55e; /* TM-specific: green-500 */
-  --tm-warning: #eab308; /* TM-specific: yellow-500 */
-  --tm-error: #ef4444; /* TM-specific: red-500 */
+  /* Semantic colors - mapped to global tokens */
+  --tm-success: var(--color-success); /* #22c55e */
+  --tm-warning: var(--color-warning); /* #f97316 */
+  --tm-error: var(--color-error); /* #ef4444 */
 
   /* Glass - mapped to global glass tokens */
   --tm-glass: var(--glass-bg-elevated); /* rgba(24, 24, 27, 0.92) */
@@ -214,6 +214,18 @@
 .tm-marker--partial.tm-marker--selected {
   background: var(--tm-warning);
   border-color: var(--tm-warning);
+}
+
+/* Success markers - subtle green tint for completed backups */
+.tm-marker--success {
+  border-color: var(--tm-success);
+  background: var(--tm-space);
+}
+
+.tm-marker--success:hover,
+.tm-marker--success.tm-marker--selected {
+  background: var(--tm-success);
+  border-color: var(--tm-success);
 }
 
 /* Cluster markers - visually distinct with subtle ring */
