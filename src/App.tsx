@@ -405,6 +405,9 @@ function AppContent() {
           <DashboardPage
             jobs={jobs}
             diskStats={destinationStats}
+            activeJobId={activeJobId}
+            logs={logs}
+            progress={progress}
             onSelectJob={id => {
               setActiveJobId(id);
               // Navigate to unified Time Machine for the selected job

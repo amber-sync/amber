@@ -10,7 +10,7 @@
 /**
  * TIM-205: Uses specific context hooks for better performance
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useJobs } from '@/features/jobs/context/JobsContext';
 import { useUI } from '../../context/UIContext';
 import { api } from '../../api';
@@ -66,48 +66,60 @@ export function TimeMachinePage({
   const { jobs, runSync, stopSync, persistJob, deleteJob } = useJobs();
   const { activeJobId, setActiveJobId, setView } = useUI();
 
-  // Current job
-  const [currentJobId, setCurrentJobId] = useState<string | null>(
-    initialJobId || activeJobId || null
-  );
+  // Current job - derive from props/context, prioritizing initialJobId
+  // Using a ref to track the "last committed" job to avoid unnecessary re-renders
+  const effectiveJobId = initialJobId || activeJobId || null;
+  const [currentJobId, setCurrentJobId] = useState<string | null>(effectiveJobId);
 
-  // Sync currentJobId when navigating to TimeMachine with different job (component stays mounted)
+  // Only update currentJobId when effectiveJobId actually changes
+  // This prevents flickering from redundant state updates
   useEffect(() => {
-    if (initialJobId && initialJobId !== currentJobId) {
-      setCurrentJobId(initialJobId);
+    if (effectiveJobId && effectiveJobId !== currentJobId) {
+      setCurrentJobId(effectiveJobId);
     }
-  }, [initialJobId]);
+  }, [effectiveJobId, currentJobId]);
 
   const currentJob = useMemo(
     () => jobs.find((j: SyncJob) => j.id === currentJobId) || null,
     [jobs, currentJobId]
   );
 
-  // Snapshots for current job - use in-memory data immediately for instant render
-  const [snapshots, setSnapshots] = useState<TimeMachineSnapshot[]>(() => {
-    // Initialize from in-memory job data for instant render
-    const job = jobs.find((j: SyncJob) => j.id === (initialJobId || activeJobId));
-    if (job?.snapshots?.length) {
-      return job.snapshots
-        .map(s => ({ ...s, jobId: job.id, jobName: job.name }))
-        .sort((a, b) => a.timestamp - b.timestamp);
-    }
-    return [];
-  });
+  // Compute snapshots directly from currentJob for instant, flicker-free render
+  const snapshots = useMemo<TimeMachineSnapshot[]>(() => {
+    if (!currentJob?.snapshots?.length) return [];
+    return currentJob.snapshots
+      .map(s => ({ ...s, jobId: currentJob.id, jobName: currentJob.name }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }, [currentJob]);
+
   const [loading, setLoading] = useState(false); // Start as false since we have in-memory data
 
   // Date filter state (TIM-151)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
-  // Timeline state - initialize to latest snapshot for instant render
+  // Timeline state - track selected timestamp, auto-select latest when job changes
   const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(() => {
-    const job = jobs.find((j: SyncJob) => j.id === (initialJobId || activeJobId));
+    const job = jobs.find((j: SyncJob) => j.id === effectiveJobId);
     if (job?.snapshots?.length) {
       const sorted = [...job.snapshots].sort((a, b) => a.timestamp - b.timestamp);
       return sorted[sorted.length - 1].timestamp;
     }
     return null;
   });
+
+  // Auto-select latest snapshot when switching jobs (but not on every snapshot update)
+  const prevJobIdRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (currentJobId !== prevJobIdRef.current) {
+      prevJobIdRef.current = currentJobId;
+      // Select latest snapshot for new job
+      if (snapshots.length > 0) {
+        setSelectedTimestamp(snapshots[snapshots.length - 1].timestamp);
+      } else {
+        setSelectedTimestamp(null);
+      }
+    }
+  }, [currentJobId, snapshots]);
 
   // Filtered snapshots based on date range (TIM-151)
   const filteredSnapshots = useMemo(() => {
@@ -154,59 +166,8 @@ export function TimeMachinePage({
     error: diffError,
   } = useSnapshotDiff(currentJobId, selectedSnapshot, compareSnapshot);
 
-  // Sync snapshots from in-memory job data (instant, no loading state)
-  useEffect(() => {
-    if (!currentJob) {
-      setSnapshots([]);
-      return;
-    }
-
-    // Use in-memory snapshots directly - no API call needed for instant render
-    const jobSnapshots = currentJob.snapshots ?? [];
-    const enriched: TimeMachineSnapshot[] = jobSnapshots
-      .map(s => ({
-        ...s,
-        jobId: currentJob.id,
-        jobName: currentJob.name,
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp);
-
-    setSnapshots(enriched);
-
-    // Auto-select latest snapshot if none selected
-    if (enriched.length > 0 && !selectedTimestamp) {
-      setSelectedTimestamp(enriched[enriched.length - 1].timestamp);
-    }
-  }, [currentJob, currentJob?.snapshots?.length]);
-
-  // Background refresh from API (optional, non-blocking)
-  useEffect(() => {
-    if (!currentJob) return;
-
-    const refreshFromApi = async () => {
-      try {
-        const snapshotList = await api.listSnapshots(currentJob.id, currentJob.destPath);
-        // Only update if we got more snapshots than in-memory
-        if (snapshotList.length > (currentJob.snapshots?.length ?? 0)) {
-          const enriched: TimeMachineSnapshot[] = snapshotList
-            .map(s => ({
-              ...s,
-              jobId: currentJob.id,
-              jobName: currentJob.name,
-            }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-          setSnapshots(enriched);
-        }
-      } catch (error) {
-        // Silently fail - we already have in-memory data
-        console.debug('Background snapshot refresh failed:', error);
-      }
-    };
-
-    // Delay API call to not block initial render
-    const timer = setTimeout(refreshFromApi, 500);
-    return () => clearTimeout(timer);
-  }, [currentJob?.id]);
+  // Note: Snapshots are now computed via useMemo from currentJob.snapshots
+  // Background refresh happens via JobsContext polling, no need for duplicate API call here
 
   // Sync active job with context
   useEffect(() => {

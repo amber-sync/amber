@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SyncJob, JobStatus, JobMountInfo } from '../../../types';
+import { SyncJob, JobStatus, JobMountInfo, LogEntry, RsyncProgressData } from '../../../types';
 import { Icons } from '../../../components/IconComponents';
 import { formatSchedule, formatRelativeTime } from '../../../utils';
 import { OfflineBadge } from '../../../components/ConnectionStatus';
@@ -10,6 +10,7 @@ import {
   Title,
   Body,
   Code,
+  Caption,
   ModeBadge,
   Button,
 } from '../../../components/ui';
@@ -17,6 +18,8 @@ import {
 interface JobCardProps {
   job: SyncJob;
   mountInfo?: JobMountInfo;
+  logs?: LogEntry[];
+  progress?: RsyncProgressData | null;
   onSelect: () => void;
   onRunBackup?: (jobId: string) => void;
   onEditSettings?: (jobId: string) => void;
@@ -29,7 +32,7 @@ interface DetailRowProps {
 }
 
 const DetailRow: React.FC<DetailRowProps> = ({ icon, label, children }) => (
-  <div className="space-y-1">
+  <div className="space-y-1 min-w-0">
     <Body size="sm" color="secondary" className="flex items-center gap-1.5">
       {icon}
       {label}
@@ -38,8 +41,112 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon, label, children }) => (
   </div>
 );
 
+// Activity log display - shows recent logs and progress
+const ActivityLog: React.FC<{
+  logs: LogEntry[];
+  progress: RsyncProgressData | null;
+  isRunning: boolean;
+  isFailed: boolean;
+}> = ({ logs, progress, isRunning, isFailed }) => {
+  // Show last 5 log entries, prioritizing errors/warnings
+  const recentLogs = logs.slice(-5);
+  const hasContent = recentLogs.length > 0 || (isRunning && progress);
+
+  if (!hasContent) return null;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-border-base">
+      <Body size="sm" color="secondary" className="flex items-center gap-1.5 mb-2">
+        <Icons.Terminal size={14} />
+        {isRunning ? 'Live Activity' : isFailed ? 'Last Error' : 'Recent Activity'}
+      </Body>
+
+      {/* Progress bar when running */}
+      {isRunning && progress && (
+        <div className="mb-3 p-3 bg-layer-2 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <Body size="sm" weight="medium">
+              {progress.percentage}% complete
+            </Body>
+            <Caption color="tertiary">
+              {progress.speed} • ETA: {progress.eta || 'calculating...'}
+            </Caption>
+          </div>
+          <div className="h-1.5 bg-layer-3 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent-primary rounded-full transition-all duration-300"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+          {progress.currentFile && (
+            <Code size="sm" className="mt-2 block truncate text-text-tertiary">
+              {progress.currentFile}
+            </Code>
+          )}
+        </div>
+      )}
+
+      {/* Log entries */}
+      <div className="space-y-1 max-h-32 overflow-y-auto">
+        {recentLogs.map((log, i) => (
+          <div
+            key={`${log.timestamp}-${i}`}
+            className={`flex items-start gap-2 text-xs font-mono ${
+              log.level === 'error'
+                ? 'text-error'
+                : log.level === 'warning'
+                  ? 'text-warning'
+                  : 'text-text-tertiary'
+            }`}
+          >
+            <span className="shrink-0 opacity-50">
+              {new Date(log.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })}
+            </span>
+            <span className="break-all">{log.message}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Smart path display - truncates middle, shows full on hover
+const PathDisplay: React.FC<{ path: string; className?: string }> = ({ path, className = '' }) => {
+  const parts = path.split('/').filter(Boolean);
+  const isLongPath = parts.length > 3;
+
+  // For long paths, show first part + ... + last 2 parts
+  const displayPath = isLongPath ? `/${parts[0]}/.../${parts.slice(-2).join('/')}` : path;
+
+  return (
+    <div className={`group relative ${className}`}>
+      <Code size="sm" className="block truncate cursor-help" title={path}>
+        {displayPath}
+      </Code>
+      {/* Tooltip on hover for full path */}
+      <div className="absolute left-0 bottom-full mb-1 px-2 py-1.5 bg-layer-1 border border-border-highlight rounded-lg shadow-elevated opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 max-w-xs">
+        <Code size="sm" className="break-all whitespace-pre-wrap text-text-secondary">
+          {path}
+        </Code>
+      </div>
+    </div>
+  );
+};
+
 export const JobCard = React.memo<JobCardProps>(
-  function JobCard({ job, mountInfo, onSelect, onRunBackup, onEditSettings }) {
+  function JobCard({
+    job,
+    mountInfo,
+    logs = [],
+    progress = null,
+    onSelect,
+    onRunBackup,
+    onEditSettings,
+  }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const isRunning = job.status === JobStatus.RUNNING;
@@ -199,15 +306,11 @@ export const JobCard = React.memo<JobCardProps>(
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-4">
               <DetailRow icon={<Icons.FolderOpen size={14} />} label="Source">
-                <Code size="sm" className="break-all" title={job.sourcePath}>
-                  {job.sourcePath}
-                </Code>
+                <PathDisplay path={job.sourcePath} />
               </DetailRow>
 
               <DetailRow icon={<Icons.HardDrive size={14} />} label="Destination">
-                <Code size="sm" className="break-all" title={job.destPath}>
-                  {job.destPath}
-                </Code>
+                <PathDisplay path={job.destPath} />
               </DetailRow>
 
               <DetailRow icon={<Icons.Clock size={14} />} label="Schedule">
@@ -232,6 +335,16 @@ export const JobCard = React.memo<JobCardProps>(
                 </Body>
               </DetailRow>
             </div>
+
+            {/* Activity Log - shows when running or failed */}
+            {(isRunning || isFailed || logs.length > 0) && (
+              <ActivityLog
+                logs={logs}
+                progress={progress}
+                isRunning={isRunning}
+                isFailed={isFailed}
+              />
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border-base">
@@ -274,6 +387,8 @@ export const JobCard = React.memo<JobCardProps>(
       prevProps.job.lastRun === nextProps.job.lastRun &&
       prevProps.job.name === nextProps.job.name &&
       prevProps.mountInfo?.mounted === nextProps.mountInfo?.mounted &&
+      prevProps.logs?.length === nextProps.logs?.length &&
+      prevProps.progress?.percentage === nextProps.progress?.percentage &&
       prevProps.onSelect === nextProps.onSelect &&
       prevProps.onRunBackup === nextProps.onRunBackup &&
       prevProps.onEditSettings === nextProps.onEditSettings

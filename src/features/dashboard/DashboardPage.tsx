@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { SyncJob, DiskStats } from '../../types';
+import { SyncJob, DiskStats, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
 import { BackupCalendar } from '../../components/analytics';
@@ -27,6 +27,12 @@ export interface DashboardPageProps {
   diskStats: Record<string, DiskStats>;
   /** Mount status for each job, keyed by job ID */
   mountStatus?: Record<string, JobMountInfo>;
+  /** Currently active/running job ID */
+  activeJobId?: string | null;
+  /** Logs for the active job */
+  logs?: LogEntry[];
+  /** Progress for the active job */
+  progress?: RsyncProgressData | null;
   onSelectJob: (jobId: string) => void;
   onCreateJob: () => void;
   onRunBackup?: (jobId: string) => void;
@@ -38,6 +44,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   jobs,
   diskStats,
   mountStatus,
+  activeJobId,
+  logs = [],
+  progress = null,
   onSelectJob,
   onCreateJob,
   onRunBackup,
@@ -141,6 +150,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               key={job.id}
               job={job}
               mountInfo={mountStatus?.[job.id]}
+              logs={job.id === activeJobId ? logs : undefined}
+              progress={job.id === activeJobId ? progress : undefined}
               onSelect={() => onSelectJob(job.id)}
               onRunBackup={onRunBackup}
               onEditSettings={onEditSettings}
