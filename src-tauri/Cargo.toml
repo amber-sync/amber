@@ -69,7 +69,7 @@ tempfile = "3"
 tokio-test = "0.4"
 criterion = { version = "0.8", features = ["html_reports"] }
 # TIM-222: Testing framework
-rstest = "0.18"
+rstest = "0.26"
 assert_fs = "1.1"
 predicates = "3.1"
 proptest = "1.4"
