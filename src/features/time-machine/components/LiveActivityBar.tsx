@@ -20,7 +20,12 @@ interface LiveActivityBarProps {
   onExpand: () => void;
 }
 
-function LiveActivityBarComponent({ isRunning, progress, logs, onExpand }: LiveActivityBarProps) {
+function LiveActivityBarComponent({
+  isRunning,
+  progress,
+  logs: _logs,
+  onExpand,
+}: LiveActivityBarProps) {
   // Only show when running
   if (!isRunning) {
     return null;

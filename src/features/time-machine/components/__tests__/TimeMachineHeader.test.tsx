@@ -15,6 +15,7 @@ vi.mock('../../../../components/IconComponents', () => ({
   Icons: {
     ArrowLeft: ({ size }: { size: number }) => <span data-testid="icon-arrow-left">{size}</span>,
     Database: ({ size }: { size: number }) => <span data-testid="icon-database">{size}</span>,
+    Folder: ({ size }: { size: number }) => <span data-testid="icon-folder">{size}</span>,
     ChevronDown: ({ size, className }: { size: number; className?: string }) => (
       <span data-testid="icon-chevron-down" className={className}>
         {size}
@@ -247,16 +248,15 @@ describe('TimeMachineHeader', () => {
       const selector = screen.getByRole('button', { name: /job 2/i });
       await user.click(selector);
 
-      // Get all buttons with "Job 2" text and find the one in the dropdown (not the selector button)
-      const allJob2Elements = screen.getAllByText('Job 2');
-      // The dropdown item will have the font-medium truncate class on its div
-      const job2DropdownItem = allJob2Elements.find(el =>
-        el.className.includes('font-medium truncate')
+      const allJob2Buttons = screen
+        .getAllByRole('button')
+        .filter(btn => btn.textContent?.includes('Job 2'));
+      const selectedJobButton = allJob2Buttons.find(
+        btn => btn !== selector && btn.className.includes('bg-accent-secondary')
       );
-      expect(job2DropdownItem).toBeDefined();
 
-      const job2Button = job2DropdownItem?.closest('button');
-      expect(job2Button).toHaveClass('bg-[var(--tm-amber-wash)]');
+      expect(selectedJobButton).toBeDefined();
+      expect(selectedJobButton).toHaveClass('text-text-primary');
     });
   });
 
@@ -336,7 +336,8 @@ describe('TimeMachineHeader', () => {
       await user.click(filterButton);
 
       const sevenDaysOption = screen.getAllByText('7 Days')[1]; // Second one is in dropdown
-      expect(sevenDaysOption.closest('button')).toHaveClass('font-medium');
+      expect(sevenDaysOption.closest('button')).toHaveClass('text-text-primary');
+      expect(sevenDaysOption.closest('button')).toHaveClass('bg-layer-2');
     });
 
     it('displays snapshot count when date filter is active', () => {
@@ -437,7 +438,7 @@ describe('TimeMachineHeader', () => {
       render(<TimeMachineHeader {...defaultProps} isRunning={true} />);
 
       const stopButton = screen.getByTitle('Stop Backup');
-      expect(stopButton).toHaveClass('bg-[var(--color-error)]');
+      expect(stopButton).toHaveClass('bg-error');
     });
   });
 

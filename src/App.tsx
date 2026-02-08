@@ -136,7 +136,7 @@ function AppContent() {
           try {
             await api.indexSnapshot(data.jobId, snapshot.timestamp, snapshot.path);
             logger.debug('Indexed snapshot', { jobId: data.jobId });
-          } catch (err) {
+          } catch {
             logger.warn('Failed to index snapshot (non-fatal)', { jobId: data.jobId });
             // Non-fatal - fallback to filesystem scan
           }
@@ -306,31 +306,6 @@ function AppContent() {
     [jobs, setIsRunning, clearLogs, addLog, setJobs]
   );
 
-  const stopSync = useCallback(
-    async (jobId: string) => {
-      addLog('Stopping sync...', 'warning');
-
-      try {
-        await api.killRsync(jobId);
-
-        // Update job status to IDLE
-        setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.IDLE } : j)));
-
-        // Reset running state
-        setIsRunning(false);
-        addLog('Sync stopped', 'warning');
-      } catch (err) {
-        addLog(`Error stopping sync: ${err}`, 'error');
-      }
-    },
-    [addLog, setJobs, setIsRunning]
-  );
-
-  const handleOpenRestore = (jobId: string) => {
-    setRestoreJobId(jobId);
-    setView('RESTORE_WIZARD');
-  };
-
   const handleRestoreFiles = async (files: string[], targetPath: string, snapshot: Snapshot) => {
     if (!restoreJobId) return;
     const job = jobs.find(j => j.id === restoreJobId);
@@ -370,8 +345,6 @@ function AppContent() {
   };
 
   const isTopLevel = ['DASHBOARD', 'TIME_MACHINE', 'APP_SETTINGS', 'HELP'].includes(view);
-  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null;
-
   return (
     <div className="flex h-screen bg-[var(--page-bg)] text-text-primary font-sans transition-colors duration-300 relative overflow-hidden">
       <div className="fixed top-0 left-0 w-full h-8 z-[100] titlebar-drag" />

@@ -20,70 +20,32 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: aarch64-apple-darwin
-          override: true
           components: rustfmt, clippy
-
-      - name: Build Rust Sidecar (Universal)
-        run: |
-          cd amber-sidecar
-          # Add targets
-          rustup target add x86_64-apple-darwin
-          rustup target add aarch64-apple-darwin
-
-          # Build for both architectures
-          cargo build --release --target x86_64-apple-darwin
-          cargo build --release --target aarch64-apple-darwin
-
-          # Create universal binary using lipo
-          lipo -create -output target/release/amber-sidecar-universal \
-            target/x86_64-apple-darwin/release/amber-sidecar \
-            target/aarch64-apple-darwin/release/amber-sidecar
-            
-          # Verify universal binary
-          lipo -info target/release/amber-sidecar-universal
-
-          # Move to expected location for electron-builder
-          # We'll put it in a 'bin' folder or root of resources
-          mkdir -p ../resources
-          cp target/release/amber-sidecar-universal ../resources/amber-sidecar
-
-      - name: Run Rust Benchmark
-        run: |
-          cd amber-sidecar
-          node ../scripts/bench-rust.js 10000 target/release/amber-sidecar-universal
 
       - name: Build icons
         run: npm run build:icons
 
-      - name: Build Electron app
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Tauri app
+        run: npm run build
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
           name: amber-dmg
-          path: dist_electron_build/*.dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
           retention-days: 5
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: dist_electron_build/*.dmg
+          files: src-tauri/target/release/bundle/dmg/*.dmg
           generate_release_notes: true
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

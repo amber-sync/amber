@@ -32,10 +32,11 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'types' | 'largest'>('types');
+  const snapshotTimestamp = snapshot?.timestamp;
 
   // Load analytics data
   useEffect(() => {
-    if (!isOpen || !snapshot || !job.destPath) {
+    if (!isOpen || !snapshotTimestamp || !job.destPath) {
       return;
     }
 
@@ -45,8 +46,8 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
 
       try {
         const [fileTypes, largestFiles] = await Promise.all([
-          api.getFileTypeStatsOnDestination(job.destPath, job.id, snapshot.timestamp, 20),
-          api.getLargestFilesOnDestination(job.destPath, job.id, snapshot.timestamp, 20),
+          api.getFileTypeStatsOnDestination(job.destPath, job.id, snapshotTimestamp, 20),
+          api.getLargestFilesOnDestination(job.destPath, job.id, snapshotTimestamp, 20),
         ]);
 
         const totalSize = fileTypes.reduce((sum, ft) => sum + ft.totalSize, 0);
@@ -62,7 +63,7 @@ function AnalyticsOverlayComponent({ isOpen, job, snapshot, onClose }: Analytics
     };
 
     loadData();
-  }, [isOpen, snapshot?.timestamp, job.id, job.destPath]);
+  }, [isOpen, snapshotTimestamp, job.id, job.destPath]);
 
   // Calculate max values for bar charts
   const maxFileTypeSize = useMemo(() => {

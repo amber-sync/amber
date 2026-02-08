@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Toast, ToastProps, ToastVariant } from '../components/ui/Toast';
+import { Toast, ToastVariant } from '../components/ui/Toast';
 
 interface ToastOptions {
   variant?: ToastVariant;

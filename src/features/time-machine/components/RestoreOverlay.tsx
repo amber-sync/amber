@@ -4,8 +4,8 @@
  * Wraps the RestorePanel component with Observatory styling.
  */
 
-import { useState, useEffect, useMemo, memo } from 'react';
-import { SyncJob, Snapshot } from '../../../types';
+import { useState, useEffect, memo } from 'react';
+import { SyncJob } from '../../../types';
 import { api } from '../../../api';
 import { Icons } from '../../../components/IconComponents';
 import { formatBytes } from '../../../utils';

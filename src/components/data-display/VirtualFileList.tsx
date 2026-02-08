@@ -3,7 +3,7 @@
  * Extracted from FileBrowser for reuse with react-window
  */
 
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { List, type RowComponentProps } from 'react-window';
 import { Icons } from '../IconComponents';
 import { formatBytes } from '../../utils/formatters';
@@ -147,12 +147,15 @@ export function VirtualFileList({
     return () => resizeObserver.disconnect();
   }, []);
 
-  const handleToggleSelection = (e: React.MouseEvent | null, path: string) => {
-    e?.stopPropagation();
-    if (onSelectionChange) {
-      onSelectionChange(path, !selectedFiles.has(path));
-    }
-  };
+  const handleToggleSelection = useCallback(
+    (e: React.MouseEvent | null, path: string) => {
+      e?.stopPropagation();
+      if (onSelectionChange) {
+        onSelectionChange(path, !selectedFiles.has(path));
+      }
+    },
+    [onSelectionChange, selectedFiles]
+  );
 
   // Memoize row props to prevent unnecessary re-renders
   const rowProps = useMemo<FileRowProps>(
@@ -164,7 +167,7 @@ export function VirtualFileList({
       onItemClick,
       onToggleSelection: handleToggleSelection,
     }),
-    [items, selectedFiles, highlightedItem, selectable, onItemClick, onSelectionChange]
+    [items, selectedFiles, highlightedItem, selectable, onItemClick, handleToggleSelection]
   );
 
   if (items.length === 0) {

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { usePerformanceMonitor } from '../usePerformanceMonitor';
 
 describe('usePerformanceMonitor', () => {

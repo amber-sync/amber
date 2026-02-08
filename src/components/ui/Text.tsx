@@ -286,7 +286,7 @@ const statusStyles: Record<StatusVariant, { bg: string; border: string; text: st
 };
 
 export const StatusMessage = React.forwardRef<HTMLDivElement, StatusMessageProps>(
-  ({ variant, icon = true, size = 'base', className = '', children, ...props }, ref) => {
+  ({ variant, icon: _icon = true, size = 'base', className = '', children, ...props }, ref) => {
     const styles = statusStyles[variant];
     const sizeClass = size === 'sm' ? 'text-body-sm' : 'text-body';
 

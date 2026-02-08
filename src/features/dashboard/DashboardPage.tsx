@@ -42,7 +42,7 @@ export interface DashboardPageProps {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   jobs,
-  diskStats,
+  diskStats: _diskStats,
   mountStatus,
   activeJobId,
   logs = [],

@@ -22,13 +22,16 @@ export function useSnapshotDiff(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const snapshotATimestamp = snapshotA?.timestamp ?? null;
+  const snapshotBTimestamp = snapshotB?.timestamp ?? null;
+
   const fetchDiff = useCallback(async () => {
-    if (!jobId || !snapshotA || !snapshotB) {
+    if (!jobId || !snapshotATimestamp || !snapshotBTimestamp) {
       setDiff(null);
       return;
     }
 
-    if (snapshotA.timestamp === snapshotB.timestamp) {
+    if (snapshotATimestamp === snapshotBTimestamp) {
       setDiff(null);
       setError('Cannot compare snapshot with itself');
       return;
@@ -38,7 +41,7 @@ export function useSnapshotDiff(
     setError(null);
 
     try {
-      const result = await api.compareSnapshots(jobId, snapshotA.timestamp, snapshotB.timestamp);
+      const result = await api.compareSnapshots(jobId, snapshotATimestamp, snapshotBTimestamp);
       setDiff(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -46,7 +49,7 @@ export function useSnapshotDiff(
     } finally {
       setIsLoading(false);
     }
-  }, [jobId, snapshotA?.timestamp, snapshotB?.timestamp]);
+  }, [jobId, snapshotATimestamp, snapshotBTimestamp]);
 
   useEffect(() => {
     fetchDiff();

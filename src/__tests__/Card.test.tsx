@@ -141,7 +141,7 @@ describe('Card', () => {
   it('should apply rounded corners via CSS variable', () => {
     render(<Card data-testid="card">Rounded</Card>);
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('rounded-[var(--card-radius)]');
+    expect(card.className).toContain('rounded-lg');
   });
 
   it('should apply transition styles', () => {

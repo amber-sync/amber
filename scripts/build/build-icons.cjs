@@ -3,30 +3,29 @@ const generateIcon = require('icon-gen');
 const fs = require('fs-extra');
 const path = require('path');
 
-const LOGO_PATH = path.join(__dirname, 'public/logo.svg');
-const ICONS_DIR = path.join(__dirname, 'build/icons');
+const ROOT_DIR = path.resolve(__dirname, '../..');
+const LOGO_PATH = path.join(ROOT_DIR, 'public/logo.svg');
+const ICONS_DIR = path.join(ROOT_DIR, 'src-tauri/icons');
 
 async function buildIcons() {
-  console.log('Building application icons from public/logo.svg...');
+  console.log(`Building application icons from ${LOGO_PATH}...`);
 
-  // Ensure build/icons directory exists
+  // Ensure output directory exists
   await fs.ensureDir(ICONS_DIR);
 
-  // Icon sizes needed
-  const sizes = [16, 32, 64, 128, 256, 512, 1024];
+  // Generate PNGs required by src-tauri/tauri.conf.json
+  const requiredPngs = [
+    { file: '32x32.png', size: 32 },
+    { file: '128x128.png', size: 128 },
+    { file: '128x128@2x.png', size: 256 },
+  ];
 
-  // Generate PNG files at different sizes
-  console.log('Generating PNG files...');
-  for (const size of sizes) {
-    const outputPath = path.join(ICONS_DIR, `icon-${size}.png`);
+  console.log('Generating required PNG files...');
+  for (const { file, size } of requiredPngs) {
+    const outputPath = path.join(ICONS_DIR, file);
     await sharp(LOGO_PATH).resize(size, size).png().toFile(outputPath);
-    console.log(`  ✓ Generated icon-${size}.png`);
+    console.log(`  ✓ Generated ${file}`);
   }
-
-  // Generate tray icon (16x16 for macOS menu bar)
-  const trayPath = path.join(ICONS_DIR, 'tray.png');
-  await sharp(LOGO_PATH).resize(16, 16).png().toFile(trayPath);
-  console.log('  ✓ Generated tray.png (16x16)');
 
   // Generate .icns (macOS) and .ico (Windows) using icon-gen
   console.log('Generating platform-specific icon files...');

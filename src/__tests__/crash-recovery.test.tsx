@@ -66,8 +66,8 @@ describe('Crash and Recovery Testing', () => {
 
     it('should catch null reference errors', () => {
       const NullReferenceComponent = () => {
-        const obj: any = null;
-        return <div>{obj.property}</div>;
+        const obj: { property: string } | null = null;
+        return <div>{obj!.property}</div>;
       };
 
       render(
@@ -81,7 +81,7 @@ describe('Crash and Recovery Testing', () => {
 
     it('should catch undefined function call errors', () => {
       const UndefinedCallComponent = () => {
-        const fn: any = undefined;
+        const fn = undefined as unknown as () => void;
         fn();
         return <div>Never rendered</div>;
       };
@@ -97,8 +97,8 @@ describe('Crash and Recovery Testing', () => {
 
     it('should catch array index out of bounds', () => {
       const ArrayComponent = () => {
-        const arr: any[] = [];
-        return <div>{arr[100].toString()}</div>;
+        const arr: string[] = [];
+        return <div>{arr[100]!.toString()}</div>;
       };
 
       render(
@@ -114,9 +114,9 @@ describe('Crash and Recovery Testing', () => {
   describe('State Corruption Scenarios', () => {
     it('should handle corrupted state gracefully', () => {
       const StateComponent = () => {
-        const [state] = React.useState<any>(null);
+        const [state] = React.useState<{ data: { value: string } } | null>(null);
         // Try to access property of null state
-        return <div>{state.data.value}</div>;
+        return <div>{state!.data.value}</div>;
       };
 
       render(
@@ -161,19 +161,19 @@ describe('Crash and Recovery Testing', () => {
   describe('API Failure Scenarios', () => {
     it('should handle API response parsing errors', async () => {
       const ApiComponent = () => {
-        const [data, setData] = React.useState<any>(null);
+        const [data, setData] = React.useState<string | null>(null);
 
         React.useEffect(() => {
           try {
             // Simulate malformed JSON
             const parsed = JSON.parse('{invalid json}');
             setData(parsed);
-          } catch (err) {
+          } catch {
             throw new Error('Failed to parse API response');
           }
         }, []);
 
-        return <div>{data}</div>;
+        return <div>{data ?? ''}</div>;
       };
 
       render(
@@ -260,9 +260,9 @@ describe('Crash and Recovery Testing', () => {
   describe('Type Coercion and Validation Errors', () => {
     it('should handle type coercion failures', () => {
       const TypeComponent = () => {
-        const value: any = { complex: 'object' };
+        const value: unknown = { complex: 'object' };
         // Try to use object as number
-        const result = value * 2;
+        const result = Number(value) * 2;
         if (isNaN(result)) {
           throw new Error('Type coercion failed');
         }

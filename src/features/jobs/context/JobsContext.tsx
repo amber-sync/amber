@@ -15,7 +15,17 @@ interface JobsContextType {
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
-const normalizeJobFromStore = (job: any): SyncJob => ({
+type StoredJob = Omit<SyncJob, 'config' | 'sshConfig' | 'snapshots'> & {
+  config?: Partial<SyncJob['config']>;
+  sshConfig?: SyncJob['sshConfig'];
+  snapshots?: SyncJob['snapshots'];
+  destinationType?: DestinationType;
+  status?: JobStatus;
+  scheduleInterval?: number | null;
+  lastRun?: number | null;
+};
+
+const normalizeJobFromStore = (job: StoredJob): SyncJob => ({
   id: job.id,
   name: job.name,
   sourcePath: job.sourcePath,
@@ -40,7 +50,8 @@ const normalizeJobFromStore = (job: any): SyncJob => ({
 const stripSnapshotsForStore = (job: SyncJob) => {
   const snapshots =
     job.snapshots?.map(s => {
-      const { root, ...rest } = s;
+      const { root: _ignoredRoot, ...rest } = s;
+      void _ignoredRoot;
       return rest;
     }) || [];
   return { ...job, snapshots };

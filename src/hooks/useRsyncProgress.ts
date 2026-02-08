@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { LogEntry, RsyncProgressData } from '../types';
 import { api } from '../api';
 
-const PROGRESS_UPDATE_INTERVAL_MS = 200;
 const LOG_FLUSH_INTERVAL_MS = 200;
 const MAX_LOG_ENTRIES = 500;
 

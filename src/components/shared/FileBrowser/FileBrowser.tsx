@@ -14,7 +14,7 @@ import {
   type IndexedDirEntry,
   type ReadDirEntry,
 } from '../../../types';
-import { Caption, Body, Badge, StatusMessage } from '../../ui';
+import { Caption, Badge, StatusMessage } from '../../ui';
 
 interface FileBrowserProps {
   initialPath: string;

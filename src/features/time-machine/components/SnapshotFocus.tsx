@@ -20,9 +20,7 @@ interface SnapshotFocusProps {
   onBrowseFiles: () => void;
   onRestore: () => void;
   onViewAnalytics: () => void;
-  onRunBackup: () => void;
   onCompare: () => void;
-  isRunning: boolean;
 }
 
 interface AnalyticsData {
@@ -39,24 +37,23 @@ function SnapshotFocusComponent({
   onBrowseFiles,
   onRestore,
   onViewAnalytics,
-  onRunBackup,
   onCompare,
-  isRunning,
 }: SnapshotFocusProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const snapshotTimestamp = snapshot?.timestamp;
 
   // Track pending requests to avoid race conditions
   const pendingRequestRef = useRef<string | null>(null);
 
   // Load analytics when snapshot changes - with caching
   useEffect(() => {
-    if (!snapshot || !job.destPath) {
+    if (!snapshotTimestamp || !job.destPath) {
       setAnalytics(null);
       return;
     }
 
-    const cacheKey = `${job.id}-${snapshot.timestamp}`;
+    const cacheKey = `${job.id}-${snapshotTimestamp}`;
 
     // Check cache first - instant return if we have data
     const cached = analyticsCache.get(cacheKey);
@@ -73,8 +70,8 @@ function SnapshotFocusComponent({
 
       try {
         const [fileTypes, largestFiles] = await Promise.all([
-          api.getFileTypeStatsOnDestination(job.destPath, job.id, snapshot.timestamp, 6),
-          api.getLargestFilesOnDestination(job.destPath, job.id, snapshot.timestamp, 3),
+          api.getFileTypeStatsOnDestination(job.destPath, job.id, snapshotTimestamp, 6),
+          api.getLargestFilesOnDestination(job.destPath, job.id, snapshotTimestamp, 3),
         ]);
 
         const data = { fileTypes, largestFiles };
@@ -101,7 +98,7 @@ function SnapshotFocusComponent({
     return () => {
       pendingRequestRef.current = null;
     };
-  }, [snapshot?.timestamp, job.id, job.destPath]);
+  }, [snapshotTimestamp, job.id, job.destPath]);
 
   // Format date parts
   const dateParts = useMemo(() => {

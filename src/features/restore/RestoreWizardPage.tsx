@@ -16,21 +16,21 @@ interface RestoreWizardProps {
 export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRestore }) => {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [restoreTarget, setRestoreTarget] = useState<string>(job.sourcePath); // Default to original source
-  const [currentPath, setCurrentPath] = useState<string>('');
   const [isRestoring, setIsRestoring] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'size'>('date');
+  const jobSnapshots = job.snapshots;
 
   // Sort snapshots
   const sortedSnapshots = useMemo(() => {
-    return [...(job.snapshots ?? [])].sort((a, b) => {
+    const snapshots = jobSnapshots ?? [];
+    return [...snapshots].sort((a, b) => {
       if (sortBy === 'date') {
         return b.timestamp - a.timestamp; // Newest first
       } else {
         return b.sizeBytes - a.sizeBytes; // Largest first
       }
     });
-  }, [job.snapshots ?? [], sortBy]);
+  }, [jobSnapshots, sortBy]);
 
   // Select latest snapshot by default
   useEffect(() => {

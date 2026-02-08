@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as Icons from 'lucide-react';
-import { Caption, Code } from './ui';
+import { Caption } from './ui';
 
 interface CodeBlockProps {
   code: string;
@@ -104,7 +104,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         </div>
       )}
       <div className="p-4 font-mono text-sm overflow-x-auto">
-        <code className="block whitespace-pre-wrap break-all">{highlightCode(code)}</code>
+        <code data-language={language} className="block whitespace-pre-wrap break-all">
+          {highlightCode(code)}
+        </code>
       </div>
       {explanation && (
         <div className="bg-layer-1 px-4 py-3 border-t border-default">

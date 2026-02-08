@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Performance measurement utilities for tracking execution times and bottlenecks
  * @module utils/performance

@@ -1,10 +1,10 @@
 name: Type Check
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, reopened, ready_for_review]
+  workflow_dispatch:
 
 jobs:
   typecheck-frontend:

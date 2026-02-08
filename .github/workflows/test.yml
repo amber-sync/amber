@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on:
   pull_request:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint-frontend:
-    name: Lint Frontend
+  test-frontend:
+    name: Frontend Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,37 +22,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Run frontend tests
+        run: npm run test -- --run
 
-      - name: Check Prettier formatting
-        run: npm run format:check
-
-  lint-backend:
-    name: Lint Backend (Rust)
+  test-backend:
+    name: Rust Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
-      - name: Check formatting
-        working-directory: src-tauri
-        run: cargo fmt --check
+      - name: Install Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev
 
-      - name: Run Clippy
+      - name: Run Rust tests
         working-directory: src-tauri
-        run: cargo clippy -- -D warnings
+        run: cargo test

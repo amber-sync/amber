@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * React hook for monitoring component performance
  * @module hooks/usePerformanceMonitor
@@ -188,26 +189,8 @@ export function useProfiler(
 ): void {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-
-    const callback = (
-      id: string,
-      phase: 'mount' | 'update',
-      actualDuration: number,
-      baseDuration: number,
-      startTime: number,
-      commitTime: number
-    ) => {
-      console.log(
-        `[Profiler] ${componentName} ${phase}: ${actualDuration.toFixed(2)}ms (base: ${baseDuration.toFixed(2)}ms)`
-      );
-
-      if (onRender) {
-        onRender(id, phase, actualDuration, baseDuration, startTime, commitTime);
-      }
-    };
-
-    return () => {
-      // Cleanup if needed
-    };
+    if (onRender) {
+      onRender(componentName, 'mount', 0, 0, performance.now(), performance.now());
+    }
   }, [componentName, onRender]);
 }

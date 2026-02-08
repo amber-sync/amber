@@ -13,7 +13,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useJobs } from '@/features/jobs/context/JobsContext';
 import { useUI } from '../../context/UIContext';
-import { api } from '../../api';
 import { Snapshot, SyncJob, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
@@ -35,7 +34,7 @@ import { useSnapshotDiff } from './hooks/useSnapshotDiff';
 import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
 import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
 import { PageContainer } from '../../components/layout';
-import { Title, Body, Caption, Code } from '../../components/ui';
+import { Body, Caption, Code } from '../../components/ui';
 
 // Styles
 import './timemachine.css';
@@ -92,7 +91,7 @@ export function TimeMachinePage({
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [currentJob]);
 
-  const [loading, setLoading] = useState(false); // Start as false since we have in-memory data
+  const loading = false;
 
   // Date filter state (TIM-151)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -311,11 +310,6 @@ export function TimeMachinePage({
     }
   }, [currentJobId]);
 
-  const handleNewJob = useCallback(() => {
-    setActiveJobId(null);
-    setView('JOB_EDITOR');
-  }, [setActiveJobId, setView]);
-
   const handleSaveJobEdit = useCallback(
     async (updatedJob: SyncJob) => {
       try {
@@ -443,9 +437,7 @@ export function TimeMachinePage({
           onBrowseFiles={handleBrowseFiles}
           onRestore={handleRestore}
           onViewAnalytics={handleViewAnalytics}
-          onRunBackup={handleRunBackup}
           onCompare={handleCompare}
-          isRunning={isRunning}
         />
 
         {/* Live Activity Bar - Fixed at bottom during sync */}
