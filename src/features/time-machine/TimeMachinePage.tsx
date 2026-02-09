@@ -91,8 +91,6 @@ export function TimeMachinePage({
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [currentJob]);
 
-  const loading = false;
-
   // Date filter state (TIM-151)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
@@ -370,7 +368,7 @@ export function TimeMachinePage({
   }
 
   // No snapshots state
-  if (!loading && snapshots.length === 0) {
+  if (snapshots.length === 0) {
     return (
       <PageContainer width="default" noPadding scrollable>
         <div className="tm-container flex flex-col min-h-full">
@@ -427,7 +425,7 @@ export function TimeMachinePage({
           selectedTimestamp={selectedTimestamp}
           timeRange={timeRange}
           onSelectSnapshot={handleSelectSnapshot}
-          loading={loading}
+          loading={false}
         />
 
         {/* Snapshot Focus - Central content */}

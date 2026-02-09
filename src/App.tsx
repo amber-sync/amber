@@ -14,10 +14,10 @@ import { DevTools } from './components/DevTools';
 import { AppContextProvider } from './context/AppContext';
 import { useJobs } from './context';
 import { useUI } from './context';
+import type { ViewType } from './context/UIContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { useRsyncProgress } from './hooks/useRsyncProgress';
-import { useDiskStats } from './hooks/useDiskStats';
 import { useJobForm } from './hooks/useJobForm';
 import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, SyncJob, SyncMode, DestinationType, Snapshot, getErrorMessage } from './types';
@@ -32,8 +32,6 @@ function AppContent() {
   // TIM-124: Pass activeJobId to filter rsync events to only the current job
   const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } =
     useRsyncProgress(activeJobId);
-  const destinationStats = useDiskStats(jobs.map(j => j.destPath));
-
   // Restore Wizard State
   const [restoreJobId, setRestoreJobId] = useState<string | null>(null);
 
@@ -195,18 +193,11 @@ function AppContent() {
         ? {
             enabled: true,
             cron: getCronFromInterval(jobForm.jobSchedule),
-            runOnMount: jobForm.jobSchedule === -1 || true,
+            runOnMount: jobForm.jobSchedule === -1,
           }
         : { enabled: false };
 
       // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
-      type ViewType =
-        | 'DASHBOARD'
-        | 'TIME_MACHINE'
-        | 'JOB_EDITOR'
-        | 'APP_SETTINGS'
-        | 'HELP'
-        | 'RESTORE_WIZARD';
       const returnView = (jobEditorSourceView ||
         (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
 
@@ -261,10 +252,23 @@ function AppContent() {
     setShowDeleteConfirm(true);
   };
 
-  const executeDelete = async () => {
+  const executeDelete = async (deleteData: boolean) => {
     if (jobToDelete) {
       setIsDeleting(true);
       try {
+        // If user opted to delete backup data, do that first
+        if (deleteData) {
+          const job = jobs.find(j => j.id === jobToDelete);
+          if (job) {
+            try {
+              await api.deleteJobData(jobToDelete, job.destPath);
+            } catch (e) {
+              logger.warn('Failed to delete backup data (continuing with job removal)', {
+                error: e,
+              });
+            }
+          }
+        }
         setJobs(prev => prev.filter(j => j.id !== jobToDelete));
         await deleteJob(jobToDelete);
         if (activeJobId === jobToDelete) {
@@ -359,6 +363,7 @@ function AppContent() {
 
       <DeleteJobModal
         isOpen={showDeleteConfirm}
+        jobName={jobs.find(j => j.id === jobToDelete)?.name}
         onCancel={() => {
           setShowDeleteConfirm(false);
           setJobToDelete(null);
@@ -377,7 +382,6 @@ function AppContent() {
         >
           <DashboardPage
             jobs={jobs}
-            diskStats={destinationStats}
             activeJobId={activeJobId}
             logs={logs}
             progress={progress}
@@ -442,13 +446,6 @@ function AppContent() {
             onSave={handleSaveJob}
             onCancel={() => {
               // TIM-211/212: Use tracked source view for proper return navigation
-              type ViewType =
-                | 'DASHBOARD'
-                | 'TIME_MACHINE'
-                | 'JOB_EDITOR'
-                | 'APP_SETTINGS'
-                | 'HELP'
-                | 'RESTORE_WIZARD';
               const returnView = (jobEditorSourceView ||
                 (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
               setView(returnView);

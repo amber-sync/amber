@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { SyncJob, JobStatus, DestinationType } from '@/types';
 import { api } from '@/api';
 import { BASE_RSYNC_CONFIG } from '@/config';
@@ -37,7 +37,7 @@ const normalizeJobFromStore = (job: StoredJob): SyncJob => ({
     ...job.config,
     excludePatterns: job.config?.excludePatterns ?? [],
     customCommand: job.config?.customCommand,
-    customFlags: '',
+    customFlags: job.config?.customFlags ?? '',
   },
   sshConfig: job.sshConfig ?? { enabled: false },
   destinationType: job.destinationType ?? DestinationType.LOCAL,
@@ -141,20 +141,19 @@ export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  return (
-    <JobsContext.Provider
-      value={{
-        jobs,
-        setJobs,
-        persistJob,
-        deleteJob,
-        runSync,
-        stopSync,
-      }}
-    >
-      {children}
-    </JobsContext.Provider>
+  const value = useMemo(
+    () => ({
+      jobs,
+      setJobs,
+      persistJob,
+      deleteJob,
+      runSync,
+      stopSync,
+    }),
+    [jobs, persistJob, deleteJob, runSync, stopSync]
   );
+
+  return <JobsContext.Provider value={value}>{children}</JobsContext.Provider>;
 };
 
 export const useJobs = () => {

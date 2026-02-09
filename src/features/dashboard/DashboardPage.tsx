@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { SyncJob, DiskStats, LogEntry, RsyncProgressData } from '../../types';
+import { SyncJob, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
 import { BackupCalendar } from '../../components/analytics';
@@ -24,7 +24,6 @@ interface DayBackup {
 
 export interface DashboardPageProps {
   jobs: SyncJob[];
-  diskStats: Record<string, DiskStats>;
   /** Mount status for each job, keyed by job ID */
   mountStatus?: Record<string, JobMountInfo>;
   /** Currently active/running job ID */
@@ -42,7 +41,6 @@ export interface DashboardPageProps {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   jobs,
-  diskStats: _diskStats,
   mountStatus,
   activeJobId,
   logs = [],

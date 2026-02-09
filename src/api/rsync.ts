@@ -27,34 +27,37 @@ export async function killRsync(jobId: string): Promise<void> {
   return invoke('kill_rsync', { jobId });
 }
 
-export function onRsyncLog(callback: RsyncLogCallback): () => void {
+/**
+ * Helper: subscribe to a Tauri event with safe cleanup.
+ * If the returned cleanup is called before the listen Promise resolves,
+ * the listener is still properly removed once it does resolve.
+ */
+function safeEventListener<T>(event: string, callback: (data: T) => void): () => void {
   let unlisten: (() => void) | null = null;
-  listen<RsyncLogPayload>('rsync-log', (event: Event<RsyncLogPayload>) =>
-    callback(event.payload)
-  ).then(fn => {
-    unlisten = fn;
+  let disposed = false;
+  listen<T>(event, (e: Event<T>) => callback(e.payload)).then(fn => {
+    if (disposed) {
+      fn(); // Already cleaned up - unlisten immediately
+    } else {
+      unlisten = fn;
+    }
   });
-  return () => unlisten?.();
+  return () => {
+    disposed = true;
+    unlisten?.();
+  };
+}
+
+export function onRsyncLog(callback: RsyncLogCallback): () => void {
+  return safeEventListener<RsyncLogPayload>('rsync-log', callback);
 }
 
 export function onRsyncProgress(callback: RsyncProgressCallback): () => void {
-  let unlisten: (() => void) | null = null;
-  listen<RsyncProgressPayload>('rsync-progress', (event: Event<RsyncProgressPayload>) =>
-    callback(event.payload)
-  ).then(fn => {
-    unlisten = fn;
-  });
-  return () => unlisten?.();
+  return safeEventListener<RsyncProgressPayload>('rsync-progress', callback);
 }
 
 export function onRsyncComplete(callback: RsyncCompleteCallback): () => void {
-  let unlisten: (() => void) | null = null;
-  listen<RsyncCompletePayload>('rsync-complete', (event: Event<RsyncCompletePayload>) =>
-    callback(event.payload)
-  ).then(fn => {
-    unlisten = fn;
-  });
-  return () => unlisten?.();
+  return safeEventListener<RsyncCompletePayload>('rsync-complete', callback);
 }
 
 // ===== Rclone (Cloud Backup) =====

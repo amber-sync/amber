@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { useJobs } from '@/features/jobs/context/JobsContext';
 
-type ViewType =
+export type ViewType =
   | 'DASHBOARD'
   | 'TIME_MACHINE'
   | 'JOB_EDITOR'
@@ -34,13 +34,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, [jobs, activeJobId]);
 
   // Enhanced setView that tracks previous view
-  const handleSetView = (newView: ViewType) => {
-    setPreviousView(view);
-    setView(newView);
-  };
+  const handleSetView = useCallback(
+    (newView: ViewType) => {
+      setPreviousView(view);
+      setView(newView);
+    },
+    [view]
+  );
 
   // Navigate back to previous view
-  const navigateBack = () => {
+  const navigateBack = useCallback(() => {
     if (previousView) {
       setView(previousView);
       setPreviousView(null);
@@ -48,22 +51,21 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       // Default fallback to DASHBOARD if no previous view
       setView('DASHBOARD');
     }
-  };
+  }, [previousView]);
 
-  return (
-    <UIContext.Provider
-      value={{
-        activeJobId,
-        view,
-        previousView,
-        setActiveJobId,
-        setView: handleSetView,
-        navigateBack,
-      }}
-    >
-      {children}
-    </UIContext.Provider>
+  const value = useMemo(
+    () => ({
+      activeJobId,
+      view,
+      previousView,
+      setActiveJobId,
+      setView: handleSetView,
+      navigateBack,
+    }),
+    [activeJobId, view, previousView, handleSetView, navigateBack]
   );
+
+  return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
 };
 
 export const useUI = () => {

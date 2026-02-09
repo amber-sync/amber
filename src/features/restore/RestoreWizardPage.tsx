@@ -6,6 +6,7 @@ import { SyncJob, Snapshot } from '../../types';
 import { formatBytes } from '../../utils/formatters';
 import { api } from '../../api';
 import { logger } from '../../utils/logger';
+import { useToast } from '../../context/ToastContext';
 
 interface RestoreWizardProps {
   job: SyncJob;
@@ -14,6 +15,7 @@ interface RestoreWizardProps {
 }
 
 export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRestore }) => {
+  const toast = useToast();
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isRestoring, setIsRestoring] = useState(false);
@@ -70,11 +72,11 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
       const targetPath = `${desktop}/Restored-${activeSnapshot.id}`;
 
       await onRestore(Array.from(selectedFiles), targetPath, activeSnapshot);
-      alert(`Successfully restored ${selectedFiles.size} files to ${targetPath}`);
+      toast.success('Restore complete', `Restored ${selectedFiles.size} files to ${targetPath}`);
       onBack();
     } catch (err) {
       logger.error('Restore error', err);
-      alert('Failed to restore files');
+      toast.error('Restore failed', 'Failed to restore files');
     } finally {
       setIsRestoring(false);
     }
@@ -102,14 +104,14 @@ export const RestoreWizard: React.FC<RestoreWizardProps> = ({ job, onBack, onRes
       );
 
       if (result.success) {
-        alert(`Successfully restored full snapshot to ${targetPath}`);
+        toast.success('Restore complete', `Restored full snapshot to ${targetPath}`);
         onBack();
       } else {
-        alert(`Restore failed: ${result.error}`);
+        toast.error('Restore failed', result.error);
       }
     } catch (err) {
       logger.error('Restore error', err);
-      alert('Failed to restore snapshot');
+      toast.error('Restore failed', 'Failed to restore snapshot');
     } finally {
       setIsRestoring(false);
     }

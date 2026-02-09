@@ -335,8 +335,12 @@ export const TimelineRuler = React.memo<TimelineRulerProps>(
   },
   (prevProps, nextProps) => {
     // Custom comparison - return true if props are equal (skip re-render)
+    const prevSnaps = prevProps.snapshots;
+    const nextSnaps = nextProps.snapshots;
     return (
-      prevProps.snapshots.length === nextProps.snapshots.length &&
+      prevSnaps.length === nextSnaps.length &&
+      prevSnaps[prevSnaps.length - 1]?.timestamp === nextSnaps[nextSnaps.length - 1]?.timestamp &&
+      prevSnaps[0]?.timestamp === nextSnaps[0]?.timestamp &&
       prevProps.selectedTimestamp === nextProps.selectedTimestamp &&
       prevProps.timeRange.start === nextProps.timeRange.start &&
       prevProps.timeRange.end === nextProps.timeRange.end &&

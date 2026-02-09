@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { api } from '../api';
 import { logger } from '../utils/logger';
 
@@ -48,20 +48,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .catch(err => logger.error('Failed to save preferences', err));
   }, [runInBackground, startOnBoot, notificationsEnabled, prefsLoaded]);
 
-  return (
-    <SettingsContext.Provider
-      value={{
-        runInBackground,
-        startOnBoot,
-        notificationsEnabled,
-        setRunInBackground,
-        setStartOnBoot,
-        setNotificationsEnabled,
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
+  const value = useMemo(
+    () => ({
+      runInBackground,
+      startOnBoot,
+      notificationsEnabled,
+      setRunInBackground,
+      setStartOnBoot,
+      setNotificationsEnabled,
+    }),
+    [runInBackground, startOnBoot, notificationsEnabled]
   );
+
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };
 
 export const useSettings = () => {

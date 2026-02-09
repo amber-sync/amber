@@ -147,7 +147,7 @@ export function useJobForm(): UseJobFormReturn {
       ...job.config,
       excludePatterns: [...job.config.excludePatterns],
       customCommand: job.config.customCommand || undefined,
-      customFlags: '',
+      customFlags: job.config.customFlags ?? '',
     });
 
     if (job.sshConfig) {
@@ -194,7 +194,7 @@ export function useJobForm(): UseJobFormReturn {
       ...jobConfig,
       excludePatterns: [...jobConfig.excludePatterns],
       customCommand: jobConfig.customCommand ? jobConfig.customCommand.trim() : undefined,
-      customFlags: '',
+      customFlags: jobConfig.customFlags ?? '',
     }),
     [jobConfig]
   );

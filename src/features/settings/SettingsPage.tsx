@@ -161,8 +161,6 @@ export const SettingsPage: React.FC = () => {
               <Body weight="medium">Amber</Body>
               <Body size="sm" color="secondary">
                 <Code size="sm">{APP_VERSION}</Code>
-                <span className="mx-2">·</span>
-                rsync 3.2.7
               </Body>
             </div>
             <Button variant="secondary" size="sm">
