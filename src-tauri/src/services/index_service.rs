@@ -703,24 +703,13 @@ impl IndexService {
                     offset_val as i64
                 ],
                 |row| {
-                    let path: String = row.get(0)?;
-                    let name: String = row.get(1)?;
-                    let size: i64 = row.get(2)?;
-                    let mtime: i64 = row.get(3)?;
-                    let file_type: String = row.get(4)?;
-
-                    let is_dir = file_type == "dir";
-                    let node_type = if is_dir { "dir" } else { "file" };
-
-                    Ok(FileNode {
-                        id: path.replace('/', "-"),
-                        name,
-                        node_type: node_type.to_string(),
-                        size: size as u64,
-                        modified: mtime * 1000, // Convert to millis
-                        children: if is_dir { Some(Vec::new()) } else { None },
-                        path,
-                    })
+                    Ok(FileNode::from_db_row(
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        &row.get::<_, String>(4)?,
+                    ))
                 },
             )
             .map_err(|e| AmberError::Index(format!("Failed to query files: {}", e)))?;
@@ -964,30 +953,37 @@ impl IndexService {
                 ))
             })?;
 
+        // Use relative paths (parent_path + name) for comparison since
+        // absolute paths differ between snapshots (each has a different root dir)
+        let rel_path_expr =
+            "CASE WHEN parent_path = '' THEN name ELSE parent_path || '/' || name END";
+
         // Query for added files (in B but not in A)
-        let mut added_stmt = conn
-            .prepare(
-                r#"
-                SELECT b.path, b.size FROM files b
-                WHERE b.snapshot_id = ?
-                AND b.file_type = 'file'
-                AND NOT EXISTS (
-                    SELECT 1 FROM files a
-                    WHERE a.snapshot_id = ? AND a.path = b.path
-                )
-                LIMIT ?
-                "#,
+        let added_query = format!(
+            r#"
+            WITH rel_b AS (
+                SELECT {rel} AS rel_path, size
+                FROM files WHERE snapshot_id = ?1 AND file_type = 'file'
             )
+            SELECT rel_path, size FROM rel_b
+            WHERE rel_path NOT IN (
+                SELECT {rel} FROM files WHERE snapshot_id = ?2 AND file_type = 'file'
+            )
+            LIMIT ?3
+            "#,
+            rel = rel_path_expr,
+        );
+
+        let mut added_stmt = conn
+            .prepare(&added_query)
             .map_err(|e| AmberError::Index(format!("Failed to prepare added query: {}", e)))?;
 
         let added_rows = added_stmt
             .query_map(params![snapshot_id_b, snapshot_id_a, limit_val], |row| {
-                let path: String = row.get(0)?;
-                let size: i64 = row.get(1)?;
                 Ok(DiffEntry {
-                    path,
+                    path: row.get(0)?,
                     size_a: None,
-                    size_b: Some(size),
+                    size_b: Some(row.get(1)?),
                 })
             })
             .map_err(|e| AmberError::Index(format!("Failed to query added files: {}", e)))?;
@@ -1000,28 +996,30 @@ impl IndexService {
         }
 
         // Query for deleted files (in A but not in B)
-        let mut deleted_stmt = conn
-            .prepare(
-                r#"
-                SELECT a.path, a.size FROM files a
-                WHERE a.snapshot_id = ?
-                AND a.file_type = 'file'
-                AND NOT EXISTS (
-                    SELECT 1 FROM files b
-                    WHERE b.snapshot_id = ? AND b.path = a.path
-                )
-                LIMIT ?
-                "#,
+        let deleted_query = format!(
+            r#"
+            WITH rel_a AS (
+                SELECT {rel} AS rel_path, size
+                FROM files WHERE snapshot_id = ?1 AND file_type = 'file'
             )
+            SELECT rel_path, size FROM rel_a
+            WHERE rel_path NOT IN (
+                SELECT {rel} FROM files WHERE snapshot_id = ?2 AND file_type = 'file'
+            )
+            LIMIT ?3
+            "#,
+            rel = rel_path_expr,
+        );
+
+        let mut deleted_stmt = conn
+            .prepare(&deleted_query)
             .map_err(|e| AmberError::Index(format!("Failed to prepare deleted query: {}", e)))?;
 
         let deleted_rows = deleted_stmt
             .query_map(params![snapshot_id_a, snapshot_id_b, limit_val], |row| {
-                let path: String = row.get(0)?;
-                let size: i64 = row.get(1)?;
                 Ok(DiffEntry {
-                    path,
-                    size_a: Some(size),
+                    path: row.get(0)?,
+                    size_a: Some(row.get(1)?),
                     size_b: None,
                 })
             })
@@ -1035,30 +1033,35 @@ impl IndexService {
         }
 
         // Query for modified files (in both but different size)
-        let mut modified_stmt = conn
-            .prepare(
-                r#"
-                SELECT a.path, a.size, b.size FROM files a
-                INNER JOIN files b ON a.path = b.path
-                WHERE a.snapshot_id = ?
-                AND b.snapshot_id = ?
-                AND a.file_type = 'file'
-                AND b.file_type = 'file'
-                AND a.size != b.size
-                LIMIT ?
-                "#,
+        let modified_query = format!(
+            r#"
+            WITH rel_a AS (
+                SELECT {rel} AS rel_path, size
+                FROM files WHERE snapshot_id = ?1 AND file_type = 'file'
+            ),
+            rel_b AS (
+                SELECT {rel} AS rel_path, size
+                FROM files WHERE snapshot_id = ?2 AND file_type = 'file'
             )
+            SELECT a.rel_path, a.size, b.size
+            FROM rel_a a
+            INNER JOIN rel_b b ON a.rel_path = b.rel_path
+            WHERE a.size != b.size
+            LIMIT ?3
+            "#,
+            rel = rel_path_expr,
+        );
+
+        let mut modified_stmt = conn
+            .prepare(&modified_query)
             .map_err(|e| AmberError::Index(format!("Failed to prepare modified query: {}", e)))?;
 
         let modified_rows = modified_stmt
             .query_map(params![snapshot_id_a, snapshot_id_b, limit_val], |row| {
-                let path: String = row.get(0)?;
-                let size_a: i64 = row.get(1)?;
-                let size_b: i64 = row.get(2)?;
                 Ok(DiffEntry {
-                    path,
-                    size_a: Some(size_a),
-                    size_b: Some(size_b),
+                    path: row.get(0)?,
+                    size_a: Some(row.get(1)?),
+                    size_b: Some(row.get(2)?),
                 })
             })
             .map_err(|e| AmberError::Index(format!("Failed to query modified files: {}", e)))?;
@@ -1158,14 +1161,18 @@ impl IndexService {
             )
             .map_err(|_| AmberError::Index("Snapshot not found in index".to_string()))?;
 
-        // Search with LIKE pattern
-        let search_pattern = format!("%{}%", pattern);
+        // Escape LIKE special characters in user input
+        let escaped = pattern
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let search_pattern = format!("%{}%", escaped);
 
         let mut stmt = conn
             .prepare(
                 "SELECT path, name, size, mtime, file_type
                  FROM files
-                 WHERE snapshot_id = ? AND name LIKE ?
+                 WHERE snapshot_id = ? AND name LIKE ? ESCAPE '\\'
                  ORDER BY name ASC
                  LIMIT ?",
             )
@@ -1173,24 +1180,13 @@ impl IndexService {
 
         let files = stmt
             .query_map(params![snapshot_id, search_pattern, limit as i64], |row| {
-                let path: String = row.get(0)?;
-                let name: String = row.get(1)?;
-                let size: i64 = row.get(2)?;
-                let mtime: i64 = row.get(3)?;
-                let file_type: String = row.get(4)?;
-
-                let is_dir = file_type == "dir";
-                let node_type = if is_dir { "dir" } else { "file" };
-
-                Ok(FileNode {
-                    id: path.replace('/', "-"),
-                    name,
-                    node_type: node_type.to_string(),
-                    size: size as u64,
-                    modified: mtime * 1000,
-                    children: if is_dir { Some(Vec::new()) } else { None },
-                    path,
-                })
+                Ok(FileNode::from_db_row(
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    &row.get::<_, String>(4)?,
+                ))
             })
             .map_err(|e| AmberError::Index(format!("Failed to search files: {}", e)))?;
 
@@ -1287,28 +1283,19 @@ impl IndexService {
 
     /// Helper to map a row to GlobalSearchResult
     fn map_global_search_row(row: &rusqlite::Row) -> rusqlite::Result<GlobalSearchResult> {
-        let path: String = row.get(0)?;
-        let name: String = row.get(1)?;
-        let size: i64 = row.get(2)?;
-        let mtime: i64 = row.get(3)?;
         let file_type: String = row.get(4)?;
         let job_id: String = row.get(5)?;
         let timestamp: i64 = row.get(6)?;
         let rank: f64 = row.get(7)?;
 
-        let is_dir = file_type == "dir";
-        let node_type = if is_dir { "dir" } else { "file" };
-
         Ok(GlobalSearchResult {
-            file: FileNode {
-                id: path.replace('/', "-"),
-                name,
-                node_type: node_type.to_string(),
-                size: size as u64,
-                modified: mtime * 1000,
-                children: if is_dir { Some(Vec::new()) } else { None },
-                path,
-            },
+            file: FileNode::from_db_row(
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                &file_type,
+            ),
             job_id,
             job_name: None, // Will be populated by the caller if needed
             snapshot_timestamp: timestamp,
@@ -1817,5 +1804,84 @@ mod tests {
         for result in &job1_results {
             assert_eq!(result.job_id, "job1");
         }
+    }
+
+    #[test]
+    fn test_compare_snapshots() {
+        let (service, temp_dir) = create_test_service();
+
+        // Snapshot A: file1.txt (5 bytes), file2.txt (6 bytes), shared.txt (4 bytes)
+        let snap_a = temp_dir.path().join("snap_a");
+        std::fs::create_dir_all(&snap_a).unwrap();
+        std::fs::write(snap_a.join("file1.txt"), "hello").unwrap();
+        std::fs::write(snap_a.join("file2.txt"), "world!").unwrap();
+        std::fs::write(snap_a.join("shared.txt"), "same").unwrap();
+
+        // Snapshot B: file3.txt (7 bytes, added), shared.txt (10 bytes, modified)
+        // file1.txt deleted, file2.txt deleted
+        let snap_b = temp_dir.path().join("snap_b");
+        std::fs::create_dir_all(&snap_b).unwrap();
+        std::fs::write(snap_b.join("file3.txt"), "new one").unwrap();
+        std::fs::write(snap_b.join("shared.txt"), "different!").unwrap();
+
+        let ts_a = 1700000000000_i64;
+        let ts_b = 1700000001000_i64;
+
+        service
+            .index_snapshot("job1", ts_a, snap_a.to_str().unwrap())
+            .unwrap();
+        service
+            .index_snapshot("job1", ts_b, snap_b.to_str().unwrap())
+            .unwrap();
+
+        let diff = service.compare_snapshots("job1", ts_a, ts_b, None).unwrap();
+
+        // file3.txt was added in B
+        assert_eq!(diff.summary.total_added, 1);
+        assert!(diff.added.iter().any(|e| e.path == "file3.txt"));
+
+        // file1.txt and file2.txt were deleted from A
+        assert_eq!(diff.summary.total_deleted, 2);
+        assert!(diff.deleted.iter().any(|e| e.path == "file1.txt"));
+        assert!(diff.deleted.iter().any(|e| e.path == "file2.txt"));
+
+        // shared.txt was modified (different size)
+        assert_eq!(diff.summary.total_modified, 1);
+        assert!(diff.modified.iter().any(|e| e.path == "shared.txt"));
+    }
+
+    #[test]
+    fn test_compare_snapshots_with_subdirs() {
+        let (service, temp_dir) = create_test_service();
+
+        // Snapshot A with nested structure
+        let snap_a = temp_dir.path().join("snap_a2");
+        std::fs::create_dir_all(snap_a.join("docs")).unwrap();
+        std::fs::write(snap_a.join("docs/readme.md"), "old readme").unwrap();
+        std::fs::write(snap_a.join("config.json"), "{}").unwrap();
+
+        // Snapshot B with same structure but modified file
+        let snap_b = temp_dir.path().join("snap_b2");
+        std::fs::create_dir_all(snap_b.join("docs")).unwrap();
+        std::fs::write(snap_b.join("docs/readme.md"), "new readme content!!").unwrap();
+        std::fs::write(snap_b.join("config.json"), "{}").unwrap();
+
+        let ts_a = 1700000002000_i64;
+        let ts_b = 1700000003000_i64;
+
+        service
+            .index_snapshot("job1", ts_a, snap_a.to_str().unwrap())
+            .unwrap();
+        service
+            .index_snapshot("job1", ts_b, snap_b.to_str().unwrap())
+            .unwrap();
+
+        let diff = service.compare_snapshots("job1", ts_a, ts_b, None).unwrap();
+
+        // docs/readme.md modified (different sizes), config.json unchanged
+        assert_eq!(diff.summary.total_added, 0);
+        assert_eq!(diff.summary.total_deleted, 0);
+        assert_eq!(diff.summary.total_modified, 1);
+        assert!(diff.modified.iter().any(|e| e.path == "docs/readme.md"));
     }
 }

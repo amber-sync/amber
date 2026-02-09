@@ -8,7 +8,13 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
+
+/// Compiled regex for backup directory names (compiled once, reused)
+fn backup_dir_pattern() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^\d{4}-\d{2}-\d{2}-\d{6}$").unwrap())
+}
 
 const LATEST_SYMLINK_NAME: &str = "latest";
 
@@ -307,7 +313,7 @@ impl RsyncService {
         }
 
         // Fall back to newest timestamp folder
-        let backup_pattern = Regex::new(r"^\d{4}-\d{2}-\d{2}-\d{6}$").ok()?;
+        let backup_pattern = backup_dir_pattern();
 
         let mut backups: Vec<_> = std::fs::read_dir(dest_path)
             .ok()?

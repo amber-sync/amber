@@ -91,45 +91,11 @@ pub struct VolumeStats {
 
 #[tauri::command]
 pub async fn get_volume_info(state: State<'_, AppState>, path: String) -> Result<VolumeStats> {
-    use std::process::Command;
-
     let validated_path = state.validate_path(&path)?;
-    // Use df -k to get stats in 1K blocks for any path
-    // This works for any directory, not just mounted volumes
-    let output = Command::new("df")
-        .args(["-k", "--", &validated_path])
-        .output()?;
-
-    if !output.status.success() {
-        return Err(crate::error::AmberError::Io(std::io::Error::other(
-            "df command failed",
-        )));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let lines: Vec<&str> = stdout.lines().collect();
-
-    if lines.len() < 2 {
-        return Err(crate::error::AmberError::Io(std::io::Error::other(
-            "Unexpected df output",
-        )));
-    }
-
-    // Parse the second line (first is header)
-    // Format: Filesystem 1K-blocks Used Available Capacity Mounted on
-    let parts: Vec<&str> = lines[1].split_whitespace().collect();
-    if parts.len() < 4 {
-        return Err(crate::error::AmberError::Io(std::io::Error::other(
-            "Unexpected df output format",
-        )));
-    }
-
-    let total_kb: u64 = parts[1].parse().unwrap_or(0);
-    let available_kb: u64 = parts[3].parse().unwrap_or(0);
-
+    let (total_bytes, available_bytes) = parse_df_output(&validated_path)?;
     Ok(VolumeStats {
-        total_bytes: total_kb * 1024,
-        available_bytes: available_kb * 1024,
+        total_bytes,
+        available_bytes,
     })
 }
 
@@ -195,29 +161,40 @@ pub async fn list_volumes() -> Result<Vec<VolumeInfo>> {
     Ok(volumes)
 }
 
-/// Get volume stats (total bytes, free bytes)
+/// Get volume stats (total bytes, free bytes) by parsing df output
 fn get_volume_stats(path: &std::path::Path) -> std::io::Result<(u64, u64)> {
+    let (total, available) = parse_df_output(path.to_str().unwrap_or("/"))?;
+    Ok((total, available))
+}
+
+/// Parse df -k output for a given path, returning (total_bytes, available_bytes)
+fn parse_df_output(path: &str) -> std::io::Result<(u64, u64)> {
     use std::process::Command;
 
-    // Use df command to get disk info
-    let output = Command::new("df")
-        .args(["-k", "--", path.to_str().unwrap_or("/")])
-        .output()?;
+    let output = Command::new("df").args(["-k", "--", path]).output()?;
 
-    let output_str = String::from_utf8_lossy(&output.stdout);
-    let lines: Vec<&str> = output_str.lines().collect();
-
-    if lines.len() >= 2 {
-        let parts: Vec<&str> = lines[1].split_whitespace().collect();
-        if parts.len() >= 4 {
-            // df -k outputs in 1K blocks
-            let total = parts[1].parse::<u64>().unwrap_or(0) * 1024;
-            let available = parts[3].parse::<u64>().unwrap_or(0) * 1024;
-            return Ok((total, available));
-        }
+    if !output.status.success() {
+        return Err(std::io::Error::other(
+            String::from_utf8_lossy(&output.stderr).to_string(),
+        ));
     }
 
-    Ok((0, 0))
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let lines: Vec<&str> = stdout.lines().collect();
+
+    if lines.len() < 2 {
+        return Ok((0, 0));
+    }
+
+    let parts: Vec<&str> = lines[1].split_whitespace().collect();
+    if parts.len() < 4 {
+        return Ok((0, 0));
+    }
+
+    let total_kb: u64 = parts[1].parse().unwrap_or(0);
+    let available_kb: u64 = parts[3].parse().unwrap_or(0);
+
+    Ok((total_kb * 1024, available_kb * 1024))
 }
 
 /// Search files in a volume by pattern (fuzzy filename match)

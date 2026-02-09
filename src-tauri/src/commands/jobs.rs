@@ -25,40 +25,17 @@ pub struct SnapshotInfo {
 }
 
 impl SnapshotInfo {
-    /// Create SnapshotInfo with a full path (dest_path + folder_name)
-    pub fn from_manifest_with_path(s: ManifestSnapshot, full_path: String) -> Self {
+    /// Create SnapshotInfo from a ManifestSnapshot with explicit path
+    pub fn from_manifest(s: ManifestSnapshot, path: String) -> Self {
         Self {
             id: s.id,
             timestamp: s.timestamp,
             size_bytes: s.total_size,
             file_count: s.file_count,
             changes_count: s.changes_count.unwrap_or(0),
-            status: match s.status {
-                crate::types::manifest::ManifestSnapshotStatus::Complete => "Complete".to_string(),
-                crate::types::manifest::ManifestSnapshotStatus::Partial => "Partial".to_string(),
-                crate::types::manifest::ManifestSnapshotStatus::Failed => "Failed".to_string(),
-            },
+            status: s.status.as_str().to_string(),
             duration: s.duration_ms,
-            path: Some(full_path),
-        }
-    }
-}
-
-impl From<ManifestSnapshot> for SnapshotInfo {
-    fn from(s: ManifestSnapshot) -> Self {
-        Self {
-            id: s.id,
-            timestamp: s.timestamp,
-            size_bytes: s.total_size,
-            file_count: s.file_count,
-            changes_count: s.changes_count.unwrap_or(0),
-            status: match s.status {
-                crate::types::manifest::ManifestSnapshotStatus::Complete => "Complete".to_string(),
-                crate::types::manifest::ManifestSnapshotStatus::Partial => "Partial".to_string(),
-                crate::types::manifest::ManifestSnapshotStatus::Failed => "Failed".to_string(),
-            },
-            duration: s.duration_ms,
-            path: Some(s.folder_name),
+            path: Some(path),
         }
     }
 }
@@ -142,7 +119,7 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                                         .join(&s.folder_name)
                                         .to_string_lossy()
                                         .to_string();
-                                    SnapshotInfo::from_manifest_with_path(s, full_path)
+                                    SnapshotInfo::from_manifest(s, full_path)
                                 })
                                 .collect();
                             (snaps, "manifest".to_string(), None)
@@ -166,7 +143,7 @@ pub async fn get_jobs_with_status(state: State<'_, AppState>) -> Result<Vec<JobW
                                         .join(&s.folder_name)
                                         .to_string_lossy()
                                         .to_string();
-                                    SnapshotInfo::from_manifest_with_path(s, full_path)
+                                    SnapshotInfo::from_manifest(s, full_path)
                                 })
                                 .collect();
                             (snaps, "cache".to_string(), Some(cache.cached_at))
@@ -250,8 +227,15 @@ pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()
 /// Delete backup data from the destination path
 /// This removes the entire backup directory including all snapshots
 #[tauri::command]
-pub async fn delete_job_data(job_id: String, dest_path: String) -> Result<()> {
+pub async fn delete_job_data(
+    state: State<'_, AppState>,
+    job_id: String,
+    dest_path: String,
+) -> Result<()> {
     validate_job_id(&job_id)?;
+
+    // Validate path is within allowed job roots
+    state.validate_path(&dest_path)?;
 
     use tokio::fs;
 

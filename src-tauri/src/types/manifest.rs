@@ -11,6 +11,17 @@ pub enum ManifestSnapshotStatus {
     Failed,
 }
 
+impl ManifestSnapshotStatus {
+    /// Convert status to display string
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ManifestSnapshotStatus::Complete => "Complete",
+            ManifestSnapshotStatus::Partial => "Partial",
+            ManifestSnapshotStatus::Failed => "Failed",
+        }
+    }
+}
+
 /// Snapshot entry in the manifest - lightweight metadata only
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

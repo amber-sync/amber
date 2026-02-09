@@ -168,6 +168,7 @@ impl Store {
         Ok(backup_path)
     }
 
+    /// Write file atomically: write to temp file, then rename
     fn write_atomic(&self, path: &Path, contents: &[u8]) -> Result<()> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -205,5 +206,136 @@ impl Store {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::job::{SyncJob, SyncMode};
+    use tempfile::TempDir;
+
+    fn test_store() -> (Store, TempDir) {
+        let dir = TempDir::new().unwrap();
+        let store = Store::new(dir.path());
+        (store, dir)
+    }
+
+    fn test_job(id: &str) -> SyncJob {
+        SyncJob {
+            id: id.to_string(),
+            name: format!("Job {}", id),
+            source_path: "/tmp/src".to_string(),
+            dest_path: "/tmp/dst".to_string(),
+            ..SyncJob::default()
+        }
+    }
+
+    #[test]
+    fn test_load_jobs_empty() {
+        let (store, _dir) = test_store();
+        let jobs = store.load_jobs().unwrap();
+        assert!(jobs.is_empty());
+    }
+
+    #[test]
+    fn test_save_and_load_job() {
+        let (store, _dir) = test_store();
+        let job = test_job("j1");
+        store.save_job(job.clone()).unwrap();
+
+        let jobs = store.load_jobs().unwrap();
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].id, "j1");
+        assert_eq!(jobs[0].name, "Job j1");
+    }
+
+    #[test]
+    fn test_save_job_updates_existing() {
+        let (store, _dir) = test_store();
+        store.save_job(test_job("j1")).unwrap();
+
+        let mut updated = test_job("j1");
+        updated.name = "Updated".to_string();
+        updated.mode = SyncMode::TimeMachine;
+        store.save_job(updated).unwrap();
+
+        let jobs = store.load_jobs().unwrap();
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].name, "Updated");
+    }
+
+    #[test]
+    fn test_delete_job() {
+        let (store, _dir) = test_store();
+        store.save_job(test_job("j1")).unwrap();
+        store.save_job(test_job("j2")).unwrap();
+        assert_eq!(store.load_jobs().unwrap().len(), 2);
+
+        store.delete_job("j1").unwrap();
+        let jobs = store.load_jobs().unwrap();
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].id, "j2");
+    }
+
+    #[test]
+    fn test_get_job() {
+        let (store, _dir) = test_store();
+        store.save_job(test_job("j1")).unwrap();
+
+        assert!(store.get_job("j1").unwrap().is_some());
+        assert!(store.get_job("nonexistent").unwrap().is_none());
+    }
+
+    #[test]
+    fn test_preferences_default() {
+        let (store, _dir) = test_store();
+        let prefs = store.load_preferences().unwrap();
+        assert_eq!(prefs.theme, "system");
+        assert!(!prefs.run_in_background);
+        assert!(prefs.notifications);
+    }
+
+    #[test]
+    fn test_save_and_load_preferences() {
+        let (store, _dir) = test_store();
+        let mut prefs = AppPreferences::default();
+        prefs.theme = "dark".to_string();
+        prefs.run_in_background = true;
+        store.save_preferences(&prefs).unwrap();
+
+        let loaded = store.load_preferences().unwrap();
+        assert_eq!(loaded.theme, "dark");
+        assert!(loaded.run_in_background);
+    }
+
+    #[test]
+    fn test_corrupt_file_handling() {
+        let (store, _dir) = test_store();
+        // Write corrupt JSON
+        std::fs::write(store.jobs_path(), "not valid json{{{").unwrap();
+
+        let result = store.load_jobs();
+        assert!(result.is_err());
+
+        // Corrupt file should have been backed up
+        let entries: Vec<_> = std::fs::read_dir(&store.data_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .contains("jobs.json.corrupt-")
+            })
+            .collect();
+        assert_eq!(entries.len(), 1);
+    }
+
+    #[test]
+    fn test_atomic_write_creates_file() {
+        let (store, _dir) = test_store();
+        let path = store.data_dir.join("test.json");
+        store.write_atomic(&path, b"hello").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "hello");
     }
 }

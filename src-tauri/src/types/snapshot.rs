@@ -68,3 +68,31 @@ pub struct FileNode {
     pub children: Option<Vec<FileNode>>,
     pub path: String,
 }
+
+impl FileNode {
+    /// Create a FileNode from database row data.
+    /// Handles ID generation, mtime conversion (seconds -> millis), and children initialization.
+    pub fn from_db_row(
+        path: String,
+        name: String,
+        size: i64,
+        mtime_secs: i64,
+        file_type: &str,
+    ) -> Self {
+        let is_dir = file_type::is_dir(file_type);
+        Self {
+            id: path.replace('/', "-"),
+            name,
+            node_type: if is_dir {
+                file_type::DIR
+            } else {
+                file_type::FILE
+            }
+            .to_string(),
+            size: size as u64,
+            modified: mtime_secs * 1000,
+            children: if is_dir { Some(Vec::new()) } else { None },
+            path,
+        }
+    }
+}

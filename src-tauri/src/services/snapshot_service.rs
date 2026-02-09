@@ -8,7 +8,14 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use walkdir::WalkDir;
+
+/// Compiled regex for backup directory timestamp pattern (compiled once, reused)
+fn backup_timestamp_pattern() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$").unwrap())
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CachedSnapshot {
@@ -190,8 +197,7 @@ impl SnapshotService {
         job_id: &str,
         dest_path: &str,
     ) -> Result<Vec<SnapshotMetadata>> {
-        let backup_pattern = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$")
-            .map_err(|e| crate::error::AmberError::Snapshot(e.to_string()))?;
+        let backup_pattern = backup_timestamp_pattern();
 
         let mut snapshots = Vec::new();
 

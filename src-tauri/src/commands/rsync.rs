@@ -12,6 +12,14 @@ use serde::Serialize;
 use std::io::{BufRead, BufReader};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::{Arc, OnceLock};
+
+/// Compiled regex for rsync progress line parsing (compiled once, reused)
+fn progress_regex() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^\s*([\d,]+)\s+(\d+)%\s+([\d.]+[KMG]?B/s)\s+(\d+:\d+:\d+)").unwrap()
+    })
+}
 use tauri::Emitter;
 use tokio::time::{timeout, Duration};
 use walkdir::WalkDir;
@@ -52,9 +60,7 @@ struct RsyncCompletePayload {
 /// Parse rsync progress line like:
 /// "         16,384 100%    4.00MB/s    0:00:00 (xfr#2, to-chk=5/10)"
 fn parse_rsync_progress(line: &str) -> Option<(String, u8, String, String)> {
-    // Match pattern: bytes percentage speed eta
-    let re = Regex::new(r"^\s*([\d,]+)\s+(\d+)%\s+([\d.]+[KMG]?B/s)\s+(\d+:\d+:\d+)").ok()?;
-    let caps = re.captures(line)?;
+    let caps = progress_regex().captures(line)?;
 
     let transferred = caps.get(1)?.as_str().to_string();
     let percentage: u8 = caps.get(2)?.as_str().parse().ok()?;
@@ -246,7 +252,7 @@ async fn handle_backup_success(
     if job.mode == SyncMode::TimeMachine {
         if let Some(info) = backup_info {
             let end_time = chrono::Utc::now().timestamp_millis();
-            let duration_ms = (end_time - info.start_time) as u64;
+            let duration_ms = end_time.saturating_sub(info.start_time) as u64;
 
             // Calculate snapshot stats
             let (file_count, total_size) =
@@ -431,7 +437,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
 
     let stall_handle = if stall_timeout > 0 {
         Some(tokio::spawn(async move {
-            let check_interval = Duration::from_secs(stall_timeout.clamp(1, 5));
+            let poll_interval = Duration::from_secs(stall_timeout.clamp(1, 5));
             loop {
                 if completed_flag.load(Ordering::Relaxed) {
                     break;
@@ -454,7 +460,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
                     break;
                 }
 
-                tokio::time::sleep(check_interval).await;
+                tokio::time::sleep(poll_interval).await;
             }
         }))
     } else {
@@ -581,6 +587,7 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
 
 #[tauri::command]
 pub async fn kill_rsync(job_id: String) -> Result<()> {
+    validate_job_id(&job_id)?;
     let service = get_rsync_service();
     service.kill_job(&job_id)
 }
