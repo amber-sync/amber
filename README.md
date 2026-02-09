@@ -40,7 +40,7 @@
 
 ```bash
 # Clone and install
-git clone https://github.com/amber-sync/amber-sync.git
+git clone https://github.com/amber-sync/amber.git
 cd amber
 
 # Install dependencies
