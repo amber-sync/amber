@@ -52,6 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live terminal output for rsync operations
 - Snapshot browser for historical file versions
 
-[Unreleased]: https://github.com/florianmahner/amber-sync/compare/v0.0.1-beta...HEAD
-[0.0.1-beta]: https://github.com/florianmahner/amber-sync/compare/v0.0.0-alpha...v0.0.1-beta
-[0.0.0-alpha]: https://github.com/florianmahner/amber-sync/releases/tag/v0.0.0-alpha
+[Unreleased]: https://github.com/amber-sync/amber-sync/compare/v0.0.1-beta...HEAD
+[0.0.1-beta]: https://github.com/amber-sync/amber-sync/compare/v0.0.0-alpha...v0.0.1-beta
+[0.0.0-alpha]: https://github.com/amber-sync/amber-sync/releases/tag/v0.0.0-alpha

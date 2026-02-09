@@ -28,7 +28,7 @@ const FALLBACK_RELEASE: ReleaseInfo = {
   version: APP_VERSION,
   downloadUrl: null,
   fallback: true,
-  fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
+  fallbackUrl: 'https://github.com/amber-sync/amber-sync/releases',
 };
 
 export function Hero() {
@@ -36,7 +36,7 @@ export function Hero() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://api.github.com/repos/florianmahner/amber-sync/releases/latest', {
+    fetch('https://api.github.com/repos/amber-sync/amber-sync/releases/latest', {
       headers: { 'Accept': 'application/vnd.github.v3+json' },
     })
       .then(res => {
@@ -51,7 +51,7 @@ export function Hero() {
           version: data.tag_name.replace(/^v/, ''),
           downloadUrl: dmg?.browser_download_url ?? null,
           fallback: !dmg,
-          fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
+          fallbackUrl: 'https://github.com/amber-sync/amber-sync/releases',
         });
         setLoading(false);
       })

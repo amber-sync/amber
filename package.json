@@ -6,13 +6,13 @@
   "author": "Florian P. Mahner",
   "description": "A modern, reliable rsync backup tool for macOS.",
   "license": "MIT",
-  "homepage": "https://github.com/florianmahner/amber-sync",
+  "homepage": "https://github.com/amber-sync/amber-sync",
   "repository": {
     "type": "git",
-    "url": "https://github.com/florianmahner/amber-sync.git"
+    "url": "https://github.com/amber-sync/amber-sync.git"
   },
   "bugs": {
-    "url": "https://github.com/florianmahner/amber-sync/issues"
+    "url": "https://github.com/amber-sync/amber-sync/issues"
   },
   "keywords": [
     "backup",
