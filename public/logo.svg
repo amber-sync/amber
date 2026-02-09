@@ -1,3 +1,205 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Deep base gradient - dark indigo to deep teal -->
+    <radialGradient id="base" cx="0.42" cy="0.38" r="0.58" fx="0.38" fy="0.34">
+      <stop offset="0%" stop-color="#1E3A5F"/>
+      <stop offset="45%" stop-color="#152E4D"/>
+      <stop offset="100%" stop-color="#0C1D33"/>
+    </radialGradient>
+
+    <!-- Layer 1 fill - slightly lighter, translucent -->
+    <radialGradient id="l1" cx="0.42" cy="0.38" r="0.55">
+      <stop offset="0%" stop-color="#2B6CB0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1A4971" stop-opacity="0.35"/>
+    </radialGradient>
+
+    <!-- Layer 2 fill - warmer, more translucent -->
+    <radialGradient id="l2" cx="0.44" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#4299E1" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#2B6CB0" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1E5A8A" stop-opacity="0.4"/>
+    </radialGradient>
+
+    <!-- Layer 3 fill - warm transition -->
+    <radialGradient id="l3" cx="0.46" cy="0.42" r="0.45">
+      <stop offset="0%" stop-color="#F6C04A" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#D4943A" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#63B3ED" stop-opacity="0.3"/>
+    </radialGradient>
+
+    <!-- Core glow - warm amber -->
+    <radialGradient id="core" cx="0.48" cy="0.46" r="0.5">
+      <stop offset="0%" stop-color="#FFFDF5"/>
+      <stop offset="30%" stop-color="#F6D67A"/>
+      <stop offset="65%" stop-color="#E8AD3E"/>
+      <stop offset="100%" stop-color="#D4943A" stop-opacity="0.6"/>
+    </radialGradient>
+
+    <!-- Ambient glow around core -->
+    <radialGradient id="ambientGlow" cx="0.48" cy="0.46" r="0.35">
+      <stop offset="0%" stop-color="#F6D67A" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1E3A5F" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Glass specular -->
+    <linearGradient id="spec" x1="0.1" y1="0" x2="0.65" y2="0.6">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+      <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Edge light -->
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#90CDF4" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#4299E1" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#F6D67A" stop-opacity="0.35"/>
+    </linearGradient>
+
+    <!-- Layer edge shimmer -->
+    <linearGradient id="layerEdge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#90CDF4" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#63B3ED" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#F6D67A" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- ======================== -->
+  <!-- OUTER SHAPE - Rounded hex -->
+  <!-- ======================== -->
+
+  <path d="
+    M 512 116
+    Q 532 116, 810 232
+    Q 830 242, 892 500
+    Q 898 530, 810 792
+    Q 800 812, 512 908
+    Q 492 908, 214 792
+    Q 194 782, 132 524
+    Q 126 494, 214 232
+    Q 224 212, 512 116
+    Z
+  " fill="url(#base)"/>
+
+  <!-- Ambient light from core bleeding outward -->
+  <circle cx="504" cy="496" r="240" fill="url(#ambientGlow)"/>
+
+  <!-- ======================== -->
+  <!-- LAYER 1 - Outer depth    -->
+  <!-- ======================== -->
+
+  <path d="
+    M 512 210
+    Q 528 210, 722 296
+    Q 738 304, 782 500
+    Q 786 520, 722 716
+    Q 714 732, 512 814
+    Q 496 814, 302 716
+    Q 286 708, 242 512
+    Q 238 492, 302 296
+    Q 310 280, 512 210
+    Z
+  " fill="url(#l1)" stroke="url(#layerEdge)" stroke-width="1"/>
+
+  <!-- ======================== -->
+  <!-- LAYER 2 - Mid depth      -->
+  <!-- ======================== -->
+
+  <g transform="rotate(30, 512, 512)">
+    <path d="
+      M 512 300
+      Q 524 300, 648 358
+      Q 660 364, 690 504
+      Q 692 518, 648 658
+      Q 642 668, 512 722
+      Q 500 722, 376 658
+      Q 364 652, 334 516
+      Q 332 502, 376 358
+      Q 382 348, 512 300
+      Z
+    " fill="url(#l2)" stroke="url(#layerEdge)" stroke-width="0.8"/>
+  </g>
+
+  <!-- ======================== -->
+  <!-- LAYER 3 - Inner depth    -->
+  <!-- ======================== -->
+
+  <g transform="rotate(15, 512, 512)">
+    <path d="
+      M 512 380
+      Q 520 380, 590 410
+      Q 598 414, 616 504
+      Q 618 514, 590 604
+      Q 586 610, 512 638
+      Q 504 638, 434 604
+      Q 426 600, 408 516
+      Q 406 506, 434 410
+      Q 438 404, 512 380
+      Z
+    " fill="url(#l3)" stroke="url(#layerEdge)" stroke-width="0.6"/>
+  </g>
+
+  <!-- ======================== -->
+  <!-- CORE - Warm amber glow   -->
+  <!-- ======================== -->
+
+  <!-- Soft glow behind core -->
+  <circle cx="508" cy="506" r="64" fill="#F6D67A" opacity="0.25" filter="url(#glow)"/>
+
+  <!-- Core shape -->
+  <circle cx="512" cy="512" r="48" fill="url(#core)"/>
+  <circle cx="512" cy="512" r="26" fill="#FFFDF5" opacity="0.45"/>
+  <circle cx="512" cy="512" r="10" fill="white" opacity="0.6" filter="url(#softBlur)"/>
+
+  <!-- ======================== -->
+  <!-- GLASS / iOS 26 TREATMENT -->
+  <!-- ======================== -->
+
+  <!-- Broad specular sweep -->
+  <path d="
+    M 380 170
+    Q 450 130, 600 180
+    Q 730 230, 790 370
+    Q 810 430, 770 470
+    Q 720 520, 600 460
+    Q 480 400, 380 420
+    Q 290 440, 260 360
+    Q 240 280, 380 170
+    Z
+  " fill="url(#spec)"/>
+
+  <!-- Tight specular dot -->
+  <circle cx="410" cy="270" r="10" fill="white" opacity="0.45"/>
+  <circle cx="410" cy="270" r="5" fill="white" opacity="0.65"/>
+
+  <!-- Soft secondary highlight -->
+  <ellipse cx="440" cy="300" rx="50" ry="22"
+           fill="white" opacity="0.1"
+           transform="rotate(-25, 440, 300)"
+           filter="url(#softBlur)"/>
+
+  <!-- Bottom ambient -->
+  <ellipse cx="512" cy="870" rx="120" ry="20"
+           fill="#63B3ED" opacity="0.08"
+           filter="url(#softBlur)"/>
+
+  <!-- Outer rim -->
+  <path d="
+    M 512 116
+    Q 532 116, 810 232
+    Q 830 242, 892 500
+    Q 898 530, 810 792
+    Q 800 812, 512 908
+    Q 492 908, 214 792
+    Q 194 782, 132 524
+    Q 126 494, 214 232
+    Q 224 212, 512 116
+    Z
+  " fill="none" stroke="url(#edge)" stroke-width="2" stroke-linejoin="round"/>
 </svg>
