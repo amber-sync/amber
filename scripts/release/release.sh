@@ -65,11 +65,30 @@ echo -e "${GREEN}Current version: $CURRENT_VERSION${NC}"
 
 # Bump version
 echo -e "${YELLOW}Bumping $TYPE version...${NC}"
-npm version $TYPE -m "chore: bump version to %s"
+npm version $TYPE --no-git-tag-version
 
 # Get new version
 NEW_VERSION=$(node -p "require('./package.json').version")
 echo -e "${GREEN}✓ Version bumped to: $NEW_VERSION${NC}"
+
+# Sync version to tauri.conf.json
+echo -e "${YELLOW}Syncing tauri.conf.json...${NC}"
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" src-tauri/tauri.conf.json
+echo -e "${GREEN}✓ tauri.conf.json updated${NC}"
+
+# Sync version to Cargo.toml
+echo -e "${YELLOW}Syncing Cargo.toml...${NC}"
+sed -i '' "s/^version = \".*\"/version = \"$NEW_VERSION\"/" src-tauri/Cargo.toml
+echo -e "${GREEN}✓ Cargo.toml updated${NC}"
+
+# Update Cargo.lock
+echo -e "${YELLOW}Updating Cargo.lock...${NC}"
+(cd src-tauri && cargo update -p app --precise "$NEW_VERSION" 2>/dev/null || cargo generate-lockfile 2>/dev/null || true)
+
+# Commit and tag
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+git commit -m "Release v$NEW_VERSION"
+git tag "v$NEW_VERSION"
 
 # Push changes and tags
 echo -e "${YELLOW}Pushing to GitHub...${NC}"

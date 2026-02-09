@@ -10,29 +10,53 @@ import { AppPreview } from "./AppPreview";
 interface ReleaseInfo {
   version: string;
   downloadUrl: string | null;
-  error?: string;
   fallback?: boolean;
   fallbackUrl?: string;
 }
+
+interface GitHubAsset {
+  name: string;
+  browser_download_url: string;
+}
+
+interface GitHubRelease {
+  tag_name: string;
+  assets: GitHubAsset[];
+}
+
+const FALLBACK_RELEASE: ReleaseInfo = {
+  version: APP_VERSION,
+  downloadUrl: null,
+  fallback: true,
+  fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
+};
 
 export function Hero() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/latest-release')
-      .then(res => res.json())
-      .then(data => {
-        setRelease(data);
+    fetch('https://api.github.com/repos/florianmahner/amber-sync/releases/latest', {
+      headers: { 'Accept': 'application/vnd.github.v3+json' },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+        return res.json();
+      })
+      .then((data: GitHubRelease) => {
+        const dmg = data.assets.find(a => a.name.endsWith('.dmg') && a.name.includes('universal'))
+          || data.assets.find(a => a.name.endsWith('.dmg') && a.name.includes('arm64'))
+          || data.assets.find(a => a.name.endsWith('.dmg'));
+        setRelease({
+          version: data.tag_name.replace(/^v/, ''),
+          downloadUrl: dmg?.browser_download_url ?? null,
+          fallback: !dmg,
+          fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
+        });
         setLoading(false);
       })
       .catch(() => {
-        setRelease({
-          version: APP_VERSION,
-          downloadUrl: null,
-          fallback: true,
-          fallbackUrl: 'https://github.com/florianmahner/amber-sync/releases',
-        });
+        setRelease(FALLBACK_RELEASE);
         setLoading(false);
       });
   }, []);
