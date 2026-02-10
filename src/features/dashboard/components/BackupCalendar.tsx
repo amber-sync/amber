@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, subWeeks, isToday } from 'date-fns';
-import { SyncJob } from '../../types';
-import { Title, Caption } from '../ui';
+import { SyncJob } from '../../../types';
+import { Title, Caption } from '../../../components/ui';
 
 interface BackupCalendarProps {
   jobs: SyncJob[];

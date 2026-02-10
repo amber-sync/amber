@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Icons } from '../../IconComponents';
+import { Icons } from '../../../../components/IconComponents';
 
 interface SlidePanelProps {
   isOpen: boolean;

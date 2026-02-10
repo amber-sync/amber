@@ -4,7 +4,7 @@
  * Replaces TimeExplorer, TimelineView, and JobDetail with a single
  * immersive interface centered on timeline navigation.
  *
- * @see docs/UNIFIED_TIME_MACHINE_DESIGN.md
+ * Replaces the earlier TimeExplorer, TimelineView, and JobDetail components.
  */
 
 /**
@@ -31,8 +31,8 @@ import { DiffTree } from './components/DiffTree';
 
 // Hooks
 import { useSnapshotDiff } from './hooks/useSnapshotDiff';
-import { SlidePanel } from '../../components/explorer/panels/SlidePanel';
-import { EditJobPanel } from '../../components/explorer/panels/EditJobPanel';
+import { SlidePanel } from './components/panels/SlidePanel';
+import { EditJobPanel } from './components/panels/EditJobPanel';
 import { PageContainer } from '../../components/layout';
 import { Body, Caption, Code } from '../../components/ui';
 

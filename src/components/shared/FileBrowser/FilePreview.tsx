@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { formatBytes } from '../utils/formatters';
-import { api } from '../api';
-import { getErrorMessage } from '../types';
-import { logger } from '../utils/logger';
-import { Body, Caption, Code } from './ui';
+import { formatBytes } from '../../../utils/formatters';
+import { api } from '../../../api';
+import { getErrorMessage } from '../../../types';
+import { logger } from '../../../utils/logger';
+import { Body, Caption, Code } from '../../ui';
 
 interface FilePreviewProps {
   filePath: string;

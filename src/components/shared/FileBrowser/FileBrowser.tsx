@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Icons } from '../../IconComponents';
-import { FilePreview } from '../../FilePreview';
+import { FilePreview } from './FilePreview';
 import { VirtualFileList, type FileEntry } from '../../data-display';
 import { api } from '../../../api';
 import { logger } from '../../../utils/logger';

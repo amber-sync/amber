@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { SyncJob, SyncMode, RsyncConfig } from '../../../types';
-import { api } from '../../../api';
-import { MODE_PRESETS } from '../../../config';
-import { Icons } from '../../IconComponents';
+import { SyncJob, SyncMode, RsyncConfig } from '../../../../types';
+import { api } from '../../../../api';
+import { MODE_PRESETS } from '../../../../config';
+import { Icons } from '../../../../components/IconComponents';
 import {
   TextInput,
   PathInput,
@@ -11,7 +11,7 @@ import {
   Button,
   IconButton,
   StatusMessage,
-} from '../../ui';
+} from '../../../../components/ui';
 
 interface EditJobPanelProps {
   job: SyncJob;

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { SyncJob, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
-import { BackupCalendar } from '../../components/analytics';
+import { BackupCalendar } from './components/BackupCalendar';
 import { format } from 'date-fns';
 import { Button, Card, StatusDot, IconButton, Title, Body, Caption } from '../../components/ui';
 import { PageContainer, PageSection } from '../../components/layout';
