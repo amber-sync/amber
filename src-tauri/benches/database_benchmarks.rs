@@ -1,12 +1,13 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rusqlite::{params, Connection};
+use std::hint::black_box;
 use std::time::Duration;
 use tempfile::NamedTempFile;
 
 /// Setup test database with stress test data
 fn setup_stress_test_db() -> Connection {
     let temp_file = NamedTempFile::new().unwrap();
-    let conn = Connection::open(temp_file.path()).unwrap();
+    let mut conn = Connection::open(temp_file.path()).unwrap();
 
     // Create schema
     conn.execute_batch(

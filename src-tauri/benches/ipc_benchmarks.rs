@@ -1,5 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use serde::{Deserialize, Serialize};
+use std::hint::black_box;
 use std::time::Duration;
 
 /// Mock Tauri IPC command structures

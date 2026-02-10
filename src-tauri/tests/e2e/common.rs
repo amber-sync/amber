@@ -28,10 +28,10 @@ pub fn run_rsync_backup(source: &std::path::Path, dest: &std::path::Path) -> std
     if output.status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("rsync failed: {}", String::from_utf8_lossy(&output.stderr)),
-        ))
+        Err(std::io::Error::other(format!(
+            "rsync failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )))
     }
 }
 
@@ -52,13 +52,10 @@ pub fn run_rsync_incremental(
     if output.status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "rsync incremental failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ),
-        ))
+        Err(std::io::Error::other(format!(
+            "rsync incremental failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )))
     }
 }
 
@@ -84,13 +81,10 @@ pub fn rsync_restore_file(
     if output.status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "rsync restore failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ),
-        ))
+        Err(std::io::Error::other(format!(
+            "rsync restore failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )))
     }
 }
 
@@ -116,12 +110,9 @@ pub fn rsync_restore_dir(
     if output.status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "rsync restore dir failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ),
-        ))
+        Err(std::io::Error::other(format!(
+            "rsync restore dir failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )))
     }
 }

@@ -1,7 +1,7 @@
-/// Security Test Suite for Custom Command Injection Fix
-///
-/// This test file demonstrates the security fix for the custom_command vulnerability
-/// Tests can be run once project compilation issues are resolved.
+// Security Test Suite for Custom Command Injection Fix
+//
+// This test file demonstrates the security fix for the custom_command vulnerability.
+// Tests can be run once project compilation issues are resolved.
 
 #[cfg(test)]
 mod security_tests {

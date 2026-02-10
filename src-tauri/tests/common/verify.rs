@@ -45,14 +45,14 @@ pub fn compare_directories(a: &Path, b: &Path) -> std::io::Result<DiffResult> {
     let files_b = collect_files(b, b)?;
 
     // Find files only in A
-    for (rel_path, _) in &files_a {
+    for rel_path in files_a.keys() {
         if !files_b.contains_key(rel_path) {
             result.only_in_a.push(rel_path.clone());
         }
     }
 
     // Find files only in B
-    for (rel_path, _) in &files_b {
+    for rel_path in files_b.keys() {
         if !files_a.contains_key(rel_path) {
             result.only_in_b.push(rel_path.clone());
         }
@@ -107,7 +107,7 @@ fn collect_files_recursive(
         let path = entry.path();
         let rel_path = path
             .strip_prefix(base)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            .map_err(std::io::Error::other)?
             .to_string_lossy()
             .to_string();
 
@@ -154,25 +154,19 @@ pub fn verify_backup_integrity(source: &Path, backup: &Path) -> std::io::Result<
     let diff = compare_directories(source, backup)?;
 
     if !diff.only_in_a.is_empty() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "Backup missing {} files: {:?}",
-                diff.only_in_a.len(),
-                &diff.only_in_a[..diff.only_in_a.len().min(5)]
-            ),
-        ));
+        return Err(std::io::Error::other(format!(
+            "Backup missing {} files: {:?}",
+            diff.only_in_a.len(),
+            &diff.only_in_a[..diff.only_in_a.len().min(5)]
+        )));
     }
 
     if !diff.different.is_empty() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "Backup has {} different files: {:?}",
-                diff.different.len(),
-                &diff.different[..diff.different.len().min(5)]
-            ),
-        ));
+        return Err(std::io::Error::other(format!(
+            "Backup has {} different files: {:?}",
+            diff.different.len(),
+            &diff.different[..diff.different.len().min(5)]
+        )));
     }
 
     Ok(())
@@ -300,23 +294,17 @@ pub fn verify_manifest_consistency(
     let missing_in_manifest: Vec<_> = actual_set.difference(&manifest_set).collect();
 
     if !missing_in_fs.is_empty() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "Snapshots in manifest but not on filesystem: {:?}",
-                missing_in_fs
-            ),
-        ));
+        return Err(std::io::Error::other(format!(
+            "Snapshots in manifest but not on filesystem: {:?}",
+            missing_in_fs
+        )));
     }
 
     if !missing_in_manifest.is_empty() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "Snapshots on filesystem but not in manifest: {:?}",
-                missing_in_manifest
-            ),
-        ));
+        return Err(std::io::Error::other(format!(
+            "Snapshots on filesystem but not in manifest: {:?}",
+            missing_in_manifest
+        )));
     }
 
     Ok(())

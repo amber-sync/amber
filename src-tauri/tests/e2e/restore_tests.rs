@@ -34,7 +34,7 @@ fn test_restore_single_file_exact() {
     run_rsync_backup(&env.source_path, &snapshot).unwrap();
 
     // Delete original
-    fs::remove_file(&env.source_path.join("important.txt")).unwrap();
+    fs::remove_file(env.source_path.join("important.txt")).unwrap();
     assert!(!env.source_path.join("important.txt").exists());
 
     // Restore from snapshot
@@ -162,7 +162,7 @@ fn test_restore_preserves_timestamps() {
     std::thread::sleep(std::time::Duration::from_millis(100));
 
     // Delete and restore
-    fs::remove_file(&env.source_path.join("file.txt")).unwrap();
+    fs::remove_file(env.source_path.join("file.txt")).unwrap();
     rsync_restore_file(
         &snapshot.join("file.txt"),
         &env.source_path.join("file.txt"),

@@ -39,7 +39,7 @@ fn test_full_time_machine_workflow() {
 
     // 2. Modify source (add, delete, change files)
     generate::file(&env.source_path.join("new.txt"), b"new file").unwrap();
-    fs::remove_file(&env.source_path.join("delete.txt")).unwrap();
+    fs::remove_file(env.source_path.join("delete.txt")).unwrap();
     generate::file(&env.source_path.join("modify.txt"), b"modified content!!!").unwrap();
 
     // 3. Create second backup
@@ -151,7 +151,7 @@ fn test_restore_to_previous_state() {
     run_rsync_backup(&env.source_path, &snap1).unwrap();
 
     // Make lots of changes
-    fs::remove_file(&env.source_path.join("a.txt")).unwrap();
+    fs::remove_file(env.source_path.join("a.txt")).unwrap();
     generate::file(&env.source_path.join("b.txt"), b"b modified").unwrap();
     generate::file(&env.source_path.join("c.txt"), b"c").unwrap();
     generate::file(&env.source_path.join("d.txt"), b"d").unwrap();
@@ -200,7 +200,7 @@ fn test_compare_across_multiple_snapshots() {
     run_rsync_backup(&env.source_path, &snap2).unwrap();
 
     // Snapshot 3: B, C, D
-    fs::remove_file(&env.source_path.join("a.txt")).unwrap();
+    fs::remove_file(env.source_path.join("a.txt")).unwrap();
     generate::file(&env.source_path.join("d.txt"), b"d").unwrap();
     let snap3 = env.snapshot_path("2024-01-03_120000");
     fs::create_dir_all(&snap3).unwrap();

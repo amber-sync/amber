@@ -234,9 +234,11 @@ mod tests {
     fn test_check_installation() {
         let service = RcloneService::new();
         let status = service.check_installation().unwrap();
-        // Just check that it returns without error
-        // installed may be true or false depending on system
-        assert!(status.installed || !status.installed);
+        // If rclone is absent, service returns a fully empty status payload.
+        if !status.installed {
+            assert!(status.version.is_none());
+            assert!(status.config_path.is_none());
+        }
     }
 
     #[test]

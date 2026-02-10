@@ -299,9 +299,11 @@ mod tests {
     #[test]
     fn test_save_and_load_preferences() {
         let (store, _dir) = test_store();
-        let mut prefs = AppPreferences::default();
-        prefs.theme = "dark".to_string();
-        prefs.run_in_background = true;
+        let prefs = AppPreferences {
+            theme: "dark".to_string(),
+            run_in_background: true,
+            ..AppPreferences::default()
+        };
         store.save_preferences(&prefs).unwrap();
 
         let loaded = store.load_preferences().unwrap();

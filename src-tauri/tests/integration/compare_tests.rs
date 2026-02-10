@@ -266,11 +266,11 @@ fn test_compare_empty_vs_populated() {
     // Compare empty -> populated
     let diff = verify::compare_directories(&snap_a, &snap_b).unwrap();
     assert!(diff.only_in_a.is_empty());
-    assert!(diff.only_in_b.len() > 0);
+    assert!(!diff.only_in_b.is_empty());
 
     // Compare populated -> empty
     let diff_reverse = verify::compare_directories(&snap_b, &snap_a).unwrap();
-    assert!(diff_reverse.only_in_a.len() > 0);
+    assert!(!diff_reverse.only_in_a.is_empty());
     assert!(diff_reverse.only_in_b.is_empty());
 }
 
