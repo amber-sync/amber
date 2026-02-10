@@ -11,18 +11,22 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from './IconComponents';
 import { api } from '../api';
 import { formatBytes } from '../utils/formatters';
-import type { DevSeedResult, DevBenchmarkResult, DevDbStats } from '../types';
+import type { DevSeedResult, DevBenchmarkResult, DevChurnResult, DevDbStats } from '../types';
 import { Title, Body, Caption, Code } from './ui';
+import { useJobs } from '@/features/jobs/context/JobsContext';
 
 interface DevToolsProps {
   onClose?: () => void;
 }
 
 export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
+  const { refreshJobs } = useJobs();
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isChurning, setIsChurning] = useState(false);
   const [isBenchmarking, setIsBenchmarking] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [seedResult, setSeedResult] = useState<DevSeedResult | null>(null);
+  const [churnResult, setChurnResult] = useState<DevChurnResult | null>(null);
   const [benchmarkResults, setBenchmarkResults] = useState<DevBenchmarkResult[] | null>(null);
   const [dbStats, setDbStats] = useState<DevDbStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +54,26 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
       const result = await api.devSeedData();
       setSeedResult(result);
       await loadDbStats();
+      await refreshJobs();
     } catch (err) {
       setError(String(err));
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handleChurnData = async () => {
+    setIsChurning(true);
+    setError(null);
+    setChurnResult(null);
+
+    try {
+      const result = await api.devChurnData();
+      setChurnResult(result);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setIsChurning(false);
     }
   };
 
@@ -81,8 +101,10 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
     try {
       await api.devClearData();
       setSeedResult(null);
+      setChurnResult(null);
       setBenchmarkResults(null);
       await loadDbStats();
+      await refreshJobs();
     } catch (err) {
       setError(String(err));
     } finally {
@@ -165,6 +187,23 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
                 )}
               </button>
               <button
+                onClick={handleChurnData}
+                disabled={isChurning || (!seedResult?.jobs_created && !dbStats?.file_count)}
+                className="px-4 py-3 bg-layer-2 border border-border-base rounded-xl font-medium hover:bg-layer-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isChurning ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-accent-primary border-t-transparent rounded-full animate-spin inline-block mr-2" />
+                    Churning...
+                  </>
+                ) : (
+                  <>
+                    <Icons.RefreshCw size={16} className="inline mr-1.5" />
+                    Churn Files
+                  </>
+                )}
+              </button>
+              <button
                 onClick={handleClearData}
                 disabled={isClearing}
                 className="px-4 py-3 bg-[var(--color-error)]/10 text-[var(--color-error)] rounded-xl font-medium hover:bg-[var(--color-error)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -173,6 +212,23 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
               </button>
             </div>
           </div>
+
+          {/* Churn Result */}
+          {churnResult && (
+            <div className="p-4 rounded-xl animate-fade-in bg-[var(--color-info)]/10 border border-[var(--color-info)]/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Icons.RefreshCw size={18} className="text-[var(--color-info)]" />
+                <Body weight="medium" className="text-[var(--color-info)]">
+                  Churn Complete
+                </Body>
+              </div>
+              <Body size="sm" color="tertiary">
+                Added {churnResult.added}, modified {churnResult.modified}, deleted{' '}
+                {churnResult.deleted} files. Click "Sync Now" on a job to create a new backup
+                snapshot.
+              </Body>
+            </div>
+          )}
 
           {/* Seed Result */}
           {seedResult && (
@@ -358,15 +414,16 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
           {/* Info */}
           <div className="p-4 bg-layer-2 rounded-xl space-y-2">
             <Caption color="tertiary">
-              <strong>Seed Mock Data</strong> creates 2 backup jobs with 85 snapshots total spanning
-              2 years, containing 40K-60K files each (~3.7M file entries, ~1GB database).
+              <strong>Seed Mock Data</strong> creates a dev playground at{' '}
+              <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
+                ~/.amber-dev/
+              </Code>{' '}
+              with 1 backup job, ~20,000 files (realistic monorepo), and 3 rsync snapshots with
+              churn between each.
             </Caption>
             <Caption color="tertiary">
-              <strong>Caching</strong>: First seed generates data and saves to{' '}
-              <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
-                mock-data/
-              </Code>
-              . Subsequent seeds import from cache (much faster).
+              <strong>Churn Files</strong> adds, modifies, and deletes source files to simulate
+              changes. After churning, click "Sync Now" on a job to create a new snapshot.
             </Caption>
             <Caption color="tertiary">
               <strong>Benchmarks</strong> run 100 iterations of each operation to measure query
@@ -377,7 +434,11 @@ export const DevTools: React.FC<DevToolsProps> = ({ onClose }) => {
               <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
                 dev-
               </Code>{' '}
-              and won't affect real backups.
+              and won't affect real backups. Clear removes all dev jobs and deletes{' '}
+              <Code size="sm" className="bg-layer-3 px-1 py-0.5 rounded">
+                ~/.amber-dev/
+              </Code>
+              .
             </Caption>
           </div>
         </div>

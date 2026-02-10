@@ -41,9 +41,7 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ label, icon, active, onCl
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => (
   <aside className="w-[184px] bg-layer-1 border-r border-border-base hidden md:flex flex-col transition-colors duration-300 relative z-10 pt-6">
     <div className="p-6 flex items-center gap-3">
-      <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-accent-text shadow-[var(--shadow-card)]">
-        <Icons.Activity size={20} />
-      </div>
+      <img src="/logo.svg" alt="Amber" className="w-9 h-9 rounded-xl shadow-[var(--shadow-card)]" />
       <Title level={3}>Amber</Title>
     </div>
 

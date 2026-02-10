@@ -114,45 +114,33 @@ pub struct VolumeInfo {
 /// List mounted volumes (external drives)
 #[tauri::command]
 pub async fn list_volumes() -> Result<Vec<VolumeInfo>> {
+    use crate::utils::platform;
     use std::fs;
 
-    let volumes_path = std::path::Path::new("/Volumes");
     let mut volumes = Vec::new();
+    let system_names = platform::system_volume_names();
 
-    // System volumes to exclude
-    let system_volumes = [
-        "Macintosh HD",
-        "Macintosh HD - Data",
-        "Recovery",
-        "Preboot",
-        "VM",
-        "Update",
-    ];
-
-    if volumes_path.exists() {
-        for entry in fs::read_dir(volumes_path)? {
+    for mount_root in platform::mount_root_paths() {
+        if !mount_root.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&mount_root)? {
             let entry = entry?;
             let name = entry.file_name().to_string_lossy().to_string();
             let path = entry.path();
 
-            // Skip system volumes
-            if system_volumes.contains(&name.as_str()) {
+            // Skip system volumes and hidden entries
+            if system_names.contains(&name.as_str()) || name.starts_with('.') {
                 continue;
             }
 
-            // Skip hidden volumes
-            if name.starts_with('.') {
-                continue;
-            }
-
-            // Get volume stats using statvfs
             if let Ok(stats) = get_volume_stats(&path) {
                 volumes.push(VolumeInfo {
                     name: name.clone(),
                     path: path.to_string_lossy().to_string(),
                     total_bytes: stats.0,
                     free_bytes: stats.1,
-                    is_external: true, // All volumes in /Volumes are external (except system)
+                    is_external: true,
                 });
             }
         }
@@ -422,34 +410,26 @@ pub async fn scan_for_backups(
 /// Scan all mounted volumes for orphan backups
 #[tauri::command]
 pub async fn find_orphan_backups(known_job_ids: Vec<String>) -> Result<Vec<DiscoveredBackup>> {
+    use crate::utils::platform;
     use std::fs;
 
     let mut all_orphans = Vec::new();
-    let volumes_path = std::path::Path::new("/Volumes");
+    let system_names = platform::system_volume_names();
 
-    // System volumes to skip
-    let skip_volumes = [
-        "Macintosh HD",
-        "Macintosh HD - Data",
-        "Recovery",
-        "Preboot",
-        "VM",
-        "Update",
-    ];
-
-    if volumes_path.exists() {
-        if let Ok(entries) = fs::read_dir(volumes_path) {
+    for mount_root in platform::mount_root_paths() {
+        if !mount_root.exists() {
+            continue;
+        }
+        if let Ok(entries) = fs::read_dir(&mount_root) {
             for entry in entries.flatten() {
                 let name = entry.file_name().to_string_lossy().to_string();
 
-                // Skip system volumes and hidden
-                if skip_volumes.contains(&name.as_str()) || name.starts_with('.') {
+                if system_names.contains(&name.as_str()) || name.starts_with('.') {
                     continue;
                 }
 
                 let volume_path = entry.path().to_string_lossy().to_string();
                 if let Ok(backups) = scan_for_backups(volume_path, known_job_ids.clone()).await {
-                    // Only include orphans (no matching job)
                     for backup in backups {
                         if !backup.has_matching_job {
                             all_orphans.push(backup);

@@ -4,18 +4,9 @@
 //! be shipped to production.
 
 use crate::error::Result;
-use crate::services::dev_seed::{BenchmarkResult, DevSeeder, SeedResult};
+use crate::services::dev_seed::{BenchmarkResult, ChurnResult, DevSeeder, SeedResult};
 use crate::state::AppState;
-use std::path::PathBuf;
 use tauri::State;
-
-/// Get the mock-data folder path (relative to project root in dev mode)
-fn get_mock_data_path() -> Option<PathBuf> {
-    // In dev mode, CARGO_MANIFEST_DIR points to src-tauri/
-    // So mock-data is at ../mock-data/
-    option_env!("CARGO_MANIFEST_DIR")
-        .map(|dir| PathBuf::from(dir).parent().unwrap().join("mock-data"))
-}
 
 /// Seed the database with realistic mock data for testing
 #[tauri::command]
@@ -27,19 +18,13 @@ pub async fn dev_seed_data(state: State<'_, AppState>) -> Result<SeedResult> {
     let app_data_path = state.data_dir.clone();
 
     let mut seeder = DevSeeder::new(&index_service, &store, app_data_path);
-
-    // Configure mock-data path for source data
-    if let Some(mock_path) = get_mock_data_path() {
-        log::info!("Using mock-data source at: {:?}", mock_path);
-        seeder = seeder.with_mock_data_path(mock_path);
-    }
-
     let result = seeder.seed()?;
 
-    // Validate schema after seeding to catch mismatches early
-    if let Err(e) = state.index_service.validate_schema() {
-        log::error!("Schema validation failed after seeding: {}", e);
-        return Err(e);
+    // Update path validator to include new dev job paths
+    if result.jobs_created > 0 {
+        if let Err(e) = state.update_job_roots() {
+            log::warn!("Failed to update path validator after seeding: {}", e);
+        }
     }
 
     log::info!(
@@ -79,18 +64,41 @@ pub async fn dev_run_benchmarks(state: State<'_, AppState>) -> Result<Vec<Benchm
     Ok(results)
 }
 
-/// Clear all dev data
+/// Apply churn (add/modify/delete files) to dev job source directories
+#[tauri::command]
+pub async fn dev_churn_data(state: State<'_, AppState>) -> Result<ChurnResult> {
+    log::info!("Applying churn to dev sources...");
+
+    let index_service = state.index_service.clone();
+    let store = state.store.clone();
+    let app_data_path = state.data_dir.clone();
+    let seeder = DevSeeder::new(&index_service, &store, app_data_path);
+    let result = seeder.churn()?;
+
+    log::info!(
+        "Churn complete: +{} added, ~{} modified, -{} deleted",
+        result.added,
+        result.modified,
+        result.deleted
+    );
+
+    Ok(result)
+}
+
+/// Clear all dev data (jobs from store + playground directory)
 #[tauri::command]
 pub async fn dev_clear_data(state: State<'_, AppState>) -> Result<()> {
     log::info!("Clearing dev data...");
 
-    // Delete dev jobs
-    let jobs = state.store.load_jobs()?;
-    for job in jobs {
-        if job.id.starts_with("dev-") {
-            state.store.delete_job(&job.id)?;
-            state.index_service.delete_job_snapshots(&job.id)?;
-        }
+    let index_service = state.index_service.clone();
+    let store = state.store.clone();
+    let app_data_path = state.data_dir.clone();
+    let seeder = DevSeeder::new(&index_service, &store, app_data_path);
+    seeder.clear()?;
+
+    // Update path validator after removing dev jobs
+    if let Err(e) = state.update_job_roots() {
+        log::warn!("Failed to update path validator after clearing: {}", e);
     }
 
     log::info!("Dev data cleared");

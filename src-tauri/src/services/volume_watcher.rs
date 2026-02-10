@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 
 use crate::error::{AmberError, Result};
+use crate::utils::platform;
 
 /// Callback type for volume events
 pub type VolumeCallback = Box<dyn Fn(VolumeEvent) + Send + Sync>;
@@ -14,10 +15,12 @@ pub enum VolumeEvent {
     Unmounted(String),
 }
 
-/// Watches /Volumes for mount/unmount events on macOS
+/// Watches mount directories for volume mount/unmount events.
+/// macOS: watches /Volumes
+/// Linux: watches /media/$USER, /mnt, /run/media/$USER
 pub struct VolumeWatcher {
     watcher: Arc<RwLock<Option<RecommendedWatcher>>>,
-    volumes_path: PathBuf,
+    watch_paths: Vec<PathBuf>,
     event_tx: Arc<RwLock<Option<mpsc::Sender<VolumeEvent>>>>,
 }
 
@@ -25,7 +28,7 @@ impl VolumeWatcher {
     pub fn new() -> Self {
         Self {
             watcher: Arc::new(RwLock::new(None)),
-            volumes_path: PathBuf::from("/Volumes"),
+            watch_paths: platform::mount_root_paths(),
             event_tx: Arc::new(RwLock::new(None)),
         }
     }
@@ -85,17 +88,26 @@ impl VolumeWatcher {
             *w = Some(watcher);
         }
 
-        // Start watching
+        // Start watching all mount root paths
         {
             let mut w = self.watcher.write().await;
             if let Some(ref mut watcher) = *w {
-                watcher
-                    .watch(&self.volumes_path, RecursiveMode::NonRecursive)
-                    .map_err(|e| AmberError::Volume(format!("Failed to watch /Volumes: {}", e)))?;
+                for watch_path in &self.watch_paths {
+                    if watch_path.exists() {
+                        watcher
+                            .watch(watch_path, RecursiveMode::NonRecursive)
+                            .map_err(|e| {
+                                AmberError::Volume(format!(
+                                    "Failed to watch {:?}: {}",
+                                    watch_path, e
+                                ))
+                            })?;
+                    }
+                }
             }
         }
 
-        log::info!("VolumeWatcher started on {:?}", self.volumes_path);
+        log::info!("VolumeWatcher started on {:?}", self.watch_paths);
         Ok(rx)
     }
 
@@ -103,9 +115,9 @@ impl VolumeWatcher {
     pub async fn stop(&self) -> Result<()> {
         let mut w = self.watcher.write().await;
         if let Some(ref mut watcher) = w.take() {
-            watcher
-                .unwatch(&self.volumes_path)
-                .map_err(|e| AmberError::Volume(format!("Failed to unwatch: {}", e)))?;
+            for watch_path in &self.watch_paths {
+                let _ = watcher.unwatch(watch_path);
+            }
         }
 
         // Clear the sender
@@ -120,13 +132,16 @@ impl VolumeWatcher {
     pub fn list_volumes(&self) -> Result<Vec<String>> {
         let mut volumes = Vec::new();
 
-        if self.volumes_path.exists() {
-            let entries = std::fs::read_dir(&self.volumes_path)
-                .map_err(|e| AmberError::Volume(format!("Failed to read /Volumes: {}", e)))?;
+        for watch_path in &self.watch_paths {
+            if watch_path.exists() {
+                let entries = std::fs::read_dir(watch_path).map_err(|e| {
+                    AmberError::Volume(format!("Failed to read {:?}: {}", watch_path, e))
+                })?;
 
-            for entry in entries.flatten() {
-                if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                    volumes.push(entry.path().to_string_lossy().to_string());
+                for entry in entries.flatten() {
+                    if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                        volumes.push(entry.path().to_string_lossy().to_string());
+                    }
                 }
             }
         }
@@ -136,15 +151,17 @@ impl VolumeWatcher {
 
     /// Check if a specific volume is mounted
     pub fn is_volume_mounted(&self, name: &str) -> bool {
-        let vol_path = self.volumes_path.join(name);
-        vol_path.exists() && vol_path.is_dir()
+        self.watch_paths.iter().any(|root| {
+            let vol_path = root.join(name);
+            vol_path.exists() && vol_path.is_dir()
+        })
     }
 
     /// Get volume info (size, available space, etc.)
     pub fn get_volume_info(&self, path: &str) -> Result<VolumeInfo> {
         use std::process::Command;
 
-        // Use df command to get volume info on macOS
+        // Use df command to get volume info (works on macOS and Linux)
         let output = Command::new("df")
             .args(["-k", "--", path])
             .output()

@@ -19,6 +19,12 @@ export interface DevBenchmarkResult {
   total_ms: number;
 }
 
+export interface DevChurnResult {
+  added: number;
+  modified: number;
+  deleted: number;
+}
+
 export interface DevDbStats {
   snapshot_count: number;
   file_count: number;

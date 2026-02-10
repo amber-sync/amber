@@ -39,8 +39,10 @@ impl PathValidator {
             validator.add_root(&home)?;
         }
 
-        // Add external volumes directory
-        validator.add_root(Path::new("/Volumes"))?;
+        // Add external volume mount directories (platform-aware)
+        for mount_root in crate::utils::platform::mount_root_paths() {
+            validator.add_root(&mount_root)?;
+        }
 
         // Add application data directory
         validator.add_root(app_data_dir)?;

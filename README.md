@@ -1,8 +1,8 @@
 # Amber
 
-A native backup application powered by rsync. Incremental snapshots with hard-link deduplication, scheduled jobs, visual snapshot history, and point-in-time file restore.
+A desktop backup application powered by rsync. Incremental snapshots with hard-link deduplication, scheduled jobs, visual snapshot history, and point-in-time file restore.
 
-Built with [Tauri v2](https://v2.tauri.app) (Rust) and React.
+Built with [Tauri v2](https://v2.tauri.app) (Rust backend, React frontend). Currently targeting macOS, with Linux support planned.
 
 ## Features
 

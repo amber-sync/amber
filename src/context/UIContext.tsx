@@ -16,6 +16,7 @@ interface UIContextType {
   setActiveJobId: (id: string | null) => void;
   setView: (view: ViewType) => void;
   navigateBack: () => void;
+  navigateToJob: (jobId: string) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -53,6 +54,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   }, [previousView]);
 
+  // Atomic navigation: sets job + view in a single batch to avoid intermediate renders
+  const navigateToJob = useCallback(
+    (jobId: string) => {
+      setActiveJobId(jobId);
+      setPreviousView(view);
+      setView('TIME_MACHINE');
+    },
+    [view]
+  );
+
   const value = useMemo(
     () => ({
       activeJobId,
@@ -61,8 +72,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       setActiveJobId,
       setView: handleSetView,
       navigateBack,
+      navigateToJob,
     }),
-    [activeJobId, view, previousView, handleSetView, navigateBack]
+    [activeJobId, view, previousView, handleSetView, navigateBack, navigateToJob]
   );
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

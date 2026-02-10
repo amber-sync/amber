@@ -15,6 +15,7 @@
 //! - SQLite `snapshots.timestamp`: Unix MILLISECONDS
 //! - Manifest timestamps: Unix MILLISECONDS
 
+pub mod platform;
 pub mod validation;
 
 use std::path::Path;
@@ -94,27 +95,10 @@ pub fn get_machine_id() -> String {
         .and_then(|h| h.into_string().ok())
         .unwrap_or_else(|| "unknown".to_string());
 
-    // Try to get a hardware UUID on macOS
-    #[cfg(target_os = "macos")]
-    {
-        if let Ok(output) = std::process::Command::new("ioreg")
-            .args(["-rd1", "-c", "IOPlatformExpertDevice"])
-            .output()
-        {
-            if let Ok(stdout) = String::from_utf8(output.stdout) {
-                // Look for IOPlatformUUID
-                for line in stdout.lines() {
-                    if line.contains("IOPlatformUUID") {
-                        if let Some(uuid) = line.split('"').nth(3) {
-                            return format!("{}-{}", hostname, &uuid[..8.min(uuid.len())]);
-                        }
-                    }
-                }
-            }
-        }
+    if let Some(uuid) = platform::get_hardware_uuid() {
+        return format!("{}-{}", hostname, uuid);
     }
 
-    // Fallback: just use hostname
     hostname
 }
 
@@ -130,19 +114,9 @@ pub struct VolumeInfo {
 /// Get volume information for a path
 /// Returns whether it's external and the volume name if applicable
 pub fn get_volume_info(path: &str) -> VolumeInfo {
-    let is_external = path.starts_with("/Volumes/") && !path.starts_with("/Volumes/Macintosh HD");
-
-    let volume_name = if is_external {
-        path.strip_prefix("/Volumes/")
-            .and_then(|rest| rest.split('/').next())
-            .map(String::from)
-    } else {
-        None
-    };
-
     VolumeInfo {
-        is_external,
-        volume_name,
+        is_external: platform::is_external_path(path),
+        volume_name: platform::volume_name_from_path(path),
     }
 }
 
@@ -212,6 +186,7 @@ mod tests {
 
     // ========== Volume info tests ==========
 
+    #[cfg(target_os = "macos")]
     #[test]
     fn test_volume_info_external() {
         let info = get_volume_info("/Volumes/MyBackup/folder");
@@ -219,11 +194,20 @@ mod tests {
         assert_eq!(info.volume_name, Some("MyBackup".to_string()));
     }
 
+    #[cfg(target_os = "macos")]
     #[test]
     fn test_volume_info_system() {
         let info = get_volume_info("/Volumes/Macintosh HD/Users/test");
         assert!(!info.is_external);
         assert_eq!(info.volume_name, None);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_volume_info_external_linux() {
+        let info = get_volume_info("/mnt/backup/folder");
+        assert!(info.is_external);
+        assert_eq!(info.volume_name, Some("backup".to_string()));
     }
 
     #[test]
