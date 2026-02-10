@@ -12,6 +12,7 @@ import type {
   MigrationReport,
   DevSeedResult,
   DevBenchmarkResult,
+  DevChurnResult,
   DevDbStats,
 } from '../types';
 
@@ -26,8 +27,7 @@ export async function setPreferences(prefs: Partial<AppPreferences>): Promise<Ap
 }
 
 export async function testNotification(): Promise<boolean> {
-  await invoke('test_notification');
-  return true;
+  return invoke('test_notification');
 }
 
 // ===== Utilities =====
@@ -53,7 +53,14 @@ export async function devRunBenchmarks(): Promise<DevBenchmarkResult[]> {
 }
 
 /**
- * Clear all dev seeded data
+ * Apply churn (add/modify/delete files) to dev job source directories
+ */
+export async function devChurnData(): Promise<DevChurnResult> {
+  return invoke('dev_churn_data');
+}
+
+/**
+ * Clear all dev seeded data and delete playground directory
  */
 export async function devClearData(): Promise<void> {
   return invoke('dev_clear_data');

@@ -23,6 +23,7 @@ vi.mock('../../api', () => ({
     saveJob: vi.fn(),
     deleteJob: vi.fn(),
     runRsync: vi.fn(),
+    runRclone: vi.fn(),
     killRsync: vi.fn(),
   },
 }));
@@ -75,6 +76,7 @@ describe('AppContext', () => {
     vi.mocked(api.saveJob).mockClear();
     vi.mocked(api.deleteJob).mockClear();
     vi.mocked(api.runRsync).mockClear();
+    vi.mocked(api.runRclone).mockClear();
     vi.mocked(api.killRsync).mockClear();
 
     // Set default implementations
@@ -90,6 +92,7 @@ describe('AppContext', () => {
     vi.mocked(api.saveJob).mockResolvedValue(undefined);
     vi.mocked(api.deleteJob).mockResolvedValue(undefined);
     vi.mocked(api.runRsync).mockResolvedValue(undefined);
+    vi.mocked(api.runRclone).mockResolvedValue(undefined);
     vi.mocked(api.killRsync).mockResolvedValue(undefined);
   });
 
@@ -163,6 +166,38 @@ describe('AppContext', () => {
 
       // API should be called
       expect(api.runRsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'test-job-1' }));
+    });
+
+    it('should route cloud jobs to runRclone', async () => {
+      const cloudJob = {
+        ...mockJob,
+        destinationType: DestinationType.CLOUD,
+        cloudConfig: {
+          remoteName: 'myS3',
+          remotePath: 'amber',
+          encrypt: false,
+          bandwidth: '10M',
+        },
+      };
+      vi.mocked(api.getJobsWithStatus).mockResolvedValue([cloudJob]);
+
+      const { result } = renderHook(() => useApp(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.jobs).toHaveLength(1);
+      });
+
+      act(() => {
+        result.current.runSync('test-job-1');
+      });
+
+      await waitFor(() => {
+        const job = result.current.jobs.find(j => j.id === 'test-job-1');
+        expect(job?.status).toBe(JobStatus.RUNNING);
+      });
+
+      expect(api.runRclone).toHaveBeenCalledWith(expect.objectContaining({ id: 'test-job-1' }));
+      expect(api.runRsync).not.toHaveBeenCalled();
     });
 
     it('should prevent duplicate calls when job is already RUNNING', async () => {

@@ -23,6 +23,7 @@ import { generateUniqueId } from './utils/idGenerator';
 import { JobStatus, SyncJob, SyncMode, DestinationType, Snapshot, getErrorMessage } from './types';
 import { api } from './api';
 import { logger } from './utils/logger';
+import { createJobFromForm, updateJobFromForm } from './features/job-editor/jobPersistence';
 
 function AppContent() {
   // TIM-205: Use specific context hooks for better performance
@@ -207,6 +208,24 @@ function AppContent() {
           }
         : { enabled: false };
 
+      const saveInput = {
+        name: jobForm.jobName,
+        sourcePath: jobForm.jobSource,
+        destPath: jobForm.jobDest,
+        mode: jobForm.jobMode,
+        destinationType: jobForm.destinationType,
+        scheduleInterval: jobForm.jobSchedule,
+        schedule: scheduleConfig,
+        config: jobConfig,
+        sshConfig,
+        cloud: {
+          remoteName: jobForm.cloudRemoteName,
+          remotePath: jobForm.cloudRemotePath,
+          encrypt: jobForm.cloudEncrypt,
+          bandwidth: jobForm.cloudBandwidth,
+        },
+      };
+
       // TIM-166: Navigate back to source view (use tracked source, fallback to DASHBOARD for new jobs)
       const returnView = (jobEditorSourceView ||
         (activeJobId ? 'TIME_MACHINE' : 'DASHBOARD')) as ViewType;
@@ -214,37 +233,13 @@ function AppContent() {
       if (activeJobId) {
         const job = jobs.find(j => j.id === activeJobId);
         if (job) {
-          const updatedJob = {
-            ...job,
-            name: jobForm.jobName,
-            sourcePath: jobForm.jobSource,
-            destPath: jobForm.jobDest,
-            mode: jobForm.jobMode,
-            scheduleInterval: jobForm.jobSchedule,
-            schedule: scheduleConfig,
-            config: jobConfig,
-            sshConfig,
-          };
+          const updatedJob = updateJobFromForm(job, saveInput);
           setJobs(prev => prev.map(j => (j.id === activeJobId ? updatedJob : j)));
           await persistJob(updatedJob);
           setView(returnView);
         }
       } else {
-        const job: SyncJob = {
-          id: generateUniqueId('job'),
-          name: jobForm.jobName || 'Untitled Job',
-          sourcePath: jobForm.jobSource,
-          destPath: jobForm.jobDest,
-          mode: jobForm.jobMode,
-          destinationType: DestinationType.LOCAL, // Default to local, can be changed to cloud later
-          scheduleInterval: jobForm.jobSchedule,
-          schedule: scheduleConfig,
-          config: jobConfig,
-          sshConfig,
-          lastRun: null,
-          status: JobStatus.IDLE,
-          snapshots: [],
-        };
+        const job: SyncJob = createJobFromForm(generateUniqueId('job'), saveInput);
         setJobs(prev => [...prev, job]);
         setActiveJobId(job.id);
         await persistJob(job);
@@ -312,7 +307,10 @@ function AppContent() {
       clearLogs();
       addLog(`Starting sync for ${job.name}...`);
 
-      api.runRsync(job).catch(err => {
+      const runJob =
+        job.destinationType === DestinationType.CLOUD ? api.runRclone(job) : api.runRsync(job);
+
+      runJob.catch(err => {
         addLog(`Error starting sync: ${err}`, 'error');
         setIsRunning(false);
       });

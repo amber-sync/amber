@@ -88,7 +88,9 @@ export const JobEditor: React.FC<JobEditorProps> = ({
     setSshCustomOptions,
     handleJobModeChange,
   } = form;
-  const canSave = !!jobName.trim() && !!jobSource.trim() && !!jobDest.trim();
+  const hasValidDestination =
+    destinationType === DestinationType.CLOUD ? !!cloudRemoteName.trim() : !!jobDest.trim();
+  const canSave = !!jobName.trim() && !!jobSource.trim() && hasValidDestination;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-app/80 backdrop-blur-md animate-fade-in">
@@ -201,7 +203,9 @@ export const JobEditor: React.FC<JobEditorProps> = ({
                           checked={cloudEncrypt}
                           onChange={setCloudEncrypt}
                           label="Encrypt transfers"
+                          description="Coming soon"
                           size="sm"
+                          disabled
                         />
                       </div>
                     </div>

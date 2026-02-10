@@ -160,9 +160,11 @@ export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update job status to RUNNING immediately to prevent double-clicks
       setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.RUNNING } : j)));
 
-      // Start the rsync process
-      api.runRsync(job).catch(err => {
-        logger.error('runSync: Failed to start rsync', { jobId, error: err });
+      const runJob =
+        job.destinationType === DestinationType.CLOUD ? api.runRclone(job) : api.runRsync(job);
+
+      runJob.catch(err => {
+        logger.error('runSync: Failed to start sync', { jobId, error: err });
         // Revert status on error
         setJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: JobStatus.FAILED } : j)));
       });
