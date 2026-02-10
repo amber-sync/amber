@@ -8,9 +8,9 @@ import React, {
   useRef,
 } from 'react';
 import { SyncJob, JobStatus, DestinationType } from '@/types';
-import type { RsyncProgressPayload, RsyncCompletePayload } from '@/types';
+import type { RsyncStartedPayload, RsyncCompletePayload } from '@/types';
 import { api } from '@/api';
-import { onRsyncProgress, onRsyncComplete } from '@/api/rsync';
+import { onRsyncStarted, onRsyncComplete } from '@/api/rsync';
 import { BASE_RSYNC_CONFIG } from '@/config';
 import { logger } from '@/utils/logger';
 
@@ -97,7 +97,8 @@ export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   loadJobsRef.current = loadJobs;
 
   useEffect(() => {
-    const unlistenProgress = onRsyncProgress((data: RsyncProgressPayload) => {
+    // Immediately mark job as RUNNING when backend emits rsync-started
+    const unlistenStarted = onRsyncStarted((data: RsyncStartedPayload) => {
       setJobs(prev =>
         prev.map(j =>
           j.id === data.jobId && j.status !== JobStatus.RUNNING
@@ -113,7 +114,7 @@ export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      unlistenProgress();
+      unlistenStarted();
       unlistenComplete();
     };
   }, []);

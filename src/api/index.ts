@@ -45,6 +45,7 @@ export const api = {
   onRsyncLog: rsync.onRsyncLog,
   onRsyncProgress: rsync.onRsyncProgress,
   onRsyncComplete: rsync.onRsyncComplete,
+  onRsyncStarted: rsync.onRsyncStarted,
   checkRclone: rsync.checkRclone,
   listRcloneRemotes: rsync.listRcloneRemotes,
   runRclone: rsync.runRclone,

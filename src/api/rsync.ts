@@ -10,12 +10,14 @@ import type {
   RsyncLogPayload,
   RsyncProgressPayload,
   RsyncCompletePayload,
+  RsyncStartedPayload,
 } from '../types';
 
 // Event callback types
 export type RsyncLogCallback = (data: RsyncLogPayload) => void;
 export type RsyncProgressCallback = (data: RsyncProgressPayload) => void;
 export type RsyncCompleteCallback = (data: RsyncCompletePayload) => void;
+export type RsyncStartedCallback = (data: RsyncStartedPayload) => void;
 
 // ===== Rsync Operations =====
 
@@ -58,6 +60,10 @@ export function onRsyncProgress(callback: RsyncProgressCallback): () => void {
 
 export function onRsyncComplete(callback: RsyncCompleteCallback): () => void {
   return safeEventListener<RsyncCompletePayload>('rsync-complete', callback);
+}
+
+export function onRsyncStarted(callback: RsyncStartedCallback): () => void {
+  return safeEventListener<RsyncStartedPayload>('rsync-started', callback);
 }
 
 // ===== Rclone (Cloud Backup) =====

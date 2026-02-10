@@ -46,6 +46,10 @@ export interface RsyncCompletePayload {
   snapshot?: Partial<Snapshot>;
 }
 
+export interface RsyncStartedPayload {
+  jobId: string;
+}
+
 // Type guards
 export function isRsyncProgress(data: unknown): data is RsyncProgressData {
   return (

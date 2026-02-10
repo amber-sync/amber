@@ -434,6 +434,7 @@
 /* Quick actions */
 .tm-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 24px;
 }

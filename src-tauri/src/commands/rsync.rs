@@ -65,6 +65,12 @@ struct RsyncCompletePayload {
     error: Option<String>,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RsyncStartedPayload {
+    job_id: String,
+}
+
 /// Parse rsync progress line like:
 /// "         16,384 100%    4.00MB/s    0:00:00 (xfr#2, to-chk=5/10)"
 fn parse_rsync_progress(line: &str) -> Option<(String, u8, String, String)> {
@@ -440,6 +446,14 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
     // Rebuild tray to show running state
     #[cfg(desktop)]
     rebuild_tray(&app);
+
+    // Notify frontend that backup has started (so tray-initiated backups reflect immediately)
+    let _ = app.emit(
+        "rsync-started",
+        RsyncStartedPayload {
+            job_id: job.id.clone(),
+        },
+    );
 
     // Get backup info before waiting
     let backup_info = service.get_backup_info(&job.id);
