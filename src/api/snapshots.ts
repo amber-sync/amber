@@ -364,6 +364,18 @@ export async function deleteSnapshotFromDestination(
 }
 
 /**
+ * Prune a snapshot: remove from manifest, delete from index, and remove folder from disk.
+ */
+export async function pruneSnapshot(
+  destPath: string,
+  jobId: string,
+  snapshotId: string,
+  timestamp: number
+): Promise<{ freedBytes: number; folderRemoved: boolean }> {
+  return invoke('prune_snapshot', { destPath, jobId, snapshotId, timestamp });
+}
+
+/**
  * TIM-221: Compare two snapshots and return file differences
  */
 export async function compareSnapshots(

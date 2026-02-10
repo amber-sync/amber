@@ -1,6 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { SyncJob, JobStatus, DestinationType } from '@/types';
+import type { RsyncProgressPayload, RsyncCompletePayload } from '@/types';
 import { api } from '@/api';
+import { onRsyncProgress, onRsyncComplete } from '@/api/rsync';
 import { BASE_RSYNC_CONFIG } from '@/config';
 import { logger } from '@/utils/logger';
 
@@ -11,6 +21,7 @@ interface JobsContextType {
   deleteJob: (jobId: string) => Promise<void>;
   runSync: (jobId: string) => void;
   stopSync: (jobId: string) => void;
+  refreshJobs: () => Promise<void>;
 }
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
@@ -60,24 +71,51 @@ const stripSnapshotsForStore = (job: SyncJob) => {
 export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [jobs, setJobs] = useState<SyncJob[]>([]);
 
+  const loadJobs = useCallback(async () => {
+    logger.debug('Loading jobs...');
+
+    try {
+      // Use getJobsWithStatus to get jobs WITH snapshot data from manifests
+      const stored = await api.getJobsWithStatus();
+      logger.debug('Stored jobs loaded', { count: Array.isArray(stored) ? stored.length : 0 });
+      const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
+
+      setJobs(normalized);
+    } catch (err) {
+      logger.error('Error loading jobs', err);
+      setJobs([]);
+    }
+  }, []);
+
   // Load jobs with mount status and snapshots from manifests
   useEffect(() => {
-    const loadJobs = async () => {
-      logger.debug('Loading jobs...');
-
-      try {
-        // Use getJobsWithStatus to get jobs WITH snapshot data from manifests
-        const stored = await api.getJobsWithStatus();
-        logger.debug('Stored jobs loaded', { count: Array.isArray(stored) ? stored.length : 0 });
-        const normalized = Array.isArray(stored) ? stored.map(normalizeJobFromStore) : [];
-
-        setJobs(normalized);
-      } catch (err) {
-        logger.error('Error loading jobs', err);
-        setJobs([]);
-      }
-    };
     loadJobs();
+  }, [loadJobs]);
+
+  // Listen for rsync events so tray-initiated backups reflect in the frontend
+  const loadJobsRef = useRef(loadJobs);
+  loadJobsRef.current = loadJobs;
+
+  useEffect(() => {
+    const unlistenProgress = onRsyncProgress((data: RsyncProgressPayload) => {
+      setJobs(prev =>
+        prev.map(j =>
+          j.id === data.jobId && j.status !== JobStatus.RUNNING
+            ? { ...j, status: JobStatus.RUNNING }
+            : j
+        )
+      );
+    });
+
+    const unlistenComplete = onRsyncComplete((_data: RsyncCompletePayload) => {
+      // Full refresh picks up new snapshots from manifests
+      loadJobsRef.current();
+    });
+
+    return () => {
+      unlistenProgress();
+      unlistenComplete();
+    };
   }, []);
 
   const persistJob = useCallback(async (job: SyncJob) => {
@@ -149,8 +187,9 @@ export const JobsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteJob,
       runSync,
       stopSync,
+      refreshJobs: loadJobs,
     }),
-    [jobs, persistJob, deleteJob, runSync, stopSync]
+    [jobs, persistJob, deleteJob, runSync, stopSync, loadJobs]
   );
 
   return <JobsContext.Provider value={value}>{children}</JobsContext.Provider>;

@@ -158,6 +158,19 @@
   flex-shrink: 0;
 }
 
+.jc-path-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  transition: max-width var(--duration-normal) var(--ease-in-out);
+}
+
+.jc-path:hover .jc-path-text {
+  max-width: 500px;
+}
+
 /* ============================================
  * Meta Row - Schedule & Last Run
  * ============================================ */

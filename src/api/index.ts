@@ -97,6 +97,7 @@ export const api = {
   getLargestFilesOnDestination: snapshots.getLargestFilesOnDestination,
   deleteSnapshotFromDestination: snapshots.deleteSnapshotFromDestination,
   compareSnapshots: snapshots.compareSnapshots,
+  pruneSnapshot: snapshots.pruneSnapshot,
 
   // ===== System & Preferences =====
   getPreferences: system.getPreferences,
@@ -105,6 +106,7 @@ export const api = {
   isDev: system.isDev,
   devSeedData: system.devSeedData,
   devRunBenchmarks: system.devRunBenchmarks,
+  devChurnData: system.devChurnData,
   devClearData: system.devClearData,
   devDbStats: system.devDbStats,
   getManifest: system.getManifest,

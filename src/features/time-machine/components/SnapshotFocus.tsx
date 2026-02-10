@@ -21,6 +21,7 @@ interface SnapshotFocusProps {
   onRestore: () => void;
   onViewAnalytics: () => void;
   onCompare: () => void;
+  onDelete?: () => void;
 }
 
 interface AnalyticsData {
@@ -38,9 +39,11 @@ function SnapshotFocusComponent({
   onRestore,
   onViewAnalytics,
   onCompare,
+  onDelete,
 }: SnapshotFocusProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const snapshotTimestamp = snapshot?.timestamp;
 
   // Track pending requests to avoid race conditions
@@ -99,6 +102,11 @@ function SnapshotFocusComponent({
       pendingRequestRef.current = null;
     };
   }, [snapshotTimestamp, job.id, job.destPath]);
+
+  // Reset confirm state when snapshot changes
+  useEffect(() => {
+    setConfirmDelete(false);
+  }, [snapshotTimestamp]);
 
   // Format date parts
   const dateParts = useMemo(() => {
@@ -200,6 +208,29 @@ function SnapshotFocusComponent({
             Open in Finder
           </Body>
         </button>
+        {onDelete && (
+          <button
+            onClick={() => {
+              if (confirmDelete) {
+                onDelete();
+                setConfirmDelete(false);
+              } else {
+                setConfirmDelete(true);
+              }
+            }}
+            className={`tm-action-btn ${confirmDelete ? 'tm-action-btn--danger' : 'tm-action-btn--secondary'}`}
+            style={
+              confirmDelete
+                ? { background: 'var(--tm-error)', color: 'white', borderColor: 'var(--tm-error)' }
+                : undefined
+            }
+          >
+            <Icons.Trash2 size={18} />
+            <Body size="sm" weight="medium">
+              {confirmDelete ? 'Confirm Delete?' : 'Delete'}
+            </Body>
+          </button>
+        )}
       </div>
 
       {/* Analytics preview - always rendered to prevent layout shift (TIM-172) */}

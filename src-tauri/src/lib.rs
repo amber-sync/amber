@@ -155,6 +155,8 @@ pub fn run() {
             commands::snapshots::get_snapshot_density_on_destination,
             // TIM-221: Snapshot comparison
             commands::snapshots::compare_snapshots,
+            // Snapshot pruning (delete from manifest + index + disk)
+            commands::snapshots::prune_snapshot,
             // Filesystem commands
             commands::filesystem::read_dir,
             commands::filesystem::read_file_preview,
@@ -189,6 +191,7 @@ pub fn run() {
             // Dev commands (debug only)
             commands::dev::dev_seed_data,
             commands::dev::dev_run_benchmarks,
+            commands::dev::dev_churn_data,
             commands::dev::dev_clear_data,
             commands::dev::dev_db_stats,
         ]

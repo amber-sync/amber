@@ -4,8 +4,16 @@ use crate::services::manifest_service;
 use crate::state::AppState;
 use crate::types::snapshot::{FileNode, SnapshotMetadata};
 use crate::utils::validation::validate_job_id;
+use serde::Serialize;
 use std::path::Path;
 use tauri::State;
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PruneResult {
+    pub freed_bytes: u64,
+    pub folder_removed: bool,
+}
 
 enum IndexHandle<'a> {
     Local(&'a IndexService),
@@ -682,4 +690,89 @@ pub async fn compare_snapshots(
     ensure_job_id(&job_id)?;
     let index = resolve_index(&state, &job_id, true)?;
     index.with(|idx| idx.compare_snapshots(&job_id, timestamp_a, timestamp_b, limit))
+}
+
+/// Prune a snapshot: remove from manifest, delete from index, and remove folder from disk.
+#[tauri::command]
+pub async fn prune_snapshot(
+    state: State<'_, AppState>,
+    dest_path: String,
+    job_id: String,
+    snapshot_id: String,
+    timestamp: i64,
+) -> Result<PruneResult> {
+    ensure_job_id(&job_id)?;
+    let validated = validate_destination_path(&state, &dest_path, true)?;
+
+    // 1. Remove from manifest and get folder_name
+    let removed = manifest_service::remove_snapshot_from_manifest(&validated, &snapshot_id)
+        .await
+        .map_err(|e| AmberError::Snapshot(format!("Failed to update manifest: {}", e)))?;
+
+    let folder_name = removed
+        .as_ref()
+        .map(|s| s.folder_name.clone())
+        .ok_or_else(|| {
+            AmberError::NotFound(format!("Snapshot {} not found in manifest", snapshot_id))
+        })?;
+
+    // 2. Remove from index (best-effort)
+    if let Ok(index) = IndexService::for_destination(&validated) {
+        let _ = index.delete_snapshot(&job_id, timestamp);
+    }
+
+    // 3. Remove snapshot folder from disk
+    let snapshot_dir = Path::new(&validated).join(&folder_name);
+    let mut freed_bytes: u64 = 0;
+    let mut folder_removed = false;
+
+    if snapshot_dir.is_dir() {
+        // Verify the folder is within the destination (prevent path traversal)
+        let canonical_dest = Path::new(&validated)
+            .canonicalize()
+            .map_err(|e| AmberError::InvalidPath(format!("Cannot resolve dest: {}", e)))?;
+        let canonical_snap = snapshot_dir
+            .canonicalize()
+            .map_err(|e| AmberError::InvalidPath(format!("Cannot resolve snapshot: {}", e)))?;
+
+        if !canonical_snap.starts_with(&canonical_dest) {
+            return Err(AmberError::PermissionDenied(
+                "Snapshot folder is outside destination".to_string(),
+            ));
+        }
+
+        // Calculate size before deletion
+        freed_bytes = dir_size(&canonical_snap);
+
+        // Remove the directory
+        tokio::fs::remove_dir_all(&canonical_snap)
+            .await
+            .map_err(|e| {
+                AmberError::Filesystem(format!("Failed to remove snapshot folder: {}", e))
+            })?;
+        folder_removed = true;
+    }
+
+    Ok(PruneResult {
+        freed_bytes,
+        folder_removed,
+    })
+}
+
+/// Recursively calculate directory size in bytes.
+fn dir_size(path: &Path) -> u64 {
+    let mut total: u64 = 0;
+    if let Ok(entries) = std::fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let meta = entry.metadata();
+            if let Ok(meta) = meta {
+                if meta.is_dir() {
+                    total += dir_size(&entry.path());
+                } else {
+                    total += meta.len();
+                }
+            }
+        }
+    }
+    total
 }

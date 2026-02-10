@@ -475,6 +475,18 @@
   border-color: var(--tm-mist);
 }
 
+.tm-action-btn--danger {
+  background: transparent;
+  color: var(--tm-text-soft);
+  border: 1px solid var(--tm-dust);
+}
+
+.tm-action-btn--danger:hover {
+  background: var(--tm-error);
+  color: white;
+  border-color: var(--tm-error);
+}
+
 /* ============================================
  * Live Activity Bar
  * ============================================ */

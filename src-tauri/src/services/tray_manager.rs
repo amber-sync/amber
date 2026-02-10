@@ -27,7 +27,7 @@ impl TrayManager {
 
         let menu = manager.build_menu()?;
 
-        let tray_icon = Image::from_bytes(include_bytes!("../../icons/tray-icon@2x.png"))?;
+        let tray_icon = Image::from_bytes(include_bytes!("../../icons/tray-icon.png"))?;
 
         TrayIconBuilder::with_id("main")
             .icon(tray_icon)
@@ -55,6 +55,24 @@ impl TrayManager {
         let menu = self.build_menu()?;
         if let Some(tray) = self.app_handle.tray_by_id("main") {
             tray.set_menu(Some(menu))?;
+
+            // Update tray icon based on whether any job is running
+            let rsync = get_rsync_service();
+            let jobs = self.load_jobs();
+            let running_job = jobs.iter().find(|(id, _)| rsync.is_job_running(id));
+
+            if let Some((_id, name)) = running_job {
+                let active_icon =
+                    Image::from_bytes(include_bytes!("../../icons/tray-icon-active.png"))?;
+                tray.set_icon(Some(active_icon))?;
+                tray.set_icon_as_template(true)?;
+                tray.set_tooltip(Some(&format!("Amber — Backing up: {}", name)))?;
+            } else {
+                let idle_icon = Image::from_bytes(include_bytes!("../../icons/tray-icon.png"))?;
+                tray.set_icon(Some(idle_icon))?;
+                tray.set_icon_as_template(true)?;
+                tray.set_tooltip(Some("Amber"))?;
+            }
         }
         Ok(())
     }

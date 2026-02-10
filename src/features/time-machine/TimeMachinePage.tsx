@@ -16,6 +16,7 @@ import { useUI } from '../../context/UIContext';
 import { Snapshot, SyncJob, LogEntry, RsyncProgressData } from '../../types';
 import { Icons } from '../../components/IconComponents';
 import { formatBytes } from '../../utils';
+import { api } from '../../api';
 
 // Components
 import { TimeMachineHeader } from './components/TimeMachineHeader';
@@ -62,21 +63,11 @@ export function TimeMachinePage({
   progress = null,
   logs = [],
 }: TimeMachineProps) {
-  const { jobs, runSync, stopSync, persistJob, deleteJob } = useJobs();
+  const { jobs, runSync, stopSync, persistJob, deleteJob, refreshJobs } = useJobs();
   const { activeJobId, setActiveJobId, setView } = useUI();
 
-  // Current job - derive from props/context, prioritizing initialJobId
-  // Using a ref to track the "last committed" job to avoid unnecessary re-renders
-  const effectiveJobId = initialJobId || activeJobId || null;
-  const [currentJobId, setCurrentJobId] = useState<string | null>(effectiveJobId);
-
-  // Only update currentJobId when effectiveJobId actually changes
-  // This prevents flickering from redundant state updates
-  useEffect(() => {
-    if (effectiveJobId && effectiveJobId !== currentJobId) {
-      setCurrentJobId(effectiveJobId);
-    }
-  }, [effectiveJobId, currentJobId]);
+  // Current job - derive directly from props/context (no intermediate state)
+  const currentJobId = initialJobId || activeJobId || null;
 
   const currentJob = useMemo(
     () => jobs.find((j: SyncJob) => j.id === currentJobId) || null,
@@ -96,7 +87,7 @@ export function TimeMachinePage({
 
   // Timeline state - track selected timestamp, auto-select latest when job changes
   const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(() => {
-    const job = jobs.find((j: SyncJob) => j.id === effectiveJobId);
+    const job = jobs.find((j: SyncJob) => j.id === currentJobId);
     if (job?.snapshots?.length) {
       const sorted = [...job.snapshots].sort((a, b) => a.timestamp - b.timestamp);
       return sorted[sorted.length - 1].timestamp;
@@ -104,19 +95,15 @@ export function TimeMachinePage({
     return null;
   });
 
-  // Auto-select latest snapshot when switching jobs (but not on every snapshot update)
-  const prevJobIdRef = React.useRef<string | null>(null);
-  useEffect(() => {
-    if (currentJobId !== prevJobIdRef.current) {
-      prevJobIdRef.current = currentJobId;
-      // Select latest snapshot for new job
-      if (snapshots.length > 0) {
-        setSelectedTimestamp(snapshots[snapshots.length - 1].timestamp);
-      } else {
-        setSelectedTimestamp(null);
-      }
+  // Auto-select latest snapshot when switching jobs (during render, not after paint)
+  const prevJobIdRef = React.useRef<string | null>(currentJobId);
+  if (currentJobId !== prevJobIdRef.current) {
+    prevJobIdRef.current = currentJobId;
+    const latestTimestamp = snapshots.length > 0 ? snapshots[snapshots.length - 1].timestamp : null;
+    if (latestTimestamp !== selectedTimestamp) {
+      setSelectedTimestamp(latestTimestamp);
     }
-  }, [currentJobId, snapshots]);
+  }
 
   // Filtered snapshots based on date range (TIM-151)
   const filteredSnapshots = useMemo(() => {
@@ -165,13 +152,6 @@ export function TimeMachinePage({
 
   // Note: Snapshots are now computed via useMemo from currentJob.snapshots
   // Background refresh happens via JobsContext polling, no need for duplicate API call here
-
-  // Sync active job with context
-  useEffect(() => {
-    if (currentJobId && currentJobId !== activeJobId) {
-      setActiveJobId(currentJobId);
-    }
-  }, [currentJobId, activeJobId, setActiveJobId]);
 
   // Handler needs to be declared before keyboard useEffect that uses it
   const handleBrowseFiles = useCallback(() => {
@@ -248,12 +228,15 @@ export function TimeMachinePage({
   ]);
 
   // Handlers
-  const handleJobSwitch = useCallback((jobId: string) => {
-    setCurrentJobId(jobId);
-    setSelectedTimestamp(null);
-    setActiveOverlay(null);
-    setDateFilter('all'); // Reset filter when switching jobs
-  }, []);
+  const handleJobSwitch = useCallback(
+    (jobId: string) => {
+      setActiveJobId(jobId);
+      setSelectedTimestamp(null);
+      setActiveOverlay(null);
+      setDateFilter('all'); // Reset filter when switching jobs
+    },
+    [setActiveJobId]
+  );
 
   // TIM-214: TimeMachine is a top-level view, back always returns to Dashboard
   const handleBack = useCallback(() => {
@@ -331,6 +314,31 @@ export function TimeMachinePage({
       console.error('Failed to delete job:', error);
     }
   }, [currentJobId, deleteJob, setView]);
+
+  const handleDeleteSnapshot = useCallback(async () => {
+    if (!selectedSnapshot || !currentJob) return;
+    try {
+      await api.pruneSnapshot(
+        currentJob.destPath,
+        currentJob.id,
+        selectedSnapshot.id,
+        selectedSnapshot.timestamp
+      );
+      // Refresh jobs to pick up manifest changes
+      await refreshJobs();
+      // Select adjacent snapshot (prefer next, fall back to previous)
+      const currentIndex = filteredSnapshots.findIndex(s => s.timestamp === selectedTimestamp);
+      if (filteredSnapshots.length > 1) {
+        const nextIndex =
+          currentIndex < filteredSnapshots.length - 1 ? currentIndex + 1 : currentIndex - 1;
+        setSelectedTimestamp(filteredSnapshots[nextIndex].timestamp);
+      } else {
+        setSelectedTimestamp(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete snapshot:', error);
+    }
+  }, [selectedSnapshot, currentJob, filteredSnapshots, selectedTimestamp, refreshJobs]);
 
   // Calculate time range from filtered snapshots (TIM-151)
   const timeRange = useMemo(() => {
@@ -436,6 +444,7 @@ export function TimeMachinePage({
           onRestore={handleRestore}
           onViewAnalytics={handleViewAnalytics}
           onCompare={handleCompare}
+          onDelete={handleDeleteSnapshot}
         />
 
         {/* Live Activity Bar - Fixed at bottom during sync */}

@@ -27,26 +27,19 @@ interface JobCardProps {
 
 // Inline path flow: Source → Destination
 const PathFlow: React.FC<{ source: string; dest: string }> = ({ source, dest }) => {
-  const truncatePath = (path: string, maxLen = 28) => {
-    if (path.length <= maxLen) return path;
-    const parts = path.split('/').filter(Boolean);
-    if (parts.length <= 2) return path;
-    return `/${parts[0]}/…/${parts[parts.length - 1]}`;
-  };
-
   return (
     <div className="jc-path-flow">
       <div className="jc-path">
         <Icons.FolderOpen size={13} className="jc-path-icon" />
-        <Code size="sm" className="truncate" title={source}>
-          {truncatePath(source)}
+        <Code size="sm" className="jc-path-text" title={source}>
+          {source}
         </Code>
       </div>
       <Icons.ArrowRight size={12} className="jc-path-arrow" />
       <div className="jc-path">
         <Icons.HardDrive size={13} className="jc-path-icon" />
-        <Code size="sm" className="truncate" title={dest}>
-          {truncatePath(dest)}
+        <Code size="sm" className="jc-path-text" title={dest}>
+          {dest}
         </Code>
       </div>
     </div>
