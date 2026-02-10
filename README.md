@@ -1,103 +1,78 @@
 # Amber
 
-<div align="center">
-  <img src="public/logo.svg" alt="Amber Logo" width="120" height="120">
-  <h3>Amber Backup</h3>
-  <p><strong>Professional, Time Machine-style backups for macOS</strong></p>
-</div>
+A native backup application powered by rsync. Incremental snapshots with hard-link deduplication, scheduled jobs, visual snapshot history, and point-in-time file restore.
 
----
-
-**Amber** is a modern, native macOS application that brings enterprise-grade `rsync` backups to a beautiful, user-friendly interface. Create incremental, Time Machine-style snapshots that save disk space while keeping every historical version accessible.
+Built with [Tauri v2](https://v2.tauri.app) (Rust) and React.
 
 ## Features
 
-- **Time Machine Mode** - Versioned snapshots using hard links (`--link-dest`). Only changed files take up space.
-- **Smart Rotation** - Automatically prunes old backups (keep dailies for a month, weeklies for a year).
-- **Native Performance** - Built with Tauri and Rust for blazing fast file operations.
-- **Beautiful UI** - Clean, dark-mode ready interface built with React and Tailwind CSS.
-- **Secure SSH** - Seamlessly handles SSH keys for remote server backups.
-- **Snapshot Browser** - Browse historical file versions directly within the app.
-- **Live Terminal** - Watch raw `rsync` output in real-time.
-
-## Architecture
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 19, TypeScript, Tailwind CSS, Vite |
-| Backend | Tauri v2, Rust |
-| Core Engine | `rsync` for data transfer |
+- **Incremental snapshots** - Each backup is a full directory tree. Unchanged files are hard-linked to the previous snapshot via `--link-dest`. Only changed data is transferred.
+- **Scheduled jobs** - Cron-based scheduling per job. Backups run in the background.
+- **Snapshot timeline** - Browse all snapshots on a visual timeline. Navigate to any point in time.
+- **File restore** - Restore individual files or directories from any snapshot.
+- **Multi-job support** - Separate backup jobs with independent schedules and destinations.
+- **SQLite metadata** - All snapshot and file metadata in a local SQLite database.
 
 ## Quick Start
 
-### Prerequisites
-
-- Node.js 18+
-- Rust (install via [rustup](https://rustup.rs/))
-- Xcode Command Line Tools
-
-### Development
-
 ```bash
-# Clone and install
 git clone https://github.com/amber-sync/amber.git
 cd amber
-
-# Install dependencies
 npm install
-
-# Start development (launches Tauri + Vite)
 npm run dev
 ```
 
-### Build
-
-```bash
-# Build production app
-npm run build
-```
-
-## Project Structure
-
-```
-amber/
-├── src/                 # React frontend (TypeScript, Vite, Tailwind)
-│   ├── api/             # Tauri IPC bindings
-│   ├── components/      # React components
-│   ├── context/         # React context providers
-│   ├── views/           # Page components
-│   └── __tests__/       # Frontend tests (Vitest)
-├── src-tauri/           # Rust/Tauri backend
-│   ├── src/commands/    # IPC command handlers
-│   ├── src/services/    # Business logic
-│   ├── src/types/       # Data structures
-│   └── tests/           # Rust integration tests
-├── tests/fixtures/      # Shared test fixtures
-├── scripts/             # Build utilities
-├── docs/                # Documentation
-└── public/              # Static assets
-```
-
-## Usage
-
-1. **Create a Job** - Define your source (e.g., `user@server:/var/www`) and destination.
-2. **Choose Strategy**:
-   - **Mirror** - Exact replica
-   - **Time Machine** - Versioned snapshots with history
-3. **Run** - Click "Sync Now" to start backup.
-4. **Browse** - Explore file versions from any snapshot.
+Requires Node.js 20+, Rust 1.77+, and rsync (included on macOS).
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development mode |
+| `npm run dev` | Start Tauri app with hot reload |
 | `npm run build` | Build production app |
-| `npm run test` | Run frontend tests |
+| `npm test` | Run frontend tests (Vitest) |
 | `npm run test:rust` | Run Rust tests |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Run Prettier |
+| `npm run typecheck` | TypeScript checking |
+| `npm run lint` | ESLint |
+| `npm run bench` | Run Criterion benchmarks |
+
+## Project Structure
+
+```
+amber/
+├── src/              # React frontend
+│   ├── api/          # Tauri IPC client
+│   ├── components/   # UI components (ui/, shared/, layout/)
+│   ├── context/      # React contexts
+│   ├── features/     # Feature modules (dashboard, time-machine, restore, ...)
+│   ├── hooks/        # Custom hooks
+│   ├── styles/       # Design tokens, typography
+│   ├── types/        # TypeScript types
+│   └── utils/        # Utilities
+├── src-tauri/        # Rust backend
+│   ├── src/
+│   │   ├── commands/ # Tauri command handlers
+│   │   ├── services/ # Business logic (rsync, snapshots, scheduler)
+│   │   ├── security/ # Path validation
+│   │   └── types/    # Rust types
+│   ├── tests/        # Integration & e2e tests
+│   └── benches/      # Criterion benchmarks
+├── scripts/          # Build & dev scripts
+├── tests/            # Frontend test fixtures
+└── docs/             # Architecture, design, guides
+```
+
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| Runtime | Tauri v2 |
+| Backend | Rust |
+| Frontend | React 19, TypeScript, Tailwind CSS |
+| Sync engine | rsync |
+| Database | SQLite |
+| Bundler | Vite |
 
 ## License
 
-MIT © Florian P. Mahner
+MIT

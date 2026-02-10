@@ -6,7 +6,6 @@ import { TimeMachinePage } from './features/time-machine';
 import { SettingsPage } from './features/settings';
 import { HelpPage } from './features/help';
 import { Sidebar } from './components/layout';
-// AmbientBackground removed - using clean page backgrounds
 import { DeleteJobModal } from '@/features/jobs/components/DeleteJobModal';
 import { CommandPalette } from './components/CommandPalette';
 import { FileSearchPalette } from './components/FileSearchPalette';

@@ -1,49 +1,20 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 # Dependencies
 node_modules/
 
 # Build outputs
 dist/
 dist-ssr/
-dist-electron/
-dist_electron_build/
 /build/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea/
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Generated files
-benchmark-results.json
-*.generated.ts
-src/generated/bindings.ts
-
-# Coverage
-coverage/
-.nyc_output/
-
-# E2E Testing
-playwright-report/
-test-results/
 
 # Rust
 src-tauri/target/
 target/
+
+# Logs
+logs/
+*.log
+
+# Databases
 *.db
 *.db-journal
 *.db-wal
@@ -56,36 +27,40 @@ target/
 .env.local
 .env*.local
 
-# ================================
-# LOCAL DEVELOPMENT FILES
-# (keep locally, not on GitHub)
-# ================================
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.sw?
 
-# Claude Code configuration
+# Generated
+benchmark-results.json
+*.generated.ts
+src/generated/bindings.ts
+
+# Coverage & testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Local-only (not on GitHub)
 .claude/
 .claude-plugins/
 .claude-flow/
 .mcp.json
+.playwright-mcp/
 claude-flow
 claude-flow.config.json
 CLAUDE.md
-
-# Swarm/coordination data
+SKILLS.md
 .swarm/
 .hive-mind/
 memory/
 coordination/
-
-# Local planning/tickets
 tickets/
 mock-data/
-
-# Skills documentation (local)
-SKILLS.md
-SKILL.md.zip
-
-# Branding source files (keep in assets/branding/ locally)
+mockups/
 assets/branding/
-
-# Session/cache data
 hive-mind-prompt-*.txt
