@@ -47,3 +47,7 @@ jobs:
       - name: Run Rust tests
         working-directory: src-tauri
         run: cargo test
+
+      - name: Compile Rust benchmarks
+        working-directory: src-tauri
+        run: cargo bench --no-run

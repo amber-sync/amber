@@ -11,6 +11,21 @@ This document outlines a comprehensive testing strategy for the Amber backup app
 - ✅ Performance benchmarks (index_service, file_service)
 - ⚠️ **Gaps:** Integration tests, scheduler testing, rsync process testing, concurrent access patterns
 
+## CI Mirror Commands
+
+Run these locally to mirror current CI quality gates:
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm test -- --run
+npm run test:rust
+cd src-tauri && cargo fmt --check
+cd src-tauri && cargo bench --no-run
+cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings
+```
+
 ---
 
 ## Table of Contents
