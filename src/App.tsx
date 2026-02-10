@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { DashboardPage } from './features/dashboard';
 import { RestoreWizard } from './features/restore';
 import { JobEditor } from './features/job-editor';
@@ -26,7 +27,7 @@ import { logger } from './utils/logger';
 function AppContent() {
   // TIM-205: Use specific context hooks for better performance
   const { jobs, setJobs, persistJob, deleteJob } = useJobs();
-  const { activeJobId, view, setActiveJobId, setView } = useUI();
+  const { activeJobId, view, setActiveJobId, setView, navigateToJob } = useUI();
 
   // TIM-124: Pass activeJobId to filter rsync events to only the current job
   const { isRunning, setIsRunning, logs, progress, clearLogs, addLog } =
@@ -86,6 +87,16 @@ function AppContent() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Listen for tray navigation events
+  useEffect(() => {
+    const unlisten = listen<string>('navigate-view', event => {
+      setView(event.payload as ViewType);
+    });
+    return () => {
+      unlisten.then(fn => fn());
+    };
+  }, [setView]);
 
   // Listen for rsync completion events
   useEffect(() => {
@@ -385,9 +396,7 @@ function AppContent() {
             logs={logs}
             progress={progress}
             onSelectJob={id => {
-              setActiveJobId(id);
-              // Navigate to unified Time Machine for the selected job
-              setView('TIME_MACHINE');
+              navigateToJob(id);
             }}
             onCreateJob={openNewJob}
             onRunBackup={runSync}

@@ -11,6 +11,8 @@ pub mod rclone_service;
 pub mod rsync_service;
 pub mod snapshot_service;
 pub mod store;
+#[cfg(desktop)]
+pub mod tray_manager;
 pub mod volume_watcher;
 
 // Dev-only modules

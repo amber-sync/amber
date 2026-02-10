@@ -20,13 +20,21 @@ fn progress_regex() -> &'static Regex {
         Regex::new(r"^\s*([\d,]+)\s+(\d+)%\s+([\d.]+[KMG]?B/s)\s+(\d+:\d+:\d+)").unwrap()
     })
 }
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tokio::time::{timeout, Duration};
 use walkdir::WalkDir;
 
+/// Rebuild the tray menu to reflect current job states.
+#[cfg(desktop)]
+fn rebuild_tray(app: &tauri::AppHandle) {
+    if let Some(tray_mgr) = app.try_state::<crate::services::tray_manager::TrayManager>() {
+        tray_mgr.rebuild_menu();
+    }
+}
+
 static RSYNC_SERVICE: OnceLock<RsyncService> = OnceLock::new();
 
-fn get_rsync_service() -> &'static RsyncService {
+pub(crate) fn get_rsync_service() -> &'static RsyncService {
     RSYNC_SERVICE.get_or_init(RsyncService::new)
 }
 
@@ -320,6 +328,10 @@ async fn handle_backup_success(
     // Clean up backup info
     service.clear_backup_info(&job.id);
 
+    // Rebuild tray to reflect completed state
+    #[cfg(desktop)]
+    rebuild_tray(app);
+
     // Emit success event
     let _ = app.emit(
         "rsync-complete",
@@ -391,6 +403,10 @@ async fn handle_backup_failure(
         }
     }
 
+    // Rebuild tray to reflect completed state
+    #[cfg(desktop)]
+    rebuild_tray(app);
+
     // Emit failure event
     let _ = app.emit(
         "rsync-complete",
@@ -420,6 +436,10 @@ pub async fn run_rsync(app: tauri::AppHandle, job: SyncJob) -> Result<()> {
 
     // Spawn rsync process
     let mut child = spawn_rsync_process(service, &job, &app)?;
+
+    // Rebuild tray to show running state
+    #[cfg(desktop)]
+    rebuild_tray(&app);
 
     // Get backup info before waiting
     let backup_info = service.get_backup_info(&job.id);

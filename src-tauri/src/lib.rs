@@ -61,6 +61,20 @@ pub fn run() {
                         ))?;
                     }
 
+                    // System tray setup via TrayManager
+                    // Non-fatal: app works without a tray (e.g. Linux without appindicator)
+                    #[cfg(desktop)]
+                    {
+                        match services::tray_manager::TrayManager::new(app.handle()) {
+                            Ok(tray_manager) => {
+                                app.manage(tray_manager);
+                            }
+                            Err(e) => {
+                                log::warn!("System tray unavailable: {}", e);
+                            }
+                        }
+                    }
+
                     Ok(())
                 }
                 Err(e) => {
@@ -79,6 +93,15 @@ pub fn run() {
                 }
             }
         });
+
+    // Hide window on close instead of quitting (app stays in system tray)
+    #[cfg(desktop)]
+    let builder = builder.on_window_event(|window, event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            let _ = window.hide();
+            api.prevent_close();
+        }
+    });
 
     // TIM-192: Single source of truth for command registration
     let builder = builder.invoke_handler(register_commands!(
