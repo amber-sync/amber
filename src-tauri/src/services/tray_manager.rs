@@ -9,6 +9,19 @@ use tauri::{AppHandle, Emitter, Manager};
 /// Format: `job::<job_id>` — the handler toggles start/stop based on running state.
 const JOB_PREFIX: &str = "job::";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum JobRunMode {
+    Rsync,
+    Rclone,
+}
+
+fn run_mode_for_job(job: &crate::types::job::SyncJob) -> JobRunMode {
+    match job.destination_type {
+        Some(crate::types::job::DestinationType::Cloud) => JobRunMode::Rclone,
+        _ => JobRunMode::Rsync,
+    }
+}
+
 /// Manages the system tray icon and dynamic menu.
 ///
 /// The menu is rebuilt whenever a job starts, stops, or completes.
@@ -230,13 +243,47 @@ fn handle_job_action(app: &AppHandle, job_id: &str) {
         let app_state = app.try_state::<AppState>();
         if let Some(state) = app_state {
             if let Ok(Some(job)) = state.store.get_job(job_id) {
+                let run_mode = run_mode_for_job(&job);
                 let app_clone = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    if let Err(e) = crate::commands::rsync::run_rsync(app_clone, job).await {
+                    let result = match run_mode {
+                        JobRunMode::Rsync => crate::commands::rsync::run_rsync(app_clone, job)
+                            .await
+                            .map_err(|e| e.to_string()),
+                        JobRunMode::Rclone => crate::commands::rclone::run_rclone(job)
+                            .await
+                            .map_err(|e| e.to_string()),
+                    };
+
+                    if let Err(e) = result {
                         log::error!("Tray: failed to start backup: {}", e);
                     }
                 });
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::job::{DestinationType, SyncJob};
+
+    #[test]
+    fn selects_rsync_for_local_jobs() {
+        let job = SyncJob {
+            destination_type: Some(DestinationType::Local),
+            ..SyncJob::default()
+        };
+        assert_eq!(run_mode_for_job(&job), JobRunMode::Rsync);
+    }
+
+    #[test]
+    fn selects_rclone_for_cloud_jobs() {
+        let job = SyncJob {
+            destination_type: Some(DestinationType::Cloud),
+            ..SyncJob::default()
+        };
+        assert_eq!(run_mode_for_job(&job), JobRunMode::Rclone);
     }
 }

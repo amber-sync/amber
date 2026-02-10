@@ -14,6 +14,21 @@ pub struct JobScheduler {
     job_mappings: Arc<RwLock<HashMap<String, Uuid>>>,
     /// Registered jobs for volume mount handling
     registered_jobs: Arc<RwLock<Vec<SyncJob>>>,
+    /// App handle used to trigger backend commands from scheduler callbacks
+    app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SchedulerRunMode {
+    Rsync,
+    Rclone,
+}
+
+fn scheduler_run_mode_for_job(job: &SyncJob) -> SchedulerRunMode {
+    match job.destination_type {
+        Some(crate::types::job::DestinationType::Cloud) => SchedulerRunMode::Rclone,
+        _ => SchedulerRunMode::Rsync,
+    }
 }
 
 impl JobScheduler {
@@ -22,7 +37,14 @@ impl JobScheduler {
             scheduler: Arc::new(RwLock::new(None)),
             job_mappings: Arc::new(RwLock::new(HashMap::new())),
             registered_jobs: Arc::new(RwLock::new(Vec::new())),
+            app_handle: Arc::new(RwLock::new(None)),
         }
+    }
+
+    /// Set app handle so scheduled callbacks can trigger command execution
+    pub async fn set_app_handle(&self, app_handle: tauri::AppHandle) {
+        let mut handle = self.app_handle.write().await;
+        *handle = Some(app_handle);
     }
 
     /// Initialize the scheduler
@@ -114,17 +136,37 @@ impl JobScheduler {
             .as_ref()
             .ok_or_else(|| AmberError::Scheduler("Scheduler not initialized".into()))?;
 
-        let job_id = job.id.clone();
-        let job_name = job.name.clone();
+        let scheduled_job = job.clone();
+        let app_handle = self.app_handle.clone();
 
         // Create the cron job
         let cron_job = Job::new_async(cron_expr.as_str(), move |_uuid, _lock| {
-            let job_id = job_id.clone();
-            let job_name = job_name.clone();
+            let job = scheduled_job.clone();
+            let app_handle = app_handle.clone();
             Box::pin(async move {
-                log::info!("Executing scheduled job: {} ({})", job_name, job_id);
-                // The actual backup execution will be triggered via Tauri events
-                // This allows the frontend to handle progress updates
+                log::info!("Executing scheduled job: {} ({})", job.name, job.id);
+
+                match scheduler_run_mode_for_job(&job) {
+                    SchedulerRunMode::Rsync => {
+                        let app = { app_handle.read().await.clone() };
+                        if let Some(app_handle) = app {
+                            if let Err(e) = crate::commands::rsync::run_rsync(app_handle, job).await
+                            {
+                                log::error!("Scheduled rsync job failed: {}", e);
+                            }
+                        } else {
+                            log::error!(
+                                "Scheduled rsync job '{}' skipped: app handle not initialized",
+                                job.id
+                            );
+                        }
+                    }
+                    SchedulerRunMode::Rclone => {
+                        if let Err(e) = crate::commands::rclone::run_rclone(job).await {
+                            log::error!("Scheduled rclone job failed: {}", e);
+                        }
+                    }
+                }
             })
         })
         .map_err(|e| {
@@ -261,5 +303,29 @@ impl JobScheduler {
 impl Default for JobScheduler {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::job::{DestinationType, SyncJob};
+
+    #[test]
+    fn selects_rsync_for_local_scheduled_jobs() {
+        let job = SyncJob {
+            destination_type: Some(DestinationType::Local),
+            ..SyncJob::default()
+        };
+        assert_eq!(scheduler_run_mode_for_job(&job), SchedulerRunMode::Rsync);
+    }
+
+    #[test]
+    fn selects_rclone_for_cloud_scheduled_jobs() {
+        let job = SyncJob {
+            destination_type: Some(DestinationType::Cloud),
+            ..SyncJob::default()
+        };
+        assert_eq!(scheduler_run_mode_for_job(&job), SchedulerRunMode::Rclone);
     }
 }

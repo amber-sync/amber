@@ -203,6 +203,17 @@ pub async fn save_job(state: State<'_, AppState>, job: SyncJob) -> Result<()> {
         // Don't fail the overall save - path validation will use previous roots
     }
 
+    match state.store.load_jobs() {
+        Ok(jobs) => {
+            if let Err(e) = state.scheduler.update_jobs(jobs).await {
+                log::warn!("Failed to update scheduler after save_job: {}", e);
+            }
+        }
+        Err(e) => {
+            log::warn!("Failed to reload jobs for scheduler update: {}", e);
+        }
+    }
+
     Ok(())
 }
 
@@ -219,6 +230,17 @@ pub async fn delete_job(state: State<'_, AppState>, job_id: String) -> Result<()
 
     if let Err(e) = state.update_job_roots() {
         log::warn!("Failed to update path validator after delete: {}", e);
+    }
+
+    match state.store.load_jobs() {
+        Ok(jobs) => {
+            if let Err(e) = state.scheduler.update_jobs(jobs).await {
+                log::warn!("Failed to update scheduler after delete_job: {}", e);
+            }
+        }
+        Err(e) => {
+            log::warn!("Failed to reload jobs for scheduler update: {}", e);
+        }
     }
 
     Ok(())
@@ -287,37 +309,29 @@ pub async fn delete_job_data(
 
     // Only allow deleting paths on external volumes (not system drive)
     // This is a critical safety check to prevent accidental data loss
+    use crate::utils::platform;
 
-    // Must be under /Volumes/ but NOT on Macintosh HD (system drive)
-    if !canonical_str.starts_with("/Volumes/") {
+    if !platform::is_external_path(&canonical_str) {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Can only delete backup data on external volumes: {}",
             dest_path
         )));
     }
 
-    if canonical_str.starts_with("/Volumes/Macintosh HD") {
-        return Err(crate::error::AmberError::InvalidPath(format!(
-            "Cannot delete data on system volume: {}",
-            dest_path
-        )));
-    }
-
     // Security: Check path component depth to prevent deleting entire volumes
-    // Must have at least: / + Volumes + DriveName + BackupDir
-    // This prevents attacks like /Volumes/Drive/. or /Volumes/Drive/..
+    // macOS: / + Volumes + DriveName + BackupDir = 4 minimum
+    // Linux: / + media + user + drive + BackupDir = 5, or / + mnt + drive + BackupDir = 4
     let components: Vec<_> = canonical.components().collect();
-    if components.len() < 4 {
+    if components.len() < platform::min_delete_depth() {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Cannot delete entire volume or root directory: {}",
             dest_path
         )));
     }
 
-    // Additional check: ensure we're not at the volume root
-    // by verifying there's at least one directory after /Volumes/DriveName/
-    let path_after_volumes = canonical_str.strip_prefix("/Volumes/").unwrap_or("");
-    if !path_after_volumes.contains('/') {
+    // Additional check: ensure the volume name itself has a subdirectory
+    // (i.e., we're not deleting the mount point itself)
+    if platform::volume_name_from_path(&canonical_str).is_none() {
         return Err(crate::error::AmberError::InvalidPath(format!(
             "Cannot delete entire volume: {}",
             dest_path

@@ -32,6 +32,10 @@ macro_rules! register_commands {
     };
 }
 
+fn should_hide_on_close(run_in_background: Option<bool>) -> bool {
+    run_in_background.unwrap_or(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -40,7 +44,26 @@ pub fn run() {
             // Initialize application state with all services
             match AppState::new() {
                 Ok(app_state) => {
+                    let scheduler = app_state.scheduler.clone();
+                    let scheduled_jobs = match app_state.store.load_jobs() {
+                        Ok(jobs) => jobs,
+                        Err(e) => {
+                            log::warn!(
+                                "Failed to load jobs before scheduler initialization: {}",
+                                e
+                            );
+                            Vec::new()
+                        }
+                    };
+                    let app_handle_for_scheduler = app.handle().clone();
                     app.manage(app_state);
+
+                    tauri::async_runtime::spawn(async move {
+                        scheduler.set_app_handle(app_handle_for_scheduler).await;
+                        if let Err(e) = scheduler.init_with_jobs(scheduled_jobs).await {
+                            log::error!("Failed to initialize job scheduler: {}", e);
+                        }
+                    });
 
                     if cfg!(debug_assertions) {
                         app.handle().plugin(
@@ -98,8 +121,16 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.on_window_event(|window, event| {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-            let _ = window.hide();
-            api.prevent_close();
+            let run_in_background = window
+                .app_handle()
+                .try_state::<AppState>()
+                .and_then(|state| state.store.load_preferences().ok())
+                .map(|prefs| prefs.run_in_background);
+
+            if should_hide_on_close(run_in_background) {
+                let _ = window.hide();
+                api.prevent_close();
+            }
         }
     });
 
@@ -255,5 +286,20 @@ fn show_startup_error(error_message: &str) {
                 .args(["-u", "critical", "Amber Startup Error", &message])
                 .status();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn close_behavior_hides_when_run_in_background_enabled() {
+        assert!(should_hide_on_close(Some(true)));
+    }
+
+    #[test]
+    fn close_behavior_closes_when_run_in_background_disabled() {
+        assert!(!should_hide_on_close(Some(false)));
     }
 }

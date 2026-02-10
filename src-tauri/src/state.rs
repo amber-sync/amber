@@ -7,6 +7,7 @@ use crate::security::PathValidator;
 use crate::services::data_dir;
 use crate::services::file_service::FileService;
 use crate::services::index_service::IndexService;
+use crate::services::job_scheduler::JobScheduler;
 use crate::services::snapshot_service::SnapshotService;
 use crate::services::store::Store;
 use std::path::PathBuf;
@@ -22,6 +23,8 @@ pub struct AppState {
     pub snapshot_service: Arc<SnapshotService>,
     /// Job/preferences store
     pub store: Arc<Store>,
+    /// Cron-based job scheduler
+    pub scheduler: Arc<JobScheduler>,
     /// Application data directory
     pub data_dir: PathBuf,
     /// Path validator for security
@@ -60,6 +63,7 @@ impl AppState {
         let snapshot_service = Arc::new(SnapshotService::new(&data_dir_path));
 
         let store = Arc::new(Store::new(&data_dir_path));
+        let scheduler = Arc::new(JobScheduler::new());
 
         // Initialize path validator with standard roots
         let path_validator = PathValidator::with_standard_roots(&data_dir_path)
@@ -70,6 +74,7 @@ impl AppState {
             index_service,
             snapshot_service,
             store,
+            scheduler,
             data_dir: data_dir_path,
             path_validator: Arc::new(RwLock::new(path_validator)),
         };
